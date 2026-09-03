@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -824,7 +825,15 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 }
                 FocusDocumentForCommand(document);
                 var context = _contextStore.GetOrCreate(document);
-                _documentReadRuntime.Prepare(context, scope, document);
+                var scan = string.Equals(selectedLane, "spelling", StringComparison.OrdinalIgnoreCase)
+                    ? context.LastSpellingScan
+                    : context.LastFormatScan;
+                var hasFinding = context.LastLocalSnapshot != null && scan != null &&
+                    scan.Findings.Any(item => string.Equals(item.FindingId, selectedFindingId, StringComparison.Ordinal));
+                if (!hasFinding)
+                {
+                    _documentReadRuntime.Prepare(context, scope, document);
+                }
                 var result = _oneClickRuntime.ExecuteSelectedFinding(
                     context, selectedLane, selectedFindingId,
                     selectedStory, selectedStart, selectedEnd, document);

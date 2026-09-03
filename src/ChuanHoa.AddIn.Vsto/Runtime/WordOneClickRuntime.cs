@@ -270,6 +270,28 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 var applied = string.Equals(lane, "spelling", StringComparison.OrdinalIgnoreCase)
                     ? ApplyDeterministicSpellingFixes(document, local, new[] { finding }, rules) > 0
                     : ApplySelectedFormatFix(document, local, finding, rules);
+
+                if (!applied && string.Equals(lane, "spelling", StringComparison.OrdinalIgnoreCase))
+                {
+                    Word.Range? directRange = null;
+                    try
+                    {
+                        directRange = document.Range(selectedStart, selectedEnd);
+                        var directText = directRange.Text ?? string.Empty;
+                        var target = ResolveTargetReplacement(finding, rules);
+                        var expected = finding.Anchor.ExpectedText ?? string.Empty;
+                        if (!string.IsNullOrEmpty(target) &&
+                            (string.Equals(directText, expected, StringComparison.Ordinal) ||
+                             string.Equals(directText.Trim(), expected.Trim(), StringComparison.OrdinalIgnoreCase)))
+                        {
+                            directRange.Text = target;
+                            applied = true;
+                        }
+                    }
+                    catch (COMException) { }
+                    finally { Release(directRange); }
+                }
+
                 if (!applied)
                     throw new InvalidOperationException(
                         "Lỗi đang chọn cần người dùng quyết định hoặc chưa có phương án tự sửa an toàn. " +
@@ -282,7 +304,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 }
 
                 annotations.ClearOwnedAnnotationsAt(lane, selectedStory, selectedStart, selectedEnd);
-                context.ClearReadAnalysis();
+                UpdateContextAfterSingleFix(context, lane, findingId);
                 return new SelectedFindingFixResult(string.Empty, lane, findingId, true);
             }
             catch (Exception exception)
@@ -1034,27 +1056,37 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         {
             var expectedText = finding.Anchor.ExpectedText ?? string.Empty;
             var start = checked(paragraph.AbsoluteStart + finding.Anchor.StartOffset.GetValueOrDefault());
+            var length = finding.Anchor.Length.GetValueOrDefault();
             switch (finding.RuleCode)
             {
                 case "LOCAL-TYPO-PUNCT":
-                    return new SpellingEdit(start, finding.Anchor.Length.GetValueOrDefault(), string.Empty,
+                    return new SpellingEdit(start, length, string.Empty,
                         expectedText, 50);
                 case "LOCAL-TYPO-SPACE":
-                    return new SpellingEdit(start, finding.Anchor.Length.GetValueOrDefault(), " ",
+                    return new SpellingEdit(start, length, " ",
                         expectedText, 40);
                 case "LOCAL-TYPO-HIDDEN":
-                    return new SpellingEdit(start, finding.Anchor.Length.GetValueOrDefault(), string.Empty,
+                    return new SpellingEdit(start, length, string.Empty,
                         expectedText, 40);
                 case "LOCAL-TYPO-DICT":
                     var correction = rules.Corrections.FirstOrDefault(item =>
                         string.Equals(item.Wrong, expectedText, StringComparison.OrdinalIgnoreCase));
                     return correction == null ? null : new SpellingEdit(start,
-                        finding.Anchor.Length.GetValueOrDefault(), ApplyCase(expectedText, correction.Replacement),
+                        length, ApplyCase(expectedText, correction.Replacement),
                         expectedText, 30);
                 case "LOCAL-TYPO-LEXICON":
                     var suggestion = lexicon.FindDeterministicCorrection(expectedText);
                     return suggestion == null ? null : new SpellingEdit(start,
-                        finding.Anchor.Length.GetValueOrDefault(), suggestion, expectedText, 25);
+                        length, suggestion, expectedText, 25);
+                case "LOCAL-TYPO-TELEX":
+                    var telexRule = rules.TelexRules?.FirstOrDefault(item =>
+                        Regex.IsMatch(expectedText, item.Pattern, RegexOptions.IgnoreCase));
+                    if (telexRule != null)
+                    {
+                        var rep = Regex.Replace(expectedText, telexRule.Pattern, telexRule.Replacement, RegexOptions.IgnoreCase);
+                        return new SpellingEdit(start, length, ApplyCase(expectedText, rep), expectedText, 25);
+                    }
+                    break;
                 case "ND30-PL2-M1":
                     if (expectedText.Length != 1 || !char.IsLower(expectedText[0])) return null;
                     return new SpellingEdit(start, 1,
@@ -1071,8 +1103,87 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     var insertionOffset = citedType.Index + citedType.Length;
                     return new SpellingEdit(start + insertionOffset, 0, " số",
                         expectedText.Substring(insertionOffset), 15);
-                default:
-                    return null;
+                case "ND30-PL2-M5-K7":
+                    return new SpellingEdit(start, length,
+                        expectedText.ToLower(CultureInfo.GetCultureInfo("vi-VN")), expectedText, 20);
+            }
+
+            var target = ResolveTargetReplacement(finding, rules);
+            if (!string.IsNullOrEmpty(target) && !string.Equals(target, expectedText, StringComparison.Ordinal))
+            {
+                return new SpellingEdit(start, length, target!, expectedText, 30);
+            }
+
+            return null;
+        }
+
+        private static string? ResolveTargetReplacement(AnnotationFinding finding, LocalRulePack rules)
+        {
+            var expectedText = finding.Anchor.ExpectedText ?? string.Empty;
+            if (rules.Capitalizations != null && rules.Capitalizations.Count > 0)
+            {
+                var cap = rules.Capitalizations.FirstOrDefault(item =>
+                    string.Equals(item.Expected, expectedText, StringComparison.OrdinalIgnoreCase));
+                if (cap != null && !string.Equals(cap.Expected, expectedText, StringComparison.Ordinal))
+                    return cap.Expected;
+            }
+
+            if (!string.IsNullOrWhiteSpace(finding.Expected))
+            {
+                var quoteMatch = Regex.Match(finding.Expected,
+                    @"(?:Viết|Sửa thành|thành)\s+[“""]([^”""]+)[”""]",
+                    RegexOptions.IgnoreCase);
+                if (quoteMatch.Success)
+                {
+                    var extracted = quoteMatch.Groups[1].Value.Trim();
+                    if (!string.IsNullOrEmpty(extracted) && !string.Equals(extracted, expectedText, StringComparison.Ordinal))
+                        return extracted;
+                }
+            }
+
+            if (rules.Corrections != null)
+            {
+                var corr = rules.Corrections.FirstOrDefault(item =>
+                    string.Equals(item.Wrong, expectedText, StringComparison.OrdinalIgnoreCase));
+                if (corr != null) return ApplyCase(expectedText, corr.Replacement);
+            }
+
+            return null;
+        }
+
+        private static void UpdateContextAfterSingleFix(DocumentContext context, string lane, string findingId)
+        {
+            try
+            {
+                if (context.LastSnapshot != null && context.LastLocalSnapshot != null)
+                {
+                    if (string.Equals(lane, "spelling", StringComparison.OrdinalIgnoreCase) && context.LastSpellingScan != null)
+                    {
+                        var scan = context.LastSpellingScan;
+                        var remaining = scan.Findings
+                            .Where(f => !string.Equals(f.FindingId, findingId, StringComparison.Ordinal)).ToArray();
+                        context.SetAnalysis(context.LastSnapshot, context.LastLocalSnapshot, context.LastFormatScan,
+                            new LocalScanResult(scan.ScanId, scan.Lane, scan.RulePackId, scan.DocumentFingerprint, scan.Revision, remaining),
+                            false);
+                        return;
+                    }
+                    else if (string.Equals(lane, "format", StringComparison.OrdinalIgnoreCase) && context.LastFormatScan != null)
+                    {
+                        var scan = context.LastFormatScan;
+                        var remaining = scan.Findings
+                            .Where(f => !string.Equals(f.FindingId, findingId, StringComparison.Ordinal)).ToArray();
+                        context.SetAnalysis(context.LastSnapshot, context.LastLocalSnapshot,
+                            new LocalScanResult(scan.ScanId, scan.Lane, scan.RulePackId, scan.DocumentFingerprint, scan.Revision, remaining),
+                            context.LastSpellingScan, false);
+                        return;
+                    }
+                }
+
+                context.ClearReadAnalysis();
+            }
+            catch
+            {
+                context.ClearReadAnalysis();
             }
         }
 
