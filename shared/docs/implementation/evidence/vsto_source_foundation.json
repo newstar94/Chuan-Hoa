@@ -46,7 +46,7 @@
     "wordFindingAnnotationAdapterSha256": "3BC4655E9F932FA538A4DD57056E4662F9AEDE2C24E8712CCDE33A353382A1FF",
     "wordSnapshotBuilderSha256": "8C5B357E2ACB09426F613431CDD122C9F5624E7F6DC23F06652F592279278681"
   },
-  "buildGate": "PASS_LOCAL_DEVELOPMENT",
-  "loadGate": "PASS_WORD16_X64_LOCAL",
-  "buildEvidenceStatus": "Local development build evidence verified by artifact hashes; Word 16 x64 visual smoke is bound to the current Ribbon hash. Production signing and the Word 2010/x86 compatibility lanes remain open."
+  "buildGate": "NOT_RUN",
+  "loadGate": "NOT_RUN",
+  "buildEvidenceStatus": "Stored VSTO build artifacts are stale or unavailable."
 }

@@ -57,11 +57,12 @@ namespace ChuanHoa.OneClickQa
                 {
                     var reader = new WordDocumentReadRuntime(application, access);
                     var scanner = new WordLocalScanRuntime(application, access);
-                    reader.Read(context, document);
-                    if (string.Equals(Environment.GetEnvironmentVariable("CHUANHOA_QA_DIAGNOSTICS"), "1",
-                            StringComparison.Ordinal))
-                        WriteSnapshotDiagnostics(context.LastLocalSnapshot);
-                    result = new WordOneClickRuntime(application, access).Execute(context);
+                    reader.PrepareForOneClick(context, document);
+                    var p9 = context.LastLocalSnapshot.Paragraphs[8];
+                    Console.WriteLine("P9: [" + p9.Text + "] len=" + p9.Text.Length + " hex=" + BitConverter.ToString(System.Text.Encoding.UTF8.GetBytes(p9.Text)));
+                    Console.WriteLine("DETECTED_TYPE=" + context.DocumentTypeCode);
+                    WriteSnapshotDiagnostics(context.LastLocalSnapshot);
+                    result = new WordOneClickRuntime(application, access).Execute(context, document);
                     reader.Prepare(context, DocumentAnalysisScope.Full, document, false);
                     postFormat = scanner.ScanAndAnnotate(context, false, document);
                     postSpelling = scanner.ScanAndAnnotate(context, true, document);
@@ -115,11 +116,7 @@ namespace ChuanHoa.OneClickQa
         private static void WriteSnapshotDiagnostics(LocalScanSnapshot snapshot)
         {
             var roles = new DocumentRoleDetector().Detect(snapshot);
-            foreach (var paragraph in snapshot.Paragraphs.Where(item =>
-                string.Equals(item.StoryType, Word.WdStoryType.wdMainTextStory.ToString(), StringComparison.Ordinal) &&
-                (roles.ContainsKey(item.Index) || item.Text.IndexOf("Điều ", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                 item.Text.IndexOf("QUYẾT ĐỊNH", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                 (item.Index >= 35 && item.Index <= 45))))
+            foreach (var paragraph in snapshot.Paragraphs)
             {
                 string role;
                 roles.TryGetValue(paragraph.Index, out role);

@@ -160,15 +160,48 @@ namespace ChuanHoa.Client.Core.Scanning
                             party ? "Dùng Exactly từ 18–22 pt." : "Dùng dòng đơn đến 1,5 dòng.", rules));
                 }
             }
-            var ordered = Scannable(snapshot).Where(p => IsBody(p, roles)).OrderBy(p => p.Index).ToArray();
-            var recipient = FirstRole(roles, "recipientLabel", "signerAuthority");
-            var last = ordered.LastOrDefault(p => !recipient.HasValue || p.Index < recipient.Value);
+            var endBoundary = FirstRole(roles,
+                "recipientLabel", "recipientList", "recipientSalutation", "recipientSalutationList",
+                "signerAuthority", "signerRole", "signerName", "appendixLabel", "appendixTitle");
+
+            if (!endBoundary.HasValue)
+            {
+                var recipientPara = Scannable(snapshot)
+                    .Where(p => Rx(@"^Nơi\s+nhận\s*:", true).IsMatch(p.Text) ||
+                                Rx(@"^(?:TM\.|KT\.|TL\.|TUQ\.)\s*", true).IsMatch(p.Text))
+                    .OrderBy(p => p.Index)
+                    .FirstOrDefault();
+                if (recipientPara != null)
+                    endBoundary = recipientPara.Index;
+            }
+
+            var headerRoles = new HashSet<string>(StringComparer.Ordinal)
+            {
+                "nationalTitle", "nationalMotto", "superiorOrganName", "organName",
+                "partyTitle", "codeNumber", "placeAndIssuedDate", "typeName",
+                "subject", "subjectContinuation", "legalBasis"
+            };
+
+            var contentParagraphs = Scannable(snapshot)
+                .Where(p => !p.IsInTable &&
+                            string.Equals(p.StoryType, "wdMainTextStory", StringComparison.Ordinal) &&
+                            (!endBoundary.HasValue || p.Index < endBoundary.Value) &&
+                            (!roles.TryGetValue(p.Index, out var role) || !headerRoles.Contains(role)))
+                .OrderBy(p => p.Index)
+                .ToArray();
+
+            var last = contentParagraphs.LastOrDefault();
             if (last != null)
             {
                 var text = last.Text.Trim();
-                if (!text.EndsWith(".", StringComparison.Ordinal))
+                if (!text.EndsWith(":", StringComparison.Ordinal) &&
+                    (!text.EndsWith(".", StringComparison.Ordinal) ||
+                     text.EndsWith("./.", StringComparison.Ordinal) ||
+                     text.EndsWith(". / .", StringComparison.Ordinal)))
+                {
                     findings.Add(Span("ND30-PL1-M2-K6E-DOTSLASH", last, Math.Max(0, text.Length - Math.Min(3, text.Length)), Math.Min(3, text.Length),
                         "Kết thúc nội dung không đúng.", "Văn bản hành chính kết thúc bằng dấu chấm.", rules));
+                }
             }
         }
 
@@ -406,7 +439,7 @@ namespace ChuanHoa.Client.Core.Scanning
                 var distance = LineVerticalCenter(line) - paragraph.PageTopPoints.Value;
                 var fontSize = paragraph.FontSizePoints.GetValueOrDefault(13d);
                 return distance >= Math.Max(5d, fontSize * .55d) &&
-                    distance <= Math.Max(24d, fontSize * 2.2d);
+                    distance <= Math.Max(32d, fontSize * 4.5d);
             }
             return IsAnchoredNear(line, paragraph) && line.TopPoints >= -6d && line.TopPoints <= 100d;
         }

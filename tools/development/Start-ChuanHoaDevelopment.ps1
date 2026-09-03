@@ -139,6 +139,39 @@ if (!$apiReady) {
 }
 if (!$apiReady) { throw "The Development API did not start. See $apiStderr" }
 
+# Clear any Word resiliency/disabled items and corrupt VSTO solution metadata
+foreach ($ver in @('14.0', '15.0', '16.0')) {
+    $disabledKey = "HKCU:\Software\Microsoft\Office\$ver\Word\Resiliency\DisabledItems"
+    if (Test-Path $disabledKey) {
+        $props = Get-ItemProperty $disabledKey
+        foreach ($prop in $props.PSObject.Properties) {
+            if ($prop.Name -notmatch '^(PS|__)') {
+                $decoded = [System.Text.Encoding]::Unicode.GetString($prop.Value)
+                if ($decoded -like '*chuanhoa*') {
+                    Remove-ItemProperty -Path $disabledKey -Name $prop.Name -Force -ErrorAction SilentlyContinue
+                }
+            }
+        }
+    }
+    $validationCache = "HKCU:\Software\Microsoft\Office\$ver\Common\CustomUIValidationCache"
+    if (Test-Path $validationCache) {
+        Remove-ItemProperty -Path $validationCache -Name 'ChuanHoa.AddIn.Vsto.Microsoft.Word.Document' -Force -ErrorAction SilentlyContinue
+    }
+}
+$vstoMeta = 'HKCU:\Software\Microsoft\VSTO\SolutionMetadata'
+if (Test-Path $vstoMeta) {
+    $metaProps = Get-ItemProperty $vstoMeta
+    foreach ($prop in $metaProps.PSObject.Properties) {
+        if ($prop.Name -like '*ChuanHoa*') {
+            $guid = $prop.Value
+            Remove-ItemProperty -Path $vstoMeta -Name $prop.Name -Force -ErrorAction SilentlyContinue
+            if ($guid -and (Test-Path "$vstoMeta\$guid")) {
+                Remove-Item -Path "$vstoMeta\$guid" -Recurse -Force -ErrorAction SilentlyContinue
+            }
+        }
+    }
+}
+
 $manifest = Join-Path $projectRoot 'src\ChuanHoa.AddIn.Vsto\bin\Development\ChuanHoa.AddIn.Vsto.vsto'
 $addinRegistry = 'HKCU:\Software\Microsoft\Office\Word\Addins\ChuanHoa.AddIn.Vsto'
 $developmentFriendlyName = [string]::Concat('Chu', [char]0x1EA9, 'n h', [char]0x00F3, 'a (Development)')

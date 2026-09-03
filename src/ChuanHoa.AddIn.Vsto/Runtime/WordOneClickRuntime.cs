@@ -91,10 +91,6 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             var local = context.LastLocalSnapshot!;
             var formatFindings = context.LastFormatScan!.Findings;
             var spellingFindings = context.LastSpellingScan!.Findings;
-            if (string.Equals(context.DocumentTypeCode, LocalDocumentTypeCodes.Unknown,
-                    StringComparison.OrdinalIgnoreCase))
-                throw new InvalidOperationException(
-                    "Ứng dụng chưa xác định được loại văn bản. Hãy bổ sung dòng tên loại như QUYẾT ĐỊNH, THÔNG BÁO, BÁO CÁO… hoặc trích yếu Công văn.");
             var backup = CreateBackup(document);
             var roles = _roleDetector.Detect(local);
             var headerFontTier = Nd30HeaderFontSizeTierResolver.Resolve(local, roles);

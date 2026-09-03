@@ -5,6 +5,7 @@ using System.IO.Compression;
 using System.Net;
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Windows.Forms;
 using Microsoft.Win32;
 
@@ -84,6 +85,7 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
                 }
 
                 ClearWordRibbonValidationCache();
+                ClearWordResiliencyAndVstoSolutionMetadata();
                 RegisterInstalledDevelopmentManifest(installDirectory);
                 RegisterInstallerState(version, installDirectory);
                 VerifyDirectRegistration(version, installDirectory);
@@ -260,6 +262,75 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
             }
         }
 
+        private static void ClearWordResiliencyAndVstoSolutionMetadata()
+        {
+            foreach (var officeVersion in new[] { "14.0", "15.0", "16.0" })
+            {
+                using (var currentUser = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Default))
+                using (var disabledItems = currentUser.OpenSubKey(
+                    @"Software\Microsoft\Office\" + officeVersion + @"\Word\Resiliency\DisabledItems", true))
+                {
+                    if (disabledItems != null)
+                    {
+                        foreach (var valueName in disabledItems.GetValueNames())
+                        {
+                            var bytes = disabledItems.GetValue(valueName) as byte[];
+                            if (bytes != null && bytes.Length > 0)
+                            {
+                                var decoded = Encoding.Unicode.GetString(bytes);
+                                if (decoded.IndexOf("chuanhoa", StringComparison.OrdinalIgnoreCase) >= 0)
+                                {
+                                    disabledItems.DeleteValue(valueName, false);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                using (var currentUser = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Default))
+                using (var crashingList = currentUser.OpenSubKey(
+                    @"Software\Microsoft\Office\" + officeVersion + @"\Word\Resiliency\CrashingAddinList", true))
+                {
+                    if (crashingList != null)
+                    {
+                        foreach (var valueName in crashingList.GetValueNames())
+                        {
+                            if (valueName.IndexOf("chuanhoa", StringComparison.OrdinalIgnoreCase) >= 0)
+                            {
+                                crashingList.DeleteValue(valueName, false);
+                            }
+                        }
+                    }
+                }
+            }
+
+            using (var currentUser = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Default))
+            using (var solutionMetadata = currentUser.OpenSubKey(@"Software\Microsoft\VSTO\SolutionMetadata", true))
+            {
+                if (solutionMetadata != null)
+                {
+                    foreach (var valueName in solutionMetadata.GetValueNames())
+                    {
+                        if (valueName.IndexOf("chuanhoa", StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            var subKeyGuid = solutionMetadata.GetValue(valueName) as string;
+                            solutionMetadata.DeleteValue(valueName, false);
+                            if (!string.IsNullOrWhiteSpace(subKeyGuid))
+                            {
+                                try
+                                {
+                                    solutionMetadata.DeleteSubKeyTree(subKeyGuid, false);
+                                }
+                                catch
+                                {
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         private static void RegisterInstallerState(string version, string installDirectory)
         {
             using (var currentUser = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Default))
@@ -372,6 +443,21 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
                 "Development");
             Directory.CreateDirectory(destinationDirectory);
             File.Copy(source, Path.Combine(destinationDirectory, "trusted-key.xml"), true);
+
+            var supportDir = Path.Combine(installDirectory, "DevelopmentSupport");
+            var cacheDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "ChuanHoa",
+                "Cache");
+            Directory.CreateDirectory(cacheDir);
+            foreach (var file in new[] { "lease.xml", "rules.xml", "server-time.txt" })
+            {
+                var srcFile = Path.Combine(supportDir, file);
+                if (File.Exists(srcFile))
+                {
+                    File.Copy(srcFile, Path.Combine(cacheDir, file), true);
+                }
+            }
         }
 
         private static bool IsDevelopmentApiAvailable()

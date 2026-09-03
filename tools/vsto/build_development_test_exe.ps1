@@ -79,6 +79,13 @@ try {
     $supportDirectory = Join-Path $payloadDirectory 'DevelopmentSupport'
     New-Item -ItemType Directory -Path $supportDirectory -Force | Out-Null
     Copy-Item -LiteralPath $trustedKeyPath -Destination (Join-Path $supportDirectory 'trusted-key.xml')
+    $cacheDir = Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'ChuanHoa\Cache'
+    foreach ($cacheFile in @('lease.xml', 'rules.xml', 'server-time.txt')) {
+        $sourceCache = Join-Path $cacheDir $cacheFile
+        if (Test-Path -LiteralPath $sourceCache) {
+            Copy-Item -LiteralPath $sourceCache -Destination (Join-Path $supportDirectory $cacheFile)
+        }
+    }
     Set-Content -LiteralPath $versionFile -Value $ApplicationVersion -Encoding ASCII -NoNewline
     Compress-Archive -Path (Join-Path $payloadDirectory '*') -DestinationPath $payloadZip -CompressionLevel Optimal
 

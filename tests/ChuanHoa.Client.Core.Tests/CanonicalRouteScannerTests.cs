@@ -558,6 +558,31 @@ public sealed class CanonicalRouteScannerTests
         Assert.False(roles.ContainsKey(5));
     }
 
+    [Fact]
+    public void Listing_colon_intro_followed_by_clauses_is_not_flagged_as_invalid_content_end()
+    {
+        var paragraphs = new[]
+        {
+            P(1, "QUYẾT ĐỊNH", "typeName", size: 14, bold: true, alignment: 1),
+            P(2, "Về việc phê duyệt kế hoạch lựa chọn nhà thầu", "subject", size: 14, bold: true, alignment: 1),
+            P(3, "4. Giải pháp và phương pháp luận:", size: 13, bold: true),
+            P(4, "Nhà thầu chuẩn bị đề xuất giải pháp, phương pháp luận tổng quát thực hiện dịch vụ theo các nội dung quy định tại Chương này, gồm các phần như sau:", size: 13),
+            P(5, "1. Giải pháp và phương pháp luận;", size: 13),
+            P(6, "2. Kế hoạch công tác.", size: 13),
+            P(7, "5. Quy định về kiểm tra, nghiệm thu sản phẩm: Quy định cụ thể trong hợp đồng.", size: 13),
+            P(8, "Nơi nhận:", "recipientLabel", size: 12, bold: true),
+            P(9, "- Như trên;", "recipientList", size: 11),
+            P(10, "- Lưu: VT.", "recipientList", size: 11)
+        };
+        var snapshot = new LocalScanSnapshot("sha256:listing-colon", 1, new[] { ValidSection() }, paragraphs,
+            Array.Empty<AnnotationProtectedSpan>(), documentTypeCode: LocalDocumentTypeCodes.Decision,
+            documentTypeWasSelectedManually: true);
+
+        var findings = new LocalDocumentScanner().ScanFormat(snapshot, Rules()).Findings;
+
+        Assert.DoesNotContain(findings, item => item.RuleCode == "ND30-PL1-M2-K6E-DOTSLASH");
+    }
+
     private static LocalScanSnapshot BadFormatSnapshot()
     {
         var paragraphs = new List<LocalParagraphSnapshot>
