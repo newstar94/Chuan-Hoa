@@ -1,0 +1,393 @@
+using System;
+using System.Diagnostics;
+using System.IO;
+using System.IO.Compression;
+using System.Net;
+using System.Reflection;
+using System.Security.Cryptography.X509Certificates;
+using System.Windows.Forms;
+using Microsoft.Win32;
+
+namespace ChuanHoa.DevelopmentTestBootstrapper
+{
+    internal static class Program
+    {
+        private const string Title = "Chu\u1EA9n h\u00F3a - C\u00E0i \u0111\u1EB7t th\u1EED nghi\u1EC7m";
+        private const string PayloadResource = "ChuanHoa.DevelopmentInstaller.Payload.zip";
+        private const string VersionResource = "ChuanHoa.DevelopmentInstaller.Version.txt";
+        private const string ExpectedCertificateSubject = "CN=Chuan Hoa Local Development";
+        private const string WordRibbonValidationValueName =
+            "ChuanHoa.AddIn.Vsto.Microsoft.Word.Document";
+
+        [STAThread]
+        private static int Main(string[] args)
+        {
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+            var quiet = Array.Exists(
+                args ?? new string[0],
+                value => string.Equals(value, "/quiet", StringComparison.OrdinalIgnoreCase) ||
+                         string.Equals(value, "/silent", StringComparison.OrdinalIgnoreCase));
+
+            try
+            {
+                if (Process.GetProcessesByName("WINWORD").Length > 0)
+                {
+                    if (!quiet)
+                    {
+                        MessageBox.Show(
+                            "H\u00E3y \u0111\u00F3ng ho\u00E0n to\u00E0n Microsoft Word tr\u01B0\u1EDBc khi c\u00E0i \u0111\u1EB7t.",
+                            Title,
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Warning);
+                    }
+                    return 2;
+                }
+
+                if (!quiet)
+                {
+                    var answer = MessageBox.Show(
+                        "\u0110\u00E2y l\u00E0 b\u1EA3n Development Test, ch\u1EC9 d\u00F9ng tr\u00EAn m\u00E1y th\u1EED nghi\u1EC7m.\n\n" +
+                        "Tr\u00ECnh c\u00E0i \u0111\u1EB7t s\u1EBD th\u00EAm ch\u1EE9ng th\u01B0 Development v\u00E0o kho tin c\u1EADy c\u1EE7a t\u00E0i kho\u1EA3n Windows hi\u1EC7n t\u1EA1i.\n\n" +
+                        "N\u1EBFu \u0111\u00E3 c\u00F3 b\u1EA3n Chu\u1EA9n h\u00F3a Development c\u0169, tr\u00ECnh c\u00E0i \u0111\u1EB7t s\u1EBD t\u1EF1 thay th\u1EBF b\u1EA3n \u0111\u00F3.\n\n" +
+                        "Ti\u1EBFp t\u1EE5c?",
+                        Title,
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Warning,
+                        MessageBoxDefaultButton.Button2);
+                    if (answer != DialogResult.Yes) return 1;
+                }
+
+                var version = ReadTextResource(VersionResource).Trim();
+                var baseDirectory = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "ChuanHoa",
+                    "DevelopmentInstaller");
+                UninstallClickOnceDevelopmentAddIn(baseDirectory);
+                var installDirectory = Path.Combine(baseDirectory, "Current");
+                ResetInstallDirectory(baseDirectory, installDirectory);
+                ExtractPayload(installDirectory);
+
+                var certificatePath = Path.Combine(installDirectory, "ChuanHoa.LocalDevelopment.Public.cer");
+                TrustDevelopmentCertificate(certificatePath);
+                InstallTrustedDevelopmentKey(installDirectory);
+                EnsureRequiredRuntimes();
+
+                if (!quiet && !IsDevelopmentApiAvailable())
+                {
+                    MessageBox.Show(
+                        "Add-in s\u1EBD \u0111\u01B0\u1EE3c c\u00E0i, nh\u01B0ng m\u00E1y ch\u1EE7 Development c\u1EE5c b\u1ED9 ch\u01B0a ch\u1EA1y. " +
+                        "C\u00E1c n\u00FAt c\u00F3 th\u1EC3 b\u1ECB kh\u00F3a sau khi gi\u1EA5y ph\u00E9p t\u1EA1m th\u1EDDi h\u1EBFt h\u1EA1n.",
+                        Title,
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                }
+
+                ClearWordRibbonValidationCache();
+                RegisterInstalledDevelopmentManifest(installDirectory);
+                RegisterInstallerState(version, installDirectory);
+                VerifyDirectRegistration(version, installDirectory);
+
+                if (!quiet)
+                {
+                    MessageBox.Show(
+                        "\u0110\u00E3 c\u00E0i add-in Chu\u1EA9n h\u00F3a Development Test " + version + ".\n\n" +
+                        "H\u00E3y m\u1EDF Microsoft Word v\u00E0 m\u1EDF m\u1ED9t t\u1EC7p .doc ho\u1EB7c .docx \u0111\u00E3 l\u01B0u \u0111\u1EC3 th\u1EED nghi\u1EC7m.",
+                        Title,
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                }
+                return 0;
+            }
+            catch (Exception exception)
+            {
+                if (!quiet)
+                {
+                    MessageBox.Show(
+                        "C\u00E0i \u0111\u1EB7t kh\u00F4ng th\u00E0nh c\u00F4ng.\n\n" + exception.Message,
+                        Title,
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error);
+                }
+                return 10;
+            }
+        }
+
+        private static string ReadTextResource(string resourceName)
+        {
+            using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName))
+            {
+                if (stream == null) throw new InvalidOperationException("Installer resource is missing: " + resourceName);
+                using (var reader = new StreamReader(stream)) return reader.ReadToEnd();
+            }
+        }
+
+        private static void ResetInstallDirectory(string baseDirectory, string installDirectory)
+        {
+            Directory.CreateDirectory(baseDirectory);
+            var normalizedBase = Path.GetFullPath(baseDirectory).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            var normalizedTarget = Path.GetFullPath(installDirectory).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            if (!normalizedTarget.StartsWith(normalizedBase, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException("Unsafe installer extraction directory.");
+            if (Directory.Exists(installDirectory)) Directory.Delete(installDirectory, true);
+            Directory.CreateDirectory(installDirectory);
+        }
+
+        private static void EnsureRequiredRuntimes()
+        {
+            if (!IsNetFramework48Installed())
+                throw new InvalidOperationException(
+                    "Máy chưa có .NET Framework 4.8. Hãy cài thành phần này rồi chạy lại bộ cài.");
+            if (!IsVstoRuntimeInstalled())
+                throw new InvalidOperationException(
+                    "Máy chưa có Microsoft Visual Studio Tools for Office Runtime. " +
+                    "Hãy cài VSTO Runtime rồi chạy lại bộ cài.");
+        }
+
+        private static bool IsNetFramework48Installed()
+        {
+            foreach (var view in new[] { RegistryView.Registry64, RegistryView.Registry32 })
+            {
+                using (var machine = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, view))
+                using (var framework = machine.OpenSubKey(@"SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full"))
+                {
+                    if (framework != null && Convert.ToInt32(framework.GetValue("Release", 0)) >= 528040)
+                        return true;
+                }
+            }
+            return false;
+        }
+
+        private static void UninstallClickOnceDevelopmentAddIn(string baseDirectory)
+        {
+            InstalledClickOnceAddIn installed;
+            if (!TryFindInstalledClickOnceAddIn(out installed)) return;
+
+            Uri manifestUri;
+            if (!Uri.TryCreate(installed.ManifestUrl, UriKind.Absolute, out manifestUri) || !manifestUri.IsFile)
+                throw new InvalidOperationException(
+                    "Bản Chuẩn hóa đang cài không có địa chỉ Development cục bộ hợp lệ.");
+            var normalizedBase = Path.GetFullPath(baseDirectory).TrimEnd(Path.DirectorySeparatorChar) +
+                Path.DirectorySeparatorChar;
+            var manifestPath = Path.GetFullPath(manifestUri.LocalPath);
+            if (!manifestPath.StartsWith(normalizedBase, StringComparison.OrdinalIgnoreCase) ||
+                !string.Equals(Path.GetFileName(manifestPath), "ChuanHoa.AddIn.Vsto.vsto", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException(
+                    "Bản Chuẩn hóa đang cài không thuộc kênh Development cục bộ; không tự gỡ để tránh ảnh hưởng bản khác.");
+            if (!File.Exists(manifestPath))
+                throw new FileNotFoundException(
+                    "Manifest của bản Development cũ đã bị mất; không thể gỡ an toàn.", manifestPath);
+
+            var vstoInstaller = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.CommonProgramFiles),
+                "Microsoft Shared", "VSTO", "10.0", "VSTOInstaller.exe");
+            if (!File.Exists(vstoInstaller))
+                throw new FileNotFoundException("Không tìm thấy VSTOInstaller.exe để gỡ bản Development cũ.", vstoInstaller);
+            var process = Process.Start(new ProcessStartInfo
+            {
+                FileName = vstoInstaller,
+                Arguments = "/Uninstall \"" + manifestUri.AbsoluteUri + "\" /Silent",
+                UseShellExecute = false,
+                CreateNoWindow = true
+            });
+            if (process == null) throw new InvalidOperationException("Không khởi động được trình gỡ bản Development cũ.");
+            process.WaitForExit();
+            if (process.ExitCode != 0)
+                throw new InvalidOperationException(
+                    "Không gỡ được bản Chuẩn hóa Development " + installed.Version +
+                    " (mã " + process.ExitCode + ").");
+            InstalledClickOnceAddIn remaining;
+            if (TryFindInstalledClickOnceAddIn(out remaining))
+                throw new InvalidOperationException(
+                    "Windows vẫn ghi nhận bản Chuẩn hóa Development " + remaining.Version + " sau khi gỡ.");
+        }
+
+        private static bool IsVstoRuntimeInstalled()
+        {
+            foreach (var view in new[] { RegistryView.Registry64, RegistryView.Registry32 })
+            {
+                using (var machine = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, view))
+                using (var runtime = machine.OpenSubKey(@"SOFTWARE\Microsoft\VSTO Runtime Setup\v4"))
+                {
+                    Version installed;
+                    if (runtime != null && Convert.ToInt32(runtime.GetValue("Install", 0)) == 1 &&
+                        Version.TryParse(Convert.ToString(runtime.GetValue("Version")), out installed) &&
+                        installed >= new Version(10, 0, 50903))
+                        return true;
+                }
+            }
+            return false;
+        }
+
+        private static void RegisterInstalledDevelopmentManifest(string installDirectory)
+        {
+            var manifestPath = Path.Combine(installDirectory, "ChuanHoa.AddIn.Vsto.vsto");
+            if (!File.Exists(manifestPath))
+                throw new FileNotFoundException("Không tìm thấy manifest VSTO sau khi cài.", manifestPath);
+            var manifest = new Uri(manifestPath).AbsoluteUri + "|vstolocal";
+            using (var currentUser = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Default))
+            using (var addIn = currentUser.CreateSubKey(
+                @"Software\Microsoft\Office\Word\Addins\ChuanHoa.AddIn.Vsto",
+                RegistryKeyPermissionCheck.ReadWriteSubTree))
+            {
+                if (addIn == null) throw new InvalidOperationException("Không tạo được đăng ký Word Add-in.");
+                addIn.SetValue("FriendlyName", "Chuẩn hóa", RegistryValueKind.String);
+                addIn.SetValue("Description", "Chuẩn hóa", RegistryValueKind.String);
+                addIn.SetValue("LoadBehavior", 3, RegistryValueKind.DWord);
+                addIn.SetValue("Manifest", manifest, RegistryValueKind.String);
+            }
+        }
+
+        private static void ClearWordRibbonValidationCache()
+        {
+            // Office caches the Custom UI validation result by add-in ProgID and
+            // Ribbon ID. Replacing a vstolocal payload in place can otherwise leave
+            // Word reporting COMAddIn.Connect=true while omitting the custom tab.
+            // Word must already be closed (enforced at installer startup), so it is
+            // safe to remove only this add-in's cache entry and let Office validate
+            // the newly installed Ribbon XML on the next launch.
+            foreach (var officeVersion in new[] { "14.0", "15.0", "16.0" })
+            {
+                using (var currentUser = RegistryKey.OpenBaseKey(
+                    RegistryHive.CurrentUser, RegistryView.Default))
+                using (var validationCache = currentUser.OpenSubKey(
+                    @"Software\Microsoft\Office\" + officeVersion +
+                    @"\Common\CustomUIValidationCache", true))
+                {
+                    if (validationCache != null)
+                        validationCache.DeleteValue(WordRibbonValidationValueName, false);
+                }
+            }
+        }
+
+        private static void RegisterInstallerState(string version, string installDirectory)
+        {
+            using (var currentUser = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Default))
+            using (var state = currentUser.CreateSubKey(
+                @"Software\ChuanHoa\DevelopmentInstaller",
+                RegistryKeyPermissionCheck.ReadWriteSubTree))
+            {
+                if (state == null) throw new InvalidOperationException("Không ghi được trạng thái bản cài Development.");
+                state.SetValue("Version", version, RegistryValueKind.String);
+                state.SetValue("InstallDirectory", installDirectory, RegistryValueKind.String);
+            }
+        }
+
+        private static void VerifyDirectRegistration(string expectedVersion, string installDirectory)
+        {
+            var manifestPath = Path.Combine(installDirectory, "ChuanHoa.AddIn.Vsto.vsto");
+            var expectedManifest = new Uri(manifestPath).AbsoluteUri + "|vstolocal";
+            using (var currentUser = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Default))
+            using (var addIn = currentUser.OpenSubKey(@"Software\Microsoft\Office\Word\Addins\ChuanHoa.AddIn.Vsto"))
+            using (var state = currentUser.OpenSubKey(@"Software\ChuanHoa\DevelopmentInstaller"))
+            {
+                if (addIn == null || state == null ||
+                    !string.Equals(Convert.ToString(addIn.GetValue("Manifest")), expectedManifest, StringComparison.OrdinalIgnoreCase) ||
+                    Convert.ToInt32(addIn.GetValue("LoadBehavior", 0)) != 3 ||
+                    !string.Equals(Convert.ToString(state.GetValue("Version")), expectedVersion, StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException(
+                        "Không xác minh được đăng ký trực tiếp của add-in Development.");
+            }
+        }
+
+        private static bool TryFindInstalledClickOnceAddIn(out InstalledClickOnceAddIn installed)
+        {
+            foreach (var view in new[] { RegistryView.Registry64, RegistryView.Registry32 })
+            {
+                using (var currentUser = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, view))
+                using (var uninstall = currentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Uninstall"))
+                {
+                    if (uninstall == null) continue;
+                    foreach (var name in uninstall.GetSubKeyNames())
+                    {
+                        using (var entry = uninstall.OpenSubKey(name))
+                        {
+                            if (entry == null || !string.Equals(
+                                Convert.ToString(entry.GetValue("DisplayName")),
+                                "ChuanHoa.AddIn.Vsto", StringComparison.Ordinal))
+                                continue;
+                            installed = new InstalledClickOnceAddIn(
+                                Convert.ToString(entry.GetValue("DisplayVersion")) ?? string.Empty,
+                                Convert.ToString(entry.GetValue("UrlUpdateInfo")) ?? string.Empty);
+                            return true;
+                        }
+                    }
+                }
+            }
+            installed = new InstalledClickOnceAddIn(string.Empty, string.Empty);
+            return false;
+        }
+
+        private sealed class InstalledClickOnceAddIn
+        {
+            public InstalledClickOnceAddIn(string version, string manifestUrl)
+            {
+                Version = version;
+                ManifestUrl = manifestUrl;
+            }
+
+            public string Version { get; }
+            public string ManifestUrl { get; }
+        }
+
+        private static void ExtractPayload(string installDirectory)
+        {
+            var zipPath = Path.Combine(installDirectory, "payload.zip");
+            using (var source = Assembly.GetExecutingAssembly().GetManifestResourceStream(PayloadResource))
+            {
+                if (source == null) throw new InvalidOperationException("Installer payload is missing.");
+                using (var destination = File.Create(zipPath)) source.CopyTo(destination);
+            }
+            ZipFile.ExtractToDirectory(zipPath, installDirectory);
+            File.Delete(zipPath);
+        }
+
+        private static void TrustDevelopmentCertificate(string certificatePath)
+        {
+            if (!File.Exists(certificatePath)) throw new FileNotFoundException("Development certificate is missing.", certificatePath);
+            var certificate = new X509Certificate2(certificatePath);
+            if (!string.Equals(certificate.Subject, ExpectedCertificateSubject, StringComparison.Ordinal))
+                throw new InvalidOperationException("Unexpected Development certificate subject.");
+            AddCertificate(StoreName.Root, certificate);
+            AddCertificate(StoreName.TrustedPublisher, certificate);
+        }
+
+        private static void AddCertificate(StoreName storeName, X509Certificate2 certificate)
+        {
+            using (var store = new X509Store(storeName, StoreLocation.CurrentUser))
+            {
+                store.Open(OpenFlags.ReadWrite);
+                var existing = store.Certificates.Find(X509FindType.FindByThumbprint, certificate.Thumbprint, false);
+                if (existing.Count == 0) store.Add(certificate);
+            }
+        }
+
+        private static void InstallTrustedDevelopmentKey(string installDirectory)
+        {
+            var source = Path.Combine(installDirectory, "DevelopmentSupport", "trusted-key.xml");
+            if (!File.Exists(source)) throw new FileNotFoundException("The Development public trust key is missing.", source);
+            var destinationDirectory = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "ChuanHoa",
+                "Development");
+            Directory.CreateDirectory(destinationDirectory);
+            File.Copy(source, Path.Combine(destinationDirectory, "trusted-key.xml"), true);
+        }
+
+        private static bool IsDevelopmentApiAvailable()
+        {
+            try
+            {
+                var request = WebRequest.CreateHttp("http://127.0.0.1:5206/health");
+                request.Method = "GET";
+                request.Timeout = 1500;
+                using (var response = (HttpWebResponse)request.GetResponse())
+                    return response.StatusCode == HttpStatusCode.OK;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+    }
+}

@@ -1,0 +1,19 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ChuanHoa.Api/ChuanHoa.Api.csproj" />
+    <Project Path="src/ChuanHoa.Application/ChuanHoa.Application.csproj" />
+    <Project Path="src/ChuanHoa.Client.Core/ChuanHoa.Client.Core.csproj" />
+    <Project Path="src/ChuanHoa.Contracts/ChuanHoa.Contracts.csproj" />
+    <Project Path="src/ChuanHoa.Domain/ChuanHoa.Domain.csproj" />
+    <Project Path="src/ChuanHoa.Infrastructure/ChuanHoa.Infrastructure.csproj" />
+    <Project Path="src/ChuanHoa.Rules/ChuanHoa.Rules.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ChuanHoa.Application.Tests/ChuanHoa.Application.Tests.csproj" />
+    <Project Path="tests/ChuanHoa.Api.Tests/ChuanHoa.Api.Tests.csproj" />
+    <Project Path="tests/ChuanHoa.Client.Core.Tests/ChuanHoa.Client.Core.Tests.csproj" />
+    <Project Path="tests/ChuanHoa.Contracts.Tests/ChuanHoa.Contracts.Tests.csproj" />
+    <Project Path="tests/ChuanHoa.Domain.Tests/ChuanHoa.Domain.Tests.csproj" />
+    <Project Path="tests/ChuanHoa.Rules.Tests/ChuanHoa.Rules.Tests.csproj" />
+  </Folder>
+</Solution>

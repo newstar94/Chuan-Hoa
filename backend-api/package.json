@@ -1,0 +1,26 @@
+{
+  "name": "chuan-hoa-the-thuc-backend-api",
+  "version": "1.0.0",
+  "description": "Core Rule Engine and API Server for Document Formatting Standardization (ND30, Party HD05, Viettel)",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "ts-node src/server.ts",
+    "test": "ts-node test/test_engine.ts"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "qrcode": "^1.5.3"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.14.9",
+    "@types/qrcode": "^1.5.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.2"
+  }
+}

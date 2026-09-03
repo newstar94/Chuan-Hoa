@@ -1,0 +1,14 @@
+{
+  "name": "chuan-hoa-the-thuc-web-addin",
+  "version": "1.0.0",
+  "description": "Office Web Add-in Task Pane for Microsoft Word Document Formatting Standardization",
+  "scripts": {
+    "start": "npx serve -l 3000 src/taskpane",
+    "build": "echo Web Addin ready"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "serve": "^14.2.3"
+  }
+}

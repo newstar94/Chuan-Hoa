@@ -1,0 +1,37 @@
+{
+  "testId": "DB-MIGRATION-V001-001",
+  "status": "PASS",
+  "postgresVersion": "17.11",
+  "startedAtUtc": "2026-09-01T09:42:49.5990046+00:00",
+  "completedAtUtc": "2026-09-01T09:42:51.8279295+00:00",
+  "durationMilliseconds": 2229,
+  "isolation": {
+    "host": "127.0.0.1",
+    "port": 55439,
+    "database": "chuanhoa_migration_v001_test",
+    "authentication": "trust on isolated loopback-only test cluster",
+    "dataDirectory": ".tools/postgresql-v001-data"
+  },
+  "assertions": [
+    "V001 applies transactionally",
+    "required tables exist",
+    "launch trial campaign ranges do not overlap",
+    "published offer ranges do not overlap for the same dimensions",
+    "trial grant history is unique per user and product",
+    "execution grant nonce and jti are replay-safe",
+    "payment provider event ids are idempotent",
+    "scoped request idempotency keys reject duplicate records",
+    "transactional outbox idempotency keys reject duplicate messages",
+    "audit events reject update and delete",
+    "payment events reject update and delete",
+    "V001 down migration removes all owned tables, enum types, and trigger function"
+  ],
+  "commands": [
+    "start isolated PostgreSQL server",
+    "create migration test database",
+    "apply V001 migration",
+    "verify V001 constraints and replay protection",
+    "apply V001 down migration",
+    "verify V001 rollback removed owned objects"
+  ]
+}

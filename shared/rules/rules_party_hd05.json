@@ -1,0 +1,290 @@
+{
+  "regime": "DANG_HD05_2026",
+  "name": "Hướng dẫn số 05-HD/VPTW ngày 27/5/2026 về Thể thức & Kỹ thuật Trình bày Văn bản của Đảng",
+  "documentScope": "Văn bản của các cấp ủy, tổ chức, cơ quan đảng từ Trung ương đến Chi bộ",
+  "parentRegulation": "Quy định số 399-QĐ/TW ngày 09/01/2026 của Ban Bí thư",
+  "pageSetup": {
+    "paperSize": "A4",
+    "widthMm": 210,
+    "heightMm": 297,
+    "orientation": "Portrait",
+    "marginsMm": {
+      "top": { "min": 20, "max": 25, "recommended": 20 },
+      "bottom": { "min": 20, "max": 25, "recommended": 20 },
+      "left": { "min": 30, "max": 35, "recommended": 30 },
+      "right": { "min": 15, "max": 20, "recommended": 15 }
+    }
+  },
+  "defaultTypography": {
+    "fontFamily": "Times New Roman",
+    "color": "#000000",
+    "encoding": "Unicode TCVN 6909:2001 (NFC)"
+  },
+  "pageNumbering": {
+    "position": "Header_Center_Or_Footer",
+    "fontFamily": "Times New Roman",
+    "fontSizeDefault": 14,
+    "fontStyle": "Regular",
+    "startNumber": 1,
+    "showOnFirstPage": false
+  },
+  "components": {
+    "partyTitle": {
+      "id": "1",
+      "name": "Tiêu đề 'ĐẢNG CỘNG SẢN VIỆT NAM'",
+      "position": "TopRight_FirstRow",
+      "text": "ĐẢNG CỘNG SẢN VIỆT NAM",
+      "textCase": "Uppercase",
+      "fontSize": 15,
+      "fontWeight": "Bold",
+      "fontStyle": "Regular",
+      "alignment": "Center",
+      "lineShape": {
+        "required": true,
+        "objectType": "MsoLineShape",
+        "lineType": "SolidSingle",
+        "lengthRatio": 1.0,
+        "alignment": "Center",
+        "description": "Line Shape nét liền dài bằng độ dài tiêu đề ngăn cách với địa danh ngày tháng; underline và paragraph border không hợp lệ"
+      }
+    },
+    "parentOrganName": {
+      "id": "2a",
+      "name": "Tên cơ quan cấp trên trực tiếp",
+      "position": "TopLeft",
+      "textCase": "Uppercase",
+      "fontSize": 14,
+      "fontWeight": "Normal",
+      "fontStyle": "Regular",
+      "alignment": "Center"
+    },
+    "organName": {
+      "id": "2b",
+      "name": "Tên cơ quan ban hành văn bản",
+      "position": "TopLeft_UnderParentOrgan",
+      "textCase": "Uppercase",
+      "fontSize": 14,
+      "fontWeight": "Bold",
+      "fontStyle": "Regular",
+      "alignment": "Center",
+      "separator": {
+        "type": "StarSymbol",
+        "symbol": "*",
+        "position": "UnderOrganName",
+        "description": "Phía dưới tên cơ quan ban hành có dấu sao (*) ngăn cách với số và ký hiệu"
+      }
+    },
+    "codeNumberNotation": {
+      "id": "3",
+      "name": "Số và ký hiệu văn bản Đảng",
+      "position": "TopLeft_UnderOrganNameAndStar",
+      "structure": "Số [số]-[Tên loại]/[Tên cơ quan]",
+      "prefix": "Số",
+      "prefixNote": "Không có dấu hai chấm liền kề từ 'Số'",
+      "fontSize": 14,
+      "fontWeight": "Normal",
+      "fontStyle": "Regular",
+      "alignment": "Center",
+      "rules": "Số < 10 phải ghi số 0 phía trước. Giữa số và loại có dấu gạch nối (-), giữa loại và cơ quan có dấu gạch chéo (/)",
+      "example": "Số 05-HD/VPTW hoặc Số 127-QĐ/TW"
+    },
+    "placeDate": {
+      "id": "4",
+      "name": "Địa danh và ngày, tháng, năm ban hành",
+      "position": "TopRight_UnderPartyTitleAndLine",
+      "fontSize": 14,
+      "fontWeight": "Normal",
+      "fontStyle": "Italic",
+      "alignment": "Center",
+      "rules": "Ngày < 10 và tháng < 3 (tháng 1, tháng 2) phải thêm số 0 phía trước",
+      "example": "Hà Nội, ngày 27 tháng 5 năm 2026"
+    },
+    "typeName": {
+      "id": "5a_type",
+      "name": "Thể loại văn bản Đảng",
+      "position": "BodyTop_Center",
+      "applicableFor": "Tất cả văn bản có tên loại (trừ công văn)",
+      "textCase": "Uppercase",
+      "fontSizeMin": 15,
+      "fontSizeMax": 16,
+      "fontSizeDefault": 15,
+      "fontWeight": "Bold",
+      "fontStyle": "Regular",
+      "alignment": "Center"
+    },
+    "subject": {
+      "id": "5a_subject",
+      "name": "Trích yếu nội dung văn bản Đảng",
+      "position": "BodyTop_UnderTypeName",
+      "textCase": "SentenceCase_Or_Uppercase",
+      "fontSizeMin": 14,
+      "fontSizeMax": 15,
+      "fontSizeDefault": 14,
+      "fontWeight": "Bold",
+      "fontStyle": "Regular",
+      "alignment": "Center",
+      "separator": {
+        "type": "FiveHyphens",
+        "content": "-----",
+        "position": "UnderSubject",
+        "description": "Phía dưới trích yếu có 05 dấu gạch nối (-----) ngăn cách với nội dung"
+      }
+    },
+    "officialLetterSubject": {
+      "id": "5b",
+      "name": "Trích yếu nội dung công văn Đảng",
+      "position": "TopLeft_UnderCodeNumber",
+      "fontSize": 12,
+      "fontWeight": "Normal",
+      "fontStyle": "Italic",
+      "alignment": "Center",
+      "example": "về việc chuẩn bị hội nghị trực tuyến quán triệt..."
+    },
+    "legalBases": {
+      "id": "6_bases",
+      "name": "Phần căn cứ ban hành",
+      "position": "UnderSubject_BeforeContent",
+      "bullet": "-",
+      "rules": "Mỗi căn cứ trình bày 1 dòng/khổ riêng, đầu dòng có dấu gạch ngang (-), cuối có dấu chấm phẩy (;), căn cứ cuối cùng có dấu chấm (.)"
+    },
+    "bodyText": {
+      "id": "6",
+      "name": "Nội dung văn bản Đảng",
+      "position": "Body",
+      "fontSizeMin": 14,
+      "fontSizeMax": 15,
+      "fontSizeDefault": 14,
+      "fontWeight": "Normal",
+      "fontStyle": "Regular",
+      "alignment": "Justify",
+      "firstLineIndentMm": 10,
+      "spacingAfterPt": 6,
+      "lineSpacingRule": "Exactly 18pt to 22pt",
+      "lineSpacingExactPtMin": 18,
+      "lineSpacingExactPtMax": 22,
+      "hierarchy": {
+        "partChapter": {
+          "label": "Từ 'Phần', 'Chương' và số thứ tự (La Mã hoặc chữ)",
+          "labelFormat": "In thường, Cỡ 14-15, Đứng, Đậm, Căn giữa (ví dụ: Phần I; Chương II)",
+          "titleFormat": "In hoa, Cỡ 14-15, Đứng, Đậm, Căn giữa dòng liền kề (ví dụ: QUY ĐỊNH CHUNG)"
+        },
+        "section": {
+          "label": "Từ 'Mục' và số Ả Rập",
+          "labelFormat": "In thường, Cỡ 14-15, Đứng, Đậm, Căn giữa (ví dụ: Mục 1)",
+          "titleFormat": "In hoa, Cỡ 14-15, Đứng, Đậm, Căn giữa (ví dụ: QUẢN LÝ VĂN BẢN ĐI)"
+        },
+        "article": {
+          "label": "Từ 'Điều', số Ả Rập và tên điều",
+          "format": "In thường, Cỡ 14-15, Đứng, Đậm (ví dụ: Điều 1. Phạm vi điều chỉnh và đối tượng áp dụng)"
+        },
+        "clause": {
+          "label": "Khoản (Số Ả Rập và dấu chấm)",
+          "format": "In thường, Cỡ 14-15, Đứng (ví dụ: 1. Quy định về...)"
+        },
+        "point": {
+          "label": "Điểm (Chữ cái tiếng Việt a, b, c... kèm ngoặc đơn đóng)",
+          "format": "In thường, Cỡ 14-15, Đứng (ví dụ: a) Đại hội đại biểu...)"
+        }
+      }
+    },
+    "signAuthority": {
+      "id": "7a",
+      "name": "Quyền hạn của người ký Đảng (T/M, K/T, T/L, Q.)",
+      "position": "BottomRight",
+      "prefixes": ["T/M", "K/T", "T/L", "Q."],
+      "note": "Dùng dấu gạch chéo T/M, K/T, T/L thay vì dấu chấm TM., KT., TL.",
+      "textCase": "Uppercase",
+      "fontSize": 14,
+      "fontWeight": "Bold",
+      "fontStyle": "Regular",
+      "alignment": "Center"
+    },
+    "signPosition": {
+      "id": "7a_pos",
+      "name": "Chức vụ của người ký Đảng",
+      "position": "BottomRight_UnderAuthority",
+      "textCase": "Uppercase",
+      "fontSize": 14,
+      "fontWeight": "Normal",
+      "fontStyle": "Regular",
+      "alignment": "Center",
+      "note": "Chức vụ người ký trong văn bản Đảng là ĐỨNG THƯỜNG (không in đậm), trừ trường hợp đặc biệt"
+    },
+    "signFullName": {
+      "id": "7b",
+      "name": "Họ và tên người ký Đảng",
+      "position": "BottomRight_UnderSignature",
+      "textCase": "TitleCase",
+      "fontSize": 14,
+      "fontWeight": "Bold",
+      "fontStyle": "Regular",
+      "alignment": "Center"
+    },
+    "recipientsKinhGui": {
+      "id": "9_kinhgui",
+      "name": "Kính gửi (Công văn) / Kính trình (Tờ trình)",
+      "position": "BodyTop_UnderSubject",
+      "prefix": "Kính gửi: / Kính trình:",
+      "prefixStyle": "Italic",
+      "fontSize": 14,
+      "listFontSize": 14,
+      "listStyle": "In thường, Cỡ 14-15, Đứng"
+    },
+    "recipientsNoiNhan": {
+      "id": "9a",
+      "name": "Nơi nhận (cuối văn bản Đảng)",
+      "position": "BottomLeft_ParallelToSignature",
+      "header": {
+        "text": "Nơi nhận:",
+        "fontSize": 14,
+        "fontWeight": "Normal",
+        "fontStyle": "Regular",
+        "underline": true,
+        "alignment": "Left",
+        "description": "Từ 'Nơi nhận' in thường, cỡ 14, đứng và CÓ GẠCH CHÂN"
+      },
+      "items": {
+        "fontSize": 12,
+        "fontWeight": "Normal",
+        "fontStyle": "Regular",
+        "alignment": "Left",
+        "bullet": "-",
+        "endPunctuation": ";",
+        "lastLineFormat": "- Lưu [Cơ quan/Văn phòng]."
+      }
+    },
+    "confidentialityUrgency": {
+      "urgency": {
+        "id": "11_urgency",
+        "levels": ["HỎA TỐC", "THƯỢNG KHẨN", "KHẨN"],
+        "textCase": "Uppercase",
+        "fontSize": 14,
+        "fontWeight": "Bold"
+      },
+      "scope": {
+        "id": "12_scope",
+        "levels": ["TÀI LIỆU HỘI NGHỊ", "LƯU HÀNH NỘI BỘ", "TÀI LIỆU THU HỒI"],
+        "fontSize": 12,
+        "fontWeight": "Bold"
+      },
+      "draft": {
+        "id": "12_draft",
+        "fontSize": 14,
+        "fontStyle": "Italic",
+        "example": "Dự thảo lần 2"
+      }
+    },
+    "authorAndCopies": {
+      "id": "13",
+      "fontSize": 11,
+      "fontStyle": "Regular",
+      "example": "NguyenVanAn-26"
+    },
+    "contactInfo": {
+      "id": "14",
+      "fontSize": 10,
+      "fontStyle": "Regular",
+      "position": "BottomFirstPage_UnderFullWidthLine"
+    }
+  }
+}

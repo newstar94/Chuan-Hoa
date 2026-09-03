@@ -1,0 +1,106 @@
+{
+  "regime": "VIETTEL_QD11095",
+  "name": "Quy chế Thể thức Văn bản Tập đoàn Viettel (QĐ 11095)",
+  "documentScope": "Văn bản nội bộ và giao dịch của Tập đoàn Công nghiệp - Viễn thông Quân đội (Viettel)",
+  "pageSetup": {
+    "paperSize": "A4",
+    "widthMm": 210,
+    "heightMm": 297,
+    "orientation": "Portrait",
+    "marginsMm": {
+      "top": {
+        "min": 20,
+        "max": 25,
+        "recommended": 20
+      },
+      "bottom": {
+        "min": 20,
+        "max": 25,
+        "recommended": 20
+      },
+      "left": {
+        "min": 30,
+        "max": 35,
+        "recommended": 30
+      },
+      "right": {
+        "min": 15,
+        "max": 20,
+        "recommended": 15
+      }
+    }
+  },
+  "defaultTypography": {
+    "fontFamily": "Times New Roman",
+    "color": "#000000",
+    "encoding": "Unicode TCVN 6909:2001 (NFC)"
+  },
+  "lineSpacing": {
+    "bodyZoneRule": "Single",
+    "spacingAfterPt": 6
+  },
+  "components": {
+    "nationalTitle": {
+      "text": "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM",
+      "fontSize": 12,
+      "fontWeight": "Bold",
+      "alignment": "Center"
+    },
+    "nationalMotto": {
+      "text": "Độc lập - Tự do - Hạnh phúc",
+      "fontSize": 13,
+      "fontWeight": "Bold",
+      "alignment": "Center",
+      "borderBottom": {
+        "required": true,
+        "lineType": "SolidSingle",
+        "lengthRatio": 1.0
+      }
+    },
+    "parentOrganName": {
+      "defaultText": "TẬP ĐOÀN CÔNG NGHIỆP - VIỄN THÔNG QUÂN ĐỘI",
+      "fontSize": 12,
+      "fontWeight": "Normal",
+      "alignment": "Center"
+    },
+    "organName": {
+      "fontSize": 12,
+      "fontWeight": "Bold",
+      "alignment": "Center",
+      "borderBottom": {
+        "required": true,
+        "lengthRatioMin": 0.333,
+        "lengthRatioMax": 0.5
+      }
+    },
+    "placeDate": {
+      "fontSize": 13,
+      "fontStyle": "Italic",
+      "alignment": "Center"
+    },
+    "officialLetterSubject": {
+      "prefix": "V/v",
+      "fontSize": 12,
+      "fontWeight": "Normal",
+      "alignment": "Center",
+      "spaceBeforePt": 6
+    },
+    "recipientList": {
+      "archivePattern": "^-?\\s*Lưu\\s*:\\s*VT\\s*,\\s*[^\\s.]+\\.[^.]+\\.$",
+      "example": "- Lưu: VT, TCHC.02."
+    },
+    "legalBasis": {
+      "decree": {
+        "bold": false,
+        "italic": true,
+        "underline": false
+      },
+      "other": {
+        "bold": false,
+        "italic": false,
+        "underline": false,
+        "lastLineEndChar": ","
+      }
+    }
+  }
+}

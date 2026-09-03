@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chuẩn Hóa Thể Thức Văn Bản</title>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Office.js -->
+  <script src="https://appsforoffice.microsoft.com/lib/1.1/hosted/office.js"></script>
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+
+  <!-- App Header -->
+  <header class="app-header">
+    <div class="brand">
+      <div class="brand-icon">⚡</div>
+      <div>
+        <div class="brand-title">Chuẩn Hóa Thể Thức</div>
+        <div class="brand-sub">NĐ 30/2020 • HD 05 ĐẢNG • VIETTEL</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="theme-toggle" id="themeToggle" title="Đổi giao diện Sáng / Tối">🌙</button>
+      <button class="btn-icon" id="btnRefresh" title="Quét lại văn bản">🔄</button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="container">
+
+    <!-- Regime Selector -->
+    <div class="regime-card">
+      <label for="regimeSelect">Bộ Quy Chuẩn Thể Thức Áp Dụng</label>
+      <div class="select-wrapper">
+        <select id="regimeSelect">
+          <option value="ND30" selected>🏛️ Nghị định 30/2020/NĐ-CP (Nhà nước)</option>
+          <option value="DANG_HD05">🚩 Hướng dẫn 05-HD/VPTW (Văn bản Đảng)</option>
+          <option value="VIETTEL">🏢 Quy chế Thể thức Viettel (QĐ 11095)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- 1-Click Auto-Fix Hero Button -->
+    <button class="btn-hero-autofix" id="btnAutoFix">
+      <span style="font-size: 18px;">✨</span>
+      <span>1-CLICK AUTO-FIX TOÀN DIỆN</span>
+    </button>
+
+    <!-- Score Summary Card -->
+    <div class="score-card">
+      <div class="stat-item">
+        <div class="stat-number error" id="statErrors">0</div>
+        <div class="stat-label">Lỗi Nghiêm Trọng</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number warning" id="statWarnings">0</div>
+        <div class="stat-label">Cảnh Báo</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number success" id="statCompliance">100%</div>
+        <div class="stat-label">Độ Tuân Thủ</div>
+      </div>
+    </div>
+
+    <!-- Tabs Navigation -->
+    <nav class="tabs-nav">
+      <button class="tab-btn active" data-tab="tabIssues">📋 Lỗi Thể Thức</button>
+      <button class="tab-btn" data-tab="tabTypography">✍️ Tiếng Việt</button>
+      <button class="tab-btn" data-tab="tabTables">📊 Bảng & Phụ Lục</button>
+      <button class="tab-btn" data-tab="tabLicense">🔑 Bản Quyền</button>
+    </nav>
+
+    <!-- TAB 1: ISSUES LIST -->
+    <section class="tab-content active" id="tabIssues">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+        <span style="font-weight: 700; font-size: 11px; color: var(--text-muted);">DANH SÁCH LỖI PHÁT HIỆN</span>
+        <span style="font-size: 11px; color: var(--text-muted); cursor: pointer;" id="btnClearHighlight">Bỏ bôi màu</span>
+      </div>
+      <div class="issue-list" id="issueListContainer">
+        <!-- Dynamic issues will be rendered here -->
+      </div>
+    </section>
+
+    <!-- TAB 2: TYPOGRAPHY -->
+    <section class="tab-content" id="tabTypography">
+      <div class="action-grid">
+        <button class="btn-action-card" id="btnFixTone">
+          <span class="action-icon">🔤</span>
+          <span class="action-title">Dấu Thanh Mới</span>
+          <span class="action-desc">Đổi 'hoà, thuý' sang 'hòa, thúy'</span>
+        </button>
+        <button class="btn-action-card" id="btnFixIy">
+          <span class="action-icon">📝</span>
+          <span class="action-title">Chính Tả i/y</span>
+          <span class="action-desc">Chuẩn hóa kỹ thuật, xử lý...</span>
+        </button>
+        <button class="btn-action-card" id="btnFixSpaces">
+          <span class="action-icon">🧹</span>
+          <span class="action-title">Dọn Khoảng Trắng</span>
+          <span class="action-desc">Xóa khoảng trắng kép, dấu câu</span>
+        </button>
+        <button class="btn-action-card" id="btnConvertUnicode">
+          <span class="action-icon">🔄</span>
+          <span class="action-title">Chuyển Mã Font</span>
+          <span class="action-desc">Đổi TCVN3/VNI sang Unicode</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- TAB 3: TABLES & APPENDICES -->
+    <section class="tab-content" id="tabTables">
+      <div class="action-grid">
+        <button class="btn-action-card" id="btnRepeatHeader">
+          <span class="action-icon">📑</span>
+          <span class="action-title">Lặp Header Bảng</span>
+          <span class="action-desc">Tự động lặp lại khi tràn trang</span>
+        </button>
+        <button class="btn-action-card" id="btnPreventSplit">
+          <span class="action-icon">🛡️</span>
+          <span class="action-title">Chống Rách Bảng</span>
+          <span class="action-desc">Ngăn gãy dòng giữa 2 trang</span>
+        </button>
+        <button class="btn-action-card" id="btnRemoveBlankPages">
+          <span class="action-icon">📄</span>
+          <span class="action-title">Xóa Trang Trắng</span>
+          <span class="action-desc">Dọn sạch các trang trắng thừa</span>
+        </button>
+        <button class="btn-action-card" id="btnLandscapeSection">
+          <span class="action-icon">📐</span>
+          <span class="action-title">Xoay Ngang Phụ Lục</span>
+          <span class="action-desc">Tạo section ngang an toàn số trang</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- TAB 4: LICENSE & SETTINGS -->
+    <section class="tab-content" id="tabLicense">
+      <div class="regime-card">
+        <label>Thông Tin Kích Hoạt Bản Quyền</label>
+        <div style="font-size: 11px; margin-top: 4px; display: flex; flex-direction: column; gap: 6px;">
+          <div><strong>Trạng thái:</strong> <span style="color: var(--success);">Đã kích hoạt PRO (Vĩnh viễn)</span></div>
+          <div><strong>Mã thiết bị:</strong> <span id="hwidDisplay">HWID-WIN11-VDS2026</span></div>
+          <div><strong>Mã kích hoạt:</strong> <code>VDS-PRO-2026-ACTV</code></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Bottom Bar -->
+  <footer class="bottom-bar">
+    <button class="btn-secondary" id="btnUndo" title="Khôi phục trạng thái ban đầu">
+      <span>↩️</span>
+      <span>Safe Undo</span>
+    </button>
+    <button class="btn-secondary" id="btnExportReport" title="Xuất báo cáo kiểm tra">
+      <span>📊</span>
+      <span>Báo Cáo</span>
+    </button>
+  </footer>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toastMessage">Thông báo</div>
+
+  <!-- JavaScript -->
+  <script src="taskpane.js"></script>
+</body>
+</html>

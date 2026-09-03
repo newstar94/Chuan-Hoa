@@ -1,0 +1,17 @@
+{
+  "testId": "DB-PERSISTENCE-001",
+  "status": "PASS",
+  "postgresVersion": "17.11",
+  "startedAtUtc": "2026-09-01T09:42:52.2876440+00:00",
+  "completedAtUtc": "2026-09-01T09:42:59.6415516+00:00",
+  "durationMilliseconds": 7354,
+  "testCount": 4,
+  "assertions": [
+    "same key and same request reports in progress while owned",
+    "same key and different request hash reports conflict",
+    "completed response replays status, content type, headers, and bytes",
+    "retryable failure can be reacquired only with a new owner token",
+    "outbox insert rolls back with a failed transaction",
+    "outbox insert commits with a successful transaction"
+  ]
+}

@@ -1,0 +1,665 @@
+{
+  "status": "MATCHES_APPROVED_BASELINE",
+  "expected": {
+    "vbaDefinitions": 96,
+    "registeredRoutes": 94,
+    "hardwiredNotCheckedRoutes": 19,
+    "routesWithLogic": 75,
+    "jsonCodes": 52,
+    "backendCodes": 14
+  },
+  "actual": {
+    "vbaDefinitions": 96,
+    "registeredRoutes": 94,
+    "hardwiredNotCheckedRoutes": 19,
+    "routesWithLogic": 75,
+    "jsonCodes": 52,
+    "backendCodes": 14
+  },
+  "mismatches": {},
+  "vbaRuleCodes": [
+    "LOCAL-TYPO-DICT",
+    "LOCAL-TYPO-HIDDEN",
+    "LOCAL-TYPO-PUNCT",
+    "LOCAL-TYPO-SPACE",
+    "LOCAL-TYPO-TELEX",
+    "ND30-PL1-M1-K1",
+    "ND30-PL1-M1-K2",
+    "ND30-PL1-M1-K3",
+    "ND30-PL1-M1-K4-COLOR",
+    "ND30-PL1-M1-K4-ENC",
+    "ND30-PL1-M1-K4-FONT",
+    "ND30-PL1-M1-K4-NFC",
+    "ND30-PL1-M1-K7",
+    "ND30-PL1-M2-K1-C",
+    "ND30-PL1-M2-K1-QH",
+    "ND30-PL1-M2-K1-TN",
+    "ND30-PL1-M2-K1-TN-LINE",
+    "ND30-PL1-M2-K1-TN-SEP",
+    "ND30-PL1-M2-K2-LINE",
+    "ND30-PL1-M2-K2-ORG",
+    "ND30-PL1-M2-K2-SUP",
+    "ND30-PL1-M2-K3-ABBR",
+    "ND30-PL1-M2-K3-CASE",
+    "ND30-PL1-M2-K3-PAD",
+    "ND30-PL1-M2-K3-PREFIX",
+    "ND30-PL1-M2-K3-SEP",
+    "ND30-PL1-M2-K3-SPACE",
+    "ND30-PL1-M2-K4-CASE",
+    "ND30-PL1-M2-K4-COMMA",
+    "ND30-PL1-M2-K4-PAD",
+    "ND30-PL1-M2-K4-STYLE",
+    "ND30-PL1-M2-K5A-LINE",
+    "ND30-PL1-M2-K5A-SUBJ",
+    "ND30-PL1-M2-K5A-TYPE",
+    "ND30-PL1-M2-K5B-SPACE",
+    "ND30-PL1-M2-K5B-STYLE",
+    "ND30-PL1-M2-K6A-PUNCT",
+    "ND30-PL1-M2-K6A-STYLE",
+    "ND30-PL1-M2-K6B-CITE",
+    "ND30-PL1-M2-K6B-DATE",
+    "ND30-PL1-M2-K6B-SO",
+    "ND30-PL1-M2-K6D-ALPHABET",
+    "ND30-PL1-M2-K6D-ARTICLE",
+    "ND30-PL1-M2-K6D-CLAUSE",
+    "ND30-PL1-M2-K6D-POINT",
+    "ND30-PL1-M2-K6D-TITLE",
+    "ND30-PL1-M2-K6E-ALIGN",
+    "ND30-PL1-M2-K6E-DOTSLASH",
+    "ND30-PL1-M2-K6E-INDENT",
+    "ND30-PL1-M2-K6E-LINESPACING",
+    "ND30-PL1-M2-K6E-SPACEAFTER",
+    "ND30-PL1-M2-K7B-AUTH",
+    "ND30-PL1-M2-K7D-STYLE",
+    "ND30-PL1-M2-K9A-COLON",
+    "ND30-PL1-M2-K9A-INLINE-END",
+    "ND30-PL1-M2-K9A-LAYOUT",
+    "ND30-PL1-M2-K9A-PUNCT",
+    "ND30-PL1-M2-K9B-LABEL",
+    "ND30-PL1-M2-K9B-LIST",
+    "ND30-PL1-M2-K9B-LUU",
+    "ND30-PL1-M3-K1A-NUM",
+    "ND30-PL1-M3-K1A-REF",
+    "ND30-PL1-M3-K1B",
+    "ND30-PL1-M3-K1C",
+    "ND30-PL1-M3-K1D",
+    "ND30-PL1-M3-K2B",
+    "ND30-PL1-M3-K2C",
+    "ND30-PL1-M3-K3",
+    "ND30-PL1-M3-K4",
+    "ND30-PL1-M4-POS",
+    "ND30-PL1-MV-CT1",
+    "ND30-PL2-M1",
+    "ND30-PL2-M2-K1",
+    "ND30-PL2-M2-K2",
+    "ND30-PL2-M3-K1A",
+    "ND30-PL2-M3-K1B",
+    "ND30-PL2-M3-K1C",
+    "ND30-PL2-M3-K1D",
+    "ND30-PL2-M3-K1E",
+    "ND30-PL2-M3-K2",
+    "ND30-PL2-M4-K1A",
+    "ND30-PL2-M4-K1B",
+    "ND30-PL2-M4-K2",
+    "ND30-PL2-M5-K10",
+    "ND30-PL2-M5-K2",
+    "ND30-PL2-M5-K3",
+    "ND30-PL2-M5-K4",
+    "ND30-PL2-M5-K5",
+    "ND30-PL2-M5-K6",
+    "ND30-PL2-M5-K7",
+    "ND30-PL2-M5-K8A",
+    "ND30-PL2-M5-K8B",
+    "ND30-PL2-M5-K8C",
+    "ND30-PL2-M5-K9",
+    "QD1989-D8-TONE-MIX",
+    "QD1989-IY-MIX"
+  ],
+  "registeredRoutes": [
+    {
+      "ruleCode": "LOCAL-TYPO-DICT",
+      "function": "CheckDictionaryTypo",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "LOCAL-TYPO-HIDDEN",
+      "function": "CheckHiddenCharacters",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "LOCAL-TYPO-PUNCT",
+      "function": "CheckPunctuationSpacingTypo",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "LOCAL-TYPO-SPACE",
+      "function": "CheckExtraSpaceTypo",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "LOCAL-TYPO-TELEX",
+      "function": "CheckTelexLeftoverTypo",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M1-K1",
+      "function": "CheckPageSizeA4",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M1-K2",
+      "function": "CheckPageOrientation",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M1-K3",
+      "function": "CheckPageMargins",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M1-K4-COLOR",
+      "function": "CheckBodyTextFontColor",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M1-K4-FONT",
+      "function": "CheckBodyTextFontName",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M1-K7",
+      "function": "CheckPageNumbering",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K1-C",
+      "function": "CheckNationalMottoSpacing",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K1-QH",
+      "function": "CheckNationalTitleStyle",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K1-TN",
+      "function": "CheckNationalMottoStyle",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K1-TN-LINE",
+      "function": "CheckComponentUnderline",
+      "classification": "HARDWIRED_NOT_CHECKED"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K1-TN-SEP",
+      "function": "CheckNationalMottoSeparator",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K2-LINE",
+      "function": "CheckComponentUnderline",
+      "classification": "HARDWIRED_NOT_CHECKED"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K2-ORG",
+      "function": "CheckOrganNameStyle",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K2-SUP",
+      "function": "CheckSuperiorOrganNameStyle",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K3-ABBR",
+      "function": "CheckCodeNumberAbbreviation",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K3-CASE",
+      "function": "CheckCodeNumberNotationUppercase",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K3-PAD",
+      "function": "CheckCodeNumberPad",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K3-PREFIX",
+      "function": "CheckCodeNumberColon",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K3-SEP",
+      "function": "CheckCodeNumberSeparators",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K3-SPACE",
+      "function": "CheckCodeNumberNoSpace",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K4-CASE",
+      "function": "CheckPlaceNameLetterCase",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K4-COMMA",
+      "function": "CheckPlaceDateComma",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K4-PAD",
+      "function": "CheckPlaceDatePad",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K4-STYLE",
+      "function": "CheckPlaceDateStyle",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K5A-LINE",
+      "function": "CheckComponentUnderline",
+      "classification": "HARDWIRED_NOT_CHECKED"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K5A-SUBJ",
+      "function": "CheckSubjectStyle",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K5A-TYPE",
+      "function": "CheckTypeNameStyle",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K5B-SPACE",
+      "function": "CheckSubjectOfficialLetterSpacing",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K5B-STYLE",
+      "function": "CheckSubjectOfficialLetterStyle",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K6A-PUNCT",
+      "function": "CheckLegalBasisPunctuation",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K6A-STYLE",
+      "function": "CheckLegalBasisStyle",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K6B-CITE",
+      "function": "CheckCitationFullFirstCitation",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K6B-DATE",
+      "function": "CheckCitationAbbreviatedDate",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K6B-SO",
+      "function": "CheckCitationMissingSoKeyword",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K6D-ALPHABET",
+      "function": "CheckPointAlphabetOrder",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K6D-ARTICLE",
+      "function": "CheckArticleFormat",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K6D-CLAUSE",
+      "function": "CheckClauseFormat",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K6D-POINT",
+      "function": "CheckPointFormat",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K6D-TITLE",
+      "function": "CheckStructureTitlePresence",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K6E-ALIGN",
+      "function": "CheckBodyTextAlignment",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K6E-DOTSLASH",
+      "function": "CheckContentEndsWithDotSlash",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K6E-INDENT",
+      "function": "CheckBodyTextFirstLineIndent",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K6E-LINESPACING",
+      "function": "CheckBodyTextLineSpacing",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K6E-SPACEAFTER",
+      "function": "CheckBodyTextSpaceAfter",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K7B-AUTH",
+      "function": "CheckSignerAuthorityAbbreviation",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K7D-STYLE",
+      "function": "CheckSignerAuthorityStyle",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K9A-COLON",
+      "function": "CheckRecipientSalutationColon",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K9A-INLINE-END",
+      "function": "CheckRecipientSalutationInlineEnd",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K9A-LAYOUT",
+      "function": "CheckRecipientSalutationLayout",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K9A-PUNCT",
+      "function": "CheckRecipientSalutationPunctuation",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K9B-LABEL",
+      "function": "CheckRecipientLabelStyle",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K9B-LIST",
+      "function": "CheckRecipientListStyle",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K9B-LUU",
+      "function": "CheckRecipientListLuuLine",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M3-K1A-NUM",
+      "function": "CheckAppendixRomanNumbering",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M3-K1A-REF",
+      "function": "CheckAppendixReferenceMentioned",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M3-K1B",
+      "function": "CheckAppendixTitleStyle",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M3-K1C",
+      "function": "CheckAppendixReferenceInfoStyle",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M3-K1D",
+      "function": "CheckAppendixPageNumberingRestart",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL1-M3-K2B",
+      "function": "CheckComponentNeverDetected",
+      "classification": "HARDWIRED_NOT_CHECKED"
+    },
+    {
+      "ruleCode": "ND30-PL1-M3-K2C",
+      "function": "CheckComponentNeverDetected",
+      "classification": "HARDWIRED_NOT_CHECKED"
+    },
+    {
+      "ruleCode": "ND30-PL1-M3-K3",
+      "function": "CheckComponentNeverDetected",
+      "classification": "HARDWIRED_NOT_CHECKED"
+    },
+    {
+      "ruleCode": "ND30-PL1-M3-K4",
+      "function": "CheckComponentNeverDetected",
+      "classification": "HARDWIRED_NOT_CHECKED"
+    },
+    {
+      "ruleCode": "ND30-PL1-M4-POS",
+      "function": "CheckComponentNeverDetected",
+      "classification": "HARDWIRED_NOT_CHECKED"
+    },
+    {
+      "ruleCode": "ND30-PL1-MV-CT1",
+      "function": "CheckFontSizeConsistency",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL2-M1",
+      "function": "CheckSentenceCapitalization",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL2-M2-K1",
+      "function": "CheckPersonNameCapitalizationWarn",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL2-M2-K2",
+      "function": "CheckCapitalizationNotDetectable",
+      "classification": "HARDWIRED_NOT_CHECKED"
+    },
+    {
+      "ruleCode": "ND30-PL2-M3-K1A",
+      "function": "CheckAdministrativeUnitNameWarn",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL2-M3-K1B",
+      "function": "CheckAdministrativeUnitNumeralCase",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL2-M3-K1C",
+      "function": "CheckSpecialGeographicCapitalization",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL2-M3-K1D",
+      "function": "CheckTerrainPlaceNameCapitalization",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL2-M3-K1E",
+      "function": "CheckRegionNameCapitalization",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL2-M3-K2",
+      "function": "CheckCapitalizationNotDetectable",
+      "classification": "HARDWIRED_NOT_CHECKED"
+    },
+    {
+      "ruleCode": "ND30-PL2-M4-K1A",
+      "function": "CheckCommonOrganNameWarn",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL2-M4-K1B",
+      "function": "CheckSpecialOrganCapitalization",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL2-M4-K2",
+      "function": "CheckCapitalizationNotDetectable",
+      "classification": "HARDWIRED_NOT_CHECKED"
+    },
+    {
+      "ruleCode": "ND30-PL2-M5-K10",
+      "function": "CheckCapitalizationNotDetectable",
+      "classification": "HARDWIRED_NOT_CHECKED"
+    },
+    {
+      "ruleCode": "ND30-PL2-M5-K2",
+      "function": "CheckCapitalizationNotDetectable",
+      "classification": "HARDWIRED_NOT_CHECKED"
+    },
+    {
+      "ruleCode": "ND30-PL2-M5-K3",
+      "function": "CheckCapitalizationNotDetectable",
+      "classification": "HARDWIRED_NOT_CHECKED"
+    },
+    {
+      "ruleCode": "ND30-PL2-M5-K4",
+      "function": "CheckCapitalizationNotDetectable",
+      "classification": "HARDWIRED_NOT_CHECKED"
+    },
+    {
+      "ruleCode": "ND30-PL2-M5-K5",
+      "function": "CheckHolidayNameCapitalization",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL2-M5-K6",
+      "function": "CheckCapitalizationNotDetectable",
+      "classification": "HARDWIRED_NOT_CHECKED"
+    },
+    {
+      "ruleCode": "ND30-PL2-M5-K7",
+      "function": "CheckArticleClauseCapitalization",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL2-M5-K8A",
+      "function": "CheckLunarYearCapitalization",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "ND30-PL2-M5-K8B",
+      "function": "CheckCapitalizationNotDetectable",
+      "classification": "HARDWIRED_NOT_CHECKED"
+    },
+    {
+      "ruleCode": "ND30-PL2-M5-K8C",
+      "function": "CheckCapitalizationNotDetectable",
+      "classification": "HARDWIRED_NOT_CHECKED"
+    },
+    {
+      "ruleCode": "ND30-PL2-M5-K9",
+      "function": "CheckCapitalizationNotDetectable",
+      "classification": "HARDWIRED_NOT_CHECKED"
+    },
+    {
+      "ruleCode": "QD1989-D8-TONE-MIX",
+      "function": "CheckToneMarkMix",
+      "classification": "HAS_LOGIC_PATH"
+    },
+    {
+      "ruleCode": "QD1989-IY-MIX",
+      "function": "CheckIyMix",
+      "classification": "HAS_LOGIC_PATH"
+    }
+  ],
+  "missingRegisteredRoutes": [
+    "ND30-PL1-M1-K4-ENC",
+    "ND30-PL1-M1-K4-NFC"
+  ],
+  "routesWithoutDefinition": [],
+  "jsonCodes": [
+    "CHK_APPENDIX_PAGE_NUM",
+    "CHK_ARTICLE",
+    "CHK_BODY_ALIGNMENT",
+    "CHK_BODY_END_DOT",
+    "CHK_BODY_FONT_COLOR",
+    "CHK_BODY_FONT_NAME",
+    "CHK_BODY_INDENT",
+    "CHK_BODY_LINE_SPACING",
+    "CHK_BODY_SPACE_AFTER",
+    "CHK_CAP_ADMIN_UNIT",
+    "CHK_CAP_GEOGRAPHY",
+    "CHK_CAP_ORGANIZATION",
+    "CHK_CAP_PERSON_NAME",
+    "CHK_CAP_SENTENCE",
+    "CHK_CAP_SPECIAL_NOUNS",
+    "CHK_CLAUSE",
+    "CHK_CODE_NUMBER_FORMAT",
+    "CHK_CODE_NUMBER_PAD",
+    "CHK_DASH_NORMALIZATION",
+    "CHK_DECIMAL_SEPARATOR",
+    "CHK_EXTRA_SPACES",
+    "CHK_FONT_SIZE_CONSISTENCY",
+    "CHK_IY_MIX",
+    "CHK_LEGAL_BASES",
+    "CHK_LEGAL_CITATION",
+    "CHK_NATIONAL_MOTTO",
+    "CHK_NATIONAL_TITLE",
+    "CHK_OFFICIAL_LETTER_SUBJECT",
+    "CHK_ORGAN_NAMES",
+    "CHK_PAGE_MARGINS",
+    "CHK_PAGE_NUMBERING",
+    "CHK_PAGE_ORIENTATION",
+    "CHK_PAGE_SIZE",
+    "CHK_PART_CHAPTER",
+    "CHK_PLACE_DATE",
+    "CHK_POINT",
+    "CHK_POINT_ORDER",
+    "CHK_PUNCTUATION_SPACING",
+    "CHK_RECIPIENTS_KINH_GUI",
+    "CHK_RECIPIENTS_NOI_NHAN",
+    "CHK_RECIPIENT_LUU_LINE",
+    "CHK_SECTION",
+    "CHK_SIGN_AUTHORITY",
+    "CHK_SIGN_FULLNAME",
+    "CHK_SIGN_POSITION",
+    "CHK_SOFT_LINEBREAKS",
+    "CHK_TABLE_HEADER_REPEAT",
+    "CHK_TABLE_ROW_SPLIT",
+    "CHK_TONE_MARK_MIX",
+    "CHK_TRAILING_EMPTY_PAGES",
+    "CHK_TYPE_NAME_SUBJECT",
+    "CHK_UNDERLINE_LENGTH"
+  ],
+  "backendCodes": [
+    "CHK_BODY_ALIGNMENT",
+    "CHK_BODY_FONT_NAME",
+    "CHK_BODY_INDENT",
+    "CHK_CAP_SENTENCE",
+    "CHK_CAP_SPECIAL_NOUNS",
+    "CHK_CODE_NUMBER_FORMAT",
+    "CHK_EXTRA_SPACES",
+    "CHK_NATIONAL_MOTTO",
+    "CHK_NATIONAL_TITLE",
+    "CHK_PAGE_MARGINS",
+    "CHK_PAGE_NUMBERING",
+    "CHK_PAGE_ORIENTATION",
+    "CHK_PAGE_SIZE",
+    "CHK_PUNCTUATION_SPACING"
+  ]
+}

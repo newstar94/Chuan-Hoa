@@ -1,0 +1,36 @@
+{
+  "testId": "CLIENT-SAFETY-KERNEL-001",
+  "status": "PASS_FOUNDATION_INTEGRATED_FAIL_CLOSED",
+  "updatedAtUtc": "2026-09-01T13:00:00Z",
+  "targetFramework": "netstandard2.0",
+  "tests": {
+    "passed": 27,
+    "failed": 0,
+    "skipped": 0
+  },
+  "coveredGates": [
+    "preflight-readonly-protected",
+    "saved-doc-and-docx-format-policy",
+    "unsupported-or-mismatched-format-fail-closed",
+    "execution-grant-vs-fix-plan-lane-separation",
+    "authorization-authenticity-verifier-gate",
+    "expiry-boundary",
+    "operation-scope-risk-allowlist",
+    "fingerprint-recheck-immediately-before-apply",
+    "one-time-replay-consumption",
+    "per-document-mutation-lock",
+    "postcondition-rollback",
+    "application-state-restoration",
+    "rs256-canonical-payload-signature-and-tamper-rejection",
+    "unknown-key-and-missing-device-binding-rejection",
+    "persistent-replay-across-process-lifetime",
+    "malformed-replay-store-fail-closed"
+  ],
+  "limitations": [
+    "Word COM adapter supports only allowlisted SetCharacterSpacing on non-empty selected text and remains unreachable from Ribbon commands.",
+    "RS256 verifier has no production public-key provider, rotation feed, user/device session binding service, or signed grant endpoint.",
+    "Persistent replay is local fail-closed defense in depth; server replay enforcement remains mandatory.",
+    "No Ribbon mutation command is enabled by this foundation alone.",
+    "Word 2010/x86, golden DOC/DOCX, real backup/Undo/rollback, fresh-install/update/uninstall and production signing lanes remain open."
+  ]
+}

@@ -1,0 +1,3467 @@
+{
+  "schema": "chuanhoa.canonical-rule-release.v1",
+  "releaseId": "VBA-BASELINE-2026-09-01",
+  "status": "BaselineDraft",
+  "createdAtUtc": "2026-09-01T00:00:00Z",
+  "effectiveFromUtc": null,
+  "effectiveUntilUtc": null,
+  "sourceBaselineId": "CORRECTION-RULE-ROUTE-BASELINE-001",
+  "rules": [
+    {
+      "ruleCode": "LOCAL-TYPO-DICT",
+      "regimeCode": "LOCAL_TYPOGRAPHY",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline LOCAL-TYPO-DICT",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckDictionaryTypo",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckDictionaryTypo",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "LOCAL-TYPO-HIDDEN",
+      "regimeCode": "LOCAL_TYPOGRAPHY",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline LOCAL-TYPO-HIDDEN",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckHiddenCharacters",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckHiddenCharacters",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "LOCAL-TYPO-PUNCT",
+      "regimeCode": "LOCAL_TYPOGRAPHY",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline LOCAL-TYPO-PUNCT",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckPunctuationSpacingTypo",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckPunctuationSpacingTypo",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "LOCAL-TYPO-SPACE",
+      "regimeCode": "LOCAL_TYPOGRAPHY",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline LOCAL-TYPO-SPACE",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckExtraSpaceTypo",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckExtraSpaceTypo",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "LOCAL-TYPO-TELEX",
+      "regimeCode": "LOCAL_TYPOGRAPHY",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline LOCAL-TYPO-TELEX",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckTelexLeftoverTypo",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckTelexLeftoverTypo",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M1-K1",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M1-K1",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckPageSizeA4",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckPageSizeA4",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M1-K2",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M1-K2",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckPageOrientation",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckPageOrientation",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M1-K3",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M1-K3",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckPageMargins",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckPageMargins",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M1-K4-COLOR",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M1-K4-COLOR",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckBodyTextFontColor",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckBodyTextFontColor",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M1-K4-ENC",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M1-K4-ENC",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "LoadRawCheckRules_RulesPart1..5",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "Unrouted",
+        "routeFunction": null,
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M1-K4-FONT",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M1-K4-FONT",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckBodyTextFontName",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckBodyTextFontName",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M1-K4-NFC",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M1-K4-NFC",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "LoadRawCheckRules_RulesPart1..5",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "Unrouted",
+        "routeFunction": null,
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M1-K7",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M1-K7",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckPageNumbering",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckPageNumbering",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K1-C",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K1-C",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckNationalMottoSpacing",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckNationalMottoSpacing",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K1-QH",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K1-QH",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckNationalTitleStyle",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckNationalTitleStyle",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K1-TN",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K1-TN",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckNationalMottoStyle",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckNationalMottoStyle",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K1-TN-LINE",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K1-TN-LINE",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckComponentUnderline",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "HardwiredNotChecked",
+        "routeFunction": "CheckComponentUnderline",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K1-TN-SEP",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K1-TN-SEP",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckNationalMottoSeparator",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckNationalMottoSeparator",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K2-LINE",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K2-LINE",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckComponentUnderline",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "HardwiredNotChecked",
+        "routeFunction": "CheckComponentUnderline",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K2-ORG",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K2-ORG",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckOrganNameStyle",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckOrganNameStyle",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K2-SUP",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K2-SUP",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckSuperiorOrganNameStyle",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckSuperiorOrganNameStyle",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K3-ABBR",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K3-ABBR",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckCodeNumberAbbreviation",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckCodeNumberAbbreviation",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K3-CASE",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K3-CASE",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckCodeNumberNotationUppercase",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckCodeNumberNotationUppercase",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K3-PAD",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K3-PAD",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckCodeNumberPad",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckCodeNumberPad",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K3-PREFIX",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K3-PREFIX",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckCodeNumberColon",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckCodeNumberColon",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K3-SEP",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K3-SEP",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckCodeNumberSeparators",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckCodeNumberSeparators",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K3-SPACE",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K3-SPACE",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckCodeNumberNoSpace",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckCodeNumberNoSpace",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K4-CASE",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K4-CASE",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckPlaceNameLetterCase",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckPlaceNameLetterCase",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K4-COMMA",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K4-COMMA",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckPlaceDateComma",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckPlaceDateComma",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K4-PAD",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K4-PAD",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckPlaceDatePad",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckPlaceDatePad",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K4-STYLE",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K4-STYLE",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckPlaceDateStyle",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckPlaceDateStyle",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K5A-LINE",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K5A-LINE",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckComponentUnderline",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "HardwiredNotChecked",
+        "routeFunction": "CheckComponentUnderline",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K5A-SUBJ",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K5A-SUBJ",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckSubjectStyle",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckSubjectStyle",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K5A-TYPE",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K5A-TYPE",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckTypeNameStyle",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckTypeNameStyle",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K5B-SPACE",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K5B-SPACE",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckSubjectOfficialLetterSpacing",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckSubjectOfficialLetterSpacing",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K5B-STYLE",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K5B-STYLE",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckSubjectOfficialLetterStyle",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckSubjectOfficialLetterStyle",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K6A-PUNCT",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K6A-PUNCT",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckLegalBasisPunctuation",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckLegalBasisPunctuation",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K6A-STYLE",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K6A-STYLE",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckLegalBasisStyle",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckLegalBasisStyle",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K6B-CITE",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K6B-CITE",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckCitationFullFirstCitation",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckCitationFullFirstCitation",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K6B-DATE",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K6B-DATE",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckCitationAbbreviatedDate",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckCitationAbbreviatedDate",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K6B-SO",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K6B-SO",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckCitationMissingSoKeyword",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckCitationMissingSoKeyword",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K6D-ALPHABET",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K6D-ALPHABET",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckPointAlphabetOrder",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckPointAlphabetOrder",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K6D-ARTICLE",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K6D-ARTICLE",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckArticleFormat",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckArticleFormat",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K6D-CLAUSE",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K6D-CLAUSE",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckClauseFormat",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckClauseFormat",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K6D-POINT",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K6D-POINT",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckPointFormat",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckPointFormat",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K6D-TITLE",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K6D-TITLE",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckStructureTitlePresence",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckStructureTitlePresence",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K6E-ALIGN",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K6E-ALIGN",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckBodyTextAlignment",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckBodyTextAlignment",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K6E-DOTSLASH",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K6E-DOTSLASH",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckContentEndsWithDotSlash",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckContentEndsWithDotSlash",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K6E-INDENT",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K6E-INDENT",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckBodyTextFirstLineIndent",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckBodyTextFirstLineIndent",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K6E-LINESPACING",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K6E-LINESPACING",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckBodyTextLineSpacing",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckBodyTextLineSpacing",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K6E-SPACEAFTER",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K6E-SPACEAFTER",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckBodyTextSpaceAfter",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckBodyTextSpaceAfter",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K7B-AUTH",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K7B-AUTH",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckSignerAuthorityAbbreviation",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckSignerAuthorityAbbreviation",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K7D-STYLE",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K7D-STYLE",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckSignerAuthorityStyle",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckSignerAuthorityStyle",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K9A-COLON",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K9A-COLON",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckRecipientSalutationColon",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckRecipientSalutationColon",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K9A-INLINE-END",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K9A-INLINE-END",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckRecipientSalutationInlineEnd",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckRecipientSalutationInlineEnd",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K9A-LAYOUT",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K9A-LAYOUT",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckRecipientSalutationLayout",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckRecipientSalutationLayout",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K9A-PUNCT",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K9A-PUNCT",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckRecipientSalutationPunctuation",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckRecipientSalutationPunctuation",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K9B-LABEL",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K9B-LABEL",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckRecipientLabelStyle",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckRecipientLabelStyle",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K9B-LIST",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K9B-LIST",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckRecipientListStyle",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckRecipientListStyle",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M2-K9B-LUU",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M2-K9B-LUU",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckRecipientListLuuLine",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckRecipientListLuuLine",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M3-K1A-NUM",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M3-K1A-NUM",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckAppendixRomanNumbering",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckAppendixRomanNumbering",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M3-K1A-REF",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M3-K1A-REF",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckAppendixReferenceMentioned",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckAppendixReferenceMentioned",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M3-K1B",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M3-K1B",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckAppendixTitleStyle",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckAppendixTitleStyle",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M3-K1C",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M3-K1C",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckAppendixReferenceInfoStyle",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckAppendixReferenceInfoStyle",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M3-K1D",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M3-K1D",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckAppendixPageNumberingRestart",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckAppendixPageNumberingRestart",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M3-K2B",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M3-K2B",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckComponentNeverDetected",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "HardwiredNotChecked",
+        "routeFunction": "CheckComponentNeverDetected",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M3-K2C",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M3-K2C",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckComponentNeverDetected",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "HardwiredNotChecked",
+        "routeFunction": "CheckComponentNeverDetected",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M3-K3",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M3-K3",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckComponentNeverDetected",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "HardwiredNotChecked",
+        "routeFunction": "CheckComponentNeverDetected",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M3-K4",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M3-K4",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckComponentNeverDetected",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "HardwiredNotChecked",
+        "routeFunction": "CheckComponentNeverDetected",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-M4-POS",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-M4-POS",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckComponentNeverDetected",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "HardwiredNotChecked",
+        "routeFunction": "CheckComponentNeverDetected",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL1-MV-CT1",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL1-MV-CT1",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckFontSizeConsistency",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckFontSizeConsistency",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL2-M1",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL2-M1",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckSentenceCapitalization",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckSentenceCapitalization",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL2-M2-K1",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL2-M2-K1",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckPersonNameCapitalizationWarn",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckPersonNameCapitalizationWarn",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL2-M2-K2",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL2-M2-K2",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckCapitalizationNotDetectable",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "HardwiredNotChecked",
+        "routeFunction": "CheckCapitalizationNotDetectable",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL2-M3-K1A",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL2-M3-K1A",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckAdministrativeUnitNameWarn",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckAdministrativeUnitNameWarn",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL2-M3-K1B",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL2-M3-K1B",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckAdministrativeUnitNumeralCase",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckAdministrativeUnitNumeralCase",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL2-M3-K1C",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL2-M3-K1C",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckSpecialGeographicCapitalization",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckSpecialGeographicCapitalization",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL2-M3-K1D",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL2-M3-K1D",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckTerrainPlaceNameCapitalization",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckTerrainPlaceNameCapitalization",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL2-M3-K1E",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL2-M3-K1E",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckRegionNameCapitalization",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckRegionNameCapitalization",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL2-M3-K2",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL2-M3-K2",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckCapitalizationNotDetectable",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "HardwiredNotChecked",
+        "routeFunction": "CheckCapitalizationNotDetectable",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL2-M4-K1A",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL2-M4-K1A",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckCommonOrganNameWarn",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckCommonOrganNameWarn",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL2-M4-K1B",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL2-M4-K1B",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckSpecialOrganCapitalization",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckSpecialOrganCapitalization",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL2-M4-K2",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL2-M4-K2",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckCapitalizationNotDetectable",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "HardwiredNotChecked",
+        "routeFunction": "CheckCapitalizationNotDetectable",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL2-M5-K10",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL2-M5-K10",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckCapitalizationNotDetectable",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "HardwiredNotChecked",
+        "routeFunction": "CheckCapitalizationNotDetectable",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL2-M5-K2",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL2-M5-K2",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckCapitalizationNotDetectable",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "HardwiredNotChecked",
+        "routeFunction": "CheckCapitalizationNotDetectable",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL2-M5-K3",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL2-M5-K3",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckCapitalizationNotDetectable",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "HardwiredNotChecked",
+        "routeFunction": "CheckCapitalizationNotDetectable",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL2-M5-K4",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL2-M5-K4",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckCapitalizationNotDetectable",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "HardwiredNotChecked",
+        "routeFunction": "CheckCapitalizationNotDetectable",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL2-M5-K5",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL2-M5-K5",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckHolidayNameCapitalization",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckHolidayNameCapitalization",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL2-M5-K6",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL2-M5-K6",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckCapitalizationNotDetectable",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "HardwiredNotChecked",
+        "routeFunction": "CheckCapitalizationNotDetectable",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL2-M5-K7",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL2-M5-K7",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckArticleClauseCapitalization",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckArticleClauseCapitalization",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL2-M5-K8A",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL2-M5-K8A",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckLunarYearCapitalization",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckLunarYearCapitalization",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL2-M5-K8B",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL2-M5-K8B",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckCapitalizationNotDetectable",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "HardwiredNotChecked",
+        "routeFunction": "CheckCapitalizationNotDetectable",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL2-M5-K8C",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL2-M5-K8C",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckCapitalizationNotDetectable",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "HardwiredNotChecked",
+        "routeFunction": "CheckCapitalizationNotDetectable",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "ND30-PL2-M5-K9",
+      "regimeCode": "ND30",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline ND30-PL2-M5-K9",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckCapitalizationNotDetectable",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "HardwiredNotChecked",
+        "routeFunction": "CheckCapitalizationNotDetectable",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "QD1989-D8-TONE-MIX",
+      "regimeCode": "VIETNAMESE_ORTHOGRAPHY",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline QD1989-D8-TONE-MIX",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckToneMarkMix",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckToneMarkMix",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    },
+    {
+      "ruleCode": "QD1989-IY-MIX",
+      "regimeCode": "VIETNAMESE_ORTHOGRAPHY",
+      "lifecycleStatus": "Draft",
+      "title": "Baseline QD1989-IY-MIX",
+      "description": "Unreviewed VBA baseline definition. Semantic wording, legal traceability, fixtures, detector behavior, and fix policy must be approved before publication.",
+      "provenance": {
+        "sourceKind": "VBA_BASELINE",
+        "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+        "sourceSymbol": "CheckIyMix",
+        "sourceHash": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB"
+      },
+      "implementation": {
+        "status": "BaselineLogicPath",
+        "routeFunction": "CheckIyMix",
+        "detectorId": null,
+        "verifiedEngineVersion": null
+      },
+      "legalReview": {
+        "status": "Unreviewed",
+        "authority": null,
+        "instrument": null,
+        "provision": null,
+        "reviewer": null,
+        "reviewedAtUtc": null
+      },
+      "fixtures": {
+        "positiveFixtureIds": [],
+        "negativeFixtureIds": [],
+        "boundaryFixtureIds": []
+      },
+      "fixPolicy": "Blocked",
+      "documentTypeCodes": [],
+      "effectiveFromUtc": null,
+      "effectiveUntilUtc": null
+    }
+  ]
+}

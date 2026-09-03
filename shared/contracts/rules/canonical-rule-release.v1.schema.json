@@ -1,0 +1,278 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:chuanhoa:schema:canonical-rule-release:v1",
+  "title": "Chuẩn Hóa canonical rule release",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "releaseId",
+    "status",
+    "createdAtUtc",
+    "effectiveFromUtc",
+    "effectiveUntilUtc",
+    "sourceBaselineId",
+    "rules"
+  ],
+  "properties": {
+    "schema": {
+      "const": "chuanhoa.canonical-rule-release.v1"
+    },
+    "releaseId": {
+      "type": "string",
+      "pattern": "^[A-Z0-9][A-Z0-9._-]{7,79}$"
+    },
+    "status": {
+      "enum": [
+        "BaselineDraft",
+        "Candidate",
+        "Published",
+        "Retired"
+      ]
+    },
+    "createdAtUtc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "effectiveFromUtc": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "effectiveUntilUtc": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "sourceBaselineId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "rules": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/rule"
+      }
+    }
+  },
+  "$defs": {
+    "nullableString": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "stringArray": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ruleCode",
+        "regimeCode",
+        "lifecycleStatus",
+        "title",
+        "description",
+        "provenance",
+        "implementation",
+        "legalReview",
+        "fixtures",
+        "fixPolicy",
+        "documentTypeCodes",
+        "effectiveFromUtc",
+        "effectiveUntilUtc"
+      ],
+      "properties": {
+        "ruleCode": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._-]{2,99}$"
+        },
+        "regimeCode": {
+          "type": "string",
+          "minLength": 1
+        },
+        "lifecycleStatus": {
+          "enum": [
+            "Draft",
+            "Active",
+            "Suspended",
+            "Retired"
+          ]
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        },
+        "implementation": {
+          "$ref": "#/$defs/implementation"
+        },
+        "legalReview": {
+          "$ref": "#/$defs/legalReview"
+        },
+        "fixtures": {
+          "$ref": "#/$defs/fixtures"
+        },
+        "fixPolicy": {
+          "enum": [
+            "ReportOnly",
+            "SignedFixPlanSafe",
+            "SignedFixPlanConfirm",
+            "Blocked"
+          ]
+        },
+        "documentTypeCodes": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "effectiveFromUtc": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "effectiveUntilUtc": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sourceKind",
+        "sourcePath",
+        "sourceSymbol",
+        "sourceHash"
+      ],
+      "properties": {
+        "sourceKind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourcePath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceSymbol": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceHash": {
+          "type": "string",
+          "pattern": "^[A-F0-9]{64}$"
+        }
+      }
+    },
+    "implementation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "routeFunction",
+        "detectorId",
+        "verifiedEngineVersion"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "Unrouted",
+            "HardwiredNotChecked",
+            "BaselineLogicPath",
+            "ImplementedVerified"
+          ]
+        },
+        "routeFunction": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "detectorId": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "verifiedEngineVersion": {
+          "$ref": "#/$defs/nullableString"
+        }
+      }
+    },
+    "legalReview": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "authority",
+        "instrument",
+        "provision",
+        "reviewer",
+        "reviewedAtUtc"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "Unreviewed",
+            "Approved",
+            "Rejected"
+          ]
+        },
+        "authority": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "instrument": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "provision": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "reviewer": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "reviewedAtUtc": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        }
+      }
+    },
+    "fixtures": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "positiveFixtureIds",
+        "negativeFixtureIds",
+        "boundaryFixtureIds"
+      ],
+      "properties": {
+        "positiveFixtureIds": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "negativeFixtureIds": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "boundaryFixtureIds": {
+          "$ref": "#/$defs/stringArray"
+        }
+      }
+    }
+  }
+}

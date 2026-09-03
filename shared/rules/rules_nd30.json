@@ -1,0 +1,352 @@
+{
+  "regime": "ND30_2020",
+  "name": "Nghị định 30/2020/NĐ-CP về Thể thức Văn bản Hành chính Nhà nước",
+  "documentScope": "Văn bản hành chính do các cơ quan nhà nước, tổ chức chính trị - xã hội ban hành",
+  "pageSetup": {
+    "paperSize": "A4",
+    "widthMm": 210,
+    "heightMm": 297,
+    "orientation": "Portrait",
+    "marginsMm": {
+      "top": { "min": 20, "max": 25, "recommended": 20 },
+      "bottom": { "min": 20, "max": 25, "recommended": 20 },
+      "left": { "min": 30, "max": 35, "recommended": 30 },
+      "right": { "min": 15, "max": 20, "recommended": 15 }
+    }
+  },
+  "defaultTypography": {
+    "fontFamily": "Times New Roman",
+    "color": "#000000",
+    "encoding": "Unicode TCVN 6909:2001 (NFC)"
+  },
+  "pageNumbering": {
+    "position": "Header_Center",
+    "fontFamily": "Times New Roman",
+    "fontSizeMin": 13,
+    "fontSizeMax": 14,
+    "fontSizeDefault": 14,
+    "fontStyle": "Regular",
+    "startNumber": 1,
+    "showOnFirstPage": false
+  },
+  "components": {
+    "nationalTitle": {
+      "id": "1a",
+      "name": "Quốc hiệu (CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM)",
+      "position": "TopRight",
+      "textCase": "Uppercase",
+      "fontSizeMin": 12,
+      "fontSizeMax": 13,
+      "fontSizeDefault": 12,
+      "fontWeight": "Bold",
+      "fontStyle": "Regular",
+      "alignment": "Center",
+      "lineSpacing": 1.0,
+      "spaceAfterPt": 0
+    },
+    "motto": {
+      "id": "1b",
+      "name": "Tiêu ngữ (Độc lập - Tự do - Hạnh phúc)",
+      "position": "TopRight_UnderNationalTitle",
+      "textCase": "TitleCaseWithHyphens",
+      "hyphenRule": "Chữ cái đầu các cụm từ viết hoa, giữa các cụm từ có gạch nối (-) và có dấu cách hai bên",
+      "fontSizeMin": 13,
+      "fontSizeMax": 14,
+      "fontSizeDefault": 13,
+      "fontWeight": "Bold",
+      "fontStyle": "Regular",
+      "alignment": "Center",
+      "lineSpacing": 1.0,
+      "spaceAfterPt": 0,
+      "lineShape": {
+        "required": true,
+        "objectType": "MsoLineShape",
+        "lineType": "SolidSingle",
+        "lengthRatio": 1.0,
+        "alignment": "Center",
+        "description": "Line Shape nét liền, độ dài bằng đúng độ dài dòng chữ Tiêu ngữ; underline và paragraph border không hợp lệ"
+      }
+    },
+    "parentOrganName": {
+      "id": "2a",
+      "name": "Tên cơ quan chủ quản trực tiếp",
+      "position": "TopLeft",
+      "textCase": "Uppercase",
+      "fontSizeMin": 12,
+      "fontSizeMax": 13,
+      "fontSizeDefault": 12,
+      "fontWeight": "Normal",
+      "fontStyle": "Regular",
+      "alignment": "Center",
+      "lineSpacing": 1.0,
+      "spaceAfterPt": 0
+    },
+    "organName": {
+      "id": "2b",
+      "name": "Tên cơ quan ban hành văn bản",
+      "position": "TopLeft_UnderParentOrgan",
+      "textCase": "Uppercase",
+      "fontSizeMin": 12,
+      "fontSizeMax": 13,
+      "fontSizeDefault": 12,
+      "fontWeight": "Bold",
+      "fontStyle": "Regular",
+      "alignment": "Center",
+      "lineSpacing": 1.0,
+      "spaceAfterPt": 0,
+      "lineShape": {
+        "required": true,
+        "objectType": "MsoLineShape",
+        "lineType": "SolidSingle",
+        "lengthRatioMin": 0.333,
+        "lengthRatioMax": 0.5,
+        "alignment": "Center",
+        "description": "Line Shape nét liền, độ dài bằng 1/3 đến 1/2 độ dài dòng chữ, đặt cân đối; underline và paragraph border không hợp lệ"
+      }
+    },
+    "codeNumberNotation": {
+      "id": "3",
+      "name": "Số và ký hiệu văn bản",
+      "position": "TopLeft_UnderOrganName",
+      "prefix": "Số:",
+      "prefixCase": "CapitalizeFirst",
+      "numberFormat": "Chữ số Ả Rập, số < 10 có số 0 ở trước (ví dụ 05)",
+      "notationFormat": "Giữa số và ký hiệu có gạch chéo (/), giữa các nhóm viết tắt có gạch nối (-) không cách chữ",
+      "example": "Số: 15/QĐ-BNV hoặc Số: 05/BNV-VP",
+      "fontSizeMin": 13,
+      "fontSizeMax": 13,
+      "fontSizeDefault": 13,
+      "fontWeight": "Normal",
+      "fontStyle": "Regular",
+      "alignment": "Center",
+      "lineSpacing": 1.0,
+      "spaceAfterPt": 0
+    },
+    "placeDate": {
+      "id": "4",
+      "name": "Địa danh và thời gian ban hành văn bản",
+      "position": "TopRight_SameLineAsCodeNumber",
+      "alignment": "Center",
+      "fontSizeMin": 13,
+      "fontSizeMax": 14,
+      "fontSizeDefault": 13,
+      "fontWeight": "Normal",
+      "fontStyle": "Italic",
+      "format": "[Địa danh], ngày [dd] tháng [mm] năm [yyyy]",
+      "rules": "Chữ cái đầu địa danh viết hoa, sau địa danh có dấu phẩy (,). Ngày < 10 và tháng 1, 2 phải có số 0 phía trước",
+      "example": "Hà Nội, ngày 05 tháng 01 năm 2020"
+    },
+    "typeName": {
+      "id": "5a",
+      "name": "Tên loại văn bản",
+      "position": "BodyTop_Center",
+      "applicableFor": "Tất cả văn bản có tên loại (trừ công văn)",
+      "textCase": "Uppercase",
+      "fontSizeMin": 13,
+      "fontSizeMax": 14,
+      "fontSizeDefault": 14,
+      "fontWeight": "Bold",
+      "fontStyle": "Regular",
+      "alignment": "Center",
+      "spaceBeforePt": 12,
+      "spaceAfterPt": 0
+    },
+    "subject": {
+      "id": "5a_subject",
+      "name": "Trích yếu nội dung văn bản (có tên loại)",
+      "position": "BodyTop_UnderTypeName",
+      "textCase": "SentenceCase",
+      "fontSizeMin": 13,
+      "fontSizeMax": 14,
+      "fontSizeDefault": 14,
+      "fontWeight": "Bold",
+      "fontStyle": "Regular",
+      "alignment": "Center",
+      "spaceAfterPt": 6,
+      "lineShape": {
+        "required": true,
+        "objectType": "MsoLineShape",
+        "lineType": "SolidSingle",
+        "lengthRatioMin": 0.333,
+        "lengthRatioMax": 0.5,
+        "alignment": "Center",
+        "description": "Line Shape nét liền, độ dài bằng 1/3 đến 1/2 độ dài dòng chữ, đặt cân đối; underline và paragraph border không hợp lệ"
+      }
+    },
+    "officialLetterSubject": {
+      "id": "5b",
+      "name": "Trích yếu nội dung công văn",
+      "position": "TopLeft_UnderCodeNumber",
+      "prefix": "V/v",
+      "fontSizeMin": 12,
+      "fontSizeMax": 13,
+      "fontSizeDefault": 12,
+      "fontWeight": "Normal",
+      "fontStyle": "Regular",
+      "alignment": "Center",
+      "spaceBeforePt": 6,
+      "spaceAfterPt": 0,
+      "example": "V/v nâng bậc lương năm 2020"
+    },
+    "legalBases": {
+      "id": "6_bases",
+      "name": "Căn cứ ban hành văn bản",
+      "position": "UnderSubject_BeforeContent",
+      "fontSizeMin": 13,
+      "fontSizeMax": 14,
+      "fontSizeDefault": 14,
+      "fontWeight": "Normal",
+      "fontStyle": "Italic",
+      "alignment": "Justify",
+      "firstLineIndentCm": 1.0,
+      "endPunctuation": "Mỗi căn cứ kết thúc bằng dấu chấm phẩy (;), căn cứ cuối cùng kết thúc bằng dấu chấm (.)"
+    },
+    "bodyText": {
+      "id": "6",
+      "name": "Nội dung văn bản chính",
+      "position": "Body",
+      "fontSizeMin": 13,
+      "fontSizeMax": 14,
+      "fontSizeDefault": 14,
+      "fontWeight": "Normal",
+      "fontStyle": "Regular",
+      "alignment": "Justify",
+      "firstLineIndentCm": 1.0,
+      "firstLineIndentAltCm": 1.27,
+      "spacingBeforePt": 0,
+      "spacingAfterPt": 6,
+      "lineSpacingRule": "Single to 1.5 lines",
+      "lineSpacingMin": 1.0,
+      "lineSpacingMax": 1.5,
+      "hierarchy": {
+        "partChapter": {
+          "label": "Từ 'Phần', 'Chương' và số La Mã",
+          "labelFormat": "In thường, Cỡ 13-14, Đứng, Đậm, Căn giữa (ví dụ: Phần I, Chương I)",
+          "titleFormat": "In hoa, Cỡ 13-14, Đứng, Đậm, Căn giữa (ví dụ: QUY ĐỊNH CHUNG)"
+        },
+        "section": {
+          "label": "Từ 'Mục', 'Tiểu mục' và số Ả Rập",
+          "labelFormat": "In thường, Cỡ 13-14, Đứng, Đậm, Căn giữa (ví dụ: Mục 1, Tiểu mục 1)",
+          "titleFormat": "In hoa, Cỡ 13-14, Đứng, Đậm, Căn giữa (ví dụ: QUẢN LÝ VĂN BẢN)"
+        },
+        "article": {
+          "label": "Từ 'Điều' và số Ả Rập kèm tiêu đề",
+          "format": "In thường, Cỡ 13-14, Đứng, Đậm, Thụt đầu dòng 1cm/1.27cm (ví dụ: Điều 1. Phạm vi điều chỉnh)"
+        },
+        "clause": {
+          "label": "Khoản (Số Ả Rập và dấu chấm)",
+          "withTitle": "In thường, Cỡ 13-14, Đứng, Đậm (ví dụ: 1. Phạm vi áp dụng)",
+          "withoutTitle": "In thường, Cỡ 13-14, Đứng (ví dụ: 1. Quyết định này có hiệu lực...)"
+        },
+        "point": {
+          "label": "Điểm (Chữ cái tiếng Việt a, b, c... kèm ngoặc đơn đóng)",
+          "format": "In thường, Cỡ 13-14, Đứng (ví dụ: a) Đối với văn bản...)"
+        }
+      }
+    },
+    "signAuthority": {
+      "id": "7a",
+      "name": "Quyền hạn của người ký (TM., KT., TL., TUQ., Q.)",
+      "position": "BottomRight",
+      "prefixes": ["TM.", "KT.", "TL.", "TUQ.", "Q."],
+      "note": "Phải có dấu chấm sau chữ viết tắt quyền hạn",
+      "textCase": "Uppercase",
+      "fontSizeMin": 13,
+      "fontSizeMax": 14,
+      "fontSizeDefault": 14,
+      "fontWeight": "Bold",
+      "fontStyle": "Regular",
+      "alignment": "Center"
+    },
+    "signPosition": {
+      "id": "7a_pos",
+      "name": "Chức vụ của người ký",
+      "position": "BottomRight_UnderAuthority",
+      "textCase": "Uppercase",
+      "fontSizeMin": 13,
+      "fontSizeMax": 14,
+      "fontSizeDefault": 14,
+      "fontWeight": "Bold",
+      "fontStyle": "Regular",
+      "alignment": "Center"
+    },
+    "signFullName": {
+      "id": "7b",
+      "name": "Họ và tên người ký",
+      "position": "BottomRight_UnderSignature",
+      "textCase": "TitleCase",
+      "fontSizeMin": 13,
+      "fontSizeMax": 14,
+      "fontSizeDefault": 14,
+      "fontWeight": "Bold",
+      "fontStyle": "Regular",
+      "alignment": "Center",
+      "rules": "Không ghi học hàm, học vị, quân hàm, danh hiệu trước họ tên (trừ cơ quan vũ trang/nghiên cứu/y tế có quy định riêng)"
+    },
+    "recipientsKinhGui": {
+      "id": "9a",
+      "name": "Kính gửi (Công văn, Tờ trình, Báo cáo)",
+      "position": "BodyTop_UnderSubject",
+      "fontSizeMin": 13,
+      "fontSizeMax": 14,
+      "fontSizeDefault": 14,
+      "prefix": "Kính gửi:",
+      "prefixStyle": "Regular",
+      "listStyle": "Gửi 1 nơi cùng dòng, gửi nhiều nơi xuống dòng có gạch đầu dòng (-) thẳng hàng dưới dấu hai chấm, kết thúc bằng dấu chấm phẩy (;), dòng cuối kết thúc bằng dấu chấm (.)"
+    },
+    "recipientsNoiNhan": {
+      "id": "9b",
+      "name": "Nơi nhận (cuối văn bản)",
+      "position": "BottomLeft_ParallelToSignAuthority",
+      "header": {
+        "text": "Nơi nhận:",
+        "fontSize": 12,
+        "fontWeight": "Bold",
+        "fontStyle": "Italic",
+        "alignment": "Left"
+      },
+      "items": {
+        "fontSize": 11,
+        "fontWeight": "Normal",
+        "fontStyle": "Regular",
+        "alignment": "Left",
+        "bullet": "-",
+        "endPunctuation": ";",
+        "lastLineFormat": "- Lưu: VT, [Đơn vị soạn thảo] ([số bản])."
+      }
+    },
+    "appendix": {
+      "id": "appendix",
+      "name": "Phụ lục kèm theo",
+      "headerFormat": "Từ 'Phụ lục' và số thứ tự (số Ả Rập hoặc số La Mã): In thường, Cỡ 14, Đứng, Đậm, Căn giữa",
+      "titleFormat": "Tên phụ lục: In hoa, Cỡ 13-14, Đứng, Đậm, Căn giữa",
+      "citationFormat": "Thông tin kèm theo: In thường, Cỡ 13-14, Nghiêng, Căn giữa (ví dụ: (Kèm theo Quyết định số...))",
+      "presentationModels": {
+        "paper": "Mẫu 2.1 - Phụ lục văn bản hành chính giấy",
+        "electronicSeparateFile": "Mẫu 2.2 - Phụ lục văn bản hành chính điện tử; thông tin số, thời gian ký số đặt góc trên bên phải, Times New Roman cỡ 10"
+      }
+    },
+    "confidentialityUrgency": {
+      "urgency": {
+        "id": "10b",
+        "levels": ["HỎA TỐC", "THƯỢNG KHẨN", "KHẨN"],
+        "textCase": "Uppercase",
+        "fontSizeMin": 13,
+        "fontSizeMax": 14,
+        "fontWeight": "Bold",
+        "fontStyle": "Regular",
+        "border": "SingleBox",
+        "color": "Red"
+      },
+      "scope": {
+        "id": "11",
+        "levels": ["XEM XONG TRẢ LẠI", "LƯU HÀNH NỘI BỘ"],
+        "textCase": "Uppercase",
+        "fontSizeMin": 13,
+        "fontSizeMax": 14,
+        "fontWeight": "Bold",
+        "border": "SingleBox"
+      }
+    }
+  }
+}

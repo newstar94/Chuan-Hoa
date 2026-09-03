@@ -1,0 +1,77 @@
+{
+  "testId": "ANNOTATION-PLANNER-001",
+  "status": "PASS_UNIT_FOUNDATION",
+  "date": "2026-09-01",
+  "contract": {
+    "findingId": true,
+    "ruleCode": true,
+    "severity": true,
+    "currentIssue": true,
+    "expected": true,
+    "citation": true,
+    "anchorKind": true,
+    "storyType": true,
+    "paragraphIndex": true,
+    "startOffset": true,
+    "length": true,
+    "expectedText": true,
+    "sectionAndTableCoordinates": true,
+    "documentFingerprintAndRevision": true
+  },
+  "plannerCoverage": [
+    "exact text span",
+    "repeated text without ambiguous fallback",
+    "stale offset",
+    "paragraph-level",
+    "section-level",
+    "document-level",
+    "table cell",
+    "header story",
+    "protected span",
+    "overlapping visual ranges",
+    "idempotent finding replay",
+    "conflicting duplicate finding id",
+    "ambiguous paragraph coordinates",
+    "document fingerprint mismatch",
+    "revision mismatch",
+    "lane ownership",
+    "preserve user color change"
+  ],
+  "presentation": {
+    "commentFields": [
+      "marker",
+      "ruleCode",
+      "severity",
+      "currentIssue",
+      "expected",
+      "citation"
+    ],
+    "localFindingVisual": "red font on the smallest exact range",
+    "paragraphFindingVisual": "red font on paragraph text without terminator",
+    "sectionOrDocumentVisual": "comment only; no fake red content",
+    "ownership": "lane-specific comment marker plus bookmark and document-variable original-color state"
+  },
+  "build": {
+    "vstoPublishVersion": "1.0.0.10",
+    "warnings": 0,
+    "errors": 0
+  },
+  "runtime": {
+    "btnKiemTraEnabled": false,
+    "wordVersion": "16.0.20326.20112 x64",
+    "realWordApplyClear": "PASS_LOCAL_SMOKE",
+    "verifiedBehaviors": [
+      "exact finding span is red",
+      "structured add-in comment is inserted",
+      "rerun is idempotent",
+      "user comment survives clear",
+      "pre-existing user red survives clear",
+      "user color change after annotation survives clear",
+      "original add-in-marked color is restored",
+      "owned document variables are removed"
+    ],
+    "undoAndInjectedFailureRollback": "NOT_RUN",
+    "goldenDocAndDocx": "NOT_RUN",
+    "reasonBtnRemainsDisabled": "Production finding endpoint, entitlement, golden DOC/DOCX, injected-failure rollback and end-to-end scan are not complete."
+  }
+}

@@ -1,0 +1,151 @@
+{
+  "openapi": "3.1.1",
+  "info": {
+    "title": "Chuẩn Hóa API",
+    "version": "v1"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "Program"
+        ],
+        "operationId": "GetLivenessHealth",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "tags": [
+          "ChuanHoa.Api"
+        ],
+        "operationId": "GetReadinessHealth",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ApiErrorResponse": {
+        "required": [
+          "schema",
+          "code",
+          "title",
+          "detail",
+          "recovery",
+          "status",
+          "correlationId",
+          "instance"
+        ],
+        "type": "object",
+        "properties": {
+          "schema": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "recovery": {
+            "type": "string"
+          },
+          "status": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "correlationId": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string"
+          },
+          "validationErrors": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "HealthResponse": {
+        "required": [
+          "schema",
+          "status",
+          "service",
+          "serverTimeUtc"
+        ],
+        "type": "object",
+        "properties": {
+          "schema": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "service": {
+            "type": "string"
+          },
+          "serverTimeUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Program"
+    },
+    {
+      "name": "ChuanHoa.Api"
+    }
+  ]
+}

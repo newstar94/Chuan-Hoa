@@ -1,0 +1,386 @@
+
+--- TABLE 1 (Rows: 17, Cols: 3) ---
+Ô số | : | Thành phần thể thức văn bản
+1 | : | Quốc hiệu và Tiêu ngữ
+2 | : | Tên cơ quan, tổ chức ban hành văn bản
+3 | : | Số, ký hiệu của văn bản
+4 | : | Địa danh và thời gian ban hành văn bản
+5a | : | Tên loại và trích yếu nội dung văn bản
+5b | : | Trích yếu nội dung công văn
+6 | : | Nội dung văn bản
+7a, 7b, 7c | : | Chức vụ, họ tên và chữ ký của người có thẩm quyền
+8 | : | Dấu, Chữ ký số của cơ quan, tổ chức
+9a, 9b | : | Nơi nhận
+10a | : | Dấu chỉ độ mật
+10b | : | Dấu chỉ mức độ khẩn
+11 | : | Chỉ dẫn về phạm vi lưu hành
+12 | : | Ký hiệu người soạn thảo văn bản và số lượng bản phát hành
+13 | : | Địa chỉ cơ quan, tổ chức; thư điện tử; trang thông tin điện tử; số điện thoại; số Fax.
+14 | : | Chữ ký số của cơ quan, tổ chức cho bản sao văn bản sang định dạng điện tử
+
+--- TABLE 2 (Rows: 13, Cols: 7) ---
+[Row 1 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 2 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 3 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 4 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 5 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 6 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 7 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 8 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 9 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 10 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 11 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 12 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 13 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+
+--- TABLE 3 (Rows: 46, Cols: 8) ---
+[Row 1 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 2 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 3 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 4 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 5 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 6 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 7 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 8 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 9 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 10 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 11 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 12 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 13 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 14 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 15 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 16 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 17 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 18 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 19 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 20 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 21 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 22 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 23 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 24 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 25 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 26 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 27 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 28 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 29 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 30 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 31 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 32 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 33 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 34 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 35 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 36 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 37 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 38 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 39 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 40 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 41 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 42 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 43 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 44 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 45 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 46 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+
+--- TABLE 4 (Rows: 8, Cols: 3) ---
+Ô số | : | Thành phần thể thức bản sao
+1 | : | Hình thức sao: “SAO Y”, “SAO LỤC” hoặc “TRÍCH SAO”
+2 | : | Tên cơ quan, tổ chức sao văn bản
+3 | : | Số, ký hiệu bản sao
+4 | : | Địa danh và ngày, tháng, năm sao
+5a, 5b, 5c | : | Chức vụ, họ tên và chữ ký của người có thẩm quyền
+6 | : | Dấu của cơ quan, tổ chức
+7 | : | Nơi nhận
+
+--- TABLE 5 (Rows: 32, Cols: 3) ---
+STT | Tên loại văn bản hành chính | Chữ viết tắt
+1. | Nghị quyết (cá biệt) | NQ
+2. | Quyết định (cá biệt) | QĐ
+3. | Chỉ thi | CT
+4. | Quy chế | QC
+5. | Quy định | QyĐ
+6. | Thông cáo | TC
+7. | Thông báo | TB
+8. | Hướng dẫn | HD
+9. | Chương trình | CTr
+10. | Kế hoạch | KH
+11. | Phương án | PA
+12. | Đề án | ĐA
+13. | Dự án | DA
+14. | Báo cáo | BC
+15. | Biên bản | BB
+16. | Tờ trình | TTr
+17. | Hợp đồng | HĐ
+18. | Công điện | CĐ
+19. | Bản ghi nhớ | BGN
+20. | Bản thỏa thuận | BTT
+21. | Giấy ủy quyền | GUQ
+22. | Giấy mời | GM
+23. | Giấy giới thiệu | GGT
+24. | Giấy nghỉ phép | GNP
+25. | Phiếu gửi | PG
+26. | Phiếu chuyển | PC
+27. | Phiếu báo | PB
+ | Bản sao văn bản | 
+1. | Bản sao y | SY
+2. | Bản trích sao | TrS
+3. | Bản sao lục | SL
+
+--- TABLE 6 (Rows: 17, Cols: 2) ---
+1. Mẫu trình bày văn bản hành chính
+Mẫu 1.1 | Nghị quyết (cá biệt)
+Mẫu 1.2 | Quyết định (cá biệt) quy định trực tiếp
+Mẫu 1.3 | Quyết định (cá biệt) quy định gián tiếp
+Mẫu 1.4 | Văn bản có tên loại
+Mẫu 1.5 | Công văn
+Mẫu 1.6 | Công điện
+Mẫu 1.7 | Giấy mời
+Mẫu 1.8 | Giấy giới thiệu
+Mẫu 1.9 | Biên bản
+Mẫu 1.10 | Giấy nghỉ phép
+2. Mẫu trình bày phụ lục văn bản
+Mẫu 2.1 | Phụ lục văn bản hành chính giấy
+Mẫu 2.2 | Phụ lục văn bản hành chính điện tử
+3. Mẫu trình bày bản sao văn bản
+Mẫu 3.1 | Bản sao sang định dạng giấy
+Mẫu 3.2 | Bản sao sang định dạng điện tử
+
+--- TABLE 7 (Rows: 1, Cols: 2) ---
+TÊN CQ, TC CHỦ QUẢN1TÊN CƠ QUAN, TỔ CHỨC2Số:    /NQ-...3... | CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM Độc lập - Tự do - Hạnh phúc...4..., ngày... tháng... năm...
+
+--- TABLE 8 (Rows: 1, Cols: 2) ---
+Nơi nhận:- Như Điều....	;- .............;- Lưu: VT,...7...8. | QUYỀN HẠN, CHỨC VỤ CỦA NGƯỜI KÝ(Chữ ký của người có thẩm quyền,dấu/chữ ký số của cơ quan, tổ chức)Họ và tên
+
+--- TABLE 9 (Rows: 1, Cols: 2) ---
+TÊN CQ, TC CHỦ QUẢN1TÊN CƠ QUAN, TỔ CHỨC2Số:     /QĐ-...3... | CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM Độc lập - Tự do - Hạnh phúc...4..., ngày... tháng... năm...
+
+--- TABLE 10 (Rows: 1, Cols: 2) ---
+Nơi nhận:- Như Điều.......;- ............;- Lưu: VT,...9...10. | QUYỀN HẠN, CHỨC VỤ CỦA NGƯỜI KÝ(Chữ ký của người có thẩm quyền,dấu/chữ ký số của cơ quan, tổ chức)Họ và tên
+
+--- TABLE 11 (Rows: 1, Cols: 2) ---
+TÊN CQ, TC CHỦ QUẢN1TÊN CƠ QUAN, TỔ CHỨC2Số:     /QĐ-...3... | CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM Độc lập - Tự do - Hạnh phúc...4..., ngày... tháng... năm...
+
+--- TABLE 12 (Rows: 1, Cols: 2) ---
+Nơi nhận:- Như Điều...	;-..............;- Lưu: VT,...8...9... | QUYỀN HẠN, CHỨC VỤ CỦA NGƯỜI KÝ(Chữ ký của người có thẩm quyền,dấu/chữ ký số của cơ quan, tổ chức)Họ và tên
+
+--- TABLE 13 (Rows: 1, Cols: 2) ---
+TÊN CQ, TC CHỦ QUẢNTÊN CƠ QUAN, TỔ CHỨC | CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM Độc lập - Tự do - Hạnh phúc
+
+--- TABLE 14 (Rows: 1, Cols: 2) ---
+TÊN CQ, TC CHỦ QUẢNTÊN CƠ QUAN, TỔ CHỨC | CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM Độc lập - Tự do - Hạnh phúc
+
+--- TABLE 15 (Rows: 1, Cols: 2) ---
+TÊN CQ, TC CHỦ QUẢN1TÊN CƠ QUAN, TỔ CHỨC2Số:     /...3...-...4... | CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM Độc lập - Tự do - Hạnh phúc...5..., ngày... tháng... năm...
+
+--- TABLE 16 (Rows: 1, Cols: 2) ---
+Nơi nhận:- ..............;- ..............;- Lưu: VT,...9...10. | QUYỀN HẠN, CHỨC VỤ CỦA NGƯỜI KÝ(Chữ ký của người có thẩm quyền,dấu/chữ ký số của cơ quan, tổ chức)Họ và tên
+
+--- TABLE 17 (Rows: 1, Cols: 2) ---
+TÊN CQ, TC CHỦ QUẢN1TÊN CƠ QUAN, TỔ CHỨC2Số:     /...3...-...4...V/v..........6....... | CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM Độc lập - Tự do - Hạnh phúc...5..., ngày... tháng... năm...
+
+--- TABLE 18 (Rows: 1, Cols: 2) ---
+Nơi nhận:- Như trên;- ..............;- Lưu: VT,...8...9... | QUYỀN HẠN, CHỨC VỤ CỦA NGƯỜI KÝ(Chữ ký của người có thẩm quyền,dấu/chữ ký số của cơ quan, tổ chức)Họ và tên
+
+--- TABLE 19 (Rows: 1, Cols: 2) ---
+TÊN CQ, TC CHỦ QUẢN1TÊN CƠ QUAN, TỔ CHỨC2Số:.../CĐ-...3... | CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM Độc lập - Tự do - Hạnh phúc...4..., ngày... tháng... năm...
+
+--- TABLE 20 (Rows: 1, Cols: 2) ---
+Nơi nhận:- ..............;- ..............;- Lưu: VT,...9...10. | QUYỀN HẠN, CHỨC VỤ CỦA NGƯỜI KÝ(Chữ ký của người có thẩm quyền,dấu/chữ ký số của cơ quan, tổ chức)Họ và tên
+
+--- TABLE 21 (Rows: 1, Cols: 2) ---
+TÊN CQ, TC CHỦ QUẢN1TÊN CƠ QUAN, TỔ CHỨC2Số:.../GM-...3... | CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM Độc lập - Tự do - Hạnh phúc...4..., ngày... tháng... năm...
+
+--- TABLE 22 (Rows: 1, Cols: 2) ---
+Nơi nhận:- ..............;- ..............;- Lưu: VT,...9...10. | QUYỀN HẠN, CHỨC VỤ CỦA NGƯỜI KÝ(Chữ ký của người có thẩm quyền,dấu/chữ ký số của cơ quan, tổ chức)Họ và tên
+
+--- TABLE 23 (Rows: 1, Cols: 2) ---
+TÊN CQ, TC CHỦ QUẢN1TÊN CƠ QUAN, TỔ CHỨC2Số:.../GGT-...3... | CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM Độc lập - Tự do - Hạnh phúc...4..., ngày... tháng... năm...
+
+--- TABLE 24 (Rows: 1, Cols: 2) ---
+Nơi nhận:- Như trên;- Lưu: VT. | QUYỀN HẠN, CHỨC VỤ CỦA NGƯỜI KÝ(Chữ ký của người có thẩm quyền,dấu/chữ ký số của cơ quan, tổ chức)Họ và tên
+
+--- TABLE 25 (Rows: 1, Cols: 2) ---
+TÊN CQ, TC CHỦ QUẢN1TÊN CƠ QUAN, TỔ CHỨC2Số:.../BB-...3... | CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM Độc lập - Tự do - Hạnh phúc
+
+--- TABLE 26 (Rows: 1, Cols: 2) ---
+THƯ KÝ(Chữ ký)Họ và tên | CHỦ TỌA(Chữ ký của người có thẩm quyền,dấu/chữ ký số của cơ quan, tổ chức (nếu có)5)Họ và tên
+
+--- TABLE 27 (Rows: 1, Cols: 2) ---
+TÊN CQ, TC CHỦ QUẢN1TÊN CƠ QUAN, TỔ CHỨC2Số:.../GNP-...3... | CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM Độc lập - Tự do - Hạnh phúc...4..., ngày... tháng... năm...
+
+--- TABLE 28 (Rows: 2, Cols: 2) ---
+Nơi nhận:- ...8....;- Lưu: VT,...9... | QUYỀN HẠN, CHỨC VỤ CỦA NGƯỜI KÝ(Chữ ký của người có thẩm quyềndấu/chữ ký số của cơ quan, tổ chức)Họ và tên
+Xác nhận của cơ quan (tổ chức) hoặc chính quyền địa phương nơi nghỉ phép (nếu cần)(Chữ ký, dấu)Họ và tên | 
+
+--- TABLE 29 (Rows: 1, Cols: 2) ---
+TÊN CQ, TC CHỦ QUẢNTÊN CƠ QUAN, TỔ CHỨCSố:.../...... | CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM Độc lập - Tự do - Hạnh phúc......, ngày... tháng... năm...
+
+--- TABLE 30 (Rows: 1, Cols: 2) ---
+Nơi nhận:- ...............;- ..............;- Lưu: VT, | QUYỀN HẠN, CHỨC VỤ CỦA NGƯỜI KÝ(Chữ ký của người có thẩm quyền dấu của cơ quan, tổ chức ban hành văn bản)Họ và tên
+
+--- TABLE 31 (Rows: 1, Cols: 2) ---
+TÊN CƠ QUAN, TỔ CHỨC2Số:...3.../4-...5... | ............1...................6..., ngày... tháng... năm...
+
+--- TABLE 32 (Rows: 1, Cols: 2) ---
+Nơi nhận:- ...............;- ..............;- Lưu: VT. | QUYỀN HẠN, CHỨC VỤ CỦA NGƯỜI KÝ7(Chữ ký của người có thẩm quyền dấu của cơ quan,tổ chức thực hiện sao văn bản)Họ và tên
+
+--- TABLE 33 (Rows: 1, Cols: 2) ---
+TÊN CQ, TC CHỦ QUẢNTÊN CƠ QUAN, TỔ CHỨCSố:.../...... | CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM Độc lập - Tự do - Hạnh phúc......, ngày... tháng... năm...
+
+--- TABLE 34 (Rows: 1, Cols: 2) ---
+Nơi nhận:- ...............;- ..............;- Lưu: VT, | QUYỀN HẠN, CHỨC VỤ CỦA NGƯỜI KÝ(Chữ ký của người có thẩm quyền, dấu của cơ quan, tổ chức ban hành văn bản)Họ và tênHọ và tên
+
+--- TABLE 35 (Rows: 1, Cols: 1) ---
+TÊN CƠ QUAN CHỦ QUẢN TRỰC TIẾPTÊN CƠ QUAN/ĐƠN VỊSỔ ĐĂNG KÝ VĂN BẢN ĐINăm:..........Từ ngày......... đến ngày...........Từ số............. đến số................Quyển số:....
+
+--- TABLE 36 (Rows: 3, Cols: 10) ---
+Số, ký hiệuvăn bản | Ngày tháng văn bản | Tên loại và trích yếu nội dungvăn bản | Người ký | Nơi nhậnvăn bản | Đơn vị, người nhận bản lưu | Số lượng bản | Ngày chuyển | Ký nhận | Ghi chú
+(1) | (2) | (3) | (4) | (5) | (6) | (7) | (8) | (9) | (10)
+ |  |  |  |  |  |  |  |  | 
+
+--- TABLE 37 (Rows: 3, Cols: 2) ---
+] | TÊN CƠ QUAN, TỔ CHỨCĐịa chỉ..................................................................Điện thoại:...................... Fax:..............................E-mail:............................ Website:.......................
+Số/ký hiệu văn bản:.......................................
+ | Kính gửi:........................................................................................................................................................
+
+--- TABLE 38 (Rows: 1, Cols: 1) ---
+TÊN CƠ QUAN CHỦ QUẢN TRỰC TIẾPTÊN CƠ QUAN/ĐƠN VỊSỔ GỬI VĂN BẢN ĐI BƯU ĐIỆNNăm:................Từ ngày............. đến ngày.............Từ số......... đến số..........................Quyển số:....
+
+--- TABLE 39 (Rows: 3, Cols: 6) ---
+Ngày chuyển | Số, ký hiệu văn bản | Nơi nhận văn bản | Số lượng bì | Ký nhận và dấu bưu điện | Ghi chú
+(1) | (2) | (3) | (4) | (5) | (6)
+ |  |  |  |  | 
+
+--- TABLE 40 (Rows: 1, Cols: 1) ---
+TÊN CƠ QUAN CHỦ QUẢN TRỰC TIẾPTÊN CƠ QUAN/ĐƠN VỊSỔ SỬ DỤNG BẢN LƯUNăm:.......Từ ngày.......... đến ngày.................Từ số............. đến số.......................Quyển số:....
+
+--- TABLE 41 (Rows: 3, Cols: 9) ---
+Ngày tháng | Họ tênngười sử dụng | Số, ký hiệu ngày tháng văn bản | Tên loại và trích yếu nội dung văn bản | Số và ký hiệu HS | Ký nhận | Ngày trả | Người cho phép sử dụng | Ghi chú
+(1) | (2) | (3) | (4) | (5) | (6) | (7) | (8) | (9)
+ |  |  |  |  |  |  |  | 
+
+--- TABLE 42 (Rows: 6, Cols: 3) ---
+[Row 1 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 2 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 3 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 4 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 5 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+[Row 6 error: (-2147352567, 'Exception occurred.', (0, 'Microsoft Word', 'Cannot access individual rows in this collection because the table has vertically merged cells.', 'wdmain11.chm', 25471, -2146822297), None)]
+
+--- TABLE 43 (Rows: 1, Cols: 1) ---
+TÊN CƠ QUAN CHỦ QUẢN TRỰC TIẾPTÊN CƠ QUAN/ĐƠN VỊSỔ ĐĂNG KÝ VĂN BẢN ĐẾNNăm:.......Từ ngày................. đến ngày.................Từ số..................... đến số......................Quyển số:....
+
+--- TABLE 44 (Rows: 3, Cols: 10) ---
+Ngày đến | Số đến | Tác giả | Số, ký hiệu văn bản | Ngày tháng văn bản | Tên loại và trích yếu nội dung văn bản | Đơn vị hoặc người nhận | Ngày chuyển | Ký nhận | Ghi chú
+(1) | (2) | (3) | (4) | (5) | (6) | (7) | (8) | (9) | (10)
+ |  |  |  |  |  |  |  |  | 
+
+--- TABLE 45 (Rows: 1, Cols: 2) ---
+TÊN CƠ QUAN, TỔ CHỨC | CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM Độc lập - Tự do - Hạnh phúc......, ngày... tháng... năm...
+
+--- TABLE 46 (Rows: 1, Cols: 1) ---
+TÊN CƠ QUAN CHỦ QUẢN TRỰC TIẾPTÊN CƠ QUAN/ĐƠN VỊSỔ THEO DÕI GIẢI QUYẾT VĂN BẢN ĐẾNNăm:.......Từ ngày........... đến ngày...............Quyển số:....
+
+--- TABLE 47 (Rows: 3, Cols: 7) ---
+Số đến | Tên loại, số, ký hiệu, ngày, tháng và tên cơ quan, tổ chức ban hành văn bản | Đơn vịhoặc người nhận | Thời hạn giải quyết | Tiến độ giải quyết | Số, ký hiệu văn bảntrả lời | Ghi chú
+(1) | (2) | (3) | (4) | (5) | (6) | (7)
+ |  |  |  |  |  | 
+
+--- TABLE 48 (Rows: 1, Cols: 2) ---
+TÊN CQ, TC CHỦ QUẢNTÊN CƠ QUAN, TỔ CHỨC | CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM Độc lập - Tự do - Hạnh phúc
+
+--- TABLE 49 (Rows: 6, Cols: 5) ---
+Số và ký hiệu hồ sơ | Tên đề mục và tiêu đề hồ sơ | Thời hạn bảo quản | Người lập hồ sơ | Ghi chú
+(1) | (2) | (3) | (4) | (5)
+ | I. TÊN ĐỀ MỤC LỚN |  |  | 
+ | 1. Tên đề mục nhỏ |  |  | 
+01.TCCB | Tiêu đề hồ sơ | 20 năm | Họ và tên | 
+ |  |  |  | 
+
+--- TABLE 50 (Rows: 1, Cols: 2) ---
+TÊN CQ, TC CHỦ QUẢNTÊN ĐƠN VỊ1 | CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM Độc lập - Tự do - Hạnh phúc
+
+--- TABLE 51 (Rows: 3, Cols: 7) ---
+Số TT | Số, ký hiệu hồ sơ | Tiêu đề hồ sơ | Thời gian tài liệu | Thời hạnbảo quản | Số tờ3/Số trang4 | Ghi chú
+(1) | (2) | (3) | (4) | (5) | (6) | (7)
+ |  |  |  |  |  | 
+
+--- TABLE 52 (Rows: 4, Cols: 7) ---
+STT | Số, ký hiệu văn bản | Ngày tháng năm văn bản | Tên loại và trích yếu nội dung văn bản | Tác giả văn bản | Tờ số/ Trang số | Ghi chú
+(1) | (2) | (3) | (4) | (5) | (6) | (7)
+ |  |  |  |  |  | 
+ |  |  |  |  |  | 
+
+--- TABLE 53 (Rows: 1, Cols: 2) ---
+TÊN CQ, TC CHỦ QUẢNTÊN CƠ QUAN, TỔ CHỨC | CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM Độc lập - Tự do - Hạnh phúc..., ngày......... tháng....... năm........
+
+--- TABLE 54 (Rows: 1, Cols: 2) ---
+ĐẠI DIỆN BÊN GIAO(Ký và ghi rõ họ và tên) | ĐẠI DIỆN BÊN NHẬN(Ký và ghi rõ họ và tên)
+
+--- TABLE 55 (Rows: 24, Cols: 5) ---
+STT | Trường thông tin | Tên (viết tắt tiếng Anh) | Kiểu dữ liệu | Độ dài
+1 | Mã hồ sơ | FileCode |  | 
+1.1 | Mã định danh của cơ quan, tổ chức lập danh mục hồ sơ2 | Organld | String | 13
+1.2 | Năm hình thành hồ sơ | FileCatalog | Number | 4
+1.3 | Số và ký hiệu hồ sơ | FileNotation | String | 20
+2 | Số thứ tự văn bản trong hồ sơ | DocOrdinal | Number | 3
+3 | Tên loại văn bản | TypeName | String | 100
+4 | Số của văn bản | CodeNumber | String | 11
+5 | Ký hiệu của văn bản | CodeNotation | String | 30
+6 | Ngày, tháng, năm văn bản | IssuedDate | Date | 10
+7 | Tên cơ quan, tổ chức ban hành văn bản | OrganName | String | 200
+8 | Trích yếu nội dung | Subject | String | 500
+9 | Ngôn ngữ | Language | String | 30
+10 | Số trang của văn bản | PageAmount | Number | 3
+11 | Ghi chú | Description | String | 500
+12 | Chức vụ, họ tên người ký | Signerlnfo |  | 
+12.1 | Chức vụ của người ký văn bản | Position | String | 100
+12.2 | Họ và tên người ký văn bản | FullName | String | 50
+13 | Nơi nhận | To |  | 
+13.1 | Mã định danh của cơ quan, tổ chức nhận văn bản | OrganId | String | 13
+13.2 | Tên cơ quan, tổ chức nhận văn bản | OrganName | String | 200
+14 | Mức độ khẩn, độ mật | Priority | Number | 1
+15 | Số lượng bản phát hành | IssuedAmount | Number | 3
+16 | Hạn trả lời văn bản | DueDate | Date | 10
+
+--- TABLE 56 (Rows: 24, Cols: 5) ---
+STT | Trường thông tin | Tên (viết tắt tiếng Anh) | Kiểu dữ liệu | Độ dài
+1 | Mã hồ sơ | FileCode |  | 
+1.1 | Mã định danh của cơ quan, tổ chức lập danh mục hồ sơ3 | Organld | String | 13
+1.2 | Năm hình thành hồ sơ | FileCatalog | Number | 4
+1.3 | Số và ký hiệu hồ sơ | FileNotation | String | 20
+2 | Số thứ tự văn bản trong hồ sơ | DocOrdinal | Number | 3
+3 | Tên loại văn bản | TypeName | String | 100
+4 | Số của văn bản | CodeNumber | String | 11
+5 | Ký hiệu của văn bản | CodeNotation | String | 30
+6 | Ngày, tháng, năm văn bản | IssuedDate | Date | 10
+7 | Tên cơ quan, tổ chức ban hành văn bản | OrganName | String | 200
+8 | Trích yếu nội dung | Subject | String | 500
+9 | Ngôn ngữ | Language | String | 30
+10 | Số trang của văn bản | PageAmount | Number | 3
+11 | Ghi chú | Description | String | 500
+12 | Ngày, tháng, năm đến | ArrivalDate | Date | 10
+13 | Số đến | ArrivalNumber | Number | 10
+14 | Chức vụ, họ tên người ký | Signerlnfo |  | 
+14.1 | Chức vụ của người ký văn bản | Position | String | 100
+14.2 | Họ và tên người ký văn bản | FullName | String | 50
+15 | Mức độ khẩn, độ mật | Priority | Number | 1
+16 | Đơn vị hoặc người nhận | ToPlaces | String | 1000
+17 | Ý kiến phân phối, chỉ đạo, trạng thái xử lý văn bản | TraceHeaderList | LongText | 
+18 | Thời hạn giải quyết | DueDate | Date | 10
+
+--- TABLE 57 (Rows: 15, Cols: 5) ---
+STT | Trường thông tin | Tên(viết tắt tiếng Anh) | Kiểu dữ liệu | Độ dài
+1 | Mã hồ sơ | FileCode |  | 
+1.1 | Mã định danh của cơ quan, tổ chức lập danh mục hồ sơ 4 | Organld | String | 13
+1.2 | Năm hình thành hồ sơ | FileCatalog | Number | 4
+1.3 | Số và ký hiệu hồ sơ | FileNotation | String | 20
+2 | Tiêu đề hồ sơ | Title | String | 500
+3 | Thời hạn bảo quản | Maintenance | String | 30
+4 | Chế độ sử dụng | Rights | String | 30
+5 | Người lập hồ sơ | Creator | String | 30
+6 | Ngôn ngữ | Language | String | 50
+7 | Thời gian bắt đầu | StartDate | Date | 10
+8 | Thời gian kết thúc | EndDate | Date | 10
+9 | Tổng số văn bản trong hồ sơ | DocTotal | Number | 4
+10 | Tổng số trang của hồ sơ | PageTotal | Number | 4
+11 | Ghi chú | Description | String | 500

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<customUI xmlns="http://schemas.microsoft.com/office/2009/07/customui" onLoad="Ribbon_Load">
+  <ribbon>
+    <tabs>
+      <tab id="tabVietDoc" label="CHUẨN HÓA THỂ THỨC" insertAfterMso="TabHome">
+        
+        <!-- Nhóm 1: Auto-Fix 1-Click -->
+        <group id="grpAutoFix" label="1-Click Auto-Fix">
+          <button id="btnAutoFixAll" label="Chuẩn Hóa Toàn Bộ" size="large" 
+                  imageMso="AutoFormatNow" onAction="OnAutoFixClick" 
+                  screentip="1-Click Auto-Fix Toàn Diện"
+                  supertip="Tự động sửa lề trang A4, font Times New Roman, kẻ đường chuẩn NĐ30/HD05, và xóa trang trắng thừa." />
+          <button id="btnToggleSidebar" label="Bảng Điều Khiển" size="large" 
+                  imageMso="TaskPaneToggle" onAction="OnToggleSidebarClick" />
+        </group>
+
+        <!-- Nhóm 2: Chế độ thể thức -->
+        <group id="grpRegimes" label="Chế Độ Thể Thức">
+          <button id="btnRegimeND30" label="Nghị Định 30" imageMso="FileSaveAsWordDocx" onAction="OnRegimeND30Click" />
+          <button id="btnRegimeDang" label="Văn Bản Đảng (HD05)" imageMso="FileDocumentProperties" onAction="OnRegimeDangClick" />
+          <button id="btnRegimeViettel" label="Quy Chế Viettel" imageMso="GroupSmartArtQuickStyles" onAction="OnRegimeViettelClick" />
+        </group>
+
+        <!-- Nhóm 3: Tiếng Việt & Typography -->
+        <group id="grpTypography" label="Tiếng Việt &amp; Font">
+          <button id="btnFixToneMark" label="Dấu Thanh Mới" imageMso="FontColorCycle" onAction="OnFixToneClick" />
+          <button id="btnFixIySpelling" label="Chính Tả i/y" imageMso="Spelling" onAction="OnFixIyClick" />
+          <button id="btnCleanSpaces" label="Dọn Khoảng Trắng" imageMso="ParagraphSpacing" onAction="OnCleanSpacesClick" />
+        </group>
+
+        <!-- Nhóm 4: Bảng biểu & Phụ lục -->
+        <group id="grpTables" label="Bảng Biểu &amp; Phụ Lục">
+          <button id="btnRepeatTableHeader" label="Lặp Header Bảng" imageMso="TableRowsRepeatHeaderRows" onAction="OnRepeatHeaderClick" />
+          <button id="btnPreventRowSplit" label="Chống Rách Bảng" imageMso="TablePropertiesDialog" onAction="OnPreventSplitClick" />
+          <button id="btnRemoveBlankPages" label="Xóa Trang Trắng" imageMso="PageBreak" onAction="OnRemoveBlankPagesClick" />
+        </group>
+
+      </tab>
+    </tabs>
+  </ribbon>
+</customUI>

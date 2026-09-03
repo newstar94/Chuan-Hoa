@@ -1,0 +1,49 @@
+{
+  "schema": "chuanhoa.implementation-evidence.v1",
+  "evidenceId": "WORD-SNAPSHOT-001",
+  "capturedAtUtc": "2026-09-02T00:00:00Z",
+  "environment": {
+    "word": "16.0 x64",
+    "runtime": ".NET Framework 4.8",
+    "addInPublishVersion": "1.0.0.15"
+  },
+  "scope": {
+    "supportedFormats": [".doc", ".docx"],
+    "stories": [
+      "MainTextStory",
+      "PrimaryHeaderStory",
+      "FirstPageHeaderStory",
+      "EvenPagesHeaderStory",
+      "PrimaryFooterStory",
+      "FirstPageFooterStory",
+      "EvenPagesFooterStory",
+      "FootnotesStory",
+      "EndnotesStory",
+      "TextFrameStory"
+    ],
+    "captures": [
+      "preflight",
+      "sections",
+      "paragraph formatting and coordinates",
+      "tables and header rows",
+      "content-control protected spans",
+      "document fingerprint",
+      "per-document revision"
+    ]
+  },
+  "verification": {
+    "command": "ChuanHoa.SnapshotSmoke.exe Hướng dẫn 05.docx Nghị định 30.doc",
+    "result": "PASS",
+    "assertions": [
+      "both DOC and DOCX produce a versioned snapshot",
+      "source file SHA-256 is unchanged",
+      "source last-write timestamp is unchanged",
+      "unsaved document fails closed with DOCUMENT_MUST_BE_SAVED"
+    ]
+  },
+  "limitations": [
+    "server classification and premium compliance findings are not connected",
+    "Word 2010 x86 compatibility lane has not run",
+    "development manifest certificate is not production signing"
+  ]
+}

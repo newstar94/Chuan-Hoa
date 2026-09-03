@@ -1,0 +1,2587 @@
+[
+  {
+    "index": 1,
+    "module": "AppEvents.cls.bas",
+    "sourcePath": "shared/vba_extracted/AppEvents.cls.bas",
+    "sha256": "634C4B27FF89BA7C52EBE4A24C9F799D1DCC9E5A0020FD9F00BECCB5D38FE127",
+    "lines": 118,
+    "publicEntryPoints": [],
+    "procedureCount": 5,
+    "dependenciesInferred": [
+      "AppEventsHost.bas.bas"
+    ],
+    "callersInferred": [],
+    "sideEffectFlags": [
+      "selection",
+      "scheduled_callback"
+    ],
+    "target": "VietDoc.AddIn.Vsto/WordEventCoordinator",
+    "disposition": "PORT, quản lý event theo document/window",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 2,
+    "module": "AppEventsHost.bas.bas",
+    "sourcePath": "shared/vba_extracted/AppEventsHost.bas.bas",
+    "sha256": "D49141A06E9880951301D4D9D73EAC58FD1D342F61C25340C54073B66DB20991",
+    "lines": 300,
+    "publicEntryPoints": [
+      "EnsureWired",
+      "ScheduleOnAnyDocumentOpen",
+      "OnAnyDocumentOpen",
+      "OnSelectionChange",
+      "OnWindowActivate",
+      "OnLastDocumentClosing"
+    ],
+    "procedureCount": 6,
+    "dependenciesInferred": [
+      "DataReadState.bas.bas",
+      "DebugTrace.bas.bas",
+      "DocumentTypeState.bas.bas",
+      "RegimeState.bas.bas",
+      "RibbonCallbacks.bas.bas",
+      "RibbonHandle.bas.bas"
+    ],
+    "callersInferred": [
+      "AppEvents.cls.bas",
+      "DataReadState.bas.bas",
+      "DebugTrace.bas.bas",
+      "DocumentSignature.bas.bas",
+      "RibbonCallbacks.bas.bas",
+      "SessionState.bas.bas"
+    ],
+    "sideEffectFlags": [
+      "active_document",
+      "scheduled_callback"
+    ],
+    "target": "WordEventCoordinator",
+    "disposition": "MERGE với AppEvents; loại OnTime không cần thiết",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 3,
+    "module": "BlankFieldSpacer.bas.bas",
+    "sourcePath": "shared/vba_extracted/BlankFieldSpacer.bas.bas",
+    "sha256": "05AA0B2B5135C83330154654602514D3B497A834923FAD44C1FF217DA0CFD0D9",
+    "lines": 430,
+    "publicEntryPoints": [
+      "PadBlankFields"
+    ],
+    "procedureCount": 4,
+    "dependenciesInferred": [
+      "DebugTrace.bas.bas",
+      "DocumentSnapshot.bas.bas",
+      "RuleLoader.bas.bas",
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [
+      "FindingReporter.bas.bas"
+    ],
+    "sideEffectFlags": [
+      "active_document"
+    ],
+    "target": "Server rule + local FixApplier",
+    "disposition": "PORT sau khi xác nhận rule canonical",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 4,
+    "module": "CheckGate.bas.bas",
+    "sourcePath": "shared/vba_extracted/CheckGate.bas.bas",
+    "sha256": "745AC57F731DC41292992A824E5955804B95BF6E5F4FD22051711498826E4D9C",
+    "lines": 512,
+    "publicEntryPoints": [
+      "RunCheckGates"
+    ],
+    "procedureCount": 8,
+    "dependenciesInferred": [
+      "ComplianceChecker.bas.bas",
+      "DocxConverter.bas.bas",
+      "EncodingConverter.bas.bas",
+      "frmWarning.frm.bas",
+      "SafetyGuard.bas.bas",
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [
+      "FindingReporter.bas.bas"
+    ],
+    "sideEffectFlags": [
+      "active_document"
+    ],
+    "target": "Server Eligibility/RuleGate",
+    "disposition": "REPLACE bằng rule applicability rõ ràng",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 5,
+    "module": "ComplianceChecker.bas.bas",
+    "sourcePath": "shared/vba_extracted/ComplianceChecker.bas.bas",
+    "sha256": "9E83D1EBF737CB1CA9131572015AB4E0C110F99A3734ECCFBED6C209E5F43DE0",
+    "lines": 8918,
+    "publicEntryPoints": [
+      "RunAllChecks",
+      "CheckPageSizeA4",
+      "CheckPageOrientation",
+      "CheckPageMargins",
+      "CheckPageNumbering",
+      "CheckAppendixPageNumberingRestart",
+      "CheckBodyTextFontName",
+      "CheckBodyTextFontColor",
+      "CheckBodyTextAlignment",
+      "CheckBodyTextFirstLineIndent",
+      "CheckBodyTextSpaceAfter",
+      "CheckBodyTextLineSpacing",
+      "CheckContentEndsWithDotSlash",
+      "CheckFontSizeConsistency",
+      "CheckNationalTitleStyle",
+      "CheckNationalMottoStyle",
+      "CheckNationalMottoSeparator",
+      "CheckComponentUnderline",
+      "CheckNationalMottoSpacing",
+      "CheckSuperiorOrganNameStyle",
+      "CheckOrganNameStyle",
+      "CheckCodeNumberColon",
+      "CheckCodeNumberPad",
+      "CheckCodeNumberNoSpace",
+      "CheckCodeNumberSeparators",
+      "CheckCodeNumberNotationUppercase",
+      "CheckCodeNumberAbbreviation",
+      "CheckPlaceDateStyle",
+      "CheckPlaceDateComma",
+      "CheckPlaceDatePad",
+      "CheckTypeNameStyle",
+      "CheckSubjectStyle",
+      "CheckSubjectOfficialLetterStyle",
+      "CheckSubjectOfficialLetterSpacing",
+      "CheckLegalBasisStyle",
+      "CheckLegalBasisPunctuation",
+      "CheckSignerAuthorityStyle",
+      "CheckSignerAuthorityAbbreviation",
+      "CheckRecipientSalutationColon",
+      "CheckRecipientSalutationLayout",
+      "CheckRecipientSalutationPunctuation",
+      "CheckRecipientSalutationInlineEnd",
+      "CheckRecipientLabelStyle",
+      "CheckRecipientListStyle",
+      "CheckRecipientListLuuLine",
+      "CheckAppendixReferenceMentioned",
+      "CheckAppendixRomanNumbering",
+      "CheckAppendixTitleStyle",
+      "CheckAppendixReferenceInfoStyle",
+      "CheckComponentNeverDetected",
+      "VnDieu",
+      "VnKhoan",
+      "VnDiem",
+      "BuildPointPattern",
+      "ArticleKeywordPattern",
+      "ArticleParagraphs",
+      "clausePattern",
+      "ClauseParagraphs",
+      "PointParagraphs",
+      "CheckStructureTitlePresence",
+      "CheckArticleFormat",
+      "CheckClauseFormat",
+      "CheckPointFormat",
+      "CheckPointAlphabetOrder",
+      "CheckCitationMissingSoKeyword",
+      "CheckCitationAbbreviatedDate",
+      "CheckCitationFullFirstCitation",
+      "CheckPlaceNameLetterCase",
+      "CheckSentenceCapitalization",
+      "CheckPersonNameCapitalizationWarn",
+      "CheckAdministrativeUnitNameWarn",
+      "CheckAdministrativeUnitNumeralCase",
+      "CheckSpecialGeographicCapitalization",
+      "CheckSpecialOrganCapitalization",
+      "CheckTerrainPlaceNameCapitalization",
+      "CheckRegionNameCapitalization",
+      "CheckCommonOrganNameWarn",
+      "CheckHolidayNameCapitalization",
+      "CheckLunarYearCapitalization",
+      "CheckArticleClauseCapitalization",
+      "CheckCapitalizationNotDetectable",
+      "CheckToneMarkMix",
+      "CheckIyMix",
+      "CheckExtraSpaceTypo",
+      "CheckPunctuationSpacingTypo",
+      "CheckHiddenCharacters",
+      "CheckDictionaryTypo",
+      "CheckTelexLeftoverTypo"
+    ],
+    "procedureCount": 182,
+    "dependenciesInferred": [
+      "ComponentDetector.bas.bas",
+      "DebugTrace.bas.bas",
+      "RuleLoader.bas.bas",
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [
+      "CheckGate.bas.bas",
+      "EdgeWhitespaceTrimmer.bas.bas",
+      "FindingAnnotator.bas.bas",
+      "FindingReporter.bas.bas",
+      "FindingTierAggregator.bas.bas",
+      "MultiSpaceCollapser.bas.bas",
+      "RibbonCallbacks.bas.bas",
+      "RuleLoader.bas.bas"
+    ],
+    "sideEffectFlags": [
+      "application_options"
+    ],
+    "target": "Server Compliance Engine",
+    "disposition": "REWRITE theo canonical catalog",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 6,
+    "module": "ComponentDetector.bas.bas",
+    "sourcePath": "shared/vba_extracted/ComponentDetector.bas.bas",
+    "sha256": "3892FDDDC418A17A595F46419C8A7F09DEB8E3BE8FF246F2067F112B0554C6B0",
+    "lines": 1918,
+    "publicEntryPoints": [
+      "DetectComponents",
+      "NormalizeForNationalTitle"
+    ],
+    "procedureCount": 29,
+    "dependenciesInferred": [
+      "DebugTrace.bas.bas",
+      "DocumentSnapshot.bas.bas",
+      "DocumentTypeDetector.bas.bas",
+      "RuleLoader.bas.bas",
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [
+      "ComplianceChecker.bas.bas",
+      "ComponentFormatter.bas.bas",
+      "DataReader.bas.bas",
+      "DebugAnnotator.bas.bas",
+      "DebugTrace.bas.bas",
+      "DocumentSnapshot.bas.bas",
+      "DocumentTypeDetector.bas.bas",
+      "EdgeWhitespaceTrimmer.bas.bas",
+      "FindingReporter.bas.bas",
+      "IyNormalizer.bas.bas",
+      "MultiSpaceCollapser.bas.bas",
+      "RegimeDetector.bas.bas",
+      "ToneNormalizer.bas.bas"
+    ],
+    "sideEffectFlags": [],
+    "target": "Server Component Classifier",
+    "disposition": "PORT bằng fixtures và golden corpus",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 7,
+    "module": "ComponentFormatter.bas.bas",
+    "sourcePath": "shared/vba_extracted/ComponentFormatter.bas.bas",
+    "sha256": "78016567DE728416DA91BA627999370B20FE19348E5906A0CBF4F4C53BE86AE5",
+    "lines": 108,
+    "publicEntryPoints": [
+      "DetectLayoutMap"
+    ],
+    "procedureCount": 1,
+    "dependenciesInferred": [
+      "ComponentDetector.bas.bas",
+      "DebugTrace.bas.bas",
+      "DocumentSnapshot.bas.bas",
+      "DocumentTypeDetector.bas.bas",
+      "ToneNormalizer.bas.bas",
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [
+      "DocumentSnapshot.bas.bas",
+      "LineBreakNormalizer.bas.bas",
+      "TextFormatter.bas.bas"
+    ],
+    "sideEffectFlags": [],
+    "target": "Server FixPlanner",
+    "disposition": "REPLACE; file hiện không đủ implementation như mô tả",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 8,
+    "module": "ComponentRole.cls.bas",
+    "sourcePath": "shared/vba_extracted/ComponentRole.cls.bas",
+    "sha256": "8681C95CC7DDA7CB6140B14483EBBB811EBEA9DA451958D8F9F9B7C57F7F5C05",
+    "lines": 38,
+    "publicEntryPoints": [],
+    "procedureCount": 0,
+    "dependenciesInferred": [],
+    "callersInferred": [],
+    "sideEffectFlags": [],
+    "target": "VietDoc.Contracts/ComponentRole",
+    "disposition": "PORT thành enum/value object",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 9,
+    "module": "CustomIcons.bas.bas",
+    "sourcePath": "shared/vba_extracted/CustomIcons.bas.bas",
+    "sha256": "9A6F08A39174C7A325769BAD1F8A90DCADA6A1A0ED7FB6909E515940161C3F6C",
+    "lines": 1404,
+    "publicEntryPoints": [
+      "GetImageIY"
+    ],
+    "procedureCount": 4,
+    "dependenciesInferred": [
+      "DebugTrace.bas.bas"
+    ],
+    "callersInferred": [],
+    "sideEffectFlags": [
+      "filesystem"
+    ],
+    "target": "Ribbon resources",
+    "disposition": "REPLACE bằng signed embedded resources",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 10,
+    "module": "DashNormalizer.bas.bas",
+    "sourcePath": "shared/vba_extracted/DashNormalizer.bas.bas",
+    "sha256": "A893D3F17FA234BFB477E1F6BE689AD75C262955A0026A9E397FDF8BAE9AE46C",
+    "lines": 216,
+    "publicEntryPoints": [
+      "NormalizeDashes"
+    ],
+    "procedureCount": 4,
+    "dependenciesInferred": [
+      "DebugTrace.bas.bas",
+      "DocumentSnapshot.bas.bas",
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [
+      "FindingReporter.bas.bas"
+    ],
+    "sideEffectFlags": [
+      "active_document"
+    ],
+    "target": "Server Text Normalizer",
+    "disposition": "PORT với protected spans",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 11,
+    "module": "DataReader.bas.bas",
+    "sourcePath": "shared/vba_extracted/DataReader.bas.bas",
+    "sha256": "3AA18E3C34BDE009DD176A93C8B17C059A8111B2978FB91AEDCEFD79F674E619",
+    "lines": 126,
+    "publicEntryPoints": [
+      "RunAndReport"
+    ],
+    "procedureCount": 3,
+    "dependenciesInferred": [
+      "ComponentDetector.bas.bas",
+      "DataReadState.bas.bas",
+      "DebugAnnotator.bas.bas",
+      "DebugTrace.bas.bas",
+      "DocumentSnapshot.bas.bas",
+      "DocumentTypeDetector.bas.bas",
+      "DocumentTypeState.bas.bas",
+      "EncodingConverter.bas.bas",
+      "MsgBoxW.bas.bas",
+      "ProcessingIndicator.bas.bas",
+      "RegimeState.bas.bas",
+      "RibbonCallbacks.bas.bas",
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [
+      "DataReadState.bas.bas",
+      "ProcessingIndicator.bas.bas",
+      "RibbonCallbacks.bas.bas"
+    ],
+    "sideEffectFlags": [
+      "scheduled_callback"
+    ],
+    "target": "Local Snapshot Pipeline",
+    "disposition": "PORT, loại side effect khỏi scan",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 12,
+    "module": "DataReadState.bas.bas",
+    "sourcePath": "shared/vba_extracted/DataReadState.bas.bas",
+    "sha256": "B0B7C51E80C9193923FEB4A9019E91C26A00DC10BB9042E49185AB85C0F83180",
+    "lines": 128,
+    "publicEntryPoints": [
+      "HasReadData",
+      "MarkReadData",
+      "HasNonUnicodeEncoding",
+      "SetNonUnicodeEncoding",
+      "ResetReadData"
+    ],
+    "procedureCount": 7,
+    "dependenciesInferred": [
+      "AppEventsHost.bas.bas",
+      "DataReader.bas.bas",
+      "DebugTrace.bas.bas",
+      "EncodingConverter.bas.bas",
+      "RibbonCallbacks.bas.bas",
+      "SessionState.bas.bas"
+    ],
+    "callersInferred": [
+      "AppEventsHost.bas.bas",
+      "DataReader.bas.bas",
+      "RibbonCallbacks.bas.bas",
+      "SessionState.bas.bas"
+    ],
+    "sideEffectFlags": [],
+    "target": "Per-document `DocumentContext",
+    "disposition": "REPLACE, không dùng global state",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 13,
+    "module": "DebugAnnotator.bas.bas",
+    "sourcePath": "shared/vba_extracted/DebugAnnotator.bas.bas",
+    "sha256": "54C8E359A9D37D4CCE469EE39168086D97F26EF50BE748A076C22B1D7CFA367F",
+    "lines": 222,
+    "publicEntryPoints": [
+      "AnnotateLayoutMap",
+      "ClearAll"
+    ],
+    "procedureCount": 5,
+    "dependenciesInferred": [
+      "ComponentDetector.bas.bas",
+      "DebugTrace.bas.bas",
+      "DocumentSnapshot.bas.bas",
+      "FindingAnnotator.bas.bas"
+    ],
+    "callersInferred": [
+      "DataReader.bas.bas",
+      "FindingAnnotator.bas.bas",
+      "FindingReporter.bas.bas",
+      "FindingTierAggregator.bas.bas",
+      "StyleBuilder.bas.bas"
+    ],
+    "sideEffectFlags": [
+      "active_document"
+    ],
+    "target": "Diagnostics channel",
+    "disposition": "REPLACE, chỉ bật trong signed diagnostic build",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 14,
+    "module": "DebugTrace.bas.bas",
+    "sourcePath": "shared/vba_extracted/DebugTrace.bas.bas",
+    "sha256": "BE474790ABE1749FE8F318B8A56A45A384C61D8ABB47F60D142DA47833A8A59D",
+    "lines": 496,
+    "publicEntryPoints": [
+      "ResetLogAtStartup",
+      "Log",
+      "Flush",
+      "EnterScope",
+      "TraceBegin",
+      "TraceEnd",
+      "LogErr",
+      "LogLayoutMap"
+    ],
+    "procedureCount": 13,
+    "dependenciesInferred": [
+      "AppEventsHost.bas.bas",
+      "ComponentDetector.bas.bas",
+      "RibbonHandle.bas.bas",
+      "TraceScope.cls.bas",
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [
+      "AppEventsHost.bas.bas",
+      "BlankFieldSpacer.bas.bas",
+      "ComplianceChecker.bas.bas",
+      "ComponentDetector.bas.bas",
+      "ComponentFormatter.bas.bas",
+      "CustomIcons.bas.bas",
+      "DashNormalizer.bas.bas",
+      "DataReader.bas.bas",
+      "DataReadState.bas.bas",
+      "DebugAnnotator.bas.bas",
+      "DecimalSeparatorConverter.bas.bas",
+      "DocumentSignature.bas.bas",
+      "DocumentSnapshot.bas.bas",
+      "DocumentTypeDetector.bas.bas",
+      "DocumentTypeState.bas.bas",
+      "DocxConverter.bas.bas",
+      "EdgeWhitespaceTrimmer.bas.bas",
+      "EllipsisNormalizer.bas.bas",
+      "EncodingConverter.bas.bas",
+      "ExcelPasteCleaner.bas.bas",
+      "FindingAnnotator.bas.bas",
+      "FindingReporter.bas.bas",
+      "FindingTierAggregator.bas.bas",
+      "FontVariantNormalizer.bas.bas",
+      "frmQrCode.frm.bas",
+      "frmWarning.frm.bas",
+      "ImageFormatter.bas.bas",
+      "IyNormalizer.bas.bas",
+      "LineBreakNormalizer.bas.bas",
+      "MultiSpaceCollapser.bas.bas",
+      "OperationLogger.bas.bas",
+      "PageBreakInserter.bas.bas",
+      "PageFormatter.bas.bas",
+      "PageNumberFormatter.bas.bas",
+      "ParagraphFormatter.bas.bas",
+      "ProcessingIndicator.bas.bas",
+      "QrCodeGenerator.bas.bas",
+      "RegimeDetector.bas.bas",
+      "RegimeState.bas.bas",
+      "RibbonCallbacks.bas.bas",
+      "RibbonHandle.bas.bas",
+      "RuleLoader.bas.bas",
+      "SafetyGuard.bas.bas",
+      "SessionState.bas.bas",
+      "StyleBuilder.bas.bas",
+      "TableFormatter.bas.bas",
+      "TextFormatter.bas.bas",
+      "ToneNormalizer.bas.bas",
+      "TraceScope.cls.bas",
+      "TrailingPageRemover.bas.bas",
+      "UnicodeNormalizer.bas.bas",
+      "UrlOpener.bas.bas",
+      "Utils.bas.bas",
+      "ViewOptions.bas.bas",
+      "WinApiFormStyle.bas.bas"
+    ],
+    "sideEffectFlags": [
+      "filesystem"
+    ],
+    "target": "Structured logging",
+    "disposition": "REPLACE, không log document content",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 15,
+    "module": "DecimalSeparatorConverter.bas.bas",
+    "sourcePath": "shared/vba_extracted/DecimalSeparatorConverter.bas.bas",
+    "sha256": "BBB9B91A0D3AA432746210C51BE9245DAA6CBBF5BA506F5FCC1BD5B7D479FBD9",
+    "lines": 498,
+    "publicEntryPoints": [
+      "ConvertDecimalSeparators"
+    ],
+    "procedureCount": 12,
+    "dependenciesInferred": [
+      "DebugTrace.bas.bas",
+      "RibbonCallbacks.bas.bas",
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [
+      "RibbonCallbacks.bas.bas"
+    ],
+    "sideEffectFlags": [
+      "active_document"
+    ],
+    "target": "Server FixPlanner",
+    "disposition": "PORT với corpus ngày/mã/outline",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 16,
+    "module": "DialogControlSink.cls.bas",
+    "sourcePath": "shared/vba_extracted/DialogControlSink.cls.bas",
+    "sha256": "915886EF9780A0000DA8502FADBECBACD93AE6A34B2492D93B63E286DA13A52B",
+    "lines": 150,
+    "publicEntryPoints": [],
+    "procedureCount": 4,
+    "dependenciesInferred": [
+      "frmQrCode.frm.bas",
+      "frmWarning.frm.bas",
+      "MsgBoxW.bas.bas",
+      "WinApiFormStyle.bas.bas"
+    ],
+    "callersInferred": [],
+    "sideEffectFlags": [],
+    "target": "Transient dialog event handlers",
+    "disposition": "REPLACE bằng WinForms/WPF dialog được kiểm thử accessibility",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 17,
+    "module": "DocumentLayoutMap.cls.bas",
+    "sourcePath": "shared/vba_extracted/DocumentLayoutMap.cls.bas",
+    "sha256": "90D4F9BBBE034D3022C9663880EB82C7A66C4DDA0E384467B23DBF2108FB8084",
+    "lines": 30,
+    "publicEntryPoints": [],
+    "procedureCount": 0,
+    "dependenciesInferred": [],
+    "callersInferred": [],
+    "sideEffectFlags": [],
+    "target": "Snapshot layout model",
+    "disposition": "PORT thành immutable DTO",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 18,
+    "module": "DocumentSignature.bas.bas",
+    "sourcePath": "shared/vba_extracted/DocumentSignature.bas.bas",
+    "sha256": "17A3D91C4B5061617A125E553549927C593B9CF4AA4E9C230AC0401D97E55E1F",
+    "lines": 124,
+    "publicEntryPoints": [
+      "EnsureSignature"
+    ],
+    "procedureCount": 2,
+    "dependenciesInferred": [
+      "AppEventsHost.bas.bas",
+      "DebugTrace.bas.bas",
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [
+      "Utils.bas.bas"
+    ],
+    "sideEffectFlags": [
+      "active_document",
+      "custom_document_properties"
+    ],
+    "target": "Document fingerprint service",
+    "disposition": "REPLACE; không ghi property ngầm",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 19,
+    "module": "DocumentSnapshot.bas.bas",
+    "sourcePath": "shared/vba_extracted/DocumentSnapshot.bas.bas",
+    "sha256": "8631035D9B8152B68AE3A6CCC19DFC401C7D78D90F6FC8300A8E3EAA11280D8F",
+    "lines": 1502,
+    "publicEntryPoints": [
+      "CaptureDocument",
+      "CaptureParagraphsOnly",
+      "CaptureParagraphsOnlySnapshot",
+      "BuildHeaderWindow",
+      "HeaderWindowLastIndex",
+      "BuildSnapshotIndexMap"
+    ],
+    "procedureCount": 28,
+    "dependenciesInferred": [
+      "ComponentDetector.bas.bas",
+      "ComponentFormatter.bas.bas",
+      "DebugTrace.bas.bas",
+      "DocumentTypeDetector.bas.bas",
+      "DocxConverter.bas.bas",
+      "EdgeWhitespaceTrimmer.bas.bas",
+      "MultiSpaceCollapser.bas.bas",
+      "RegimeDetector.bas.bas",
+      "TextFormatter.bas.bas",
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [
+      "BlankFieldSpacer.bas.bas",
+      "ComponentDetector.bas.bas",
+      "ComponentFormatter.bas.bas",
+      "DashNormalizer.bas.bas",
+      "DataReader.bas.bas",
+      "DebugAnnotator.bas.bas",
+      "DocumentTypeDetector.bas.bas",
+      "DocumentTypeState.bas.bas",
+      "EdgeWhitespaceTrimmer.bas.bas",
+      "EllipsisNormalizer.bas.bas",
+      "FindingAnnotator.bas.bas",
+      "FindingReporter.bas.bas",
+      "IyNormalizer.bas.bas",
+      "LineBreakNormalizer.bas.bas",
+      "MultiSpaceCollapser.bas.bas",
+      "RegimeDetector.bas.bas",
+      "RegimeState.bas.bas",
+      "TextFormatter.bas.bas",
+      "ToneNormalizer.bas.bas"
+    ],
+    "sideEffectFlags": [
+      "active_document",
+      "screen_updating"
+    ],
+    "target": "Snapshot Builder/Contract",
+    "disposition": "REWRITE có schema version và limits",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 20,
+    "module": "DocumentTypeDetector.bas.bas",
+    "sourcePath": "shared/vba_extracted/DocumentTypeDetector.bas.bas",
+    "sha256": "1A4AEF665E3263EC10D55CDA8E346FE9B0A404CDD350027F449F61436EA6D872",
+    "lines": 812,
+    "publicEntryPoints": [
+      "DetectDocumentType",
+      "FindTypeNameParagraph",
+      "MatchedTypeNameOrdinal"
+    ],
+    "procedureCount": 17,
+    "dependenciesInferred": [
+      "ComponentDetector.bas.bas",
+      "DebugTrace.bas.bas",
+      "DocumentSnapshot.bas.bas",
+      "RuleLoader.bas.bas",
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [
+      "ComponentDetector.bas.bas",
+      "ComponentFormatter.bas.bas",
+      "DataReader.bas.bas",
+      "DocumentSnapshot.bas.bas",
+      "DocumentTypeState.bas.bas",
+      "EdgeWhitespaceTrimmer.bas.bas",
+      "FindingReporter.bas.bas",
+      "IyNormalizer.bas.bas",
+      "MultiSpaceCollapser.bas.bas",
+      "ToneNormalizer.bas.bas"
+    ],
+    "sideEffectFlags": [],
+    "target": "Server Document Type Classifier",
+    "disposition": "PORT; nhận regime rõ ràng",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 21,
+    "module": "DocumentTypeState.bas.bas",
+    "sourcePath": "shared/vba_extracted/DocumentTypeState.bas.bas",
+    "sha256": "173721F648388F9A797A448E33975BD14686B4B28053AB1CF31D387853B556CB",
+    "lines": 202,
+    "publicEntryPoints": [
+      "GetSelectedIndex",
+      "SetSelectedIndexManual",
+      "AutoDetectAndStore",
+      "DetectAndAutoStore"
+    ],
+    "procedureCount": 7,
+    "dependenciesInferred": [
+      "DebugTrace.bas.bas",
+      "DocumentSnapshot.bas.bas",
+      "DocumentTypeDetector.bas.bas",
+      "RegimeState.bas.bas",
+      "RibbonCallbacks.bas.bas",
+      "RuleLoader.bas.bas",
+      "SessionState.bas.bas"
+    ],
+    "callersInferred": [
+      "AppEventsHost.bas.bas",
+      "DataReader.bas.bas",
+      "FindingReporter.bas.bas",
+      "RegimeState.bas.bas",
+      "RibbonCallbacks.bas.bas"
+    ],
+    "sideEffectFlags": [
+      "active_document"
+    ],
+    "target": "Per-document context",
+    "disposition": "REPLACE; manual selection authoritative",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 22,
+    "module": "DocxConverter.bas.bas",
+    "sourcePath": "shared/vba_extracted/DocxConverter.bas.bas",
+    "sha256": "40DEB49C5D85345ABDA4600B0FAE8C7055ABE801C232B73E13EB7A6EED8A6123",
+    "lines": 168,
+    "publicEntryPoints": [
+      "SaveAsDocx",
+      "IsCurrentDocumentDocx"
+    ],
+    "procedureCount": 3,
+    "dependenciesInferred": [
+      "DebugTrace.bas.bas",
+      "MsgBoxW.bas.bas",
+      "RibbonCallbacks.bas.bas",
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [
+      "CheckGate.bas.bas",
+      "DocumentSnapshot.bas.bas",
+      "RibbonCallbacks.bas.bas"
+    ],
+    "sideEffectFlags": [
+      "active_document",
+      "save_or_convert"
+    ],
+    "target": "Local Word Save Adapter",
+    "disposition": "PORT với backup, path và format preflight",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 23,
+    "module": "EdgeWhitespaceTrimmer.bas.bas",
+    "sourcePath": "shared/vba_extracted/EdgeWhitespaceTrimmer.bas.bas",
+    "sha256": "B10FB4890DF121D6E4DD91E909B904EB0AD17DCFFC53814968CB74F4BDFC862A",
+    "lines": 368,
+    "publicEntryPoints": [
+      "TrimEdgeWhitespace"
+    ],
+    "procedureCount": 5,
+    "dependenciesInferred": [
+      "ComplianceChecker.bas.bas",
+      "ComponentDetector.bas.bas",
+      "DebugTrace.bas.bas",
+      "DocumentSnapshot.bas.bas",
+      "DocumentTypeDetector.bas.bas",
+      "LineBreakNormalizer.bas.bas",
+      "RuleLoader.bas.bas",
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [
+      "DocumentSnapshot.bas.bas",
+      "FindingReporter.bas.bas"
+    ],
+    "sideEffectFlags": [
+      "active_document"
+    ],
+    "target": "Server FixPlanner",
+    "disposition": "PORT, không tự chạy trong Scan",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 24,
+    "module": "EllipsisNormalizer.bas.bas",
+    "sourcePath": "shared/vba_extracted/EllipsisNormalizer.bas.bas",
+    "sha256": "A26D2662A2C0FE84D621BB4452083916C84D475F6218521D50B70CE68359E348",
+    "lines": 262,
+    "publicEntryPoints": [
+      "NormalizeEllipsis"
+    ],
+    "procedureCount": 2,
+    "dependenciesInferred": [
+      "DebugTrace.bas.bas",
+      "DocumentSnapshot.bas.bas",
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [
+      "FindingReporter.bas.bas"
+    ],
+    "sideEffectFlags": [
+      "active_document"
+    ],
+    "target": "Server Text Normalizer",
+    "disposition": "PORT với protected spans",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 25,
+    "module": "EncodingConverter.bas.bas",
+    "sourcePath": "shared/vba_extracted/EncodingConverter.bas.bas",
+    "sha256": "E8CFA2FAA3C3280D1B7B0C4E2FF2A8D98550B910C51E6D0CE87410D55E4B161F",
+    "lines": 1930,
+    "publicEntryPoints": [
+      "ClassifyFontName",
+      "AggregateRuns",
+      "DetectEncoding",
+      "ApplyEncodingTable",
+      "ConvertRunText",
+      "ConvertRun",
+      "ConvertToUnicode"
+    ],
+    "procedureCount": 30,
+    "dependenciesInferred": [
+      "DebugTrace.bas.bas",
+      "frmWarning.frm.bas",
+      "RibbonCallbacks.bas.bas",
+      "RuleLoader.bas.bas",
+      "UnicodeNormalizer.bas.bas",
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [
+      "CheckGate.bas.bas",
+      "DataReader.bas.bas",
+      "DataReadState.bas.bas",
+      "RibbonCallbacks.bas.bas"
+    ],
+    "sideEffectFlags": [
+      "active_document",
+      "screen_updating"
+    ],
+    "target": "Server plan + local StoryRange rewriter",
+    "disposition": "PORT TCVN3; VNI chỉ publish khi đủ mapping/tests",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 26,
+    "module": "ExcelPasteCleaner.bas.bas",
+    "sourcePath": "shared/vba_extracted/ExcelPasteCleaner.bas.bas",
+    "sha256": "EEE54ECA919A2999F5A40CD0C610CFB5588482BCCE0093AEB41BE84A775255D8",
+    "lines": 224,
+    "publicEntryPoints": [
+      "CleanExcelPasteWhitespace"
+    ],
+    "procedureCount": 4,
+    "dependenciesInferred": [
+      "DebugTrace.bas.bas",
+      "RibbonCallbacks.bas.bas",
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [
+      "RibbonCallbacks.bas.bas"
+    ],
+    "sideEffectFlags": [
+      "active_document"
+    ],
+    "target": "Server plan + local table adapter",
+    "disposition": "PORT với table-scope rõ ràng",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 27,
+    "module": "Finding.cls.bas",
+    "sourcePath": "shared/vba_extracted/Finding.cls.bas",
+    "sha256": "7A4409F750547AA546C9E6A4EC12C0D1D6980740EB19F5A525023F40AED8C9BB",
+    "lines": 80,
+    "publicEntryPoints": [],
+    "procedureCount": 1,
+    "dependenciesInferred": [
+      "RuleLoader.bas.bas"
+    ],
+    "callersInferred": [],
+    "sideEffectFlags": [],
+    "target": "VietDoc.Contracts/Finding",
+    "disposition": "PORT thành immutable contract",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 28,
+    "module": "FindingAnnotator.bas.bas",
+    "sourcePath": "shared/vba_extracted/FindingAnnotator.bas.bas",
+    "sha256": "B6D3F11C7D9B0CC9433FDD2B5FDCCA8AAFD8B2C09D36765E4274BBC349C691B2",
+    "lines": 376,
+    "publicEntryPoints": [
+      "MarkerTagTheThuc",
+      "MarkerTagChinhTa",
+      "CommentAuthorName",
+      "AnnotateFindings",
+      "ClearMarker",
+      "ClearAll"
+    ],
+    "procedureCount": 11,
+    "dependenciesInferred": [
+      "ComplianceChecker.bas.bas",
+      "DebugAnnotator.bas.bas",
+      "DebugTrace.bas.bas",
+      "DocumentSnapshot.bas.bas",
+      "FindingReporter.bas.bas",
+      "FindingTierAggregator.bas.bas"
+    ],
+    "callersInferred": [
+      "DebugAnnotator.bas.bas",
+      "FindingReporter.bas.bas",
+      "FindingTierAggregator.bas.bas",
+      "StyleBuilder.bas.bas"
+    ],
+    "sideEffectFlags": [
+      "active_document"
+    ],
+    "target": "Local Finding Presenter",
+    "disposition": "PORT; chỉ xóa marker của add-in",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 29,
+    "module": "FindingReporter.bas.bas",
+    "sourcePath": "shared/vba_extracted/FindingReporter.bas.bas",
+    "sha256": "888209839AC766E15DD0F6DE48E1506C4166D9F902974EB4F7BA6BB2392898A6",
+    "lines": 552,
+    "publicEntryPoints": [
+      "IsScanning",
+      "RunFormatCheck",
+      "RunSpellingCheck"
+    ],
+    "procedureCount": 8,
+    "dependenciesInferred": [
+      "BlankFieldSpacer.bas.bas",
+      "CheckGate.bas.bas",
+      "ComplianceChecker.bas.bas",
+      "ComponentDetector.bas.bas",
+      "DashNormalizer.bas.bas",
+      "DebugAnnotator.bas.bas",
+      "DebugTrace.bas.bas",
+      "DocumentSnapshot.bas.bas",
+      "DocumentTypeDetector.bas.bas",
+      "DocumentTypeState.bas.bas",
+      "EdgeWhitespaceTrimmer.bas.bas",
+      "EllipsisNormalizer.bas.bas",
+      "FindingAnnotator.bas.bas",
+      "FindingTierAggregator.bas.bas",
+      "FontVariantNormalizer.bas.bas",
+      "LineBreakNormalizer.bas.bas",
+      "MsgBoxW.bas.bas",
+      "MultiSpaceCollapser.bas.bas",
+      "ProcessingIndicator.bas.bas",
+      "RegimeState.bas.bas",
+      "RibbonCallbacks.bas.bas",
+      "RuleLoader.bas.bas",
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [
+      "FindingAnnotator.bas.bas",
+      "RibbonCallbacks.bas.bas"
+    ],
+    "sideEffectFlags": [
+      "screen_updating"
+    ],
+    "target": "Scan Orchestrator",
+    "disposition": "REWRITE; loại toàn bộ mutation khỏi scan",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 30,
+    "module": "FindingTierAggregator.bas.bas",
+    "sourcePath": "shared/vba_extracted/FindingTierAggregator.bas.bas",
+    "sha256": "2E699FB5531362341153313110A42F7BC2A4DE1D6E4C1C2C5446080202B3D33F",
+    "lines": 528,
+    "publicEntryPoints": [
+      "IsLegacyTierComment",
+      "ApplyTieredFindings"
+    ],
+    "procedureCount": 9,
+    "dependenciesInferred": [
+      "ComplianceChecker.bas.bas",
+      "DebugAnnotator.bas.bas",
+      "DebugTrace.bas.bas",
+      "FindingAnnotator.bas.bas",
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [
+      "FindingAnnotator.bas.bas",
+      "FindingReporter.bas.bas"
+    ],
+    "sideEffectFlags": [
+      "active_document"
+    ],
+    "target": "Server Finding Aggregator",
+    "disposition": "PORT và test severity/tier",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 31,
+    "module": "FontVariantNormalizer.bas.bas",
+    "sourcePath": "shared/vba_extracted/FontVariantNormalizer.bas.bas",
+    "sha256": "7DD118F3886F8DDD6DFB64D1CD590CB99BAFD1E7B957788D0BAE7608852F70A9",
+    "lines": 688,
+    "publicEntryPoints": [
+      "NormalizeFontVariants"
+    ],
+    "procedureCount": 13,
+    "dependenciesInferred": [
+      "DebugTrace.bas.bas",
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [
+      "FindingReporter.bas.bas"
+    ],
+    "sideEffectFlags": [
+      "active_document"
+    ],
+    "target": "Server FixPlanner",
+    "disposition": "PORT, không chạy ngầm trước scan",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 32,
+    "module": "frmProcessing.frm.bas",
+    "sourcePath": "shared/vba_extracted/frmProcessing.frm.bas",
+    "sha256": "B0FDAF11DD8157F1044880F473FF1079D6563AAE38178689BD77B1A8BC6C6BC5",
+    "lines": 218,
+    "publicEntryPoints": [
+      "SetText"
+    ],
+    "procedureCount": 6,
+    "dependenciesInferred": [
+      "ProcessingIndicator.bas.bas",
+      "WinApiFormStyle.bas.bas"
+    ],
+    "callersInferred": [
+      "RibbonCallbacks.bas.bas"
+    ],
+    "sideEffectFlags": [],
+    "target": "Progress dialog",
+    "disposition": "REPLACE bằng dialog hủy được, không block Word vô hạn",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 33,
+    "module": "frmQrCode.frm.bas",
+    "sourcePath": "shared/vba_extracted/frmQrCode.frm.bas",
+    "sha256": "AE05F00A4854D95944155CC73577964EB638F3F26EBEC2C602DFFEDBC17B1558",
+    "lines": 1004,
+    "publicEntryPoints": [
+      "BuildQrCode",
+      "ShowQrCode",
+      "HandleControlClick"
+    ],
+    "procedureCount": 23,
+    "dependenciesInferred": [
+      "DebugTrace.bas.bas",
+      "frmWarning.frm.bas",
+      "MsgBoxW.bas.bas",
+      "QrCodeGenerator.bas.bas",
+      "Utils.bas.bas",
+      "WinApiFormStyle.bas.bas"
+    ],
+    "callersInferred": [
+      "DialogControlSink.cls.bas",
+      "frmWarning.frm.bas",
+      "QrCodeGenerator.bas.bas"
+    ],
+    "sideEffectFlags": [],
+    "target": "QR input/preview dialog",
+    "disposition": "REPLACE bằng dialog tạm thời",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 34,
+    "module": "frmWarning.frm.bas",
+    "sourcePath": "shared/vba_extracted/frmWarning.frm.bas",
+    "sha256": "5A685E644291E62279305582F02430389F17A1641C3B84C795D15672B9879A8E",
+    "lines": 1434,
+    "publicEntryPoints": [
+      "BuildGate",
+      "ShowGate",
+      "BuildHighRisk",
+      "ShowHighRisk",
+      "BuildAbout",
+      "ShowAbout",
+      "HandleControlClick"
+    ],
+    "procedureCount": 29,
+    "dependenciesInferred": [
+      "DebugTrace.bas.bas",
+      "frmQrCode.frm.bas",
+      "MsgBoxW.bas.bas",
+      "SafetyGuard.bas.bas",
+      "Utils.bas.bas",
+      "WinApiFormStyle.bas.bas"
+    ],
+    "callersInferred": [
+      "CheckGate.bas.bas",
+      "DialogControlSink.cls.bas",
+      "EncodingConverter.bas.bas",
+      "frmQrCode.frm.bas",
+      "RibbonCallbacks.bas.bas"
+    ],
+    "sideEffectFlags": [],
+    "target": "Warning/About dialogs",
+    "disposition": "REPLACE, tách warning và About",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 35,
+    "module": "ImageFormatter.bas.bas",
+    "sourcePath": "shared/vba_extracted/ImageFormatter.bas.bas",
+    "sha256": "9EA98FFB7B37A4B38325CBE290BAE18CFD57305C4A4FD4F57862B0BA59E9ADB4",
+    "lines": 246,
+    "publicEntryPoints": [
+      "NormalizeImages"
+    ],
+    "procedureCount": 4,
+    "dependenciesInferred": [
+      "DebugTrace.bas.bas",
+      "PageFormatter.bas.bas",
+      "RuleLoader.bas.bas",
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [
+      "RibbonCallbacks.bas.bas"
+    ],
+    "sideEffectFlags": [
+      "active_document",
+      "screen_updating"
+    ],
+    "target": "Server/local image plan",
+    "disposition": "PORT inline/floating logic và table exclusion",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 36,
+    "module": "IyNormalizer.bas.bas",
+    "sourcePath": "shared/vba_extracted/IyNormalizer.bas.bas",
+    "sha256": "01BF58ADE002214D24B9F962A318F39B763FC8375E91D8A904763D0001D2032E",
+    "lines": 762,
+    "publicEntryPoints": [
+      "NormalizeIy",
+      "GetExcludedComponentRoles",
+      "ApplyIyStyle"
+    ],
+    "procedureCount": 18,
+    "dependenciesInferred": [
+      "ComponentDetector.bas.bas",
+      "DebugTrace.bas.bas",
+      "DocumentSnapshot.bas.bas",
+      "DocumentTypeDetector.bas.bas",
+      "RuleLoader.bas.bas",
+      "ToneNormalizer.bas.bas",
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [
+      "RibbonCallbacks.bas.bas",
+      "ToneNormalizer.bas.bas"
+    ],
+    "sideEffectFlags": [
+      "active_document"
+    ],
+    "target": "Server Text Normalizer",
+    "disposition": "PORT với dictionary canonical và protected phrases",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 37,
+    "module": "LineBreakNormalizer.bas.bas",
+    "sourcePath": "shared/vba_extracted/LineBreakNormalizer.bas.bas",
+    "sha256": "C7889BC5BBC61FAEAE01C8EB7FC22C377D8D23110BD295FA082AE879250A591C",
+    "lines": 388,
+    "publicEntryPoints": [
+      "NormalizeLineBreaks"
+    ],
+    "procedureCount": 5,
+    "dependenciesInferred": [
+      "ComponentFormatter.bas.bas",
+      "DebugTrace.bas.bas",
+      "DocumentSnapshot.bas.bas",
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [
+      "EdgeWhitespaceTrimmer.bas.bas",
+      "FindingReporter.bas.bas"
+    ],
+    "sideEffectFlags": [
+      "active_document"
+    ],
+    "target": "Server FixPlanner",
+    "disposition": "PORT, không tự chạy trong Scan",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 38,
+    "module": "MsgBoxW.bas.bas",
+    "sourcePath": "shared/vba_extracted/MsgBoxW.bas.bas",
+    "sha256": "2DCCF1B9CD3ED65D2CB89443B86F3DE2AC175CB545FF235191DA9EA5FAEC2936",
+    "lines": 64,
+    "publicEntryPoints": [
+      "Show"
+    ],
+    "procedureCount": 1,
+    "dependenciesInferred": [
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [
+      "DataReader.bas.bas",
+      "DialogControlSink.cls.bas",
+      "DocxConverter.bas.bas",
+      "FindingReporter.bas.bas",
+      "frmQrCode.frm.bas",
+      "frmWarning.frm.bas",
+      "ProcessingIndicator.bas.bas",
+      "RibbonCallbacks.bas.bas",
+      "TableFormatter.bas.bas",
+      "TextFormatter.bas.bas",
+      "TrailingPageRemover.bas.bas",
+      "Utils.bas.bas"
+    ],
+    "sideEffectFlags": [
+      "native_api"
+    ],
+    "target": "Standard managed dialogs",
+    "disposition": "RETIRE native MsgBoxW",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 39,
+    "module": "MultiSpaceCollapser.bas.bas",
+    "sourcePath": "shared/vba_extracted/MultiSpaceCollapser.bas.bas",
+    "sha256": "8221C27A7CC7BD308F8BC75A527C02A91886F84E7EA9269E00E8217AA3D4E17A",
+    "lines": 332,
+    "publicEntryPoints": [
+      "CollapseDoubleSpaces"
+    ],
+    "procedureCount": 4,
+    "dependenciesInferred": [
+      "ComplianceChecker.bas.bas",
+      "ComponentDetector.bas.bas",
+      "DebugTrace.bas.bas",
+      "DocumentSnapshot.bas.bas",
+      "DocumentTypeDetector.bas.bas",
+      "RuleLoader.bas.bas",
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [
+      "DocumentSnapshot.bas.bas",
+      "FindingReporter.bas.bas"
+    ],
+    "sideEffectFlags": [
+      "active_document"
+    ],
+    "target": "Server Text Normalizer",
+    "disposition": "PORT với Unicode whitespace corpus",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 40,
+    "module": "Operation.cls.bas",
+    "sourcePath": "shared/vba_extracted/Operation.cls.bas",
+    "sha256": "63E8963BB74436686F890533F0AA10FE5BC085EDEDDE261DF62EC95553196040",
+    "lines": 44,
+    "publicEntryPoints": [],
+    "procedureCount": 1,
+    "dependenciesInferred": [
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [],
+    "sideEffectFlags": [],
+    "target": "FixOperation` contract",
+    "disposition": "PORT thành discriminated operation model",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 41,
+    "module": "OperationLogger.bas.bas",
+    "sourcePath": "shared/vba_extracted/OperationLogger.bas.bas",
+    "sha256": "AB257F3892BCBE97069D7B3A2262F07A3E5A31AE7F6C7E93F6A1667E3CBD19CE",
+    "lines": 160,
+    "publicEntryPoints": [
+      "LogOperation",
+      "LogError"
+    ],
+    "procedureCount": 4,
+    "dependenciesInferred": [
+      "DebugTrace.bas.bas",
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [
+      "Utils.bas.bas"
+    ],
+    "sideEffectFlags": [],
+    "target": "Local change log + server job status",
+    "disposition": "REWRITE, privacy-minimized",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 42,
+    "module": "PageBreakInserter.bas.bas",
+    "sourcePath": "shared/vba_extracted/PageBreakInserter.bas.bas",
+    "sha256": "D804B4917226AF74B30BBED56D7F587A65E40FB8FB90F24ADCE0F55763CC6A77",
+    "lines": 156,
+    "publicEntryPoints": [
+      "InsertLandscapePage",
+      "InsertPortraitPage"
+    ],
+    "procedureCount": 3,
+    "dependenciesInferred": [
+      "DebugTrace.bas.bas",
+      "PageNumberFormatter.bas.bas",
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [
+      "RibbonCallbacks.bas.bas"
+    ],
+    "sideEffectFlags": [
+      "selection"
+    ],
+    "target": "Local Section Adapter",
+    "disposition": "PORT, bảo toàn page numbering",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 43,
+    "module": "PageFormatter.bas.bas",
+    "sourcePath": "shared/vba_extracted/PageFormatter.bas.bas",
+    "sha256": "389742F32A8FB7E7AB924B932A11864C4F09494BDF825D2EEDFC36B79E616B54",
+    "lines": 328,
+    "publicEntryPoints": [
+      "ApplyPageSetup",
+      "GetContentWidthMm"
+    ],
+    "procedureCount": 7,
+    "dependenciesInferred": [
+      "DebugTrace.bas.bas",
+      "RuleLoader.bas.bas",
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [
+      "ImageFormatter.bas.bas",
+      "RibbonCallbacks.bas.bas"
+    ],
+    "sideEffectFlags": [
+      "active_document"
+    ],
+    "target": "Server Page FixPlanner + local adapter",
+    "disposition": "PORT; không ép mọi section portrait",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 44,
+    "module": "PageNumberFormatter.bas.bas",
+    "sourcePath": "shared/vba_extracted/PageNumberFormatter.bas.bas",
+    "sha256": "3B3A8BC7396DD25EAD9F13D3B64268B340894AE6A8C73157A74C18B03E21F726",
+    "lines": 436,
+    "publicEntryPoints": [
+      "InsertPageNumbers"
+    ],
+    "procedureCount": 7,
+    "dependenciesInferred": [
+      "DebugTrace.bas.bas",
+      "RibbonCallbacks.bas.bas",
+      "RuleLoader.bas.bas",
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [
+      "PageBreakInserter.bas.bas",
+      "RibbonCallbacks.bas.bas"
+    ],
+    "sideEffectFlags": [
+      "active_document"
+    ],
+    "target": "Server plan + local HeaderFooter Adapter",
+    "disposition": "PORT, bổ sung regime Đảng/cỡ 15",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 45,
+    "module": "ParagraphFormatter.bas.bas",
+    "sourcePath": "shared/vba_extracted/ParagraphFormatter.bas.bas",
+    "sha256": "D1357A2EC4A5705608EE45969B2C8495D2E3040A81082BC72688F29EE8AC51B5",
+    "lines": 88,
+    "publicEntryPoints": [
+      "ApplyKeepWithNextAtCursor"
+    ],
+    "procedureCount": 1,
+    "dependenciesInferred": [
+      "DebugTrace.bas.bas",
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [
+      "RibbonCallbacks.bas.bas"
+    ],
+    "sideEffectFlags": [
+      "selection"
+    ],
+    "target": "Local Paragraph Adapter",
+    "disposition": "PORT command scope rõ ràng",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 46,
+    "module": "ParagraphSnapshot.cls.bas",
+    "sourcePath": "shared/vba_extracted/ParagraphSnapshot.cls.bas",
+    "sha256": "86AACB14A70A3EE838DA6F41B17AC5FB9F81DFA53CA9CB58C1FFE64D359C64D8",
+    "lines": 120,
+    "publicEntryPoints": [],
+    "procedureCount": 1,
+    "dependenciesInferred": [
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [],
+    "sideEffectFlags": [],
+    "target": "Snapshot paragraph DTO",
+    "disposition": "PORT thành immutable contract",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 47,
+    "module": "ProcessingIndicator.bas.bas",
+    "sourcePath": "shared/vba_extracted/ProcessingIndicator.bas.bas",
+    "sha256": "D1928A3D5494307BE9FBBE585D37CDF883B9B5A04F8937FD67E66977B29D8F7F",
+    "lines": 148,
+    "publicEntryPoints": [
+      "ResetDepth",
+      "ShowProcessing",
+      "HideProcessing"
+    ],
+    "procedureCount": 3,
+    "dependenciesInferred": [
+      "DataReader.bas.bas",
+      "DebugTrace.bas.bas",
+      "MsgBoxW.bas.bas",
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [
+      "DataReader.bas.bas",
+      "FindingReporter.bas.bas",
+      "frmProcessing.frm.bas",
+      "Utils.bas.bas"
+    ],
+    "sideEffectFlags": [],
+    "target": "Progress coordinator",
+    "disposition": "MERGE với dialog/cancellation service",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 48,
+    "module": "QrCodeGenerator.bas.bas",
+    "sourcePath": "shared/vba_extracted/QrCodeGenerator.bas.bas",
+    "sha256": "F341217FB8842C5F64ED8E9928F89F3E2CE6B6AEB6C911B0CB9139D517F8DA6B",
+    "lines": 2306,
+    "publicEntryPoints": [
+      "InsertQrCode",
+      "GenerateQrModuleMatrix"
+    ],
+    "procedureCount": 42,
+    "dependenciesInferred": [
+      "DebugTrace.bas.bas",
+      "frmQrCode.frm.bas",
+      "RibbonCallbacks.bas.bas",
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [
+      "frmQrCode.frm.bas",
+      "RibbonCallbacks.bas.bas"
+    ],
+    "sideEffectFlags": [
+      "filesystem",
+      "selection"
+    ],
+    "target": "QR domain + local renderer",
+    "disposition": "PORT sau security review payload/temp-file",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 49,
+    "module": "RegimeDetector.bas.bas",
+    "sourcePath": "shared/vba_extracted/RegimeDetector.bas.bas",
+    "sha256": "9BCBBDC7A0D4099A62234EB3D45E43C64448333621383259B04915474FA58A02",
+    "lines": 216,
+    "publicEntryPoints": [
+      "DetectRegime"
+    ],
+    "procedureCount": 4,
+    "dependenciesInferred": [
+      "ComponentDetector.bas.bas",
+      "DebugTrace.bas.bas",
+      "DocumentSnapshot.bas.bas",
+      "RegimeState.bas.bas",
+      "RuleLoader.bas.bas",
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [
+      "DocumentSnapshot.bas.bas",
+      "RegimeState.bas.bas"
+    ],
+    "sideEffectFlags": [],
+    "target": "Server Regime Classifier",
+    "disposition": "PORT bằng golden corpus",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 50,
+    "module": "RegimeState.bas.bas",
+    "sourcePath": "shared/vba_extracted/RegimeState.bas.bas",
+    "sha256": "5912B06FF3F59CE0F23BA317445725400CBA938AD62444396ED0A17149501930",
+    "lines": 254,
+    "publicEntryPoints": [
+      "GetSelectedRegime",
+      "SetSelectedRegimeManual",
+      "AutoDetectAndStore",
+      "RememberedRegimeCode",
+      "GetSelectedIndex",
+      "SetSelectedIndexManual",
+      "DetectAndAutoStore"
+    ],
+    "procedureCount": 9,
+    "dependenciesInferred": [
+      "DebugTrace.bas.bas",
+      "DocumentSnapshot.bas.bas",
+      "DocumentTypeState.bas.bas",
+      "RegimeDetector.bas.bas",
+      "RibbonCallbacks.bas.bas",
+      "SessionState.bas.bas"
+    ],
+    "callersInferred": [
+      "AppEventsHost.bas.bas",
+      "DataReader.bas.bas",
+      "DocumentTypeState.bas.bas",
+      "FindingReporter.bas.bas",
+      "RegimeDetector.bas.bas",
+      "RibbonCallbacks.bas.bas"
+    ],
+    "sideEffectFlags": [
+      "active_document"
+    ],
+    "target": "Per-document context",
+    "disposition": "REPLACE, loại global state",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 51,
+    "module": "RibbonCallbacks.bas.bas",
+    "sourcePath": "shared/vba_extracted/RibbonCallbacks.bas.bas",
+    "sha256": "70771397D5961C27F6C8AB817FBC2CDCBE389CB4D080062B790D7F54752DC327",
+    "lines": 1618,
+    "publicEntryPoints": [
+      "OnRibbonLoaded",
+      "InvalidateRibbon",
+      "OnDocDuLieu",
+      "OnLuuDocx",
+      "GetEnabledRequiresDocx",
+      "GetEnabledHasDocument",
+      "GetEnabledChuyenDoiUnicode",
+      "GetEnabledLuuDocx",
+      "IsDocEmpty",
+      "OnChuyenDoiUnicode",
+      "OnKiemTra",
+      "OnKiemTraChinhTa",
+      "GetEnabledKiemTra",
+      "InvalidateKiemTra",
+      "GetEnabledLoaiVanBan",
+      "GetItemCountLoaiVanBan",
+      "GetItemLabelLoaiVanBan",
+      "GetSelectedIndexLoaiVanBan",
+      "OnChonLoaiVanBan",
+      "InvalidateLoaiVanBan",
+      "GetSelectedIndexQuyDinh",
+      "OnChonQuyDinh",
+      "InvalidateQuyDinh",
+      "GetEnabledCoChu13",
+      "GetEnabledCoChu14",
+      "GetEnabledCoChu15",
+      "NotifyScanProgress",
+      "OnDinhDangTrangGiay",
+      "OnChenTrangNgang",
+      "OnChenTrangDoc",
+      "OnDungBoStyle14",
+      "OnDungBoStyle13",
+      "OnDungBoStyle15",
+      "OnChenSoTrang",
+      "OnCoChu13",
+      "OnCoChu14",
+      "OnCoChu15",
+      "OnKeepWithNext",
+      "OnCoChu",
+      "OnGianChuNormal",
+      "OnGianChuRa",
+      "OnChuanHoaBang",
+      "OnLapDongTieuDe",
+      "OnCanDinhO",
+      "OnCanGiuaO",
+      "OnChuanHoaAnh",
+      "OnXoaKyTuThuaBangExcel",
+      "OnKieuOaUy",
+      "OnKieuOaUy2",
+      "OnKieuI",
+      "OnKieuY",
+      "OnXoaTrangThua",
+      "OnDoiDauThapPhan",
+      "OnChenQrCode",
+      "GetEnabledHienThi",
+      "GetPressedRanhGioiVanBan",
+      "OnRanhGioiVanBan",
+      "GetPressedDauGoc",
+      "OnDauGoc",
+      "GetPressedKyHieuSoanThao",
+      "OnKyHieuSoanThao",
+      "OnGioiThieu",
+      "OnKiemTraPhienBanMoi",
+      "OnGuiPhanHoi"
+    ],
+    "procedureCount": 73,
+    "dependenciesInferred": [
+      "AppEventsHost.bas.bas",
+      "ComplianceChecker.bas.bas",
+      "DataReader.bas.bas",
+      "DataReadState.bas.bas",
+      "DebugTrace.bas.bas",
+      "DecimalSeparatorConverter.bas.bas",
+      "DocumentTypeState.bas.bas",
+      "DocxConverter.bas.bas",
+      "EncodingConverter.bas.bas",
+      "ExcelPasteCleaner.bas.bas",
+      "FindingReporter.bas.bas",
+      "frmProcessing.frm.bas",
+      "frmWarning.frm.bas",
+      "ImageFormatter.bas.bas",
+      "IyNormalizer.bas.bas",
+      "MsgBoxW.bas.bas",
+      "PageBreakInserter.bas.bas",
+      "PageFormatter.bas.bas",
+      "PageNumberFormatter.bas.bas",
+      "ParagraphFormatter.bas.bas",
+      "QrCodeGenerator.bas.bas",
+      "RegimeState.bas.bas",
+      "RibbonHandle.bas.bas",
+      "RuleLoader.bas.bas",
+      "SafetyGuard.bas.bas",
+      "StyleBuilder.bas.bas",
+      "TableFormatter.bas.bas",
+      "TextFormatter.bas.bas",
+      "ToneNormalizer.bas.bas",
+      "TrailingPageRemover.bas.bas",
+      "UrlOpener.bas.bas",
+      "Utils.bas.bas",
+      "ViewOptions.bas.bas"
+    ],
+    "callersInferred": [
+      "AppEventsHost.bas.bas",
+      "DataReader.bas.bas",
+      "DataReadState.bas.bas",
+      "DecimalSeparatorConverter.bas.bas",
+      "DocumentTypeState.bas.bas",
+      "DocxConverter.bas.bas",
+      "EncodingConverter.bas.bas",
+      "ExcelPasteCleaner.bas.bas",
+      "FindingReporter.bas.bas",
+      "PageNumberFormatter.bas.bas",
+      "QrCodeGenerator.bas.bas",
+      "RegimeState.bas.bas",
+      "RibbonHandle.bas.bas",
+      "UrlOpener.bas.bas"
+    ],
+    "sideEffectFlags": [
+      "active_document",
+      "application_options",
+      "filesystem",
+      "scheduled_callback"
+    ],
+    "target": "Ribbon Command Handlers",
+    "disposition": "REWRITE theo command catalog",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 52,
+    "module": "RibbonHandle.bas.bas",
+    "sourcePath": "shared/vba_extracted/RibbonHandle.bas.bas",
+    "sha256": "067367CBF4F9DF6FF897975F8B2624F5D1974B612EC80028A6A7652F8029C8FA",
+    "lines": 546,
+    "publicEntryPoints": [
+      "RibbonOnLoad",
+      "RequestInvalidateAll",
+      "RequestInvalidateControl",
+      "BeginCallback",
+      "EndCallback"
+    ],
+    "procedureCount": 14,
+    "dependenciesInferred": [
+      "DebugTrace.bas.bas",
+      "RibbonCallbacks.bas.bas"
+    ],
+    "callersInferred": [
+      "AppEventsHost.bas.bas",
+      "DebugTrace.bas.bas",
+      "RibbonCallbacks.bas.bas"
+    ],
+    "sideEffectFlags": [
+      "filesystem",
+      "native_api",
+      "scheduled_callback"
+    ],
+    "target": "Managed Ribbon lifecycle",
+    "disposition": "REWRITE, loại CopyMemory/pointer workaround",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 53,
+    "module": "RuleData.bas.bas",
+    "sourcePath": "shared/vba_extracted/RuleData.bas.bas",
+    "sha256": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB",
+    "lines": 28778,
+    "publicEntryPoints": [
+      "LoadRawTcvn3Lower",
+      "LoadRawTcvn3Upper",
+      "LoadRawVni",
+      "LoadRawStyleSheet",
+      "LoadRawDocTypeAbbreviations",
+      "LoadRawComponentSignals",
+      "LoadRawToneMapping",
+      "LoadRawTerrainPlaceNames",
+      "LoadRawPlaceNames",
+      "LoadRawAdministrativeUnitNames",
+      "LoadRawFontPatterns",
+      "LoadRawIyMapping",
+      "LoadRawLunarYears",
+      "LoadRawHolidays",
+      "LoadRawRegimeConfig",
+      "LoadRawCheckRules",
+      "LoadRawTelexWhitelist",
+      "LoadRawCommonOrganNames",
+      "LoadRawFormatSpec",
+      "LoadRawTypoDictionary",
+      "LoadRawUnicodeToNfc",
+      "LoadRawCitationRules",
+      "LoadRawSpecialCapitalizations",
+      "LoadRawNonSentenceEndingAbbreviations",
+      "LoadRawRegionNames"
+    ],
+    "procedureCount": 646,
+    "dependenciesInferred": [
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [
+      "RuleLoader.bas.bas"
+    ],
+    "sideEffectFlags": [],
+    "target": "Canonical Rule Database",
+    "disposition": "MIGRATE dữ liệu sau parser và legal review",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 54,
+    "module": "RuleLoader.bas.bas",
+    "sourcePath": "shared/vba_extracted/RuleLoader.bas.bas",
+    "sha256": "A1CDD655397A92307482A114C7E32ACFE96564D73030ADF0AC526C2DFFF4DFBE",
+    "lines": 1426,
+    "publicEntryPoints": [
+      "NormalizeSourceLabel",
+      "GetFormatSpec",
+      "GetCheckRules",
+      "GetCheckRule",
+      "GetEffectiveFontSizeSet",
+      "GetHeaderWindowChars",
+      "GetContentEndMark",
+      "GetRegimeLineSpacing",
+      "GetEffectiveComponentSpec",
+      "GetStyleSheet",
+      "GetToneMapping",
+      "GetIyMapping",
+      "GetTypoDictionary",
+      "GetPlaceNames",
+      "GetAdministrativeUnitNames",
+      "GetFontPatterns",
+      "GetDocTypeAbbreviations",
+      "GetComponentSignals",
+      "GetRegimeConfig",
+      "GetTerrainPlaceNames",
+      "GetLunarYears",
+      "GetHolidays",
+      "GetSpecialCapitalizations",
+      "GetRegionNames",
+      "GetNonSentenceEndingAbbreviations",
+      "GetCommonOrganNames",
+      "GetTelexWhitelist",
+      "GetCitationRules",
+      "GetUnicodeToNfc",
+      "GetEncodingTable",
+      "ValidateRules"
+    ],
+    "procedureCount": 38,
+    "dependenciesInferred": [
+      "ComplianceChecker.bas.bas",
+      "DebugTrace.bas.bas",
+      "RuleData.bas.bas",
+      "TextFormatter.bas.bas",
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [
+      "BlankFieldSpacer.bas.bas",
+      "ComplianceChecker.bas.bas",
+      "ComponentDetector.bas.bas",
+      "DocumentTypeDetector.bas.bas",
+      "DocumentTypeState.bas.bas",
+      "EdgeWhitespaceTrimmer.bas.bas",
+      "EncodingConverter.bas.bas",
+      "Finding.cls.bas",
+      "FindingReporter.bas.bas",
+      "ImageFormatter.bas.bas",
+      "IyNormalizer.bas.bas",
+      "MultiSpaceCollapser.bas.bas",
+      "PageFormatter.bas.bas",
+      "PageNumberFormatter.bas.bas",
+      "RegimeDetector.bas.bas",
+      "RibbonCallbacks.bas.bas",
+      "SafetyGuard.bas.bas",
+      "StyleBuilder.bas.bas",
+      "TextFormatter.bas.bas",
+      "ToneNormalizer.bas.bas",
+      "UnicodeNormalizer.bas.bas",
+      "Utils.bas.bas"
+    ],
+    "sideEffectFlags": [],
+    "target": "Server Rule Release Loader",
+    "disposition": "REWRITE với schema/signature/version checks",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 55,
+    "module": "SafetyGuard.bas.bas",
+    "sourcePath": "shared/vba_extracted/SafetyGuard.bas.bas",
+    "sha256": "3B6FF66750803FF600EECC697000FB333E2F72C980A7A186344B71DAA6957B1A",
+    "lines": 242,
+    "publicEntryPoints": [
+      "IsDocumentSaved",
+      "BuildWarning"
+    ],
+    "procedureCount": 3,
+    "dependenciesInferred": [
+      "DebugTrace.bas.bas",
+      "RuleLoader.bas.bas",
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [
+      "CheckGate.bas.bas",
+      "frmWarning.frm.bas",
+      "RibbonCallbacks.bas.bas"
+    ],
+    "sideEffectFlags": [
+      "active_document"
+    ],
+    "target": "Local Preflight/Risk Policy",
+    "disposition": "REWRITE theo hành vi engine thật",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 56,
+    "module": "SessionState.bas.bas",
+    "sourcePath": "shared/vba_extracted/SessionState.bas.bas",
+    "sha256": "448495B33C13EA0F0CD2495A14A6D2C828D18AC89A5D3C50E78838E63A7F3610",
+    "lines": 340,
+    "publicEntryPoints": [
+      "GetValue",
+      "SetValue",
+      "ClearValue"
+    ],
+    "procedureCount": 10,
+    "dependenciesInferred": [
+      "AppEventsHost.bas.bas",
+      "DataReadState.bas.bas",
+      "DebugTrace.bas.bas"
+    ],
+    "callersInferred": [
+      "DataReadState.bas.bas",
+      "DocumentTypeState.bas.bas",
+      "RegimeState.bas.bas"
+    ],
+    "sideEffectFlags": [
+      "active_document",
+      "filesystem"
+    ],
+    "target": "DocumentContext Registry",
+    "disposition": "REWRITE bằng weak references/document IDs an toàn",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 57,
+    "module": "StyleBuilder.bas.bas",
+    "sourcePath": "shared/vba_extracted/StyleBuilder.bas.bas",
+    "sha256": "C14074A10F1164BF9E3D2E19AE8F501731D1419DAF290A9A5ED7283C5FD70325",
+    "lines": 980,
+    "publicEntryPoints": [
+      "BuildStyles"
+    ],
+    "procedureCount": 21,
+    "dependenciesInferred": [
+      "DebugAnnotator.bas.bas",
+      "DebugTrace.bas.bas",
+      "FindingAnnotator.bas.bas",
+      "RuleLoader.bas.bas",
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [
+      "RibbonCallbacks.bas.bas"
+    ],
+    "sideEffectFlags": [
+      "active_document"
+    ],
+    "target": "Server Style Plan + local Style Adapter",
+    "disposition": "PORT toàn bộ style được xác nhận",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 58,
+    "module": "TableFormatter.bas.bas",
+    "sourcePath": "shared/vba_extracted/TableFormatter.bas.bas",
+    "sha256": "1EC39E58DC9EA202887EA88E9F3C4CAC7D6F2283236EF0CB050C0745AEF49F2B",
+    "lines": 286,
+    "publicEntryPoints": [
+      "NormalizeTables",
+      "RepeatHeaderRows",
+      "AlignCellsTop",
+      "AlignCellsCenter"
+    ],
+    "procedureCount": 6,
+    "dependenciesInferred": [
+      "DebugTrace.bas.bas",
+      "MsgBoxW.bas.bas",
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [
+      "RibbonCallbacks.bas.bas"
+    ],
+    "sideEffectFlags": [
+      "active_document",
+      "selection"
+    ],
+    "target": "Server plan + local Table Adapter",
+    "disposition": "PORT outer/nested/merge guards",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 59,
+    "module": "TextFormatter.bas.bas",
+    "sourcePath": "shared/vba_extracted/TextFormatter.bas.bas",
+    "sha256": "0E0836729E3F4A7B1120FB196E66270F0426B1B39A88C55CCA5076E2611A2989",
+    "lines": 802,
+    "publicEntryPoints": [
+      "ApplyFontSizeWholeDocument",
+      "CondenseSpacing",
+      "ResetSpacing",
+      "ExpandSpacing"
+    ],
+    "procedureCount": 17,
+    "dependenciesInferred": [
+      "ComponentFormatter.bas.bas",
+      "DebugTrace.bas.bas",
+      "DocumentSnapshot.bas.bas",
+      "MsgBoxW.bas.bas",
+      "RuleLoader.bas.bas",
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [
+      "DocumentSnapshot.bas.bas",
+      "RibbonCallbacks.bas.bas",
+      "RuleLoader.bas.bas"
+    ],
+    "sideEffectFlags": [
+      "active_document",
+      "selection"
+    ],
+    "target": "Server plan + local Text Adapter",
+    "disposition": "PORT role-aware sizing và spacing clamp",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 60,
+    "module": "ThisDocument.cls.bas",
+    "sourcePath": "shared/vba_extracted/ThisDocument.cls.bas",
+    "sha256": "EFF323452C8E898B8D89C97C9FB2ACF10283B9AAC0C51B2580D658F36022F863",
+    "lines": 16,
+    "publicEntryPoints": [],
+    "procedureCount": 0,
+    "dependenciesInferred": [],
+    "callersInferred": [],
+    "sideEffectFlags": [],
+    "target": "ThisAddIn` generated host",
+    "disposition": "RETIRE VBA host; thay bằng VSTO project-generated partial",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 61,
+    "module": "ToneNormalizer.bas.bas",
+    "sourcePath": "shared/vba_extracted/ToneNormalizer.bas.bas",
+    "sha256": "347150ED887A1E3B9F8D4ACDB02A8417CE107BECAF436A465BBB7DBBA776872A",
+    "lines": 1104,
+    "publicEntryPoints": [
+      "NormalizeTone",
+      "GetExcludedComponentRoles",
+      "ApplyToneStyle"
+    ],
+    "procedureCount": 21,
+    "dependenciesInferred": [
+      "ComponentDetector.bas.bas",
+      "DebugTrace.bas.bas",
+      "DocumentSnapshot.bas.bas",
+      "DocumentTypeDetector.bas.bas",
+      "IyNormalizer.bas.bas",
+      "RuleLoader.bas.bas",
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [
+      "ComponentFormatter.bas.bas",
+      "IyNormalizer.bas.bas",
+      "RibbonCallbacks.bas.bas"
+    ],
+    "sideEffectFlags": [
+      "active_document"
+    ],
+    "target": "Server Text Normalizer",
+    "disposition": "PORT hai chiều với protected roles",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 62,
+    "module": "TraceScope.cls.bas",
+    "sourcePath": "shared/vba_extracted/TraceScope.cls.bas",
+    "sha256": "ABB043F2AD3B8643295D2B97F5104C7A53BFC87D511E794504235984633A2A27",
+    "lines": 58,
+    "publicEntryPoints": [
+      "Init"
+    ],
+    "procedureCount": 2,
+    "dependenciesInferred": [
+      "DebugTrace.bas.bas"
+    ],
+    "callersInferred": [
+      "DebugTrace.bas.bas"
+    ],
+    "sideEffectFlags": [],
+    "target": "Structured activity scope",
+    "disposition": "REPLACE bằng tracing có correlation ID",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 63,
+    "module": "TrailingPageRemover.bas.bas",
+    "sourcePath": "shared/vba_extracted/TrailingPageRemover.bas.bas",
+    "sha256": "07F752F73B1118B2DEF9D1CB7E57B73320AF4AF84C00031C2ED73539A67BDBB4",
+    "lines": 314,
+    "publicEntryPoints": [
+      "RemoveTrailingPage"
+    ],
+    "procedureCount": 4,
+    "dependenciesInferred": [
+      "DebugTrace.bas.bas",
+      "MsgBoxW.bas.bas",
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [
+      "RibbonCallbacks.bas.bas"
+    ],
+    "sideEffectFlags": [
+      "active_document"
+    ],
+    "target": "Server/local safe plan",
+    "disposition": "PORT page-count verification và rollback",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 64,
+    "module": "UnicodeNormalizer.bas.bas",
+    "sourcePath": "shared/vba_extracted/UnicodeNormalizer.bas.bas",
+    "sha256": "3968C103AA47768DAFD957FEDEE208FE310D7DA6D3EDF88CD96E76A8E6AA27EA",
+    "lines": 192,
+    "publicEntryPoints": [
+      "NormalizeNfc"
+    ],
+    "procedureCount": 1,
+    "dependenciesInferred": [
+      "DebugTrace.bas.bas",
+      "RuleLoader.bas.bas",
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [
+      "EncodingConverter.bas.bas",
+      "Utils.bas.bas"
+    ],
+    "sideEffectFlags": [],
+    "target": "Server Text Normalizer",
+    "disposition": "PORT NFC và grapheme tests",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 65,
+    "module": "UrlOpener.bas.bas",
+    "sourcePath": "shared/vba_extracted/UrlOpener.bas.bas",
+    "sha256": "00EB2BB718C36D18D25D99CC4C780C0E87492154222356DE9F45D12CAF1F4AB6",
+    "lines": 176,
+    "publicEntryPoints": [
+      "LastFailureDetail",
+      "OpenUrl"
+    ],
+    "procedureCount": 2,
+    "dependenciesInferred": [
+      "DebugTrace.bas.bas",
+      "RibbonCallbacks.bas.bas"
+    ],
+    "callersInferred": [
+      "RibbonCallbacks.bas.bas"
+    ],
+    "sideEffectFlags": [
+      "active_document",
+      "native_api",
+      "process_or_shell"
+    ],
+    "target": "System Browser Service",
+    "disposition": "REPLACE bằng managed process launch allowlist",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 66,
+    "module": "Utils.bas.bas",
+    "sourcePath": "shared/vba_extracted/Utils.bas.bas",
+    "sha256": "0685BBB051677D6ACB37A70BE56A9B271F9E33D9106BD1A60C6F1059CDCE8076",
+    "lines": 592,
+    "publicEntryPoints": [
+      "BeginOperation",
+      "EndOperation",
+      "AbortOperation",
+      "ToUnaccented",
+      "LevenshteinDistance",
+      "GetSelectionOnly",
+      "ToUpperVn",
+      "ToLowerVn",
+      "NormalizeNfc",
+      "CmToPoint",
+      "TwipToPoint",
+      "NewDictionary"
+    ],
+    "procedureCount": 15,
+    "dependenciesInferred": [
+      "DebugTrace.bas.bas",
+      "DocumentSignature.bas.bas",
+      "MsgBoxW.bas.bas",
+      "OperationLogger.bas.bas",
+      "ProcessingIndicator.bas.bas",
+      "RuleLoader.bas.bas",
+      "UnicodeNormalizer.bas.bas"
+    ],
+    "callersInferred": [
+      "BlankFieldSpacer.bas.bas",
+      "CheckGate.bas.bas",
+      "ComplianceChecker.bas.bas",
+      "ComponentDetector.bas.bas",
+      "ComponentFormatter.bas.bas",
+      "DashNormalizer.bas.bas",
+      "DataReader.bas.bas",
+      "DebugTrace.bas.bas",
+      "DecimalSeparatorConverter.bas.bas",
+      "DocumentSignature.bas.bas",
+      "DocumentSnapshot.bas.bas",
+      "DocumentTypeDetector.bas.bas",
+      "DocxConverter.bas.bas",
+      "EdgeWhitespaceTrimmer.bas.bas",
+      "EllipsisNormalizer.bas.bas",
+      "EncodingConverter.bas.bas",
+      "ExcelPasteCleaner.bas.bas",
+      "FindingReporter.bas.bas",
+      "FindingTierAggregator.bas.bas",
+      "FontVariantNormalizer.bas.bas",
+      "frmQrCode.frm.bas",
+      "frmWarning.frm.bas",
+      "ImageFormatter.bas.bas",
+      "IyNormalizer.bas.bas",
+      "LineBreakNormalizer.bas.bas",
+      "MsgBoxW.bas.bas",
+      "MultiSpaceCollapser.bas.bas",
+      "Operation.cls.bas",
+      "OperationLogger.bas.bas",
+      "PageBreakInserter.bas.bas",
+      "PageFormatter.bas.bas",
+      "PageNumberFormatter.bas.bas",
+      "ParagraphFormatter.bas.bas",
+      "ParagraphSnapshot.cls.bas",
+      "ProcessingIndicator.bas.bas",
+      "QrCodeGenerator.bas.bas",
+      "RegimeDetector.bas.bas",
+      "RibbonCallbacks.bas.bas",
+      "RuleData.bas.bas",
+      "RuleLoader.bas.bas",
+      "SafetyGuard.bas.bas",
+      "StyleBuilder.bas.bas",
+      "TableFormatter.bas.bas",
+      "TextFormatter.bas.bas",
+      "ToneNormalizer.bas.bas",
+      "TrailingPageRemover.bas.bas",
+      "UnicodeNormalizer.bas.bas",
+      "ViewOptions.bas.bas"
+    ],
+    "sideEffectFlags": [
+      "screen_updating",
+      "selection"
+    ],
+    "target": "Các service chuyên biệt",
+    "disposition": "SPLIT; loại utility global và side effect ẩn",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 67,
+    "module": "ViewOptions.bas.bas",
+    "sourcePath": "shared/vba_extracted/ViewOptions.bas.bas",
+    "sha256": "A135506BE1FCFD73E4461B537E32E3270F27EDF20E35F14833B8695EC034A0CC",
+    "lines": 98,
+    "publicEntryPoints": [
+      "GetShowTextBoundaries",
+      "GetShowCropMarks",
+      "GetShowAllMarks",
+      "SetShowTextBoundaries",
+      "SetShowCropMarks",
+      "SetShowAllMarks",
+      "HasActiveWindow"
+    ],
+    "procedureCount": 7,
+    "dependenciesInferred": [
+      "DebugTrace.bas.bas",
+      "Utils.bas.bas"
+    ],
+    "callersInferred": [
+      "RibbonCallbacks.bas.bas"
+    ],
+    "sideEffectFlags": [],
+    "target": "Local Window View Adapter",
+    "disposition": "PORT theo window context",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  },
+  {
+    "index": 68,
+    "module": "WinApiFormStyle.bas.bas",
+    "sourcePath": "shared/vba_extracted/WinApiFormStyle.bas.bas",
+    "sha256": "89A74B2C204123F13C576DB06838F45B11442C0E129B1DC1B8CE00C063740B61",
+    "lines": 316,
+    "publicEntryPoints": [
+      "MakeActiveWindowBorderless",
+      "StartDragActiveWindow"
+    ],
+    "procedureCount": 7,
+    "dependenciesInferred": [
+      "DebugTrace.bas.bas"
+    ],
+    "callersInferred": [
+      "DialogControlSink.cls.bas",
+      "frmProcessing.frm.bas",
+      "frmQrCode.frm.bas",
+      "frmWarning.frm.bas"
+    ],
+    "sideEffectFlags": [
+      "filesystem",
+      "native_api"
+    ],
+    "target": "Managed window/dialog styling",
+    "disposition": "RETIRE WinAPI nếu không có nhu cầu bắt buộc",
+    "migrationStatus": "BASELINED",
+    "fixtures": [],
+    "testIds": [],
+    "reviewer": null,
+    "signedOffAt": null
+  }
+]

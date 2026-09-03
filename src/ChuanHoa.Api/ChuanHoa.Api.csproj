@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <ProjectReference Include="..\ChuanHoa.Contracts\ChuanHoa.Contracts.csproj" />
+    <ProjectReference Include="..\ChuanHoa.Domain\ChuanHoa.Domain.csproj" />
+    <ProjectReference Include="..\ChuanHoa.Application\ChuanHoa.Application.csproj" />
+    <ProjectReference Include="..\ChuanHoa.Infrastructure\ChuanHoa.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.11" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="DevelopmentAdmin\index.html">
+      <LogicalName>ChuanHoa.Api.DevelopmentAdmin.index.html</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+</Project>

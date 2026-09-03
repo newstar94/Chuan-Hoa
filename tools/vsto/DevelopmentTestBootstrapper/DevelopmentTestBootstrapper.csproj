@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="Current" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props"
+          Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
+    <Platform Condition="'$(Platform)' == ''">AnyCPU</Platform>
+    <ProjectGuid>{64944D5B-F352-4D61-B50A-816D6EEA65EE}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>ChuanHoa.DevelopmentTestBootstrapper</RootNamespace>
+    <AssemblyName>ChuanHoa.DevelopmentTestBootstrapper</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath Condition="'$(OutputPath)' == ''">bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <WarningLevel>4</WarningLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
+    <Reference Include="System.Security" />
+    <Reference Include="System.Windows.Forms" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <EmbeddedResource Include="$(PayloadZip)" LogicalName="ChuanHoa.DevelopmentInstaller.Payload.zip" />
+    <EmbeddedResource Include="$(VersionFile)" LogicalName="ChuanHoa.DevelopmentInstaller.Version.txt" />
+  </ItemGroup>
+  <Target Name="ValidateInstallerInputs" BeforeTargets="PrepareForBuild">
+    <Error Condition="'$(PayloadZip)' == '' or !Exists('$(PayloadZip)')" Text="PayloadZip is required." />
+    <Error Condition="'$(VersionFile)' == '' or !Exists('$(VersionFile)')" Text="VersionFile is required." />
+  </Target>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

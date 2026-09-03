@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ChuanHoa.Contracts\ChuanHoa.Contracts.csproj" />
+    <ProjectReference Include="..\..\src\ChuanHoa.Rules\ChuanHoa.Rules.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\..\shared\rules\canonical\baseline-draft.v1.json"
+             Link="Rules\baseline-draft.v1.json"
+             CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\shared\contracts\rules\canonical-rule-release.v1.schema.json"
+             Link="Rules\canonical-rule-release.v1.schema.json"
+             CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

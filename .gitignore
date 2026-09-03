@@ -1,0 +1,46 @@
+# Build outputs
+**/bin/
+**/obj/
+**/dist/
+**/coverage/
+**/TestResults/
+
+# Dependencies
+**/node_modules/
+**/packages/
+
+# IDE and user state
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Local development tools and secrets
+.tools/
+.env
+.env.*
+!.env.example
+.dev-secrets/
+*.pfx
+*.p12
+*.snk
+*.key
+*.pem
+
+# Generated deployment artefacts
+artifacts/
+publish/
+*.vsto
+*.dll.manifest
+*.application
+*.msi
+*.msix
+
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
+~$*

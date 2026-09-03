@@ -1,0 +1,134 @@
+using ChuanHoa.Client.Core.Annotations;
+using ChuanHoa.Client.Core.Scanning;
+
+namespace ChuanHoa.Client.Core.Tests;
+
+public sealed class DocumentRoleDetectorTests
+{
+    [Theory]
+    [InlineData("NGHỊ QUYẾT", LocalDocumentTypeCodes.Resolution)]
+    [InlineData("QUYẾT ĐỊNH", LocalDocumentTypeCodes.Decision)]
+    [InlineData("CHỈ THỊ", LocalDocumentTypeCodes.Directive)]
+    [InlineData("THÔNG TƯ", LocalDocumentTypeCodes.Circular)]
+    [InlineData("THÔNG CÁO", LocalDocumentTypeCodes.Communique)]
+    [InlineData("THÔNG BÁO", LocalDocumentTypeCodes.Notice)]
+    [InlineData("HƯỚNG DẪN", LocalDocumentTypeCodes.Guidance)]
+    [InlineData("CHƯƠNG TRÌNH", LocalDocumentTypeCodes.Program)]
+    [InlineData("KẾ HOẠCH", LocalDocumentTypeCodes.Plan)]
+    [InlineData("PHƯƠNG ÁN", LocalDocumentTypeCodes.Option)]
+    [InlineData("ĐỀ ÁN", LocalDocumentTypeCodes.Scheme)]
+    [InlineData("DỰ ÁN", LocalDocumentTypeCodes.Project)]
+    [InlineData("BÁO CÁO", LocalDocumentTypeCodes.Report)]
+    [InlineData("TỜ TRÌNH", LocalDocumentTypeCodes.Proposal)]
+    [InlineData("QUY CHẾ", LocalDocumentTypeCodes.Regulation)]
+    [InlineData("QUY ĐỊNH", LocalDocumentTypeCodes.Regulation)]
+    [InlineData("GIẤY MỜI", LocalDocumentTypeCodes.Invitation)]
+    [InlineData("CÔNG ĐIỆN", LocalDocumentTypeCodes.Telegram)]
+    [InlineData("GIẤY GIỚI THIỆU", LocalDocumentTypeCodes.IntroductionLetter)]
+    [InlineData("BIÊN BẢN", LocalDocumentTypeCodes.Minutes)]
+    [InlineData("GIẤY NGHỈ PHÉP", LocalDocumentTypeCodes.LeavePermit)]
+    [InlineData("GIẤY ỦY QUYỀN", LocalDocumentTypeCodes.AuthorizationLetter)]
+    [InlineData("PHIẾU GỬI", LocalDocumentTypeCodes.SendingSlip)]
+    [InlineData("PHIẾU CHUYỂN", LocalDocumentTypeCodes.TransferSlip)]
+    [InlineData("PHIẾU BÁO", LocalDocumentTypeCodes.NotificationSlip)]
+    [InlineData("KẾT LUẬN", LocalDocumentTypeCodes.Conclusion)]
+    public void Resolves_all_named_document_types_from_content(string title, string expectedCode)
+    {
+        Assert.Equal(expectedCode, new DocumentRoleDetector().ResolveDocumentType(Snapshot(title)));
+    }
+
+    [Fact]
+    public void Resolves_official_letter_without_a_type_heading_from_subject_marker()
+    {
+        Assert.Equal(LocalDocumentTypeCodes.OfficialLetter,
+            new DocumentRoleDetector().ResolveDocumentType(Snapshot("V/v triển khai nhiệm vụ năm 2026")));
+    }
+
+    [Fact]
+    public void Content_overrides_a_stale_manual_selection()
+    {
+        var snapshot = Snapshot("QUYẾT ĐỊNH", LocalDocumentTypeCodes.Report, true);
+
+        Assert.Equal(LocalDocumentTypeCodes.Decision,
+            new DocumentRoleDetector().ResolveDocumentType(snapshot));
+    }
+
+    [Fact]
+    public void Unknown_content_does_not_reuse_non_manual_stale_context()
+    {
+        var snapshot = Snapshot("Nội dung chưa có tên loại văn bản", LocalDocumentTypeCodes.Decision, false);
+
+        Assert.Equal(LocalDocumentTypeCodes.Unknown,
+            new DocumentRoleDetector().ResolveDocumentType(snapshot));
+    }
+
+    [Fact]
+    public void Accepts_a_small_footnote_marker_after_the_type_heading()
+    {
+        Assert.Equal(LocalDocumentTypeCodes.Decision,
+            new DocumentRoleDetector().ResolveDocumentType(Snapshot("QUYẾT ĐỊNH 1")));
+    }
+
+    [Fact]
+    public void Repeated_decision_formula_does_not_turn_article_one_into_a_subject()
+    {
+        var paragraphs = new[]
+        {
+            Paragraph(1, "QUYẾT ĐỊNH"),
+            Paragraph(2, "Về việc phê duyệt kế hoạch lựa chọn nhà thầu"),
+            Paragraph(3, "Căn cứ Luật Đấu thầu số 22/2023/QH15;"),
+            Paragraph(4, "QUYẾT ĐỊNH"),
+            Paragraph(5, "Điều 1. Phê duyệt kế hoạch lựa chọn nhà thầu.")
+        };
+        var snapshot = new LocalScanSnapshot("sha256:repeated-decision", 1,
+            new[] { new LocalSectionSnapshot(1, 595, 842, 57, 57, 85, 43, false) },
+            paragraphs, Array.Empty<AnnotationProtectedSpan>());
+
+        var roles = new DocumentRoleDetector().Detect(snapshot);
+
+        Assert.Equal("typeName", roles[1]);
+        Assert.Equal("subject", roles[2]);
+        Assert.Equal("structuralTitle", roles[4]);
+        Assert.False(roles.ContainsKey(5));
+    }
+
+    [Fact]
+    public void Consecutive_centered_bold_paragraphs_extend_the_subject_until_a_blank_gap()
+    {
+        var paragraphs = new[]
+        {
+            Paragraph(1, "QUYẾT ĐỊNH"),
+            Paragraph(2, "Về việc phê duyệt kế hoạch lựa chọn nhà thầu"),
+            Paragraph(3, "dự án, dự toán mua sắm: Mua sắm phục vụ ăn bán trú"),
+            Paragraph(5, "HIỆU TRƯỞNG TRƯỜNG THCS NGỌC HÀ"),
+            Paragraph(6, "Căn cứ Luật Đấu thầu số 22/2023/QH15;")
+        };
+        var snapshot = new LocalScanSnapshot("sha256:multiline-subject", 1,
+            new[] { new LocalSectionSnapshot(1, 595, 842, 57, 57, 85, 43, false) },
+            paragraphs, Array.Empty<AnnotationProtectedSpan>());
+
+        var roles = new DocumentRoleDetector().Detect(snapshot);
+
+        Assert.Equal("subject", roles[2]);
+        Assert.Equal("subjectContinuation", roles[3]);
+        Assert.False(roles.ContainsKey(5));
+        Assert.Equal("legalBasis", roles[6]);
+    }
+
+    private static LocalScanSnapshot Snapshot(string text,
+        string documentTypeCode = LocalDocumentTypeCodes.Unknown,
+        bool selectedManually = false)
+    {
+        var paragraph = new LocalParagraphSnapshot(1, text, "wdMainTextStory", 1, 0,
+            "Times New Roman", fontSizePoints: 14, bold: true, alignment: 1);
+        return new LocalScanSnapshot("sha256:document-type", 1,
+            new[] { new LocalSectionSnapshot(1, 595, 842, 57, 57, 85, 43, false) },
+            new[] { paragraph }, Array.Empty<AnnotationProtectedSpan>(),
+            documentTypeCode: documentTypeCode,
+            documentTypeWasSelectedManually: selectedManually);
+    }
+
+    private static LocalParagraphSnapshot Paragraph(int index, string text) =>
+        new(index, text, "wdMainTextStory", 1, index * 100,
+            "Times New Roman", fontSizePoints: 14, bold: true, alignment: 1);
+}

@@ -1,0 +1,1470 @@
+{
+  "schemaVersion": 1,
+  "generatedAtUtc": "2026-09-01T09:42:37.576250Z",
+  "workspace": "D:\\Chuẩn Hóa",
+  "summary": {
+    "sourceFiles": 243,
+    "sourceBytes": 10519258,
+    "ribbon": {
+      "tabs": 1,
+      "groups": 7,
+      "buttons": 36,
+      "menus": 4,
+      "dropDowns": 2,
+      "checkBoxes": 3,
+      "interactiveControls": 45
+    },
+    "vbaModules": 68,
+    "vbaPublicEntryPoints": 363,
+    "rules": {
+      "vbaDefinitions": 96,
+      "registeredRoutes": 94,
+      "hardwiredNotCheckedRoutes": 19,
+      "routesWithLogic": 75,
+      "jsonCodes": 52,
+      "backendCodes": 14
+    }
+  },
+  "files": [
+    {
+      "path": ".gitignore",
+      "bytes": 460,
+      "sha256": "5E6E5044C88141471A54C29D3576D72DBEF48DFBC6AAEF757569935EBEFC8FAB"
+    },
+    {
+      "path": "backend-api/dist/auth/LicenseManager.js",
+      "bytes": 2979,
+      "sha256": "2152DFF3C419E6DB73978CD719E0A60626B16859909AD1F4122EECB1C4A0A41E",
+      "lines": 67
+    },
+    {
+      "path": "backend-api/dist/autofix/AutoFixEngine.js",
+      "bytes": 11765,
+      "sha256": "423FA0E8B9E3571CE85B7A32385FB67B80D5E8BF6E9C8A32A7D878E9E2285E73",
+      "lines": 243
+    },
+    {
+      "path": "backend-api/dist/checker/ComplianceChecker.js",
+      "bytes": 14679,
+      "sha256": "7AD790BA7F6905EE4739CAA004732B505C73BC2CF1116635F84E0E78E0CD0314",
+      "lines": 305
+    },
+    {
+      "path": "backend-api/dist/detector/ComponentDetector.js",
+      "bytes": 8529,
+      "sha256": "7973F2E2F6E5B754FC60057577AB2A249915A0C5BC6396CDDCFAE356BA660500",
+      "lines": 167
+    },
+    {
+      "path": "backend-api/dist/formatter/TableFormatter.js",
+      "bytes": 1059,
+      "sha256": "7248B26C47AA0A3750B63CE719F2AA7A95C03E455B0510186FD8001A358A765B",
+      "lines": 32
+    },
+    {
+      "path": "backend-api/dist/normalizer/TextNormalizer.js",
+      "bytes": 5012,
+      "sha256": "645191F87877FCCB16D48C50C3F624D8BF6F9D3DCA15C2118969E321C90322E6",
+      "lines": 115
+    },
+    {
+      "path": "backend-api/dist/rules/RuleLoader.js",
+      "bytes": 4453,
+      "sha256": "43A1D24C190F6109DF46A72DA81292FF0CA93DB6B4B64AB2D85E2B79ED090201",
+      "lines": 107
+    },
+    {
+      "path": "backend-api/dist/server.js",
+      "bytes": 4346,
+      "sha256": "C089E0422019B4E02D4267447C0C8527B4E8778D4ECACBB3CDB1CC4CC52D91FC",
+      "lines": 110
+    },
+    {
+      "path": "backend-api/dist/types/index.js",
+      "bytes": 77,
+      "sha256": "D43AA81F5BC89FAA359E0F97C814BA25155591FF078FBB9BFD40F8C7C9683230",
+      "lines": 2
+    },
+    {
+      "path": "backend-api/package-lock.json",
+      "bytes": 55563,
+      "sha256": "F52F87D5FE1F10496E0973746F2D29392812CFDD62ABCCA6B6D1B29C7581F36B",
+      "lines": 1528
+    },
+    {
+      "path": "backend-api/package.json",
+      "bytes": 699,
+      "sha256": "56227AF9FEC056B76CC23413857A91AD5031E9E891CFB0752AFBA66BAA7A6D08",
+      "lines": 26
+    },
+    {
+      "path": "backend-api/src/auth/LicenseManager.ts",
+      "bytes": 1756,
+      "sha256": "733C2565733C7E6CB89C25D7348AD9952DC0FF05FFC4940B953A5B7FEE05F4DE",
+      "lines": 44
+    },
+    {
+      "path": "backend-api/src/autofix/AutoFixEngine.ts",
+      "bytes": 9587,
+      "sha256": "8D51BF2067E537D8B4AC2932732ABD273A7A948A4B92D23DE5EB5AEFC2EAE33E",
+      "lines": 264
+    },
+    {
+      "path": "backend-api/src/checker/ComplianceChecker.ts",
+      "bytes": 12942,
+      "sha256": "2BEC1CC9B1E4A84C7CE71D78800254E8A66091D960C92BAFA1D2112DDD0EAD26",
+      "lines": 323
+    },
+    {
+      "path": "backend-api/src/detector/ComponentDetector.ts",
+      "bytes": 7387,
+      "sha256": "70F230EE48F8C6530ADCFA2444B0AD7565405D21724F5A159E208A5FA8303B7D",
+      "lines": 193
+    },
+    {
+      "path": "backend-api/src/formatter/TableFormatter.ts",
+      "bytes": 1128,
+      "sha256": "857B693A1E623746B1DE1309C1E51DD50AA20C481A4C81C114F4B34508CAD73D",
+      "lines": 48
+    },
+    {
+      "path": "backend-api/src/normalizer/TextNormalizer.ts",
+      "bytes": 4606,
+      "sha256": "6E6539F085691CDACCA5E24C425258C1DBCFD8DC9D49AD9821F1929CC5BA8664",
+      "lines": 122
+    },
+    {
+      "path": "backend-api/src/rules/RuleLoader.ts",
+      "bytes": 3078,
+      "sha256": "9E4E653BEDB4CE5A5DDE6B377932361986C706228517298B2F45456724BD017B",
+      "lines": 81
+    },
+    {
+      "path": "backend-api/src/server.ts",
+      "bytes": 3908,
+      "sha256": "8D37BB335BA5495C1E789F599BCBEA7B4F35838AA35BBF704DEEEC3C10A27A2A",
+      "lines": 114
+    },
+    {
+      "path": "backend-api/src/types/index.ts",
+      "bytes": 3190,
+      "sha256": "DB8CA1CE7761B2984441B70B0B321DB3C51427DF6F3590518F9DEA7EB9121BB7",
+      "lines": 146
+    },
+    {
+      "path": "backend-api/test/test_engine.ts",
+      "bytes": 3434,
+      "sha256": "331D22572665F98B090CCEE5AEE580AEC1ABB54F878741A3FA773EFA03CBFB38",
+      "lines": 103
+    },
+    {
+      "path": "backend-api/tsconfig.json",
+      "bytes": 362,
+      "sha256": "94B2618A261CB990D835A74633917A0BBBE29D828544D13026BF58648CAE23EC",
+      "lines": 16
+    },
+    {
+      "path": "ChuanHoa.slnx",
+      "bytes": 704,
+      "sha256": "B6B4A4B635AC07B329B2B9DA3890515837D031B526B533F4C781EA59B2C9B2E1"
+    },
+    {
+      "path": "client-vsto-csharp/installer/setup.iss",
+      "bytes": 2074,
+      "sha256": "290B0736085695AB9A5B1AFA730EC477637202949B3F84E4A45D4245FB572132",
+      "lines": 40
+    },
+    {
+      "path": "client-vsto-csharp/src/RibbonStandardizer.cs",
+      "bytes": 3867,
+      "sha256": "98F5408789E99164AB36CF2D159CDE9B64D52F3F3302598BBAFB76EF623EC8ED",
+      "lines": 107
+    },
+    {
+      "path": "client-vsto-csharp/src/RibbonStandardizer.xml",
+      "bytes": 2535,
+      "sha256": "0C040CDCEEECCC380AD76979F2BFB1D3A185BB8767031E5F08467E01BD960583",
+      "lines": 41
+    },
+    {
+      "path": "client-vsto-csharp/src/TaskPaneControl.cs",
+      "bytes": 5544,
+      "sha256": "5EC1D848C39C67F7E4C0045166E605438C9226070AE3745D3CB4CA406425FA5A",
+      "lines": 128
+    },
+    {
+      "path": "client-vsto-csharp/src/ThisAddIn.cs",
+      "bytes": 1478,
+      "sha256": "3BE39DB74E2F84AA64013B9F7624C04FB96A61B227DD33F7DEDCF6A4BEB9D85A",
+      "lines": 49
+    },
+    {
+      "path": "client-vsto-csharp/src/WordInteropEngine.cs",
+      "bytes": 9671,
+      "sha256": "9F14370D255E0965F4292D4B5E172F6356CEA66808442E351705072E1A072968",
+      "lines": 237
+    },
+    {
+      "path": "client-vsto-csharp/VietDocStandardizer.csproj",
+      "bytes": 3103,
+      "sha256": "00F13774538E79AE2AEB050EF30AE26AED7DF241682A9E83E0212B0E8D345F44",
+      "lines": 64
+    },
+    {
+      "path": "client-web-addin/assets/icon-128.png",
+      "bytes": 447,
+      "sha256": "2BCCDEF47B84496445158C51A40DA5724C2F8F3EFDF607D0AAF620EAF90F3305"
+    },
+    {
+      "path": "client-web-addin/assets/icon-16.png",
+      "bytes": 124,
+      "sha256": "80AA73A3D953473D96E56B0F34012DE90466DCDA3A6712523D4BDA0A6AC39B22"
+    },
+    {
+      "path": "client-web-addin/assets/icon-32.png",
+      "bytes": 163,
+      "sha256": "5623C59A183C7C7277369ECAF8A18ACD29E8B30712BF9E0CC87B7B6478186696"
+    },
+    {
+      "path": "client-web-addin/assets/icon-80.png",
+      "bytes": 300,
+      "sha256": "35C98DC55640D06EB5DD7120F8107E2A0C55C0AA39FB8C81DF53AB95DDAE489E"
+    },
+    {
+      "path": "client-web-addin/http-server.js",
+      "bytes": 916,
+      "sha256": "5DF8689337A5B4091A23225E19D94D722EC65B205DDF298043856C5E12A939BE",
+      "lines": 33
+    },
+    {
+      "path": "client-web-addin/https-server.js",
+      "bytes": 1352,
+      "sha256": "BCF0D461B4065420D8C463A2EC618051442C539E4ADA833C318C5EBD7A35E4F1",
+      "lines": 45
+    },
+    {
+      "path": "client-web-addin/manifest.xml",
+      "bytes": 3959,
+      "sha256": "0E4F28BE2488AFE9B8CA767870B3422150797BDAF714D20B4D951FAFD62A06D5",
+      "lines": 84
+    },
+    {
+      "path": "client-web-addin/package-lock.json",
+      "bytes": 66159,
+      "sha256": "2A81A72AA0E11F80740AD4847A45DA0BBCF53BC53966929A0BD7CA37E6244DF4",
+      "lines": 1843
+    },
+    {
+      "path": "client-web-addin/package.json",
+      "bytes": 368,
+      "sha256": "61E13CAE42F7F3ABC172C7979097BC66A51B500CF856FF24C86A78EA293DB974",
+      "lines": 14
+    },
+    {
+      "path": "client-web-addin/src/taskpane/index.css",
+      "bytes": 8181,
+      "sha256": "08B0F3D63D06149FA7942A01C11D2E9D8669CD2B7EACAD71CC406140159F06ED",
+      "lines": 423
+    },
+    {
+      "path": "client-web-addin/src/taskpane/index.html",
+      "bytes": 7360,
+      "sha256": "6731BB5BEAC2B3B0A9238ADA0BB17A602E02F7B2CB287CDD42D0D4B4482AC240",
+      "lines": 174
+    },
+    {
+      "path": "client-web-addin/src/taskpane/taskpane.html",
+      "bytes": 7360,
+      "sha256": "6731BB5BEAC2B3B0A9238ADA0BB17A602E02F7B2CB287CDD42D0D4B4482AC240",
+      "lines": 174
+    },
+    {
+      "path": "client-web-addin/src/taskpane/taskpane.js",
+      "bytes": 15570,
+      "sha256": "22A17939CEC54EB1141134FE43D2735C32DDB6A1F4D33CAFE044E939F322C675",
+      "lines": 457
+    },
+    {
+      "path": "database/migrations/V001__identity_trial_commercial_foundation.sql",
+      "bytes": 15192,
+      "sha256": "61726B90A708153EC70F5555EBF9AA630543E373D09EBD4500F1D724D00AED4C"
+    },
+    {
+      "path": "database/migrations/V001_down.sql",
+      "bytes": 1303,
+      "sha256": "D5CFB4862D262084090BE1DA2161D38C6809E92AD3022B6A5DEB3BAC3B6BCFDC"
+    },
+    {
+      "path": "Directory.Build.props",
+      "bytes": 364,
+      "sha256": "97E8555F4C4E35D23CAC72B94D96DA843F394D4C33662AF5727ADCFBBB399C28"
+    },
+    {
+      "path": "global.json",
+      "bytes": 109,
+      "sha256": "B54F95CCC7A0A2199F7F2CE71CEF88C853E633B5F6D0C492095CD16BBF4D8506",
+      "lines": 7
+    },
+    {
+      "path": "Hướng dẫn 05.docx",
+      "bytes": 122999,
+      "sha256": "DFD22896C32C8F2EC273176F3E92F9ED724019103011EF646C779DBB572BB3C2"
+    },
+    {
+      "path": "Nghị định 30.doc",
+      "bytes": 530432,
+      "sha256": "0C875C3C69D081892A41E5B3C1A5B731A1728AF141AAADFB013978C2EF67B793"
+    },
+    {
+      "path": "Phụ lục Nghị định 30.doc",
+      "bytes": 1625088,
+      "sha256": "DCA5247B53E65492F67061C52CEF3135104E44A267143568DD2F8FF5348ADB00"
+    },
+    {
+      "path": "README.md",
+      "bytes": 2704,
+      "sha256": "E3FE9E78EC17967FFFED6961C90CE87832BD0A2CA21AAFF982251A43C5B85A09",
+      "lines": 43
+    },
+    {
+      "path": "shared/ChuanHoaTheThuc_Full_Ribbon.dotm",
+      "bytes": 1278049,
+      "sha256": "74E7FAE1D8B80BCE22054421AB59D37B5C726236554A1AD145C32B99A8997105"
+    },
+    {
+      "path": "shared/ChuanHoaTheThuc_temp.dotm",
+      "bytes": 1278046,
+      "sha256": "38E3F216AE226525DE54D4E8A4C187CE4075B98BD184E1150C1402C25C13D5EC"
+    },
+    {
+      "path": "shared/ChuanHoaTheThuc_v2026.dotm",
+      "bytes": 1278021,
+      "sha256": "570C68B639853998F7006791E495AD52FB6A476023DF63D9C226B0E37529F213"
+    },
+    {
+      "path": "shared/contracts/openapi/chuanhoa-api.v1.json",
+      "bytes": 3171,
+      "sha256": "6058D097CB1CB542237ADB519D38C7CF5CB70ABC0A8F9506D72E07F10E7251AD",
+      "lines": 151
+    },
+    {
+      "path": "shared/contracts/ribbon/ribbon-contract.v1.json",
+      "bytes": 67236,
+      "sha256": "0A4187AE87AB3343FF05C0EE700F4F8AF3408801E059E32F1A70497DE288B591",
+      "lines": 2257
+    },
+    {
+      "path": "shared/dictionaries/administrative_units.json",
+      "bytes": 25897,
+      "sha256": "F946CC127520910462A571800A78531AC0345200ADFC4DD804FB188693FAD053",
+      "lines": 1522
+    },
+    {
+      "path": "shared/dictionaries/doctype_abbreviations.json",
+      "bytes": 392,
+      "sha256": "D6B18CF4B70FE71E06D165673B0ADDEC03D87D53D1806B060F893ACDB9E5255F",
+      "lines": 8
+    },
+    {
+      "path": "shared/dictionaries/iy_dictionary.json",
+      "bytes": 466,
+      "sha256": "55B826F5B8946A415E1271743B6FBF3E8F35D4D8B6A84FF4201B23547E0C024B",
+      "lines": 18
+    },
+    {
+      "path": "shared/dictionaries/non_sentence_ending_abbreviations.json",
+      "bytes": 761,
+      "sha256": "04271A4670D756BC5F25EC01F0893666CFCD1B290495D9B2C91FC968D3042CB4",
+      "lines": 57
+    },
+    {
+      "path": "shared/dictionaries/special_capitalizations.json",
+      "bytes": 1122,
+      "sha256": "B983451B040D65BB0F70BD73C615BB927B6EACD0FB57A946154A91C719474CC7",
+      "lines": 85
+    },
+    {
+      "path": "shared/dictionaries/typo_dictionary.json",
+      "bytes": 591,
+      "sha256": "69C93672A27991BFD1919B04F80254127F401128FB3AC770CE543DB7E1B733E0",
+      "lines": 20
+    },
+    {
+      "path": "shared/docs/BaoCao_PhanTich_Addin_ChuanHoaTheThuc.md",
+      "bytes": 8213,
+      "sha256": "9AC97FCA84791D05ED9991C78157513AF3962F39A1C0902F8C035E193D053A80",
+      "lines": 111
+    },
+    {
+      "path": "shared/docs/build_full_ribbon_addin.py",
+      "bytes": 2553,
+      "sha256": "441490834FBEAC6CDB00621F34B278E2266E7B417D412A4DB5237FF03CCA20C3",
+      "lines": 62
+    },
+    {
+      "path": "shared/docs/build_v2026_dotm.py",
+      "bytes": 1843,
+      "sha256": "4BAF33034D9034D3EFECE12977180A407C60A2246E7BD67A283EE0557F67E964",
+      "lines": 46
+    },
+    {
+      "path": "shared/docs/bypass_cert_webview2.py",
+      "bytes": 1205,
+      "sha256": "EEC2AFB69E0CAB27D16A4DB08D122DB0DA9B7CD29A2CCBE8929EB2DBDE6326AD",
+      "lines": 29
+    },
+    {
+      "path": "shared/docs/check_word_addins.py",
+      "bytes": 901,
+      "sha256": "641C7BCA0EF96C4E5075E5F5457838D9B4A4892CD9DC39F16D21C303159425D7",
+      "lines": 23
+    },
+    {
+      "path": "shared/docs/clean_all_addins.py",
+      "bytes": 3358,
+      "sha256": "3F2831FB4389B22F302EC581ACF13AEEC26136C0DC1C7416B38F64CCD48EB542",
+      "lines": 87
+    },
+    {
+      "path": "shared/docs/export_compliance_catalog.py",
+      "bytes": 11659,
+      "sha256": "3B1BDBC52EFBE8D1D133F15665C02F48C3A1A90E4E38181D026CFFF55EFDF292",
+      "lines": 200
+    },
+    {
+      "path": "shared/docs/export_vba_rules_to_json.py",
+      "bytes": 4006,
+      "sha256": "0B71D61349C6AFBFC52D1B0DB1D0AFDC51F48EA495DE59E38D0E78899C96B5BE",
+      "lines": 97
+    },
+    {
+      "path": "shared/docs/extract_doc_info.py",
+      "bytes": 1999,
+      "sha256": "3D1E30FA21D71C7B7099E0B4F5BB775131F768C9B43579AE3F8580780F936644",
+      "lines": 51
+    },
+    {
+      "path": "shared/docs/extracted_text/HD05.txt",
+      "bytes": 58386,
+      "sha256": "85076BCB3BCE62D7859C90E2A30ADBC04C66386C72CAEF45BE0FD1321B23C8A6",
+      "lines": 944
+    },
+    {
+      "path": "shared/docs/extracted_text/HD05_tables.txt",
+      "bytes": 7107,
+      "sha256": "C3B3495899E458D99D78FAF8BBE6844795FD40D6EB00FD436442C862B55EA210",
+      "lines": 126
+    },
+    {
+      "path": "shared/docs/extracted_text/ND30.txt",
+      "bytes": 47047,
+      "sha256": "CFB1B7856EC78DA97E4E2E3DA3BD66A85130F9262D39EE5C17FF135232C4B253",
+      "lines": 319
+    },
+    {
+      "path": "shared/docs/extracted_text/ND30_tables.txt",
+      "bytes": 326,
+      "sha256": "C68D7A63146DA6C58EA310E32E6065EB5C6954D8E1A05226164B0990F7FF20F9",
+      "lines": 16
+    },
+    {
+      "path": "shared/docs/extracted_text/PL_ND30.txt",
+      "bytes": 108629,
+      "sha256": "5FB71101DD82090A119FC8D5272DFD0C9A9B7E4F29032A0A88D4E3EE19EC5216",
+      "lines": 2802
+    },
+    {
+      "path": "shared/docs/extracted_text/PL_ND30_tables.txt",
+      "bytes": 34002,
+      "sha256": "D797B6B8805A8D4AFF7C75AFC925652FC63BE34D227D4B609AE4D4136F080201",
+      "lines": 654
+    },
+    {
+      "path": "shared/docs/implementation/Architecture_Decisions.md",
+      "bytes": 4730,
+      "sha256": "1C091471C3B168E07F27930B50AC513C297D08E300028A4EA5F6FB6B097A5CD8",
+      "lines": 60
+    },
+    {
+      "path": "shared/docs/implementation/Compatibility_Matrix.md",
+      "bytes": 893,
+      "sha256": "5F2B51C86EA44213F1D58A2D619EBE59280A9B95B96838B7B084ACB423D5AE61",
+      "lines": 13
+    },
+    {
+      "path": "shared/docs/implementation/Data_Privacy_Register.md",
+      "bytes": 1815,
+      "sha256": "BCA80CA74598BE59634C1B0CC98FE1ABBB05A62F7EBA2A88C071F01CC57DA307",
+      "lines": 16
+    },
+    {
+      "path": "shared/docs/implementation/Decision_Register.md",
+      "bytes": 4734,
+      "sha256": "683C45E52ABEAD165C030523FEFD054136EDAF3F7D6D5F89E501D20255CFB73A",
+      "lines": 37
+    },
+    {
+      "path": "shared/docs/implementation/evidence/baseline_inventory.json",
+      "bytes": 1380048,
+      "sha256": "E38725A290F3BDF0727136AD6EFF2324238DF15EE5ED357771B3CD19DE284A8A",
+      "lines": 29870
+    },
+    {
+      "path": "shared/docs/implementation/evidence/migration_v001.json",
+      "bytes": 1311,
+      "sha256": "E30A23F4D028E69B0634E0BD5DD3DCF1B88688FE240585D4EC482A49722F4BF8",
+      "lines": 35
+    },
+    {
+      "path": "shared/docs/implementation/evidence/persistence_integration.json",
+      "bytes": 677,
+      "sha256": "0F6C4E5316DB6D79115110A3BA0A6FCA36232379F80809A4C6A879F2651AE94B",
+      "lines": 17
+    },
+    {
+      "path": "shared/docs/implementation/evidence/ribbon_actual.json",
+      "bytes": 25304,
+      "sha256": "3395E97ABEB4E82519E096C94F540877451F6860D8459A324B73C92D48E852DE",
+      "lines": 832
+    },
+    {
+      "path": "shared/docs/implementation/evidence/rule_reconciliation.json",
+      "bytes": 18282,
+      "sha256": "A3FED1A6F7C46DE843AEEF33009288D04CC684B677D5419A426812013C3CF345",
+      "lines": 665
+    },
+    {
+      "path": "shared/docs/implementation/evidence/vba_migration_ledger.json",
+      "bytes": 73060,
+      "sha256": "02AD829D954A58CD505D1957C54FC6ED1975B2CCD8A62008A95BF74C8CA74FF8",
+      "lines": 2587
+    },
+    {
+      "path": "shared/docs/implementation/evidence/vsto_source_foundation.json",
+      "bytes": 1033,
+      "sha256": "117D31ED382C57AE199C01412648F13DAD72086BF13F8CEBE3FD7929AAC8D454",
+      "lines": 29
+    },
+    {
+      "path": "shared/docs/implementation/Execution_Board.md",
+      "bytes": 1518,
+      "sha256": "5A3834E868FC389A255ECC8DC06DEA3895A8B97538494A00B4311F476A8DDDA1",
+      "lines": 16
+    },
+    {
+      "path": "shared/docs/implementation/Implementation_Status.md",
+      "bytes": 5300,
+      "sha256": "0E8A622483DC22D83109E40AD559055A76AD76DE64BDF43B908DF72B6F7E4701",
+      "lines": 46
+    },
+    {
+      "path": "shared/docs/implementation/Incident_Runbook.md",
+      "bytes": 1385,
+      "sha256": "F6C5083F62C9916859D2B6166D37C3AA22AE21E345975FFD9B693E48E3FB186C",
+      "lines": 26
+    },
+    {
+      "path": "shared/docs/implementation/Release_Runbook.md",
+      "bytes": 1785,
+      "sha256": "47E2BB0F4D1A83A2EC7E6E86EFE4AFA3A9977470D4685A3BF5AD4AF0014A5656",
+      "lines": 40
+    },
+    {
+      "path": "shared/docs/implementation/Ribbon_Contract.md",
+      "bytes": 1293,
+      "sha256": "687D0863D849F5C955FFFC1D5F2BDF96E1B0B1D391ED5DC99A78310740A99030",
+      "lines": 30
+    },
+    {
+      "path": "shared/docs/implementation/Rule_Catalog_Reconciliation.md",
+      "bytes": 1021,
+      "sha256": "D0A007A074CF0965DFF6C90E47E3D357A72FC8A47933D8CA1C69162B0800A9F1",
+      "lines": 27
+    },
+    {
+      "path": "shared/docs/implementation/Security_Threat_Model.md",
+      "bytes": 2848,
+      "sha256": "4EA53AB733C1C5679227473FA80F61E9D4B7D9B29EDDBBF849143FB8F30D8B36",
+      "lines": 43
+    },
+    {
+      "path": "shared/docs/implementation/Test_Evidence.md",
+      "bytes": 2813,
+      "sha256": "1D2FD9AA4835A7A607CE2489A37DAD90D571BAD81852A4E70FD1E3F3B373F3E8",
+      "lines": 24
+    },
+    {
+      "path": "shared/docs/implementation/VBA_Migration_Ledger.md",
+      "bytes": 770,
+      "sha256": "E46E067887D47459B9E15C56823C8A536145974E2B687C2BC26EE11956AC6770",
+      "lines": 19
+    },
+    {
+      "path": "shared/docs/inject_vba_autofix.py",
+      "bytes": 7516,
+      "sha256": "E50C7ADDE6EBB532D993999F99B87867CE8CCB561F543D630BB2B69B566B45C0",
+      "lines": 213
+    },
+    {
+      "path": "shared/docs/install_startup_addin.py",
+      "bytes": 483,
+      "sha256": "0436333F7FC89E588EAB8FE941D4AF533EF6EC5205888C3F466769563FC7416A",
+      "lines": 15
+    },
+    {
+      "path": "shared/docs/KeHoach_TrienKhai_Addin_VSTO_Word_2010_Plus.md",
+      "bytes": 129727,
+      "sha256": "6E707BE47F535FC0A5C76325F868A9BA7833186854BD2E6F27402355EA5518C3",
+      "lines": 2394
+    },
+    {
+      "path": "shared/docs/Prompt_ThucThi_KeHoach_Addin_VSTO_Word_2010_Plus.md",
+      "bytes": 41459,
+      "sha256": "939D19DA735F8138CB8565A403DAC1CA7CA552072EE5F00D7C9677D0055A3AD2",
+      "lines": 664
+    },
+    {
+      "path": "shared/docs/purge_vba_addin.py",
+      "bytes": 1633,
+      "sha256": "999C351FE67C778695A05D5706E09F09E8CBBA5098058E2D6BC152E457B90010",
+      "lines": 42
+    },
+    {
+      "path": "shared/docs/QuyChuan_TheThuc_ND30_va_HD05.md",
+      "bytes": 13071,
+      "sha256": "2857951B1AB82F3E776DC5A49ABCE1AF2BE71C4D8099F5DE8E20DBB5AF4B4F04",
+      "lines": 111
+    },
+    {
+      "path": "shared/docs/restart_word.py",
+      "bytes": 855,
+      "sha256": "6E1332380AB1993B878FB4CC7F59C971B5FD5D629D37FE7EF9A917F420E14FC9",
+      "lines": 27
+    },
+    {
+      "path": "shared/docs/restart_word_http.py",
+      "bytes": 761,
+      "sha256": "3B18B66E29152A7FADBD301118927E2DB331A83C7C6A759202EDF3FFCDC331A4",
+      "lines": 25
+    },
+    {
+      "path": "shared/docs/set_unc_registry.py",
+      "bytes": 1183,
+      "sha256": "6B3C4EFFCA4682A6CDC64643E47BF2ED6C13CEF87A7D614B134832E9648B1DE4",
+      "lines": 25
+    },
+    {
+      "path": "shared/docs/set_word_registry.py",
+      "bytes": 1509,
+      "sha256": "E716C93ACB01D251E2D02550BE126A0E334B0623C0441892114AEDA7A4A2FE91",
+      "lines": 27
+    },
+    {
+      "path": "shared/docs/setup_word_sideload.ps1",
+      "bytes": 1104,
+      "sha256": "C65D797C68CA5F6F8304BEFD6DB2F11EB3D7BDA3AFB7CFDFE0F6C7ECCA7E9B62",
+      "lines": 32
+    },
+    {
+      "path": "shared/docs/uninstall_old_addin.py",
+      "bytes": 1534,
+      "sha256": "D6430E13FCC261E037FDA498E20DD105F8D03399990AAE2A875A062A5C9125F0",
+      "lines": 41
+    },
+    {
+      "path": "shared/rules/rules_compliance_checks.json",
+      "bytes": 11487,
+      "sha256": "9C1B53E33D9BFAFC11B43DD03A0F68D050D448F2AB11C236C5CC9C0EA2D52651",
+      "lines": 353
+    },
+    {
+      "path": "shared/rules/rules_nd30.json",
+      "bytes": 12282,
+      "sha256": "AB9513C13073F58487357401BDD363DE6764C91D472A2DCFC9B3E7E79060D219",
+      "lines": 345
+    },
+    {
+      "path": "shared/rules/rules_party_hd05.json",
+      "bytes": 10292,
+      "sha256": "31DE8E2E8DA0A0DF1001492183ED2F8EBC26DC17DE104D357E6ED0D568402180",
+      "lines": 289
+    },
+    {
+      "path": "shared/rules/rules_viettel.json",
+      "bytes": 2643,
+      "sha256": "844FDC029C13C8C5A1E998A5BE29838706F623EF62D690472F050F733D31B257",
+      "lines": 106
+    },
+    {
+      "path": "shared/vba_extracted/AppEvents.cls.bas",
+      "bytes": 3587,
+      "sha256": "634C4B27FF89BA7C52EBE4A24C9F799D1DCC9E5A0020FD9F00BECCB5D38FE127",
+      "lines": 118
+    },
+    {
+      "path": "shared/vba_extracted/AppEventsHost.bas.bas",
+      "bytes": 8427,
+      "sha256": "D49141A06E9880951301D4D9D73EAC58FD1D342F61C25340C54073B66DB20991",
+      "lines": 300
+    },
+    {
+      "path": "shared/vba_extracted/BlankFieldSpacer.bas.bas",
+      "bytes": 11259,
+      "sha256": "05AA0B2B5135C83330154654602514D3B497A834923FAD44C1FF217DA0CFD0D9",
+      "lines": 430
+    },
+    {
+      "path": "shared/vba_extracted/CheckGate.bas.bas",
+      "bytes": 12053,
+      "sha256": "745AC57F731DC41292992A824E5955804B95BF6E5F4FD22051711498826E4D9C",
+      "lines": 512
+    },
+    {
+      "path": "shared/vba_extracted/ComplianceChecker.bas.bas",
+      "bytes": 224061,
+      "sha256": "9E83D1EBF737CB1CA9131572015AB4E0C110F99A3734ECCFBED6C209E5F43DE0",
+      "lines": 8918
+    },
+    {
+      "path": "shared/vba_extracted/ComponentDetector.bas.bas",
+      "bytes": 40199,
+      "sha256": "3892FDDDC418A17A595F46419C8A7F09DEB8E3BE8FF246F2067F112B0554C6B0",
+      "lines": 1918
+    },
+    {
+      "path": "shared/vba_extracted/ComponentFormatter.bas.bas",
+      "bytes": 4008,
+      "sha256": "78016567DE728416DA91BA627999370B20FE19348E5906A0CBF4F4C53BE86AE5",
+      "lines": 108
+    },
+    {
+      "path": "shared/vba_extracted/ComponentRole.cls.bas",
+      "bytes": 794,
+      "sha256": "8681C95CC7DDA7CB6140B14483EBBB811EBEA9DA451958D8F9F9B7C57F7F5C05",
+      "lines": 38
+    },
+    {
+      "path": "shared/vba_extracted/CustomIcons.bas.bas",
+      "bytes": 78459,
+      "sha256": "9A6F08A39174C7A325769BAD1F8A90DCADA6A1A0ED7FB6909E515940161C3F6C",
+      "lines": 1404
+    },
+    {
+      "path": "shared/vba_extracted/DashNormalizer.bas.bas",
+      "bytes": 4879,
+      "sha256": "A893D3F17FA234BFB477E1F6BE689AD75C262955A0026A9E397FDF8BAE9AE46C",
+      "lines": 216
+    },
+    {
+      "path": "shared/vba_extracted/DataReader.bas.bas",
+      "bytes": 3351,
+      "sha256": "3AA18E3C34BDE009DD176A93C8B17C059A8111B2978FB91AEDCEFD79F674E619",
+      "lines": 126
+    },
+    {
+      "path": "shared/vba_extracted/DataReadState.bas.bas",
+      "bytes": 3439,
+      "sha256": "B0B7C51E80C9193923FEB4A9019E91C26A00DC10BB9042E49185AB85C0F83180",
+      "lines": 128
+    },
+    {
+      "path": "shared/vba_extracted/DebugAnnotator.bas.bas",
+      "bytes": 6004,
+      "sha256": "54C8E359A9D37D4CCE469EE39168086D97F26EF50BE748A076C22B1D7CFA367F",
+      "lines": 222
+    },
+    {
+      "path": "shared/vba_extracted/DebugTrace.bas.bas",
+      "bytes": 12711,
+      "sha256": "BE474790ABE1749FE8F318B8A56A45A384C61D8ABB47F60D142DA47833A8A59D",
+      "lines": 496
+    },
+    {
+      "path": "shared/vba_extracted/DecimalSeparatorConverter.bas.bas",
+      "bytes": 11668,
+      "sha256": "BBB9B91A0D3AA432746210C51BE9245DAA6CBBF5BA506F5FCC1BD5B7D479FBD9",
+      "lines": 498
+    },
+    {
+      "path": "shared/vba_extracted/DialogControlSink.cls.bas",
+      "bytes": 3800,
+      "sha256": "915886EF9780A0000DA8502FADBECBACD93AE6A34B2492D93B63E286DA13A52B",
+      "lines": 150
+    },
+    {
+      "path": "shared/vba_extracted/DocumentLayoutMap.cls.bas",
+      "bytes": 631,
+      "sha256": "90D4F9BBBE034D3022C9663880EB82C7A66C4DDA0E384467B23DBF2108FB8084",
+      "lines": 30
+    },
+    {
+      "path": "shared/vba_extracted/DocumentSignature.bas.bas",
+      "bytes": 3603,
+      "sha256": "17A3D91C4B5061617A125E553549927C593B9CF4AA4E9C230AC0401D97E55E1F",
+      "lines": 124
+    },
+    {
+      "path": "shared/vba_extracted/DocumentSnapshot.bas.bas",
+      "bytes": 31306,
+      "sha256": "8631035D9B8152B68AE3A6CCC19DFC401C7D78D90F6FC8300A8E3EAA11280D8F",
+      "lines": 1502
+    },
+    {
+      "path": "shared/vba_extracted/DocumentTypeDetector.bas.bas",
+      "bytes": 17951,
+      "sha256": "1A4AEF665E3263EC10D55CDA8E346FE9B0A404CDD350027F449F61436EA6D872",
+      "lines": 812
+    },
+    {
+      "path": "shared/vba_extracted/DocumentTypeState.bas.bas",
+      "bytes": 5488,
+      "sha256": "173721F648388F9A797A448E33975BD14686B4B28053AB1CF31D387853B556CB",
+      "lines": 202
+    },
+    {
+      "path": "shared/vba_extracted/DocxConverter.bas.bas",
+      "bytes": 3900,
+      "sha256": "40DEB49C5D85345ABDA4600B0FAE8C7055ABE801C232B73E13EB7A6EED8A6123",
+      "lines": 168
+    },
+    {
+      "path": "shared/vba_extracted/EdgeWhitespaceTrimmer.bas.bas",
+      "bytes": 9534,
+      "sha256": "B10FB4890DF121D6E4DD91E909B904EB0AD17DCFFC53814968CB74F4BDFC862A",
+      "lines": 368
+    },
+    {
+      "path": "shared/vba_extracted/EllipsisNormalizer.bas.bas",
+      "bytes": 6550,
+      "sha256": "A26D2662A2C0FE84D621BB4452083916C84D475F6218521D50B70CE68359E348",
+      "lines": 262
+    },
+    {
+      "path": "shared/vba_extracted/EncodingConverter.bas.bas",
+      "bytes": 39165,
+      "sha256": "E8CFA2FAA3C3280D1B7B0C4E2FF2A8D98550B910C51E6D0CE87410D55E4B161F",
+      "lines": 1930
+    },
+    {
+      "path": "shared/vba_extracted/ExcelPasteCleaner.bas.bas",
+      "bytes": 5587,
+      "sha256": "EEE54ECA919A2999F5A40CD0C610CFB5588482BCCE0093AEB41BE84A775255D8",
+      "lines": 224
+    },
+    {
+      "path": "shared/vba_extracted/Finding.cls.bas",
+      "bytes": 1574,
+      "sha256": "7A4409F750547AA546C9E6A4EC12C0D1D6980740EB19F5A525023F40AED8C9BB",
+      "lines": 80
+    },
+    {
+      "path": "shared/vba_extracted/FindingAnnotator.bas.bas",
+      "bytes": 9347,
+      "sha256": "B6D3F11C7D9B0CC9433FDD2B5FDCCA8AAFD8B2C09D36765E4274BBC349C691B2",
+      "lines": 376
+    },
+    {
+      "path": "shared/vba_extracted/FindingReporter.bas.bas",
+      "bytes": 14750,
+      "sha256": "888209839AC766E15DD0F6DE48E1506C4166D9F902974EB4F7BA6BB2392898A6",
+      "lines": 552
+    },
+    {
+      "path": "shared/vba_extracted/FindingTierAggregator.bas.bas",
+      "bytes": 13349,
+      "sha256": "2E699FB5531362341153313110A42F7BC2A4DE1D6E4C1C2C5446080202B3D33F",
+      "lines": 528
+    },
+    {
+      "path": "shared/vba_extracted/FontVariantNormalizer.bas.bas",
+      "bytes": 15599,
+      "sha256": "7DD118F3886F8DDD6DFB64D1CD590CB99BAFD1E7B957788D0BAE7608852F70A9",
+      "lines": 688
+    },
+    {
+      "path": "shared/vba_extracted/frmProcessing.frm.bas",
+      "bytes": 4764,
+      "sha256": "B0FDAF11DD8157F1044880F473FF1079D6563AAE38178689BD77B1A8BC6C6BC5",
+      "lines": 218
+    },
+    {
+      "path": "shared/vba_extracted/frmQrCode.frm.bas",
+      "bytes": 17323,
+      "sha256": "AE05F00A4854D95944155CC73577964EB638F3F26EBEC2C602DFFEDBC17B1558",
+      "lines": 1004
+    },
+    {
+      "path": "shared/vba_extracted/frmWarning.frm.bas",
+      "bytes": 30621,
+      "sha256": "5A685E644291E62279305582F02430389F17A1641C3B84C795D15672B9879A8E",
+      "lines": 1434
+    },
+    {
+      "path": "shared/vba_extracted/ImageFormatter.bas.bas",
+      "bytes": 5554,
+      "sha256": "9EA98FFB7B37A4B38325CBE290BAE18CFD57305C4A4FD4F57862B0BA59E9ADB4",
+      "lines": 246
+    },
+    {
+      "path": "shared/vba_extracted/IyNormalizer.bas.bas",
+      "bytes": 15987,
+      "sha256": "01BF58ADE002214D24B9F962A318F39B763FC8375E91D8A904763D0001D2032E",
+      "lines": 762
+    },
+    {
+      "path": "shared/vba_extracted/LineBreakNormalizer.bas.bas",
+      "bytes": 9264,
+      "sha256": "C7889BC5BBC61FAEAE01C8EB7FC22C377D8D23110BD295FA082AE879250A591C",
+      "lines": 388
+    },
+    {
+      "path": "shared/vba_extracted/MsgBoxW.bas.bas",
+      "bytes": 1552,
+      "sha256": "2DCCF1B9CD3ED65D2CB89443B86F3DE2AC175CB545FF235191DA9EA5FAEC2936",
+      "lines": 64
+    },
+    {
+      "path": "shared/vba_extracted/MultiSpaceCollapser.bas.bas",
+      "bytes": 8815,
+      "sha256": "8221C27A7CC7BD308F8BC75A527C02A91886F84E7EA9269E00E8217AA3D4E17A",
+      "lines": 332
+    },
+    {
+      "path": "shared/vba_extracted/Operation.cls.bas",
+      "bytes": 785,
+      "sha256": "63E8963BB74436686F890533F0AA10FE5BC085EDEDDE261DF62EC95553196040",
+      "lines": 44
+    },
+    {
+      "path": "shared/vba_extracted/OperationLogger.bas.bas",
+      "bytes": 3874,
+      "sha256": "AB257F3892BCBE97069D7B3A2262F07A3E5A31AE7F6C7E93F6A1667E3CBD19CE",
+      "lines": 160
+    },
+    {
+      "path": "shared/vba_extracted/PageBreakInserter.bas.bas",
+      "bytes": 4301,
+      "sha256": "D804B4917226AF74B30BBED56D7F587A65E40FB8FB90F24ADCE0F55763CC6A77",
+      "lines": 156
+    },
+    {
+      "path": "shared/vba_extracted/PageFormatter.bas.bas",
+      "bytes": 7182,
+      "sha256": "389742F32A8FB7E7AB924B932A11864C4F09494BDF825D2EEDFC36B79E616B54",
+      "lines": 328
+    },
+    {
+      "path": "shared/vba_extracted/PageNumberFormatter.bas.bas",
+      "bytes": 9816,
+      "sha256": "3B3A8BC7396DD25EAD9F13D3B64268B340894AE6A8C73157A74C18B03E21F726",
+      "lines": 436
+    },
+    {
+      "path": "shared/vba_extracted/ParagraphFormatter.bas.bas",
+      "bytes": 2373,
+      "sha256": "D1357A2EC4A5705608EE45969B2C8495D2E3040A81082BC72688F29EE8AC51B5",
+      "lines": 88
+    },
+    {
+      "path": "shared/vba_extracted/ParagraphSnapshot.cls.bas",
+      "bytes": 2806,
+      "sha256": "86AACB14A70A3EE838DA6F41B17AC5FB9F81DFA53CA9CB58C1FFE64D359C64D8",
+      "lines": 120
+    },
+    {
+      "path": "shared/vba_extracted/ProcessingIndicator.bas.bas",
+      "bytes": 4005,
+      "sha256": "D1928A3D5494307BE9FBBE585D37CDF883B9B5A04F8937FD67E66977B29D8F7F",
+      "lines": 148
+    },
+    {
+      "path": "shared/vba_extracted/QrCodeGenerator.bas.bas",
+      "bytes": 44276,
+      "sha256": "F341217FB8842C5F64ED8E9928F89F3E2CE6B6AEB6C911B0CB9139D517F8DA6B",
+      "lines": 2306
+    },
+    {
+      "path": "shared/vba_extracted/RegimeDetector.bas.bas",
+      "bytes": 4864,
+      "sha256": "9BCBBDC7A0D4099A62234EB3D45E43C64448333621383259B04915474FA58A02",
+      "lines": 216
+    },
+    {
+      "path": "shared/vba_extracted/RegimeState.bas.bas",
+      "bytes": 6374,
+      "sha256": "5912B06FF3F59CE0F23BA317445725400CBA938AD62444396ED0A17149501930",
+      "lines": 254
+    },
+    {
+      "path": "shared/vba_extracted/RibbonCallbacks.bas.bas",
+      "bytes": 40142,
+      "sha256": "70771397D5961C27F6C8AB817FBC2CDCBE389CB4D080062B790D7F54752DC327",
+      "lines": 1618
+    },
+    {
+      "path": "shared/vba_extracted/RibbonHandle.bas.bas",
+      "bytes": 11740,
+      "sha256": "067367CBF4F9DF6FF897975F8B2624F5D1974B612EC80028A6A7652F8029C8FA",
+      "lines": 546
+    },
+    {
+      "path": "shared/vba_extracted/RuleData.bas.bas",
+      "bytes": 725839,
+      "sha256": "D0CFD8F4BFF8C69E615C9326A567B31DD899C8751081E7E7DF324AE166CF54EB",
+      "lines": 28778
+    },
+    {
+      "path": "shared/vba_extracted/RuleLoader.bas.bas",
+      "bytes": 28902,
+      "sha256": "A1CDD655397A92307482A114C7E32ACFE96564D73030ADF0AC526C2DFFF4DFBE",
+      "lines": 1426
+    },
+    {
+      "path": "shared/vba_extracted/SafetyGuard.bas.bas",
+      "bytes": 5835,
+      "sha256": "3B6FF66750803FF600EECC697000FB333E2F72C980A7A186344B71DAA6957B1A",
+      "lines": 242
+    },
+    {
+      "path": "shared/vba_extracted/SessionState.bas.bas",
+      "bytes": 8316,
+      "sha256": "448495B33C13EA0F0CD2495A14A6D2C828D18AC89A5D3C50E78838E63A7F3610",
+      "lines": 340
+    },
+    {
+      "path": "shared/vba_extracted/StyleBuilder.bas.bas",
+      "bytes": 21696,
+      "sha256": "C14074A10F1164BF9E3D2E19AE8F501731D1419DAF290A9A5ED7283C5FD70325",
+      "lines": 980
+    },
+    {
+      "path": "shared/vba_extracted/TableFormatter.bas.bas",
+      "bytes": 6321,
+      "sha256": "1EC39E58DC9EA202887EA88E9F3C4CAC7D6F2283236EF0CB050C0745AEF49F2B",
+      "lines": 286
+    },
+    {
+      "path": "shared/vba_extracted/TextFormatter.bas.bas",
+      "bytes": 18796,
+      "sha256": "0E0836729E3F4A7B1120FB196E66270F0426B1B39A88C55CCA5076E2611A2989",
+      "lines": 802
+    },
+    {
+      "path": "shared/vba_extracted/ThisDocument.cls.bas",
+      "bytes": 313,
+      "sha256": "EFF323452C8E898B8D89C97C9FB2ACF10283B9AAC0C51B2580D658F36022F863",
+      "lines": 16
+    },
+    {
+      "path": "shared/vba_extracted/ToneNormalizer.bas.bas",
+      "bytes": 24448,
+      "sha256": "347150ED887A1E3B9F8D4ACDB02A8417CE107BECAF436A465BBB7DBBA776872A",
+      "lines": 1104
+    },
+    {
+      "path": "shared/vba_extracted/TraceScope.cls.bas",
+      "bytes": 963,
+      "sha256": "ABB043F2AD3B8643295D2B97F5104C7A53BFC87D511E794504235984633A2A27",
+      "lines": 58
+    },
+    {
+      "path": "shared/vba_extracted/TrailingPageRemover.bas.bas",
+      "bytes": 7197,
+      "sha256": "07F752F73B1118B2DEF9D1CB7E57B73320AF4AF84C00031C2ED73539A67BDBB4",
+      "lines": 314
+    },
+    {
+      "path": "shared/vba_extracted/UnicodeNormalizer.bas.bas",
+      "bytes": 4253,
+      "sha256": "3968C103AA47768DAFD957FEDEE208FE310D7DA6D3EDF88CD96E76A8E6AA27EA",
+      "lines": 192
+    },
+    {
+      "path": "shared/vba_extracted/UrlOpener.bas.bas",
+      "bytes": 3896,
+      "sha256": "00EB2BB718C36D18D25D99CC4C780C0E87492154222356DE9F45D12CAF1F4AB6",
+      "lines": 176
+    },
+    {
+      "path": "shared/vba_extracted/Utils.bas.bas",
+      "bytes": 13705,
+      "sha256": "0685BBB051677D6ACB37A70BE56A9B271F9E33D9106BD1A60C6F1059CDCE8076",
+      "lines": 592
+    },
+    {
+      "path": "shared/vba_extracted/ViewOptions.bas.bas",
+      "bytes": 2003,
+      "sha256": "A135506BE1FCFD73E4461B537E32E3270F27EDF20E35F14833B8695EC034A0CC",
+      "lines": 98
+    },
+    {
+      "path": "shared/vba_extracted/WinApiFormStyle.bas.bas",
+      "bytes": 6328,
+      "sha256": "89A74B2C204123F13C576DB06838F45B11442C0E129B1DC1B8CE00C063740B61",
+      "lines": 316
+    },
+    {
+      "path": "src/ChuanHoa.AddIn.Vsto/ChuanHoa.AddIn.Vsto.csproj",
+      "bytes": 3965,
+      "sha256": "589DB3EE1948AB1A38B27B1D327AD6E01B625A24871EFCC0635AD56CAFB44487",
+      "lines": 88
+    },
+    {
+      "path": "src/ChuanHoa.AddIn.Vsto/Ribbon/ChuanHoaRibbon.Callbacks.g.cs",
+      "bytes": 9779,
+      "sha256": "5DB9D1F034D894665B08837FBB4C292B629C89319655ADEBAD28E2EFF551DD84",
+      "lines": 260
+    },
+    {
+      "path": "src/ChuanHoa.AddIn.Vsto/Ribbon/ChuanHoaRibbon.cs",
+      "bytes": 1588,
+      "sha256": "602D2CBFE546A44B99732C80DA11402432FCC4C0C2FB5C0E9670BB77D1EFDDBD",
+      "lines": 49
+    },
+    {
+      "path": "src/ChuanHoa.AddIn.Vsto/Ribbon/ChuanHoaRibbon.xml",
+      "bytes": 14091,
+      "sha256": "129470B4A6997B2DC5F08D76CC763AAD1DF9D363F43FB4464D828016AB88903B",
+      "lines": 92
+    },
+    {
+      "path": "src/ChuanHoa.AddIn.Vsto/Ribbon/IChuanHoaRibbonRuntime.cs",
+      "bytes": 673,
+      "sha256": "4F9220E5069EEACB63247039EF5E009B821AEC24112DF1A9C06727644CD6AD07",
+      "lines": 27
+    },
+    {
+      "path": "src/ChuanHoa.AddIn.Vsto/Runtime/DocumentContext.cs",
+      "bytes": 1332,
+      "sha256": "02F82C190AC79D696228E6F54FA5793712069C4F74E75C63247EAC0DC82A6A61",
+      "lines": 47
+    },
+    {
+      "path": "src/ChuanHoa.AddIn.Vsto/Runtime/DocumentContextStore.cs",
+      "bytes": 1827,
+      "sha256": "6DF2385F4A3B098838B80A4E7D8316B6E0F030185F12CB89E94EF3A275ED8D42",
+      "lines": 71
+    },
+    {
+      "path": "src/ChuanHoa.AddIn.Vsto/Runtime/RibbonRuntime.cs",
+      "bytes": 10765,
+      "sha256": "08EEE5E19F5AD246E0733D9486280BE1CA852CDFC02884256FC57026BD13B8C6",
+      "lines": 343
+    },
+    {
+      "path": "src/ChuanHoa.AddIn.Vsto/ThisAddIn.cs",
+      "bytes": 2609,
+      "sha256": "48244E52F106CEBD42990BE921A5CD5D64B6EC31A43597C95BB66EC5A8BAE33E",
+      "lines": 88
+    },
+    {
+      "path": "src/ChuanHoa.Api/appsettings.Development.json",
+      "bytes": 127,
+      "sha256": "73F95F9E0CEB205FC1C4DC50C07697FCFA29D7087868C2AEF1D504CB38C771EC",
+      "lines": 8
+    },
+    {
+      "path": "src/ChuanHoa.Api/appsettings.json",
+      "bytes": 151,
+      "sha256": "200332B434757A0054A3D356C91CDE01F2C48712BE8AA2BCB0F3E973619F06E3",
+      "lines": 9
+    },
+    {
+      "path": "src/ChuanHoa.Api/ChuanHoa.Api.csproj",
+      "bytes": 713,
+      "sha256": "F6F5D4F5A708681489F729860C3F3B94D3FB7F1C80901D3B9EE198DB9673315A",
+      "lines": 20
+    },
+    {
+      "path": "src/ChuanHoa.Api/ChuanHoa.Api.http",
+      "bytes": 137,
+      "sha256": "8F9DB8F013321295CEB2BACCE3DC775EAF6FD1F87E758F0AB004F0AB3FB697C1"
+    },
+    {
+      "path": "src/ChuanHoa.Api/Errors/ApiExceptionHandler.cs",
+      "bytes": 3671,
+      "sha256": "B7970C2343D39E498FC5F4F59B627DD5519BC0DCEB8F9168598A956BD3AF72D4",
+      "lines": 92
+    },
+    {
+      "path": "src/ChuanHoa.Api/Middleware/ApiErrorWriter.cs",
+      "bytes": 986,
+      "sha256": "02E10B8AE270F6915915891B8221CBE6B111CC74E86C7E1D97A8826E1942CB0A",
+      "lines": 35
+    },
+    {
+      "path": "src/ChuanHoa.Api/Middleware/CorrelationIdMiddleware.cs",
+      "bytes": 1268,
+      "sha256": "A5BC68FDE624DEFABAF73AE0BA48F942D58F67979B00F8A4CBE9207BD2565115",
+      "lines": 40
+    },
+    {
+      "path": "src/ChuanHoa.Api/Middleware/IdempotencyKeyValidationMiddleware.cs",
+      "bytes": 2225,
+      "sha256": "64FB1E4F34CF0424CD6219A0C230BB25A90168E09CCBE347ACBDE72635602A16",
+      "lines": 63
+    },
+    {
+      "path": "src/ChuanHoa.Api/Program.cs",
+      "bytes": 2841,
+      "sha256": "AA09B99DA9AC357E998AB59BD1C61E446418DEA809D6797C29155C0974D531EC",
+      "lines": 83
+    },
+    {
+      "path": "src/ChuanHoa.Api/Properties/launchSettings.json",
+      "bytes": 358,
+      "sha256": "26231AF0C336C0EA62BC3E7EE12CC8492AA882EA567D3D6CC51FA30D07976F4E",
+      "lines": 14
+    },
+    {
+      "path": "src/ChuanHoa.Application/ChuanHoa.Application.csproj",
+      "bytes": 502,
+      "sha256": "E6D506155BB88EE56B9E4CCFD58248771AB18A24C414562BB1A0DB08B47E6769",
+      "lines": 18
+    },
+    {
+      "path": "src/ChuanHoa.Application/Clock.cs",
+      "bytes": 201,
+      "sha256": "F72B1441760299092171D40F1315CDCF956D7AB8BDF0AF80B337232E820D3F56",
+      "lines": 11
+    },
+    {
+      "path": "src/ChuanHoa.Application/Persistence/IdempotencyContracts.cs",
+      "bytes": 1439,
+      "sha256": "B0EF6F1B90F80C96D3CEB4305C12B76690ED0AE07E268E1F9B5D879D26091626",
+      "lines": 56
+    },
+    {
+      "path": "src/ChuanHoa.Application/Persistence/OutboxContracts.cs",
+      "bytes": 347,
+      "sha256": "D889536F36C03E50A955F6E974758A4BD9DAD3F2C425CC2E8732DEB3F4AEB1F4",
+      "lines": 14
+    },
+    {
+      "path": "src/ChuanHoa.Application/ServiceCollectionExtensions.cs",
+      "bytes": 580,
+      "sha256": "43AC4CCEB8D31630601E08738D5860C4BDB51F7529685052EA41359A7818EC4B",
+      "lines": 18
+    },
+    {
+      "path": "src/ChuanHoa.Contracts/ApiContracts.cs",
+      "bytes": 1050,
+      "sha256": "664ABD42FF5092FF877B7BF0A6E96404B194468A568F7EEF4E7BAFD92E36328F",
+      "lines": 43
+    },
+    {
+      "path": "src/ChuanHoa.Contracts/AuthorizationContracts.cs",
+      "bytes": 1488,
+      "sha256": "1AF0D4A8A1840AD223CD5FA039A31530700BB32CE19534C5D39D14C468E49798",
+      "lines": 62
+    },
+    {
+      "path": "src/ChuanHoa.Contracts/ChuanHoa.Contracts.csproj",
+      "bytes": 219,
+      "sha256": "61E3F2D043E37F0DB4BE1D8083DD31BEBBFBB8FDE2CF027327DB2556C16BC385",
+      "lines": 9
+    },
+    {
+      "path": "src/ChuanHoa.Contracts/DocumentContracts.cs",
+      "bytes": 2463,
+      "sha256": "0997A97A8434F4D96D74113D03A1F728D1DECB4EFCC00B043BA9B82488ABE53D",
+      "lines": 116
+    },
+    {
+      "path": "src/ChuanHoa.Contracts/FindingContracts.cs",
+      "bytes": 1021,
+      "sha256": "881C28C903E09CAC5FE852E1E1BC5DB5F07254136AF93FF937C1FCBA11697DFE",
+      "lines": 51
+    },
+    {
+      "path": "src/ChuanHoa.Contracts/FixPlanContracts.cs",
+      "bytes": 1293,
+      "sha256": "5780DD821A5199108A8AA05937D1D1A72188761A591595FDC88783426F28E41F",
+      "lines": 50
+    },
+    {
+      "path": "src/ChuanHoa.Domain/ChuanHoa.Domain.csproj",
+      "bytes": 336,
+      "sha256": "424342E59273FF33E8B97764625132DE917DB27CEEDF3F41D8CB8E2FEE8EF788",
+      "lines": 13
+    },
+    {
+      "path": "src/ChuanHoa.Domain/Commercial/CommercialModels.cs",
+      "bytes": 805,
+      "sha256": "89030C5DD1B18E05013496E3E9E7415B275254AB386BD8FBA2AD1A0BBEEBB753",
+      "lines": 38
+    },
+    {
+      "path": "src/ChuanHoa.Domain/Commercial/OfferSelector.cs",
+      "bytes": 1280,
+      "sha256": "DE2E8C82C5C7A89152A459CF14028C2CCBE5D0FF47F85F47FD01B9FA7B234CB4",
+      "lines": 33
+    },
+    {
+      "path": "src/ChuanHoa.Domain/Common/DomainException.cs",
+      "bytes": 225,
+      "sha256": "44B0950863C10868733C2D95AA643AC26EE7D532B48A9822AF3D875D5E363ABD",
+      "lines": 11
+    },
+    {
+      "path": "src/ChuanHoa.Domain/Security/GrantValidator.cs",
+      "bytes": 2630,
+      "sha256": "E04B7E0A0A0D76A90CF0329C26EF51CFF8672FD915E1EAC2FB7B161FE36C6B15",
+      "lines": 60
+    },
+    {
+      "path": "src/ChuanHoa.Domain/Trials/TrialEligibilityResolver.cs",
+      "bytes": 3163,
+      "sha256": "926F1811BB9147C33CDB6B98FAF8CA300C15FFCF3ACBEFBD664F0D89C86D5476",
+      "lines": 86
+    },
+    {
+      "path": "src/ChuanHoa.Domain/Trials/TrialModels.cs",
+      "bytes": 1237,
+      "sha256": "BF3BB41083409E1E76DA1F642670DFF96CE2914407CBAA9E6E48C301F0A88F7D",
+      "lines": 60
+    },
+    {
+      "path": "src/ChuanHoa.Infrastructure/ChuanHoa.Infrastructure.csproj",
+      "bytes": 680,
+      "sha256": "035A46EF36EEF50DB096899C6ED088F6D61156A0199F2E7AC8346D0B57A9CE39",
+      "lines": 23
+    },
+    {
+      "path": "src/ChuanHoa.Infrastructure/Persistence/PostgresIdempotencyStore.cs",
+      "bytes": 11380,
+      "sha256": "4652139D3A6351E92AAAFA5AB7EC2CFA3A24AC3CE289CB67C9D9C742C638566F",
+      "lines": 275
+    },
+    {
+      "path": "src/ChuanHoa.Infrastructure/Persistence/PostgresOutboxWriter.cs",
+      "bytes": 2137,
+      "sha256": "DCB7698E4F594A8A5201395590D60A6C99AAAC3BAB726D5D876643B1727BC524",
+      "lines": 55
+    },
+    {
+      "path": "src/ChuanHoa.Infrastructure/Persistence/PostgresTransactionRunner.cs",
+      "bytes": 974,
+      "sha256": "BCD6DC38BE67B6332C02B8FAF7D5BB7106CF5A4DE68542270FFF86DEF4DEE6E8",
+      "lines": 30
+    },
+    {
+      "path": "src/ChuanHoa.Infrastructure/ServiceCollectionExtensions.cs",
+      "bytes": 1199,
+      "sha256": "7EBA6875B44A713CD47EECC23933D97A90FAD7CF35CC90D084A15E4FA2A8CDA5",
+      "lines": 32
+    },
+    {
+      "path": "tests/ChuanHoa.Api.Tests/ApiBoundaryTests.cs",
+      "bytes": 6742,
+      "sha256": "CD9E33EA4A5C9C7EDE7CA2C7F8D073AB72E055E9EEB2D5072A5AE913E662AC5C",
+      "lines": 172
+    },
+    {
+      "path": "tests/ChuanHoa.Api.Tests/ChuanHoa.Api.Tests.csproj",
+      "bytes": 977,
+      "sha256": "46983BB14E2AD7A0ABDA24DFF57506ACC269C7ABBA316BC5315A5A9884A07F6D",
+      "lines": 28
+    },
+    {
+      "path": "tests/ChuanHoa.Contracts.Tests/ChuanHoa.Contracts.Tests.csproj",
+      "bytes": 966,
+      "sha256": "053757EC854F0A776251A06178D7640CA87725A50C4FA0BB3048A2318C3922B3",
+      "lines": 31
+    },
+    {
+      "path": "tests/ChuanHoa.Contracts.Tests/ContractSerializationTests.cs",
+      "bytes": 665,
+      "sha256": "C6B8AD9208E209484DE78B56477FE86C83A09F91ADF8C28DE6731279E5851659",
+      "lines": 23
+    },
+    {
+      "path": "tests/ChuanHoa.Contracts.Tests/OpenApiContractTests.cs",
+      "bytes": 1560,
+      "sha256": "1DBA127D2E8AABEAFFEC573D81CECF55D26934D60B82DDDCE4ED3FBC00D15DD2",
+      "lines": 42
+    },
+    {
+      "path": "tests/ChuanHoa.Domain.Tests/ChuanHoa.Domain.Tests.csproj",
+      "bytes": 843,
+      "sha256": "1D105D39995F4E1B6167751DF8B815105B27E05014B953CCFDD0A54DE833C522",
+      "lines": 26
+    },
+    {
+      "path": "tests/ChuanHoa.Domain.Tests/ExecutionGrantValidatorTests.cs",
+      "bytes": 3083,
+      "sha256": "22E85F3818F449780349BA27D18F1287383FA0D982076D395EEF5B7206F0D488",
+      "lines": 88
+    },
+    {
+      "path": "tests/ChuanHoa.Domain.Tests/OfferSelectorTests.cs",
+      "bytes": 2040,
+      "sha256": "19FC5C24D0C80F17ED3FE6DB25B8D96FF030996BF6444A10A0E82E405A4651BC",
+      "lines": 59
+    },
+    {
+      "path": "tests/ChuanHoa.Domain.Tests/TrialEligibilityResolverTests.cs",
+      "bytes": 3634,
+      "sha256": "C53C00626015D82D4BA9AC04C62DF7F3895664887355AE596B58DB6100E967A5",
+      "lines": 99
+    },
+    {
+      "path": "tests/ChuanHoa.Infrastructure.IntegrationTests/ChuanHoa.Infrastructure.IntegrationTests.csproj",
+      "bytes": 926,
+      "sha256": "1A53BBC8C9022235264A9244231BB4F0D878845AD502933F080089774F9530B0",
+      "lines": 27
+    },
+    {
+      "path": "tests/ChuanHoa.Infrastructure.IntegrationTests/PostgresPersistenceTests.cs",
+      "bytes": 8037,
+      "sha256": "C4D6B161012CB87F760F0459C3B0F97BF78A72E3E0B24A0FBE5FE23454C070CC",
+      "lines": 209
+    },
+    {
+      "path": "tools/baseline/generate_inventory.py",
+      "bytes": 18333,
+      "sha256": "65C73328832014EB2E952A6B08CC947EB49CC6C5AAFC4BD50DF7F23C3DC6F374",
+      "lines": 491
+    },
+    {
+      "path": "tools/contracts/generate_ribbon_contract.py",
+      "bytes": 13806,
+      "sha256": "CA1BE8632906AA0418850E009C52058537F80AF96ED606A2A85FC19273AA810B",
+      "lines": 187
+    },
+    {
+      "path": "tools/database/verify_persistence.ps1",
+      "bytes": 6368,
+      "sha256": "A80DB2F539F840F83365A3F64CDBDF6F103962F24BE18C13745DD50D3BD8F40E",
+      "lines": 173
+    },
+    {
+      "path": "tools/database/verify_v001.ps1",
+      "bytes": 7792,
+      "sha256": "B4AC53AAC10B863DE212E26F4613727B3769F4F76877BC08C0183CFBFE365C1D",
+      "lines": 212
+    },
+    {
+      "path": "tools/database/verify_v001_assertions.sql",
+      "bytes": 15541,
+      "sha256": "E5EF38969352D46B3F47E70E3846CA7D899F21FD8B87DDF21F225A7DB86B4AB2"
+    },
+    {
+      "path": "tools/database/verify_v001_down_assertions.sql",
+      "bytes": 802,
+      "sha256": "EA1CEB4EA803401B8132A0905F2419388A85C77C289F61964F66E1CB28570382"
+    },
+    {
+      "path": "tools/vsto/generate_vsto_ribbon.py",
+      "bytes": 9320,
+      "sha256": "D1C72D3BEBF164422173D21C79F834E8B60CBF1E47A1B9CE9AA5B089F6344C79",
+      "lines": 248
+    },
+    {
+      "path": "tools/vsto/validate_vsto_source.py",
+      "bytes": 6236,
+      "sha256": "A60A9BB66F2034804DE42C7B91B4F6AA6314E423A7528170405F6F9CCF7047BA",
+      "lines": 167
+    }
+  ]
+}

@@ -1,0 +1,832 @@
+{
+  "artefact": "shared/ChuanHoaTheThuc_Full_Ribbon.dotm",
+  "artefactSha256": "74E7FAE1D8B80BCE22054421AB59D37B5C726236554A1AD145C32B99A8997105",
+  "xmlEntry": "customUI/customUI14.xml",
+  "xmlSha256": "0A1EE70DCE6425CE6B414A2CEE2DD8633063BF5230F8456F359CE2EADDAAE272",
+  "schema": "http://schemas.microsoft.com/office/2009/07/customui",
+  "onLoad": "RibbonOnLoad",
+  "tab": {
+    "id": "tabTheThuc",
+    "label": "CHUẨN HÓA THỂ THỨC (2026)"
+  },
+  "groups": [
+    {
+      "order": 1,
+      "id": "grpAutoFixHero",
+      "label": "1-Click Auto-Fix"
+    },
+    {
+      "order": 2,
+      "id": "grpKhoiDong",
+      "label": "Khởi động"
+    },
+    {
+      "order": 3,
+      "id": "grpDinhDang",
+      "label": "Định dạng"
+    },
+    {
+      "order": 4,
+      "id": "grpBangBieu",
+      "label": "Bảng biểu và hình ảnh"
+    },
+    {
+      "order": 5,
+      "id": "grpChinhTaSo",
+      "label": "Chính tả và số"
+    },
+    {
+      "order": 6,
+      "id": "grpHienThi",
+      "label": "Hiển thị"
+    },
+    {
+      "order": 7,
+      "id": "grpAbout",
+      "label": "About"
+    }
+  ],
+  "counts": {
+    "tabs": 1,
+    "groups": 7,
+    "buttons": 36,
+    "menus": 4,
+    "dropDowns": 2,
+    "checkBoxes": 3,
+    "interactiveControls": 45
+  },
+  "controls": [
+    {
+      "order": 1,
+      "groupId": "grpAutoFixHero",
+      "parentContainerId": null,
+      "controlType": "button",
+      "id": "btnAutoFixAll2026",
+      "label": "CHUẨN HÓA TOÀN BỘ",
+      "size": "large",
+      "imageMso": "AutoFormatNow",
+      "callbacks": {
+        "onAction": "OnDinhDangTrangGiay"
+      },
+      "screenTip": "1-Click Auto-Fix Toàn Diện (2026)",
+      "superTip": "Tự động căn lề A4, đổi font Times New Roman, in đậm Quốc hiệu, kẻ đường chuẩn NĐ30/HD05, lặp header bảng, chống rách hàng và xóa trang trắng thừa chỉ với 1 click!",
+      "staticItems": []
+    },
+    {
+      "order": 2,
+      "groupId": "grpKhoiDong",
+      "parentContainerId": null,
+      "controlType": "button",
+      "id": "btnLuuDocx",
+      "label": "Lưu thành DOCX",
+      "size": "large",
+      "imageMso": "FileSaveAs",
+      "callbacks": {
+        "getEnabled": "GetEnabledLuuDocx",
+        "onAction": "OnLuuDocx"
+      },
+      "screenTip": "Lưu thành DOCX",
+      "superTip": "Lưu lại dưới dạng file .docx",
+      "staticItems": []
+    },
+    {
+      "order": 3,
+      "groupId": "grpKhoiDong",
+      "parentContainerId": "boxDocDuLieu",
+      "controlType": "button",
+      "id": "btnDocDuLieu",
+      "label": "Đọc dữ liệu       ",
+      "size": "normal",
+      "imageMso": "MailMergeUpdateLabels",
+      "callbacks": {
+        "getEnabled": "GetEnabledRequiresDocx",
+        "onAction": "OnDocDuLieu"
+      },
+      "screenTip": "Đọc dữ liệu",
+      "superTip": "Đọc dữ liệu của file. Bắt buộc chạy lần đầu trước khi sử dụng các tiện ích khác",
+      "staticItems": []
+    },
+    {
+      "order": 4,
+      "groupId": "grpKhoiDong",
+      "parentContainerId": "boxDocDuLieu",
+      "controlType": "dropDown",
+      "id": "ddQuyDinh",
+      "label": "Quy định:",
+      "size": null,
+      "imageMso": null,
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument",
+        "getSelectedItemIndex": "GetSelectedIndexQuyDinh",
+        "onAction": "OnChonQuyDinh"
+      },
+      "screenTip": "Quy định thể thức",
+      "superTip": "Chọn bộ quy định về thể thức áp dụng cho văn bản này. Add-in tự nhận diện, bạn có thể chọn lại thủ công",
+      "staticItems": [
+        {
+          "id": "iqdND30",
+          "label": "VB hành chính (NĐ 30)"
+        },
+        {
+          "id": "iqdVIETTEL",
+          "label": "Viettel (QĐ 11095)"
+        },
+        {
+          "id": "iqdDANG",
+          "label": "VB của Đảng (HD 05)"
+        }
+      ]
+    },
+    {
+      "order": 5,
+      "groupId": "grpKhoiDong",
+      "parentContainerId": "boxDocDuLieu",
+      "controlType": "dropDown",
+      "id": "ddLoaiVanBan",
+      "label": "Loại:",
+      "size": null,
+      "imageMso": null,
+      "callbacks": {
+        "getEnabled": "GetEnabledLoaiVanBan",
+        "getItemCount": "GetItemCountLoaiVanBan",
+        "getItemLabel": "GetItemLabelLoaiVanBan",
+        "getSelectedItemIndex": "GetSelectedIndexLoaiVanBan",
+        "onAction": "OnChonLoaiVanBan"
+      },
+      "screenTip": "Loại văn bản",
+      "superTip": "Add-in tự nhận diện loại văn bản đang soạn thảo. Bạn có thể chọn lại thủ công. Danh mục thay đổi theo Quy định đang chọn (Viettel có thêm 5 loại riêng)",
+      "staticItems": []
+    },
+    {
+      "order": 6,
+      "groupId": "grpKhoiDong",
+      "parentContainerId": null,
+      "controlType": "button",
+      "id": "btnKiemTra",
+      "label": "Kiểm tra thể thức",
+      "size": "large",
+      "imageMso": "FileCompatibilityCheckerWord",
+      "callbacks": {
+        "getEnabled": "GetEnabledKiemTra",
+        "onAction": "OnKiemTra"
+      },
+      "screenTip": "Kiểm tra thể thức",
+      "superTip": "Kiểm tra khổ giấy, lề, kiểu chữ, thành phần thể thức...",
+      "staticItems": []
+    },
+    {
+      "order": 7,
+      "groupId": "grpKhoiDong",
+      "parentContainerId": null,
+      "controlType": "button",
+      "id": "btnKiemTraChinhTa",
+      "label": "Kiểm tra chính tả",
+      "size": "large",
+      "imageMso": "SpellingAndGrammar",
+      "callbacks": {
+        "getEnabled": "GetEnabledKiemTra",
+        "onAction": "OnKiemTraChinhTa"
+      },
+      "screenTip": "Kiểm tra chính tả",
+      "superTip": "Kiểm tra từ điển chính tả, viết hoa, đặt dấu thanh/i-y không thống nhất",
+      "staticItems": []
+    },
+    {
+      "order": 8,
+      "groupId": "grpKhoiDong",
+      "parentContainerId": null,
+      "controlType": "button",
+      "id": "btnChuyenDoiUnicode",
+      "label": "Chuyển đổi Unicode",
+      "size": "large",
+      "imageMso": "ReplaceDialog",
+      "callbacks": {
+        "getEnabled": "GetEnabledChuyenDoiUnicode",
+        "onAction": "OnChuyenDoiUnicode"
+      },
+      "screenTip": "Chuyển đổi Unicode",
+      "superTip": "Chuyển đổi các font chữ cũ (.VnTime, VNI-Times) sang Times New Roman",
+      "staticItems": []
+    },
+    {
+      "order": 9,
+      "groupId": "grpDinhDang",
+      "parentContainerId": null,
+      "controlType": "button",
+      "id": "btnDinhDangTrangGiay",
+      "label": "Định dạng trang giấy",
+      "size": "large",
+      "imageMso": "PageSizeGallery",
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument",
+        "onAction": "OnDinhDangTrangGiay"
+      },
+      "screenTip": "Định dạng trang giấy",
+      "superTip": "Định dạng cỡ giấy và khoảng cách lề",
+      "staticItems": []
+    },
+    {
+      "order": 10,
+      "groupId": "grpDinhDang",
+      "parentContainerId": "boxChenTrang",
+      "controlType": "button",
+      "id": "btnChenTrangNgang",
+      "label": "Chèn trang ngang",
+      "size": "normal",
+      "imageMso": "PageOrientationLandscape",
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument",
+        "onAction": "OnChenTrangNgang"
+      },
+      "screenTip": "Chèn trang ngang",
+      "superTip": "Chèn trang mới theo chiều ngang",
+      "staticItems": []
+    },
+    {
+      "order": 11,
+      "groupId": "grpDinhDang",
+      "parentContainerId": "boxChenTrang",
+      "controlType": "button",
+      "id": "btnChenTrangDoc",
+      "label": "Chèn trang dọc  ",
+      "size": "normal",
+      "imageMso": "PageOrientationPortrait",
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument",
+        "onAction": "OnChenTrangDoc"
+      },
+      "screenTip": "Chèn trang dọc",
+      "superTip": "Chèn trang mới theo chiều dọc",
+      "staticItems": []
+    },
+    {
+      "order": 12,
+      "groupId": "grpDinhDang",
+      "parentContainerId": "boxChenTrang",
+      "controlType": "button",
+      "id": "btnXoaTrangThua",
+      "label": "Xóa trang thừa  ",
+      "size": "normal",
+      "imageMso": "ReviewRejectChangeMenu",
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument",
+        "onAction": "OnXoaTrangThua"
+      },
+      "screenTip": "Xóa trang thừa",
+      "superTip": "Xóa trang trống thừa ở cuối văn bản",
+      "staticItems": []
+    },
+    {
+      "order": 13,
+      "groupId": "grpDinhDang",
+      "parentContainerId": null,
+      "controlType": "menu",
+      "id": "mnuDungBoStyle",
+      "label": "Dựng bộ Style",
+      "size": "large",
+      "imageMso": "StyleGalleryClassic",
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument"
+      },
+      "screenTip": "Dựng bộ Style",
+      "superTip": "Dựng bộ Style để soạn thảo văn bản",
+      "staticItems": []
+    },
+    {
+      "order": 14,
+      "groupId": "grpDinhDang",
+      "parentContainerId": "mnuDungBoStyle",
+      "controlType": "button",
+      "id": "btnDungBoStyleCo15",
+      "label": "Cỡ chữ 15",
+      "size": null,
+      "imageMso": "FontSizeIncreaseWord",
+      "callbacks": {
+        "getEnabled": "GetEnabledCoChu15",
+        "onAction": "OnDungBoStyle15"
+      },
+      "screenTip": "Dựng bộ Style — Cỡ chữ 15",
+      "superTip": "Dựng bộ Style với bộ cỡ chữ 15",
+      "staticItems": []
+    },
+    {
+      "order": 15,
+      "groupId": "grpDinhDang",
+      "parentContainerId": "mnuDungBoStyle",
+      "controlType": "button",
+      "id": "btnDungBoStyleCo14",
+      "label": "Cỡ chữ 14",
+      "size": null,
+      "imageMso": "ActiveXLabel",
+      "callbacks": {
+        "getEnabled": "GetEnabledCoChu14",
+        "onAction": "OnDungBoStyle14"
+      },
+      "screenTip": "Dựng bộ Style — Cỡ chữ 14",
+      "superTip": "Dựng bộ Style với bộ cỡ chữ 14",
+      "staticItems": []
+    },
+    {
+      "order": 16,
+      "groupId": "grpDinhDang",
+      "parentContainerId": "mnuDungBoStyle",
+      "controlType": "button",
+      "id": "btnDungBoStyleCo13",
+      "label": "Cỡ chữ 13",
+      "size": null,
+      "imageMso": "FontSizeDecreaseWord",
+      "callbacks": {
+        "getEnabled": "GetEnabledCoChu13",
+        "onAction": "OnDungBoStyle13"
+      },
+      "screenTip": "Dựng bộ Style — Cỡ chữ 13",
+      "superTip": "Dựng bộ Style với bộ cỡ chữ 13",
+      "staticItems": []
+    },
+    {
+      "order": 17,
+      "groupId": "grpDinhDang",
+      "parentContainerId": "boxCoChuGianChu",
+      "controlType": "button",
+      "id": "btnCoChu15",
+      "label": "Cỡ chữ 15",
+      "size": "normal",
+      "imageMso": "FontSizeIncreaseWord",
+      "callbacks": {
+        "getEnabled": "GetEnabledCoChu15",
+        "onAction": "OnCoChu15"
+      },
+      "screenTip": "Cỡ chữ 15",
+      "superTip": "Chuyển toàn bộ văn bản thành bộ cỡ chữ 15",
+      "staticItems": []
+    },
+    {
+      "order": 18,
+      "groupId": "grpDinhDang",
+      "parentContainerId": "boxCoChuGianChu",
+      "controlType": "button",
+      "id": "btnCoChu14",
+      "label": "Cỡ chữ 14",
+      "size": "normal",
+      "imageMso": "ActiveXLabel",
+      "callbacks": {
+        "getEnabled": "GetEnabledCoChu14",
+        "onAction": "OnCoChu14"
+      },
+      "screenTip": "Cỡ chữ 14",
+      "superTip": "Chuyển toàn bộ văn bản thành bộ cỡ chữ 14",
+      "staticItems": []
+    },
+    {
+      "order": 19,
+      "groupId": "grpDinhDang",
+      "parentContainerId": "boxCoChuGianChu",
+      "controlType": "button",
+      "id": "btnCoChu13",
+      "label": "Cỡ chữ 13",
+      "size": "normal",
+      "imageMso": "FontSizeDecreaseWord",
+      "callbacks": {
+        "getEnabled": "GetEnabledCoChu13",
+        "onAction": "OnCoChu13"
+      },
+      "screenTip": "Cỡ chữ 13",
+      "superTip": "Chuyển toàn bộ văn bản thành bộ cỡ chữ 13",
+      "staticItems": []
+    },
+    {
+      "order": 20,
+      "groupId": "grpDinhDang",
+      "parentContainerId": "boxKeepPageNum",
+      "controlType": "button",
+      "id": "btnKeepWithNext",
+      "label": "Keep with next",
+      "size": "normal",
+      "imageMso": "FootnoteNextWord",
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument",
+        "onAction": "OnKeepWithNext"
+      },
+      "screenTip": "Keep with next",
+      "superTip": "Giữ đoạn hiện tại cùng trang với đoạn kế tiếp",
+      "staticItems": []
+    },
+    {
+      "order": 21,
+      "groupId": "grpDinhDang",
+      "parentContainerId": "boxKeepPageNum",
+      "controlType": "button",
+      "id": "btnChenSoTrang",
+      "label": "Chèn số trang",
+      "size": "normal",
+      "imageMso": "HeaderFooterPageNumberInsert",
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument",
+        "onAction": "OnChenSoTrang"
+      },
+      "screenTip": "Chèn số trang",
+      "superTip": "Chèn số trang tự động",
+      "staticItems": []
+    },
+    {
+      "order": 22,
+      "groupId": "grpDinhDang",
+      "parentContainerId": "boxGianChu",
+      "controlType": "button",
+      "id": "btnCoChu",
+      "label": "◀   ",
+      "size": "normal",
+      "imageMso": "CharacterSpacingCondensed",
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument",
+        "onAction": "OnCoChu"
+      },
+      "screenTip": "Co chữ lại",
+      "superTip": "Co chữ đang chọn -0,1pt",
+      "staticItems": []
+    },
+    {
+      "order": 23,
+      "groupId": "grpDinhDang",
+      "parentContainerId": "boxGianChu",
+      "controlType": "button",
+      "id": "btnGianChuNormal",
+      "label": "⬤   ",
+      "size": "normal",
+      "imageMso": "CharacterSpacingNormal",
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument",
+        "onAction": "OnGianChuNormal"
+      },
+      "screenTip": "Về Normal",
+      "superTip": "Bỏ co giãn chữ",
+      "staticItems": []
+    },
+    {
+      "order": 24,
+      "groupId": "grpDinhDang",
+      "parentContainerId": "boxGianChu",
+      "controlType": "button",
+      "id": "btnGianChuRa",
+      "label": "▶   ",
+      "size": "normal",
+      "imageMso": "CharacterSpacingExpanded",
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument",
+        "onAction": "OnGianChuRa"
+      },
+      "screenTip": "Giãn chữ ra",
+      "superTip": "Giãn chữ đang chọn +0,1pt",
+      "staticItems": []
+    },
+    {
+      "order": 25,
+      "groupId": "grpBangBieu",
+      "parentContainerId": "boxBangCanGiua",
+      "controlType": "button",
+      "id": "btnLapDongTieuDe",
+      "label": "Lặp Tiêu đề bảng",
+      "size": "normal",
+      "imageMso": "TableRepeatHeaderRows",
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument",
+        "onAction": "OnLapDongTieuDe"
+      },
+      "screenTip": "Lặp Tiêu đề bảng",
+      "superTip": "Lặp tiêu đề tất cả các bảng trong văn bản",
+      "staticItems": []
+    },
+    {
+      "order": 26,
+      "groupId": "grpBangBieu",
+      "parentContainerId": "boxBangCanGiua",
+      "controlType": "button",
+      "id": "btnChuanHoaBang",
+      "label": "Căn giữa bảng   ",
+      "size": "normal",
+      "imageMso": "TableAutoFitContents",
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument",
+        "onAction": "OnChuanHoaBang"
+      },
+      "screenTip": "Căn giữa bảng",
+      "superTip": "Căn giữa và AutoFit to Window tất cả các bảng trong văn bản",
+      "staticItems": []
+    },
+    {
+      "order": 27,
+      "groupId": "grpBangBieu",
+      "parentContainerId": "boxBangCanGiua",
+      "controlType": "button",
+      "id": "btnChuanHoaAnh",
+      "label": "Căn giữa ảnh    ",
+      "size": "normal",
+      "imageMso": "CaptionInsert",
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument",
+        "onAction": "OnChuanHoaAnh"
+      },
+      "screenTip": "Căn giữa ảnh",
+      "superTip": "Căn giữa và chỉnh vừa chiều ngang tất cả các ảnh trong bản",
+      "staticItems": []
+    },
+    {
+      "order": 28,
+      "groupId": "grpBangBieu",
+      "parentContainerId": "boxCanO",
+      "controlType": "button",
+      "id": "btnCanDinhO",
+      "label": "Căn đỉnh ô            ",
+      "size": "normal",
+      "imageMso": "TableCellAlignTop",
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument",
+        "onAction": "OnCanDinhO"
+      },
+      "screenTip": "Căn đỉnh ô",
+      "superTip": "Căn chữ phía trên ô cho bảng hiện tại",
+      "staticItems": []
+    },
+    {
+      "order": 29,
+      "groupId": "grpBangBieu",
+      "parentContainerId": "boxCanO",
+      "controlType": "button",
+      "id": "btnCanGiuaO",
+      "label": "Căn giữa ô            ",
+      "size": "normal",
+      "imageMso": "TableCellAlignMiddleCenter",
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument",
+        "onAction": "OnCanGiuaO"
+      },
+      "screenTip": "Căn giữa ô",
+      "superTip": "Căn chữ ở giữa ô cho bảng hiện tại",
+      "staticItems": []
+    },
+    {
+      "order": 30,
+      "groupId": "grpBangBieu",
+      "parentContainerId": "boxCanO",
+      "controlType": "button",
+      "id": "btnXoaKyTuThuaBangExcel",
+      "label": "Xóa ký tự thừa (Excel)",
+      "size": "normal",
+      "imageMso": "CellsDelete",
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument",
+        "onAction": "OnXoaKyTuThuaBangExcel"
+      },
+      "screenTip": "Xóa ký tự thừa (Excel)",
+      "superTip": "Xóa ký tự thừa khi dán bảng từ Excel",
+      "staticItems": []
+    },
+    {
+      "order": 31,
+      "groupId": "grpBangBieu",
+      "parentContainerId": null,
+      "controlType": "button",
+      "id": "btnChenQrCode",
+      "label": "Chèn mã QR",
+      "size": "large",
+      "imageMso": "ViewFocusModeView",
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument",
+        "onAction": "OnChenQrCode"
+      },
+      "screenTip": "Chèn mã QR",
+      "superTip": "Chèn mã QR vào văn bản",
+      "staticItems": []
+    },
+    {
+      "order": 32,
+      "groupId": "grpChinhTaSo",
+      "parentContainerId": null,
+      "controlType": "menu",
+      "id": "mnuBoDau",
+      "label": "Bỏ dấu",
+      "size": "large",
+      "imageMso": "SyntexEsign",
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument"
+      },
+      "screenTip": "Bỏ dấu",
+      "superTip": "Áp dụng quy tắc bỏ dấu kiểu oà, uý hoặc òa, úy cho toàn bộ văn bản",
+      "staticItems": []
+    },
+    {
+      "order": 33,
+      "groupId": "grpChinhTaSo",
+      "parentContainerId": "mnuBoDau",
+      "controlType": "button",
+      "id": "btnKieuOaUy",
+      "label": "Kiểu oà, uý",
+      "size": null,
+      "imageMso": null,
+      "callbacks": {
+        "onAction": "OnKieuOaUy"
+      },
+      "screenTip": "Kiểu oà, uý",
+      "superTip": "Chuyển toàn bộ dấu thanh sang dạng đặt trên âm chính (theo quy định chính tả của Bộ Giáo dục và Đào tạo).",
+      "staticItems": []
+    },
+    {
+      "order": 34,
+      "groupId": "grpChinhTaSo",
+      "parentContainerId": "mnuBoDau",
+      "controlType": "button",
+      "id": "btnKieuOaUy2",
+      "label": "Kiểu òa, úy",
+      "size": null,
+      "imageMso": null,
+      "callbacks": {
+        "onAction": "OnKieuOaUy2"
+      },
+      "screenTip": "Kiểu òa, úy",
+      "superTip": "Chuyển toàn bộ dấu thanh sang dạng đặt trên nguyên âm đầu (theo thông lệ).",
+      "staticItems": []
+    },
+    {
+      "order": 35,
+      "groupId": "grpChinhTaSo",
+      "parentContainerId": null,
+      "controlType": "menu",
+      "id": "mnuIY",
+      "label": "i / y",
+      "size": "large",
+      "imageMso": null,
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument",
+        "getImage": "GetImageIY"
+      },
+      "screenTip": "i / y",
+      "superTip": "Áp dụng quy tắc dùng i / y cho toàn bộ văn bản",
+      "staticItems": []
+    },
+    {
+      "order": 36,
+      "groupId": "grpChinhTaSo",
+      "parentContainerId": "mnuIY",
+      "controlType": "button",
+      "id": "btnKieuI",
+      "label": "Kiểu i",
+      "size": null,
+      "imageMso": null,
+      "callbacks": {
+        "onAction": "OnKieuI"
+      },
+      "screenTip": "Kiểu i",
+      "superTip": "Theo quy định chính tả của Bộ Giáo dục và Đào tạo: hi vọng, kỉ niệm, lí luận, mĩ thuật, tỉ lệ,…",
+      "staticItems": []
+    },
+    {
+      "order": 37,
+      "groupId": "grpChinhTaSo",
+      "parentContainerId": "mnuIY",
+      "controlType": "button",
+      "id": "btnKieuY",
+      "label": "Kiểu y",
+      "size": null,
+      "imageMso": null,
+      "callbacks": {
+        "onAction": "OnKieuY"
+      },
+      "screenTip": "Kiểu y",
+      "superTip": "Theo thông lệ: hy vọng, kỷ niệm, lý luận, mỹ thuật, tỷ lệ,…",
+      "staticItems": []
+    },
+    {
+      "order": 38,
+      "groupId": "grpChinhTaSo",
+      "parentContainerId": null,
+      "controlType": "button",
+      "id": "btnDoiDauThapPhan",
+      "label": "Dấu phẩy thập phân",
+      "size": "large",
+      "imageMso": "CommaStyle",
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument",
+        "onAction": "OnDoiDauThapPhan"
+      },
+      "screenTip": "Dấu phẩy thập phân",
+      "superTip": "Chuyển kiểu viết số về chuẩn Việt Nam 1,234,567.89 → 1.234.567,89",
+      "staticItems": []
+    },
+    {
+      "order": 39,
+      "groupId": "grpHienThi",
+      "parentContainerId": "boxHienThi",
+      "controlType": "checkBox",
+      "id": "chkRanhGioiVanBan",
+      "label": "Ẩn/hiện ranh giới văn bản",
+      "size": null,
+      "imageMso": null,
+      "callbacks": {
+        "getEnabled": "GetEnabledHienThi",
+        "getPressed": "GetPressedRanhGioiVanBan",
+        "onAction": "OnRanhGioiVanBan"
+      },
+      "screenTip": "Ẩn/hiện ranh giới văn bản",
+      "superTip": "Đồng bộ với \"Show text boundaries\" trong File → Options → Advanced → Show document content",
+      "staticItems": []
+    },
+    {
+      "order": 40,
+      "groupId": "grpHienThi",
+      "parentContainerId": "boxHienThi",
+      "controlType": "checkBox",
+      "id": "chkDauGoc",
+      "label": "Ẩn/hiện dấu góc",
+      "size": null,
+      "imageMso": null,
+      "callbacks": {
+        "getEnabled": "GetEnabledHienThi",
+        "getPressed": "GetPressedDauGoc",
+        "onAction": "OnDauGoc"
+      },
+      "screenTip": "Ẩn/hiện dấu góc",
+      "superTip": "Đồng bộ với \"Show crop marks\" trong File → Options → Advanced → Show document content",
+      "staticItems": []
+    },
+    {
+      "order": 41,
+      "groupId": "grpHienThi",
+      "parentContainerId": "boxHienThi",
+      "controlType": "checkBox",
+      "id": "chkKyHieuSoanThao",
+      "label": "Ẩn/hiện ký hiệu soạn thảo",
+      "size": null,
+      "imageMso": null,
+      "callbacks": {
+        "getEnabled": "GetEnabledHienThi",
+        "getPressed": "GetPressedKyHieuSoanThao",
+        "onAction": "OnKyHieuSoanThao"
+      },
+      "screenTip": "Ẩn/hiện ký hiệu soạn thảo",
+      "superTip": "Đồng bộ với \"Show all formatting marks\" trong File → Options → Display",
+      "staticItems": []
+    },
+    {
+      "order": 42,
+      "groupId": "grpAbout",
+      "parentContainerId": null,
+      "controlType": "menu",
+      "id": "mnuThongTinTienIch",
+      "label": "Thông tin tiện ích",
+      "size": "large",
+      "imageMso": "Info",
+      "callbacks": {},
+      "screenTip": "Thông tin tiện ích",
+      "superTip": "Gửi phản hồi hoặc xem thông tin sản phẩm, phiên bản, tác giả",
+      "staticItems": []
+    },
+    {
+      "order": 43,
+      "groupId": "grpAbout",
+      "parentContainerId": "mnuThongTinTienIch",
+      "controlType": "button",
+      "id": "btnKiemTraPhienBanMoi",
+      "label": "Kiểm tra phiên bản mới",
+      "size": null,
+      "imageMso": "FileStartWorkflow",
+      "callbacks": {
+        "onAction": "OnKiemTraPhienBanMoi"
+      },
+      "screenTip": "Kiểm tra phiên bản mới",
+      "superTip": "Kiểm tra phiên bản mới và xem hướng dẫn sử dụng",
+      "staticItems": []
+    },
+    {
+      "order": 44,
+      "groupId": "grpAbout",
+      "parentContainerId": "mnuThongTinTienIch",
+      "controlType": "button",
+      "id": "btnGuiPhanHoi",
+      "label": "Gửi phản hồi",
+      "size": null,
+      "imageMso": "Callout",
+      "callbacks": {
+        "onAction": "OnGuiPhanHoi"
+      },
+      "screenTip": "Gửi phản hồi",
+      "superTip": "Gửi phản hồi hoặc báo lỗi",
+      "staticItems": []
+    },
+    {
+      "order": 45,
+      "groupId": "grpAbout",
+      "parentContainerId": "mnuThongTinTienIch",
+      "controlType": "button",
+      "id": "btnGioiThieu",
+      "label": "Thông tin tiện ích",
+      "size": null,
+      "imageMso": "Info",
+      "callbacks": {
+        "onAction": "OnGioiThieu"
+      },
+      "screenTip": "Thông tin tiện ích",
+      "superTip": "Thông tin sản phẩm, phiên bản, tác giả",
+      "staticItems": []
+    }
+  ]
+}

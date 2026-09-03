@@ -1,0 +1,64 @@
+
+--- TABLE 1 (Rows: 2, Cols: 2) ---
+BAN CHẤP HÀNH TRUNG ƯƠNGVĂN PHÒNG* | ĐẢNG CỘNG SẢN VIỆT NAM
+Số 05-HD/VPTW | Hà Nội, ngày 27 tháng 5 năm 2026
+
+--- TABLE 2 (Rows: 1, Cols: 2) ---
+T/M ĐOÀN THƯ KÝ TRƯỞNG ĐOÀN (chữ ký)Họ và tên | T/M ĐOÀN CHỦ TỊCH(chữ ký)Họ và tên
+
+--- TABLE 3 (Rows: 1, Cols: 2) ---
+NGƯỜI GHI BIÊN BẢN(chữ ký)Họ và tên | T/M ĐOÀN THƯ KÝ TRƯỞNG ĐOÀN (chữ ký)Họ và tên
+
+--- TABLE 4 (Rows: 1, Cols: 2) ---
+NGƯỜI GHI BIÊN BẢN(chữ ký)Họ và tên | CHỦ TRÌ HỘI NGHỊ(chữ ký)Họ và tên
+
+--- TABLE 5 (Rows: 1, Cols: 2) ---
+NGƯỜI GHI BIÊN BẢN(chữ ký)Họ và tên | CHỦ TRÌ HỘI NGHỊ(chữ ký)Họ và tên
+
+--- TABLE 6 (Rows: 1, Cols: 2) ---
+CHÁNH VĂN PHÒNG ỦY BAN NHÂN DÂN TỈNH (chữ ký)Họ và tên | CHÁNH VĂN PHÒNGTỈNH UỶ (chữ ký) Họ và tên
+
+--- TABLE 7 (Rows: 1, Cols: 2) ---
+Nơi nhận:- Các đồng chí Uỷ viên Trung ương Đảng;- Các tỉnh uỷ, thành uỷ;- Văn phòng Trung ương Đảng và các cơ quan chuyên trách tham mưu, giúp việc; đảng uỷ, ban chỉ đạo, tiểu ban, hội đồng trực thuộc Trung ương;- Các đảng uỷ bộ, ngành ở Trung ương;- Các đơn vị sự nghiệp trực thuộc Trung ương;- Các đơn vị trực thuộcVăn phòng Trung ương Đảng;- Lưu Văn phòng Trung ương Đảng. | K/T CHÁNH VĂN PHÒNGPHÓ CHÁNH VĂN PHÒNGLê Khánh Toàn
+
+--- TABLE 8 (Rows: 1, Cols: 2) ---
+1. Tiêu đề "Đảng Cộng sản Việt Nam";2. Tên tổ chức, cơ quan ban hành văn bản;3. Số và ký hiệu văn bản;4. Địa danh và ngày, tháng, năm ban hành văn bản;5a. Thể loại văn bản và trích yếu nội dung văn bản;5b. Trích yếu nội dung công văn;6. Nội dung văn bản (có thể nhiều trang); 7a, 7b, 7c. Quyền hạn, chức vụ, họ tên và chữ ký của người có thẩm quyền;8. Dấu, chữ ký số của tổ chức, cơ quan; | 9a, 9b. Nơi nhận văn bản;10. Dấu chỉ mức độ khẩn;11a. Chỉ dẫn về phạm vi lưu hành, phổ biến;11b. Chỉ dẫn về dự thảo văn bản;12. Ký hiệu người soạn thảo văn bản và số lượng bản phát hành;13. Thông tin liên hệ của cơ quan ban hành văn bản;14. Chữ ký số của cơ quan trên bản sao sang văn bản điện tử;15. Chữ ký số của cá nhân trên bản sao sang văn bản điện tử.
+
+--- TABLE 9 (Rows: 37, Cols: 6) ---
+TT | Thành phần thể thức | Loại chữ | Cỡ chữ | Kiểu chữ | Minh hoạ (phông chữ Times New Roman)
+1. | Tiêu đề "Đảng Cộng sản Việt Nam" | In hoa | 15 | Đứng, đậm | ĐẢNG CỘNG SẢN VIỆT NAM
+2. | Tên cơ quan ban hành văn bản, cơ quan sao văn bản |  |  |  | 
+ | - Tên cơ quan cấp trên trực tiếp | In hoa | 14 | Đứng | ĐẢNG BỘ TỈNH LÂM ĐỒNG
+ | - Tên cơ quan ban hành văn bản | In hoa | 14 | Đứng, đậm | ĐẢNG UỶ ĐẶC KHU PHÚ QUÝ
+3. | Số và ký hiệu văn bản | In thường | 14 | Đứng | Số 127-QĐ/TW
+4. | Địa danh và ngày, tháng, năm ban hành văn bản | In thường | 14 | Nghiêng | Hà Nội, ngày 20 tháng 10 năm 2025
+5. | Tên loại văn bản và trích yếu nội dung văn bản |  |  |  | 
+ | - Thể loại văn bản | In hoa | 15-16 | Đứng, đậm | BÁO CÁO
+ | - Trích yếu nội dung văn bản | In thường | 14-15 | Đứng, đậm | kết quả đại hội chi bộ nhiệm kỳ 2025 - 2030
+ | - Trích yếu nội dung thể loại công văn | In thường | 12 | Nghiêng | về việc chuẩn bị hội nghị trực tuyến quán triệt Nghị quyết Trung ương 12 khoá XIII
+6. | Nội dung văn bản | In thường | 14-15 | Đứng | Trong công tác chỉ đạo...
+ | - Từ "Phần", "Chương" và số thứ tự của phần, chương | In thường | 14-15 | Đứng, đậm | Phần I; Chương II(hoặc: Phần thứ nhất; Chương thứ hai)
+ | - Tên phần, chương | In hoa | 14-15 | Đứng, đậm | QUY ĐỊNH CHUNG
+ | - Từ "Mục" và số thứ tự của mục | In thường | 14-15 | Đứng, đậm | Mục 1
+ | - Tên mục | In hoa | 14-15 | Đứng, đậm | QUẢN LÝ VĂN BẢN ĐI
+ | - Từ "Điều", số thứ tự và tên điều | In thường | 14-15 | Đứng, đậm | Điều 1. Phạm vi điều chỉnh và đối tượng áp dụng
+ | - Khoản | In thường | 14-15 | Đứng | 1. Quy định về…
+ | - Điểm | In thường | 14-15 | Đứng | a) Đại hội đại hiểu đảng bộ tỉnh, thành phố
+7. | Quyền hạn, chức vụ, họ tên và chữ ký của người có thẩm quyền ký văn bản, sao văn bản |  |  |  | 
+ | - Quyền hạn ký văn bản, bản sao | In hoa | 14 | Đứng, đậm | T/M BAN THƯỜNG VỤ
+ | - Chức vụ của người ký văn bản, bản sao | In hoa | 14 | Đứng | PHÓ BÍ THƯ
+ | - Họ tên của người ký văn bản, bản sao | In thường | 14 | Đứng, đậm | Nguyễn Văn A
+8. | Dấu tổ chức ban hành văn bản, sao văn bản |  |  |  | Thực hiện theo quy định của Ban Bí thư, hướng dẫn của Ban Tổ chức Trung ương và Bộ Công an
+9. | Nơi nhận văn bản |  |  |  | 
+ | - Từ "Kính gửi" đối với thể loại công văn, "Kính trình" đối với thể loại tờ trình | In thường | 14 | Nghiêng | Kính gửi:
+ | - Tên tổ chức, cơ quan, cá nhân sau từ "Kính gửi", "Kính trình" | In thường | 14-15 | Đứng | - Ban Bí thư Trung ương;- Văn phòng Trung ương Đảng;
+ | - Từ "Nơi nhận" | In thường | 14 | Đứng, có gạch chân | Nơi nhận:
+ | - Tên tổ chức, cơ quan, cá nhân sau từ "Nơi nhận" | In thường | 12 | Đứng | - Các đảng uỷ xã, phường trực thuộc;- Các đồng chí Tỉnh uỷ viên;- Lưu Văn phòng Tỉnh uỷ.
+10. | Dấu chỉ mức độ mật và các thông tin cần thiết trên văn bản mật |  |  |  | Thực hiện theo hướng dẫn của Bộ Công an
+11. | Dấu chỉ mức độ khẩn | In hoa | 14 | Đứng, đậm | KHẨN
+12. | Chỉ dẫn phạm vi lưu hành, phổ biến, giao dịch, dự thảo văn bản và tài liệu hội nghị |  |  |  | 
+ | - Chỉ dẫn phạm vi lưu hành | In hoa | 12 | Đứng, đậm | TÀI LIỆU HỘI NGHỊ
+ | - Chỉ dẫn dự thảo văn bản | In thường | 14 | Nghiêng | Dự thảo lần 2
+13. | Ký hiệu người soạn thảo văn bản và số lượng bản phát hành | In thường | 11 | Đứng | NguyenVanAn-26
+14. | Thông tin liên hệ của cơ quan ban hành văn bản | In thường | 10 | Đứng | Số 9A, Nguyễn Cảnh Chân, Ba Đình, Hà Nội;điện thoại: 080.45774; fax: 080.43472; email: Cucluutru@VPTW.
+15. | Số trang văn bản, phụ lục | In thường | 14 | Đứng | 28

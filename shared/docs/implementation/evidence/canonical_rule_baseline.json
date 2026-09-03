@@ -1,0 +1,22 @@
+{
+  "testId": "RULE-CANONICAL-BASELINE-001",
+  "status": "PASS_DRAFT_ONLY",
+  "releaseId": "VBA-BASELINE-2026-09-01",
+  "ruleCount": 96,
+  "implementationStatusCounts": {
+    "Unrouted": 2,
+    "HardwiredNotChecked": 19,
+    "BaselineLogicPath": 75
+  },
+  "legalReviewStatus": "Unreviewed",
+  "publishable": false,
+  "publicationBlockers": [
+    "96 rules do not have approved legal traceability",
+    "96 rules do not have positive, negative, and boundary fixtures",
+    "75 logic paths are baseline observations, not verified engine implementations",
+    "19 routes are hardwired to NotChecked",
+    "2 rule definitions are not routed",
+    "all fix policies remain Blocked"
+  ],
+  "outputSha256": "981D32F24C232FC233E2AD2B5D3CFDDCA1EF35CD2649FD15B06FFA4E8765A09D"
+}

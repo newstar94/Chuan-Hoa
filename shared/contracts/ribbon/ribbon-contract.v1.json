@@ -1,0 +1,2102 @@
+{
+  "schemaVersion": 1,
+  "contractId": "CHUAN_HOA_WORD_RIBBON_V1",
+  "sourceArtefact": "shared/ChuanHoaTheThuc_Full_Ribbon.dotm",
+  "sourceArtefactSha256": "74E7FAE1D8B80BCE22054421AB59D37B5C726236554A1AD145C32B99A8997105",
+  "ribbonSchema": "http://schemas.microsoft.com/office/2009/07/customui",
+  "tab": {
+    "id": "tabTheThuc",
+    "label": "Chuẩn hóa"
+  },
+  "groups": [
+    {
+      "order": 1,
+      "id": "grpAutoFixHero",
+      "label": "1-Click Auto-Fix"
+    },
+    {
+      "order": 2,
+      "id": "grpKhoiDong",
+      "label": "Khởi động"
+    },
+    {
+      "order": 3,
+      "id": "grpDinhDang",
+      "label": "Định dạng"
+    },
+    {
+      "order": 4,
+      "id": "grpBangBieu",
+      "label": "Bảng biểu và hình ảnh"
+    },
+    {
+      "order": 5,
+      "id": "grpChinhTaSo",
+      "label": "Chính tả và số"
+    },
+    {
+      "order": 6,
+      "id": "grpHienThi",
+      "label": "Hiển thị"
+    },
+    {
+      "order": 7,
+      "id": "grpAbout",
+      "label": "About"
+    }
+  ],
+  "counts": {
+    "tabs": 1,
+    "groups": 7,
+    "buttons": 33,
+    "menus": 3,
+    "dropDowns": 2,
+    "checkBoxes": 3,
+    "interactiveControls": 41
+  },
+  "approvedProductChanges": [
+    {
+      "changeId": "REMOVE_SAVE_AS_DOCX_AND_SUPPORT_DOC_DOCX",
+      "removedControlIds": [
+        "btnLuuDocx"
+      ],
+      "supportedDocumentExtensions": [
+        ".doc",
+        ".docx"
+      ],
+      "preserveCurrentDocumentFormat": true
+    },
+    {
+      "changeId": "REMOVE_TONE_AND_IY_NORMALIZATION",
+      "removedControlIds": [
+        "btnKieuI",
+        "btnKieuY",
+        "mnuIY"
+      ]
+    },
+    {
+      "changeId": "PRODUCT_NAME_CHUAN_HOA",
+      "ribbonTabLabel": "Chuẩn hóa"
+    },
+    {
+      "changeId": "REMOVE_MANUAL_READ_DATA_USE_COMMAND_SCOPED_ANALYSIS",
+      "removedControlIds": [
+        "btnDocDuLieu"
+      ],
+      "documentReadPolicy": "USER_INITIATED_COMMAND_ONLY",
+      "analysisPolicy": "MINIMUM_REQUIRED_LANES"
+    }
+  ],
+  "invariants": [
+    "EXACTLY_ONE_CUSTOM_TAB",
+    "NO_PERSISTENT_TASK_PANE",
+    "SCAN_COMMANDS_ARE_READ_ONLY",
+    "DOCUMENT_AND_WINDOW_STATE_ARE_NOT_GLOBAL_STATIC",
+    "DISABLED_COMMANDS_EXPOSE_A_REASON",
+    "UNKNOWN_OPERATION_FAILS_CLOSED"
+  ],
+  "controls": [
+    {
+      "order": 1,
+      "groupId": "grpAutoFixHero",
+      "parentContainerId": null,
+      "controlType": "button",
+      "id": "btnAutoFixAll2026",
+      "label": "CHUẨN HÓA TOÀN BỘ",
+      "size": "large",
+      "imageMso": "AutoFormatNow",
+      "callbacks": {
+        "onAction": "OnAutoFixAll2026",
+        "getEnabled": "GetEnabledAutoFixAll2026"
+      },
+      "screenTip": "1-Click Auto-Fix Toàn Diện (2026)",
+      "superTip": "Tự động căn lề A4, đổi font Times New Roman, in đậm Quốc hiệu, kẻ đường chuẩn NĐ30/HD05, lặp header bảng, chống rách hàng và xóa trang trắng thừa chỉ với 1 click!",
+      "staticItems": [],
+      "commandContract": {
+        "commandId": "btnAutoFixAll2026",
+        "executionMode": "SIGNED_FIX_PLAN",
+        "entitlement": "AUTOFIX",
+        "riskTier": "CONFIRM",
+        "mutationScope": "AUTHORIZED_FIX_PLAN_OPERATIONS",
+        "preconditions": [
+          "ACTIVE_DOCUMENT",
+          "DOCUMENT_WRITABLE",
+          "NOT_PROTECTED",
+          "NO_ACTIVE_MUTATION_JOB",
+          "AUTHENTICATED",
+          "DEVICE_ACTIVE",
+          "ENTITLEMENT_ACTIVE",
+          "RELEASE_ALLOWED",
+          "NETWORK_AVAILABLE",
+          "SIGNED_FIX_PLAN_VALID",
+          "DOCUMENT_FINGERPRINT_MATCH"
+        ],
+        "capability": "WORD_2010_OBJECT_MODEL",
+        "undoPolicy": "ONE_CUSTOM_UNDO_RECORD",
+        "backupPolicy": "REQUIRED_BEFORE_APPLY",
+        "telemetryAllowlist": [
+          "commandId",
+          "resultCode",
+          "durationBucket",
+          "clientRelease",
+          "wordVersion",
+          "bitness"
+        ],
+        "testIds": [
+          "RIBBON-001",
+          "CONTROL-btnAutoFixAll2026"
+        ]
+      }
+    },
+    {
+      "order": 2,
+      "groupId": "grpKhoiDong",
+      "parentContainerId": "boxDocDuLieu",
+      "controlType": "dropDown",
+      "id": "ddQuyDinh",
+      "label": "Quy định:",
+      "size": null,
+      "imageMso": null,
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument",
+        "getSelectedItemIndex": "GetSelectedIndexQuyDinh",
+        "onAction": "OnChonQuyDinh"
+      },
+      "screenTip": "Quy định thể thức",
+      "superTip": "Chọn bộ quy định về thể thức áp dụng cho văn bản này. Add-in tự nhận diện, bạn có thể chọn lại thủ công",
+      "staticItems": [
+        {
+          "id": "iqdND30",
+          "label": "VB hành chính (NĐ 30)"
+        },
+        {
+          "id": "iqdVIETTEL",
+          "label": "Viettel (QĐ 11095)"
+        },
+        {
+          "id": "iqdDANG",
+          "label": "VB của Đảng (HD 05)"
+        }
+      ],
+      "commandContract": {
+        "commandId": "ddQuyDinh",
+        "executionMode": "LOCAL_CONTEXT",
+        "entitlement": "DOCUMENT_READ",
+        "riskTier": "SAFE",
+        "mutationScope": "DOCUMENT_CONTEXT_ONLY",
+        "preconditions": [
+          "ACTIVE_DOCUMENT"
+        ],
+        "capability": "ALL_SUPPORTED_WORD",
+        "undoPolicy": "NOT_APPLICABLE",
+        "backupPolicy": "NOT_APPLICABLE",
+        "telemetryAllowlist": [
+          "commandId",
+          "resultCode",
+          "durationBucket",
+          "clientRelease",
+          "wordVersion",
+          "bitness"
+        ],
+        "testIds": [
+          "RIBBON-002",
+          "CONTROL-ddQuyDinh"
+        ]
+      }
+    },
+    {
+      "order": 3,
+      "groupId": "grpKhoiDong",
+      "parentContainerId": "boxDocDuLieu",
+      "controlType": "dropDown",
+      "id": "ddLoaiVanBan",
+      "label": "Loại:",
+      "size": null,
+      "imageMso": null,
+      "callbacks": {
+        "getEnabled": "GetEnabledLoaiVanBan",
+        "getItemCount": "GetItemCountLoaiVanBan",
+        "getItemLabel": "GetItemLabelLoaiVanBan",
+        "getSelectedItemIndex": "GetSelectedIndexLoaiVanBan",
+        "onAction": "OnChonLoaiVanBan"
+      },
+      "screenTip": "Loại văn bản",
+      "superTip": "Add-in tự nhận diện loại văn bản đang soạn thảo. Bạn có thể chọn lại thủ công. Danh mục thay đổi theo Quy định đang chọn (Viettel có thêm 5 loại riêng)",
+      "staticItems": [],
+      "commandContract": {
+        "commandId": "ddLoaiVanBan",
+        "executionMode": "LOCAL_CONTEXT_WITH_SERVER_CATALOG",
+        "entitlement": "DOCUMENT_READ",
+        "riskTier": "SAFE",
+        "mutationScope": "DOCUMENT_CONTEXT_ONLY",
+        "preconditions": [
+          "ACTIVE_DOCUMENT",
+          "REGIME_SELECTED"
+        ],
+        "capability": "DYNAMIC_DROPDOWN",
+        "undoPolicy": "NOT_APPLICABLE",
+        "backupPolicy": "NOT_APPLICABLE",
+        "telemetryAllowlist": [
+          "commandId",
+          "resultCode",
+          "durationBucket",
+          "clientRelease",
+          "wordVersion",
+          "bitness"
+        ],
+        "testIds": [
+          "RIBBON-003",
+          "CONTROL-ddLoaiVanBan"
+        ]
+      }
+    },
+    {
+      "order": 4,
+      "groupId": "grpKhoiDong",
+      "parentContainerId": null,
+      "controlType": "button",
+      "id": "btnKiemTra",
+      "label": "Kiểm tra thể thức",
+      "size": "large",
+      "imageMso": "FileCompatibilityCheckerWord",
+      "callbacks": {
+        "getEnabled": "GetEnabledKiemTra",
+        "onAction": "OnKiemTra"
+      },
+      "screenTip": "Kiểm tra thể thức",
+      "superTip": "Kiểm tra khổ giấy, lề, kiểu chữ và thành phần thể thức; thêm comment giải thích và tô đỏ đúng chỗ sai.",
+      "staticItems": [],
+      "commandContract": {
+        "commandId": "btnKiemTra",
+        "executionMode": "REMOTE_FINDINGS",
+        "entitlement": "SCAN_FORMAT",
+        "riskTier": "REPORT_ONLY",
+        "mutationScope": "OWNED_FINDING_ANNOTATIONS_ONLY",
+        "preconditions": [
+          "ACTIVE_DOCUMENT",
+          "DOCUMENT_WRITABLE",
+          "NOT_PROTECTED",
+          "NO_ACTIVE_MUTATION_JOB",
+          "AUTHENTICATED",
+          "DEVICE_ACTIVE",
+          "ENTITLEMENT_ACTIVE",
+          "RELEASE_ALLOWED",
+          "NETWORK_AVAILABLE",
+          "FINDING_ANCHORS_EXACT",
+          "DOCUMENT_FINGERPRINT_MATCH"
+        ],
+        "capability": "WORD_SNAPSHOT_AND_EXACT_ANCHOR_V1",
+        "undoPolicy": "ONE_CUSTOM_UNDO_RECORD_WHEN_SUPPORTED",
+        "backupPolicy": "NOT_APPLICABLE",
+        "telemetryAllowlist": [
+          "commandId",
+          "resultCode",
+          "durationBucket",
+          "clientRelease",
+          "wordVersion",
+          "bitness"
+        ],
+        "testIds": [
+          "RIBBON-004",
+          "CONTROL-btnKiemTra"
+        ]
+      }
+    },
+    {
+      "order": 5,
+      "groupId": "grpKhoiDong",
+      "parentContainerId": null,
+      "controlType": "button",
+      "id": "btnKiemTraChinhTa",
+      "label": "Kiểm tra chính tả",
+      "size": "large",
+      "imageMso": "SpellingAndGrammar",
+      "callbacks": {
+        "getEnabled": "GetEnabledKiemTra",
+        "onAction": "OnKiemTraChinhTa"
+      },
+      "screenTip": "Kiểm tra chính tả",
+      "superTip": "Kiểm tra từ điển chính tả và viết hoa; thêm comment giải thích và tô đỏ đúng chỗ sai.",
+      "staticItems": [],
+      "commandContract": {
+        "commandId": "btnKiemTraChinhTa",
+        "executionMode": "REMOTE_FINDINGS",
+        "entitlement": "SCAN_SPELLING",
+        "riskTier": "REPORT_ONLY",
+        "mutationScope": "OWNED_FINDING_ANNOTATIONS_ONLY",
+        "preconditions": [
+          "ACTIVE_DOCUMENT",
+          "DOCUMENT_WRITABLE",
+          "NOT_PROTECTED",
+          "NO_ACTIVE_MUTATION_JOB",
+          "AUTHENTICATED",
+          "DEVICE_ACTIVE",
+          "ENTITLEMENT_ACTIVE",
+          "RELEASE_ALLOWED",
+          "NETWORK_AVAILABLE",
+          "FINDING_ANCHORS_EXACT",
+          "DOCUMENT_FINGERPRINT_MATCH"
+        ],
+        "capability": "UNICODE_SNAPSHOT_AND_EXACT_ANCHOR_V1",
+        "undoPolicy": "ONE_CUSTOM_UNDO_RECORD_WHEN_SUPPORTED",
+        "backupPolicy": "NOT_APPLICABLE",
+        "telemetryAllowlist": [
+          "commandId",
+          "resultCode",
+          "durationBucket",
+          "clientRelease",
+          "wordVersion",
+          "bitness"
+        ],
+        "testIds": [
+          "RIBBON-005",
+          "CONTROL-btnKiemTraChinhTa"
+        ]
+      }
+    },
+    {
+      "order": 6,
+      "groupId": "grpKhoiDong",
+      "parentContainerId": null,
+      "controlType": "button",
+      "id": "btnChuyenDoiUnicode",
+      "label": "Chuyển đổi Unicode",
+      "size": "large",
+      "imageMso": "ReplaceDialog",
+      "callbacks": {
+        "getEnabled": "GetEnabledChuyenDoiUnicode",
+        "onAction": "OnChuyenDoiUnicode"
+      },
+      "screenTip": "Chuyển đổi Unicode",
+      "superTip": "Chuyển đổi các font chữ cũ (.VnTime, VNI-Times) sang Times New Roman",
+      "staticItems": [],
+      "commandContract": {
+        "commandId": "btnChuyenDoiUnicode",
+        "executionMode": "SIGNED_FIX_PLAN",
+        "entitlement": "ENCODING_CONVERT",
+        "riskTier": "CONFIRM",
+        "mutationScope": "AUTHORIZED_STORY_RANGES",
+        "preconditions": [
+          "ACTIVE_DOCUMENT",
+          "DOCUMENT_WRITABLE",
+          "NOT_PROTECTED",
+          "NO_ACTIVE_MUTATION_JOB",
+          "AUTHENTICATED",
+          "DEVICE_ACTIVE",
+          "ENTITLEMENT_ACTIVE",
+          "RELEASE_ALLOWED",
+          "NETWORK_AVAILABLE",
+          "SIGNED_FIX_PLAN_VALID",
+          "DOCUMENT_FINGERPRINT_MATCH"
+        ],
+        "capability": "TCVN3_FULL_VNI_GATED",
+        "undoPolicy": "ONE_CUSTOM_UNDO_RECORD",
+        "backupPolicy": "REQUIRED_BEFORE_APPLY",
+        "telemetryAllowlist": [
+          "commandId",
+          "resultCode",
+          "durationBucket",
+          "clientRelease",
+          "wordVersion",
+          "bitness"
+        ],
+        "testIds": [
+          "RIBBON-006",
+          "CONTROL-btnChuyenDoiUnicode"
+        ]
+      }
+    },
+    {
+      "order": 7,
+      "groupId": "grpDinhDang",
+      "parentContainerId": null,
+      "controlType": "button",
+      "id": "btnDinhDangTrangGiay",
+      "label": "Định dạng trang giấy",
+      "size": "large",
+      "imageMso": "PageSizeGallery",
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument",
+        "onAction": "OnDinhDangTrangGiay"
+      },
+      "screenTip": "Định dạng trang giấy",
+      "superTip": "Định dạng cỡ giấy và khoảng cách lề",
+      "staticItems": [],
+      "commandContract": {
+        "commandId": "btnDinhDangTrangGiay",
+        "executionMode": "SIGNED_FIX_PLAN",
+        "entitlement": "PAGE_FORMAT",
+        "riskTier": "SAFE",
+        "mutationScope": "AUTHORIZED_SECTIONS_PAGE_SETUP",
+        "preconditions": [
+          "ACTIVE_DOCUMENT",
+          "DOCUMENT_WRITABLE",
+          "NOT_PROTECTED",
+          "NO_ACTIVE_MUTATION_JOB",
+          "AUTHENTICATED",
+          "DEVICE_ACTIVE",
+          "ENTITLEMENT_ACTIVE",
+          "RELEASE_ALLOWED",
+          "NETWORK_AVAILABLE",
+          "SIGNED_FIX_PLAN_VALID",
+          "DOCUMENT_FINGERPRINT_MATCH"
+        ],
+        "capability": "WORD_SECTION_PAGE_SETUP",
+        "undoPolicy": "ONE_CUSTOM_UNDO_RECORD",
+        "backupPolicy": "REQUIRED_FOR_MULTI_SECTION",
+        "telemetryAllowlist": [
+          "commandId",
+          "resultCode",
+          "durationBucket",
+          "clientRelease",
+          "wordVersion",
+          "bitness"
+        ],
+        "testIds": [
+          "RIBBON-007",
+          "CONTROL-btnDinhDangTrangGiay"
+        ]
+      }
+    },
+    {
+      "order": 8,
+      "groupId": "grpDinhDang",
+      "parentContainerId": "boxChenTrang",
+      "controlType": "button",
+      "id": "btnChenTrangNgang",
+      "label": "Chèn trang ngang",
+      "size": "normal",
+      "imageMso": "PageOrientationLandscape",
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument",
+        "onAction": "OnChenTrangNgang"
+      },
+      "screenTip": "Chèn trang ngang",
+      "superTip": "Chèn trang mới theo chiều ngang",
+      "staticItems": [],
+      "commandContract": {
+        "commandId": "btnChenTrangNgang",
+        "executionMode": "LOCAL_EXECUTION_GRANT",
+        "entitlement": "SECTION_INSERT",
+        "riskTier": "CONFIRM",
+        "mutationScope": "SELECTION_AND_NEW_SECTIONS",
+        "preconditions": [
+          "ACTIVE_DOCUMENT",
+          "DOCUMENT_WRITABLE",
+          "NOT_PROTECTED",
+          "NO_ACTIVE_MUTATION_JOB",
+          "AUTHENTICATED",
+          "DEVICE_ACTIVE",
+          "ENTITLEMENT_ACTIVE",
+          "RELEASE_ALLOWED",
+          "SIGNED_EXECUTION_GRANT_VALID",
+          "DOCUMENT_FINGERPRINT_MATCH",
+          "VALID_SELECTION"
+        ],
+        "capability": "WORD_SECTION_BREAKS",
+        "undoPolicy": "ONE_CUSTOM_UNDO_RECORD",
+        "backupPolicy": "REQUIRED",
+        "telemetryAllowlist": [
+          "commandId",
+          "resultCode",
+          "durationBucket",
+          "clientRelease",
+          "wordVersion",
+          "bitness"
+        ],
+        "testIds": [
+          "RIBBON-008",
+          "CONTROL-btnChenTrangNgang"
+        ]
+      }
+    },
+    {
+      "order": 9,
+      "groupId": "grpDinhDang",
+      "parentContainerId": "boxChenTrang",
+      "controlType": "button",
+      "id": "btnChenTrangDoc",
+      "label": "Chèn trang dọc  ",
+      "size": "normal",
+      "imageMso": "PageOrientationPortrait",
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument",
+        "onAction": "OnChenTrangDoc"
+      },
+      "screenTip": "Chèn trang dọc",
+      "superTip": "Chèn trang mới theo chiều dọc",
+      "staticItems": [],
+      "commandContract": {
+        "commandId": "btnChenTrangDoc",
+        "executionMode": "LOCAL_EXECUTION_GRANT",
+        "entitlement": "SECTION_INSERT",
+        "riskTier": "CONFIRM",
+        "mutationScope": "SELECTION_AND_NEW_SECTIONS",
+        "preconditions": [
+          "ACTIVE_DOCUMENT",
+          "DOCUMENT_WRITABLE",
+          "NOT_PROTECTED",
+          "NO_ACTIVE_MUTATION_JOB",
+          "AUTHENTICATED",
+          "DEVICE_ACTIVE",
+          "ENTITLEMENT_ACTIVE",
+          "RELEASE_ALLOWED",
+          "SIGNED_EXECUTION_GRANT_VALID",
+          "DOCUMENT_FINGERPRINT_MATCH",
+          "VALID_SELECTION"
+        ],
+        "capability": "WORD_SECTION_BREAKS",
+        "undoPolicy": "ONE_CUSTOM_UNDO_RECORD",
+        "backupPolicy": "REQUIRED",
+        "telemetryAllowlist": [
+          "commandId",
+          "resultCode",
+          "durationBucket",
+          "clientRelease",
+          "wordVersion",
+          "bitness"
+        ],
+        "testIds": [
+          "RIBBON-009",
+          "CONTROL-btnChenTrangDoc"
+        ]
+      }
+    },
+    {
+      "order": 10,
+      "groupId": "grpDinhDang",
+      "parentContainerId": "boxChenTrang",
+      "controlType": "button",
+      "id": "btnXoaTrangThua",
+      "label": "Xóa trang thừa  ",
+      "size": "normal",
+      "imageMso": "ReviewRejectChangeMenu",
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument",
+        "onAction": "OnXoaTrangThua"
+      },
+      "screenTip": "Xóa trang thừa",
+      "superTip": "Xóa trang trống thừa ở cuối văn bản",
+      "staticItems": [],
+      "commandContract": {
+        "commandId": "btnXoaTrangThua",
+        "executionMode": "SIGNED_FIX_PLAN",
+        "entitlement": "TRAILING_PAGE_REMOVE",
+        "riskTier": "CONFIRM",
+        "mutationScope": "VERIFIED_TRAILING_EMPTY_PAGE_ONLY",
+        "preconditions": [
+          "ACTIVE_DOCUMENT",
+          "DOCUMENT_WRITABLE",
+          "NOT_PROTECTED",
+          "NO_ACTIVE_MUTATION_JOB",
+          "AUTHENTICATED",
+          "DEVICE_ACTIVE",
+          "ENTITLEMENT_ACTIVE",
+          "RELEASE_ALLOWED",
+          "NETWORK_AVAILABLE",
+          "SIGNED_FIX_PLAN_VALID",
+          "DOCUMENT_FINGERPRINT_MATCH"
+        ],
+        "capability": "WORD_PAGE_COUNT_VERIFY",
+        "undoPolicy": "ONE_CUSTOM_UNDO_RECORD",
+        "backupPolicy": "REQUIRED",
+        "telemetryAllowlist": [
+          "commandId",
+          "resultCode",
+          "durationBucket",
+          "clientRelease",
+          "wordVersion",
+          "bitness"
+        ],
+        "testIds": [
+          "RIBBON-010",
+          "CONTROL-btnXoaTrangThua"
+        ]
+      }
+    },
+    {
+      "order": 11,
+      "groupId": "grpDinhDang",
+      "parentContainerId": null,
+      "controlType": "menu",
+      "id": "mnuDungBoStyle",
+      "label": "Dựng bộ Style",
+      "size": "large",
+      "imageMso": "StyleGalleryClassic",
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument"
+      },
+      "screenTip": "Dựng bộ Style",
+      "superTip": "Dựng bộ Style để soạn thảo văn bản",
+      "staticItems": [],
+      "commandContract": {
+        "commandId": "mnuDungBoStyle",
+        "executionMode": "CONTAINER",
+        "entitlement": "STYLE_BUILD",
+        "riskTier": "SAFE",
+        "mutationScope": "NONE",
+        "preconditions": [
+          "ACTIVE_DOCUMENT"
+        ],
+        "capability": "ALL_SUPPORTED_WORD",
+        "undoPolicy": "NOT_APPLICABLE",
+        "backupPolicy": "NOT_APPLICABLE",
+        "telemetryAllowlist": [
+          "commandId",
+          "resultCode",
+          "durationBucket",
+          "clientRelease",
+          "wordVersion",
+          "bitness"
+        ],
+        "testIds": [
+          "RIBBON-011",
+          "CONTROL-mnuDungBoStyle"
+        ]
+      }
+    },
+    {
+      "order": 12,
+      "groupId": "grpDinhDang",
+      "parentContainerId": "mnuDungBoStyle",
+      "controlType": "button",
+      "id": "btnDungBoStyleCo15",
+      "label": "Cỡ chữ 15",
+      "size": null,
+      "imageMso": "FontSizeIncreaseWord",
+      "callbacks": {
+        "getEnabled": "GetEnabledCoChu15",
+        "onAction": "OnDungBoStyle15"
+      },
+      "screenTip": "Dựng bộ Style — Cỡ chữ 15",
+      "superTip": "Dựng bộ Style với bộ cỡ chữ 15",
+      "staticItems": [],
+      "commandContract": {
+        "commandId": "btnDungBoStyleCo15",
+        "executionMode": "SIGNED_FIX_PLAN",
+        "entitlement": "STYLE_BUILD",
+        "riskTier": "SAFE",
+        "mutationScope": "AUTHORIZED_STYLE_DEFINITIONS",
+        "preconditions": [
+          "ACTIVE_DOCUMENT",
+          "DOCUMENT_WRITABLE",
+          "NOT_PROTECTED",
+          "NO_ACTIVE_MUTATION_JOB",
+          "AUTHENTICATED",
+          "DEVICE_ACTIVE",
+          "ENTITLEMENT_ACTIVE",
+          "RELEASE_ALLOWED",
+          "NETWORK_AVAILABLE",
+          "SIGNED_FIX_PLAN_VALID",
+          "DOCUMENT_FINGERPRINT_MATCH"
+        ],
+        "capability": "WORD_STYLES",
+        "undoPolicy": "ONE_CUSTOM_UNDO_RECORD",
+        "backupPolicy": "REQUIRED_IF_STYLE_COLLISION",
+        "telemetryAllowlist": [
+          "commandId",
+          "resultCode",
+          "durationBucket",
+          "clientRelease",
+          "wordVersion",
+          "bitness"
+        ],
+        "testIds": [
+          "RIBBON-012",
+          "CONTROL-btnDungBoStyleCo15"
+        ]
+      }
+    },
+    {
+      "order": 13,
+      "groupId": "grpDinhDang",
+      "parentContainerId": "mnuDungBoStyle",
+      "controlType": "button",
+      "id": "btnDungBoStyleCo14",
+      "label": "Cỡ chữ 14",
+      "size": null,
+      "imageMso": "ActiveXLabel",
+      "callbacks": {
+        "getEnabled": "GetEnabledCoChu14",
+        "onAction": "OnDungBoStyle14"
+      },
+      "screenTip": "Dựng bộ Style — Cỡ chữ 14",
+      "superTip": "Dựng bộ Style với bộ cỡ chữ 14",
+      "staticItems": [],
+      "commandContract": {
+        "commandId": "btnDungBoStyleCo14",
+        "executionMode": "SIGNED_FIX_PLAN",
+        "entitlement": "STYLE_BUILD",
+        "riskTier": "SAFE",
+        "mutationScope": "AUTHORIZED_STYLE_DEFINITIONS",
+        "preconditions": [
+          "ACTIVE_DOCUMENT",
+          "DOCUMENT_WRITABLE",
+          "NOT_PROTECTED",
+          "NO_ACTIVE_MUTATION_JOB",
+          "AUTHENTICATED",
+          "DEVICE_ACTIVE",
+          "ENTITLEMENT_ACTIVE",
+          "RELEASE_ALLOWED",
+          "NETWORK_AVAILABLE",
+          "SIGNED_FIX_PLAN_VALID",
+          "DOCUMENT_FINGERPRINT_MATCH"
+        ],
+        "capability": "WORD_STYLES",
+        "undoPolicy": "ONE_CUSTOM_UNDO_RECORD",
+        "backupPolicy": "REQUIRED_IF_STYLE_COLLISION",
+        "telemetryAllowlist": [
+          "commandId",
+          "resultCode",
+          "durationBucket",
+          "clientRelease",
+          "wordVersion",
+          "bitness"
+        ],
+        "testIds": [
+          "RIBBON-013",
+          "CONTROL-btnDungBoStyleCo14"
+        ]
+      }
+    },
+    {
+      "order": 14,
+      "groupId": "grpDinhDang",
+      "parentContainerId": "mnuDungBoStyle",
+      "controlType": "button",
+      "id": "btnDungBoStyleCo13",
+      "label": "Cỡ chữ 13",
+      "size": null,
+      "imageMso": "FontSizeDecreaseWord",
+      "callbacks": {
+        "getEnabled": "GetEnabledCoChu13",
+        "onAction": "OnDungBoStyle13"
+      },
+      "screenTip": "Dựng bộ Style — Cỡ chữ 13",
+      "superTip": "Dựng bộ Style với bộ cỡ chữ 13",
+      "staticItems": [],
+      "commandContract": {
+        "commandId": "btnDungBoStyleCo13",
+        "executionMode": "SIGNED_FIX_PLAN",
+        "entitlement": "STYLE_BUILD",
+        "riskTier": "SAFE",
+        "mutationScope": "AUTHORIZED_STYLE_DEFINITIONS",
+        "preconditions": [
+          "ACTIVE_DOCUMENT",
+          "DOCUMENT_WRITABLE",
+          "NOT_PROTECTED",
+          "NO_ACTIVE_MUTATION_JOB",
+          "AUTHENTICATED",
+          "DEVICE_ACTIVE",
+          "ENTITLEMENT_ACTIVE",
+          "RELEASE_ALLOWED",
+          "NETWORK_AVAILABLE",
+          "SIGNED_FIX_PLAN_VALID",
+          "DOCUMENT_FINGERPRINT_MATCH"
+        ],
+        "capability": "WORD_STYLES",
+        "undoPolicy": "ONE_CUSTOM_UNDO_RECORD",
+        "backupPolicy": "REQUIRED_IF_STYLE_COLLISION",
+        "telemetryAllowlist": [
+          "commandId",
+          "resultCode",
+          "durationBucket",
+          "clientRelease",
+          "wordVersion",
+          "bitness"
+        ],
+        "testIds": [
+          "RIBBON-014",
+          "CONTROL-btnDungBoStyleCo13"
+        ]
+      }
+    },
+    {
+      "order": 15,
+      "groupId": "grpDinhDang",
+      "parentContainerId": "boxCoChuGianChu",
+      "controlType": "button",
+      "id": "btnCoChu15",
+      "label": "Cỡ chữ 15",
+      "size": "normal",
+      "imageMso": "FontSizeIncreaseWord",
+      "callbacks": {
+        "getEnabled": "GetEnabledCoChu15",
+        "onAction": "OnCoChu15"
+      },
+      "screenTip": "Cỡ chữ 15",
+      "superTip": "Chuyển toàn bộ văn bản thành bộ cỡ chữ 15",
+      "staticItems": [],
+      "commandContract": {
+        "commandId": "btnCoChu15",
+        "executionMode": "SIGNED_FIX_PLAN",
+        "entitlement": "FONT_SIZE_SET",
+        "riskTier": "CONFIRM",
+        "mutationScope": "AUTHORIZED_COMPONENT_RANGES",
+        "preconditions": [
+          "ACTIVE_DOCUMENT",
+          "DOCUMENT_WRITABLE",
+          "NOT_PROTECTED",
+          "NO_ACTIVE_MUTATION_JOB",
+          "AUTHENTICATED",
+          "DEVICE_ACTIVE",
+          "ENTITLEMENT_ACTIVE",
+          "RELEASE_ALLOWED",
+          "NETWORK_AVAILABLE",
+          "SIGNED_FIX_PLAN_VALID",
+          "DOCUMENT_FINGERPRINT_MATCH"
+        ],
+        "capability": "ROLE_AWARE_FORMATTING",
+        "undoPolicy": "ONE_CUSTOM_UNDO_RECORD",
+        "backupPolicy": "REQUIRED",
+        "telemetryAllowlist": [
+          "commandId",
+          "resultCode",
+          "durationBucket",
+          "clientRelease",
+          "wordVersion",
+          "bitness"
+        ],
+        "testIds": [
+          "RIBBON-015",
+          "CONTROL-btnCoChu15"
+        ]
+      }
+    },
+    {
+      "order": 16,
+      "groupId": "grpDinhDang",
+      "parentContainerId": "boxCoChuGianChu",
+      "controlType": "button",
+      "id": "btnCoChu14",
+      "label": "Cỡ chữ 14",
+      "size": "normal",
+      "imageMso": "ActiveXLabel",
+      "callbacks": {
+        "getEnabled": "GetEnabledCoChu14",
+        "onAction": "OnCoChu14"
+      },
+      "screenTip": "Cỡ chữ 14",
+      "superTip": "Chuyển toàn bộ văn bản thành bộ cỡ chữ 14",
+      "staticItems": [],
+      "commandContract": {
+        "commandId": "btnCoChu14",
+        "executionMode": "SIGNED_FIX_PLAN",
+        "entitlement": "FONT_SIZE_SET",
+        "riskTier": "CONFIRM",
+        "mutationScope": "AUTHORIZED_COMPONENT_RANGES",
+        "preconditions": [
+          "ACTIVE_DOCUMENT",
+          "DOCUMENT_WRITABLE",
+          "NOT_PROTECTED",
+          "NO_ACTIVE_MUTATION_JOB",
+          "AUTHENTICATED",
+          "DEVICE_ACTIVE",
+          "ENTITLEMENT_ACTIVE",
+          "RELEASE_ALLOWED",
+          "NETWORK_AVAILABLE",
+          "SIGNED_FIX_PLAN_VALID",
+          "DOCUMENT_FINGERPRINT_MATCH"
+        ],
+        "capability": "ROLE_AWARE_FORMATTING",
+        "undoPolicy": "ONE_CUSTOM_UNDO_RECORD",
+        "backupPolicy": "REQUIRED",
+        "telemetryAllowlist": [
+          "commandId",
+          "resultCode",
+          "durationBucket",
+          "clientRelease",
+          "wordVersion",
+          "bitness"
+        ],
+        "testIds": [
+          "RIBBON-016",
+          "CONTROL-btnCoChu14"
+        ]
+      }
+    },
+    {
+      "order": 17,
+      "groupId": "grpDinhDang",
+      "parentContainerId": "boxCoChuGianChu",
+      "controlType": "button",
+      "id": "btnCoChu13",
+      "label": "Cỡ chữ 13",
+      "size": "normal",
+      "imageMso": "FontSizeDecreaseWord",
+      "callbacks": {
+        "getEnabled": "GetEnabledCoChu13",
+        "onAction": "OnCoChu13"
+      },
+      "screenTip": "Cỡ chữ 13",
+      "superTip": "Chuyển toàn bộ văn bản thành bộ cỡ chữ 13",
+      "staticItems": [],
+      "commandContract": {
+        "commandId": "btnCoChu13",
+        "executionMode": "SIGNED_FIX_PLAN",
+        "entitlement": "FONT_SIZE_SET",
+        "riskTier": "CONFIRM",
+        "mutationScope": "AUTHORIZED_COMPONENT_RANGES",
+        "preconditions": [
+          "ACTIVE_DOCUMENT",
+          "DOCUMENT_WRITABLE",
+          "NOT_PROTECTED",
+          "NO_ACTIVE_MUTATION_JOB",
+          "AUTHENTICATED",
+          "DEVICE_ACTIVE",
+          "ENTITLEMENT_ACTIVE",
+          "RELEASE_ALLOWED",
+          "NETWORK_AVAILABLE",
+          "SIGNED_FIX_PLAN_VALID",
+          "DOCUMENT_FINGERPRINT_MATCH"
+        ],
+        "capability": "ROLE_AWARE_FORMATTING",
+        "undoPolicy": "ONE_CUSTOM_UNDO_RECORD",
+        "backupPolicy": "REQUIRED",
+        "telemetryAllowlist": [
+          "commandId",
+          "resultCode",
+          "durationBucket",
+          "clientRelease",
+          "wordVersion",
+          "bitness"
+        ],
+        "testIds": [
+          "RIBBON-017",
+          "CONTROL-btnCoChu13"
+        ]
+      }
+    },
+    {
+      "order": 18,
+      "groupId": "grpDinhDang",
+      "parentContainerId": "boxKeepPageNum",
+      "controlType": "button",
+      "id": "btnKeepWithNext",
+      "label": "Keep with next",
+      "size": "normal",
+      "imageMso": "FootnoteNextWord",
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument",
+        "onAction": "OnKeepWithNext"
+      },
+      "screenTip": "Keep with next",
+      "superTip": "Giữ đoạn hiện tại cùng trang với đoạn kế tiếp",
+      "staticItems": [],
+      "commandContract": {
+        "commandId": "btnKeepWithNext",
+        "executionMode": "LOCAL_EXECUTION_GRANT",
+        "entitlement": "PARAGRAPH_KEEP",
+        "riskTier": "SAFE",
+        "mutationScope": "SELECTED_OR_CURRENT_PARAGRAPHS",
+        "preconditions": [
+          "ACTIVE_DOCUMENT",
+          "DOCUMENT_WRITABLE",
+          "NOT_PROTECTED",
+          "NO_ACTIVE_MUTATION_JOB",
+          "AUTHENTICATED",
+          "DEVICE_ACTIVE",
+          "ENTITLEMENT_ACTIVE",
+          "RELEASE_ALLOWED",
+          "SIGNED_EXECUTION_GRANT_VALID",
+          "DOCUMENT_FINGERPRINT_MATCH",
+          "VALID_SELECTION_OR_CARET"
+        ],
+        "capability": "WORD_PARAGRAPH_FORMAT",
+        "undoPolicy": "ONE_CUSTOM_UNDO_RECORD",
+        "backupPolicy": "NOT_REQUIRED",
+        "telemetryAllowlist": [
+          "commandId",
+          "resultCode",
+          "durationBucket",
+          "clientRelease",
+          "wordVersion",
+          "bitness"
+        ],
+        "testIds": [
+          "RIBBON-018",
+          "CONTROL-btnKeepWithNext"
+        ]
+      }
+    },
+    {
+      "order": 19,
+      "groupId": "grpDinhDang",
+      "parentContainerId": "boxKeepPageNum",
+      "controlType": "button",
+      "id": "btnChenSoTrang",
+      "label": "Chèn số trang",
+      "size": "normal",
+      "imageMso": "HeaderFooterPageNumberInsert",
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument",
+        "onAction": "OnChenSoTrang"
+      },
+      "screenTip": "Chèn số trang",
+      "superTip": "Chèn số trang tự động",
+      "staticItems": [],
+      "commandContract": {
+        "commandId": "btnChenSoTrang",
+        "executionMode": "SIGNED_FIX_PLAN",
+        "entitlement": "PAGE_NUMBERING",
+        "riskTier": "CONFIRM",
+        "mutationScope": "AUTHORIZED_HEADERS_FOOTERS",
+        "preconditions": [
+          "ACTIVE_DOCUMENT",
+          "DOCUMENT_WRITABLE",
+          "NOT_PROTECTED",
+          "NO_ACTIVE_MUTATION_JOB",
+          "AUTHENTICATED",
+          "DEVICE_ACTIVE",
+          "ENTITLEMENT_ACTIVE",
+          "RELEASE_ALLOWED",
+          "NETWORK_AVAILABLE",
+          "SIGNED_FIX_PLAN_VALID",
+          "DOCUMENT_FINGERPRINT_MATCH"
+        ],
+        "capability": "WORD_SECTION_HEADER_FOOTER",
+        "undoPolicy": "ONE_CUSTOM_UNDO_RECORD",
+        "backupPolicy": "REQUIRED",
+        "telemetryAllowlist": [
+          "commandId",
+          "resultCode",
+          "durationBucket",
+          "clientRelease",
+          "wordVersion",
+          "bitness"
+        ],
+        "testIds": [
+          "RIBBON-019",
+          "CONTROL-btnChenSoTrang"
+        ]
+      }
+    },
+    {
+      "order": 20,
+      "groupId": "grpDinhDang",
+      "parentContainerId": "boxGianChu",
+      "controlType": "button",
+      "id": "btnCoChu",
+      "label": "◀   ",
+      "size": "normal",
+      "imageMso": "CharacterSpacingCondensed",
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument",
+        "onAction": "OnCoChu"
+      },
+      "screenTip": "Co chữ lại",
+      "superTip": "Co chữ đang chọn -0,1pt",
+      "staticItems": [],
+      "commandContract": {
+        "commandId": "btnCoChu",
+        "executionMode": "LOCAL_EXECUTION_GRANT",
+        "entitlement": "CHARACTER_SPACING",
+        "riskTier": "SAFE",
+        "mutationScope": "SELECTED_TEXT",
+        "preconditions": [
+          "ACTIVE_DOCUMENT",
+          "DOCUMENT_WRITABLE",
+          "NOT_PROTECTED",
+          "NO_ACTIVE_MUTATION_JOB",
+          "VALID_SELECTION",
+          "SIGNED_EXECUTION_GRANT_VALID"
+        ],
+        "capability": "WORD_FONT_SPACING",
+        "undoPolicy": "ONE_CUSTOM_UNDO_RECORD",
+        "backupPolicy": "NOT_REQUIRED",
+        "telemetryAllowlist": [
+          "commandId",
+          "resultCode",
+          "durationBucket",
+          "clientRelease",
+          "wordVersion",
+          "bitness"
+        ],
+        "testIds": [
+          "RIBBON-020",
+          "CONTROL-btnCoChu"
+        ]
+      }
+    },
+    {
+      "order": 21,
+      "groupId": "grpDinhDang",
+      "parentContainerId": "boxGianChu",
+      "controlType": "button",
+      "id": "btnGianChuNormal",
+      "label": "⬤   ",
+      "size": "normal",
+      "imageMso": "CharacterSpacingNormal",
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument",
+        "onAction": "OnGianChuNormal"
+      },
+      "screenTip": "Về Normal",
+      "superTip": "Bỏ co giãn chữ",
+      "staticItems": [],
+      "commandContract": {
+        "commandId": "btnGianChuNormal",
+        "executionMode": "LOCAL_EXECUTION_GRANT",
+        "entitlement": "CHARACTER_SPACING",
+        "riskTier": "SAFE",
+        "mutationScope": "SELECTED_TEXT",
+        "preconditions": [
+          "ACTIVE_DOCUMENT",
+          "DOCUMENT_WRITABLE",
+          "NOT_PROTECTED",
+          "NO_ACTIVE_MUTATION_JOB",
+          "VALID_SELECTION",
+          "SIGNED_EXECUTION_GRANT_VALID"
+        ],
+        "capability": "WORD_FONT_SPACING",
+        "undoPolicy": "ONE_CUSTOM_UNDO_RECORD",
+        "backupPolicy": "NOT_REQUIRED",
+        "telemetryAllowlist": [
+          "commandId",
+          "resultCode",
+          "durationBucket",
+          "clientRelease",
+          "wordVersion",
+          "bitness"
+        ],
+        "testIds": [
+          "RIBBON-021",
+          "CONTROL-btnGianChuNormal"
+        ]
+      }
+    },
+    {
+      "order": 22,
+      "groupId": "grpDinhDang",
+      "parentContainerId": "boxGianChu",
+      "controlType": "button",
+      "id": "btnGianChuRa",
+      "label": "▶   ",
+      "size": "normal",
+      "imageMso": "CharacterSpacingExpanded",
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument",
+        "onAction": "OnGianChuRa"
+      },
+      "screenTip": "Giãn chữ ra",
+      "superTip": "Giãn chữ đang chọn +0,1pt",
+      "staticItems": [],
+      "commandContract": {
+        "commandId": "btnGianChuRa",
+        "executionMode": "LOCAL_EXECUTION_GRANT",
+        "entitlement": "CHARACTER_SPACING",
+        "riskTier": "SAFE",
+        "mutationScope": "SELECTED_TEXT",
+        "preconditions": [
+          "ACTIVE_DOCUMENT",
+          "DOCUMENT_WRITABLE",
+          "NOT_PROTECTED",
+          "NO_ACTIVE_MUTATION_JOB",
+          "VALID_SELECTION",
+          "SIGNED_EXECUTION_GRANT_VALID"
+        ],
+        "capability": "WORD_FONT_SPACING",
+        "undoPolicy": "ONE_CUSTOM_UNDO_RECORD",
+        "backupPolicy": "NOT_REQUIRED",
+        "telemetryAllowlist": [
+          "commandId",
+          "resultCode",
+          "durationBucket",
+          "clientRelease",
+          "wordVersion",
+          "bitness"
+        ],
+        "testIds": [
+          "RIBBON-022",
+          "CONTROL-btnGianChuRa"
+        ]
+      }
+    },
+    {
+      "order": 23,
+      "groupId": "grpBangBieu",
+      "parentContainerId": "boxBangCanGiua",
+      "controlType": "button",
+      "id": "btnLapDongTieuDe",
+      "label": "Lặp Tiêu đề bảng",
+      "size": "normal",
+      "imageMso": "TableRepeatHeaderRows",
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument",
+        "onAction": "OnLapDongTieuDe"
+      },
+      "screenTip": "Lặp Tiêu đề bảng",
+      "superTip": "Lặp tiêu đề tất cả các bảng trong văn bản",
+      "staticItems": [],
+      "commandContract": {
+        "commandId": "btnLapDongTieuDe",
+        "executionMode": "SIGNED_FIX_PLAN",
+        "entitlement": "TABLE_HEADER_REPEAT",
+        "riskTier": "SAFE",
+        "mutationScope": "AUTHORIZED_OUTER_TABLE_ROWS",
+        "preconditions": [
+          "ACTIVE_DOCUMENT",
+          "DOCUMENT_WRITABLE",
+          "NOT_PROTECTED",
+          "NO_ACTIVE_MUTATION_JOB",
+          "AUTHENTICATED",
+          "DEVICE_ACTIVE",
+          "ENTITLEMENT_ACTIVE",
+          "RELEASE_ALLOWED",
+          "NETWORK_AVAILABLE",
+          "SIGNED_FIX_PLAN_VALID",
+          "DOCUMENT_FINGERPRINT_MATCH"
+        ],
+        "capability": "WORD_TABLE_HEADER",
+        "undoPolicy": "ONE_CUSTOM_UNDO_RECORD",
+        "backupPolicy": "REQUIRED_FOR_MULTI_TABLE",
+        "telemetryAllowlist": [
+          "commandId",
+          "resultCode",
+          "durationBucket",
+          "clientRelease",
+          "wordVersion",
+          "bitness"
+        ],
+        "testIds": [
+          "RIBBON-023",
+          "CONTROL-btnLapDongTieuDe"
+        ]
+      }
+    },
+    {
+      "order": 24,
+      "groupId": "grpBangBieu",
+      "parentContainerId": "boxBangCanGiua",
+      "controlType": "button",
+      "id": "btnChuanHoaBang",
+      "label": "Căn giữa bảng   ",
+      "size": "normal",
+      "imageMso": "TableAutoFitContents",
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument",
+        "onAction": "OnChuanHoaBang"
+      },
+      "screenTip": "Căn giữa bảng",
+      "superTip": "Căn giữa và AutoFit to Window tất cả các bảng trong văn bản",
+      "staticItems": [],
+      "commandContract": {
+        "commandId": "btnChuanHoaBang",
+        "executionMode": "SIGNED_FIX_PLAN",
+        "entitlement": "TABLE_FORMAT",
+        "riskTier": "CONFIRM",
+        "mutationScope": "AUTHORIZED_TABLES",
+        "preconditions": [
+          "ACTIVE_DOCUMENT",
+          "DOCUMENT_WRITABLE",
+          "NOT_PROTECTED",
+          "NO_ACTIVE_MUTATION_JOB",
+          "AUTHENTICATED",
+          "DEVICE_ACTIVE",
+          "ENTITLEMENT_ACTIVE",
+          "RELEASE_ALLOWED",
+          "NETWORK_AVAILABLE",
+          "SIGNED_FIX_PLAN_VALID",
+          "DOCUMENT_FINGERPRINT_MATCH"
+        ],
+        "capability": "WORD_TABLE_AUTOFIT",
+        "undoPolicy": "ONE_CUSTOM_UNDO_RECORD",
+        "backupPolicy": "REQUIRED",
+        "telemetryAllowlist": [
+          "commandId",
+          "resultCode",
+          "durationBucket",
+          "clientRelease",
+          "wordVersion",
+          "bitness"
+        ],
+        "testIds": [
+          "RIBBON-024",
+          "CONTROL-btnChuanHoaBang"
+        ]
+      }
+    },
+    {
+      "order": 25,
+      "groupId": "grpBangBieu",
+      "parentContainerId": "boxBangCanGiua",
+      "controlType": "button",
+      "id": "btnChuanHoaAnh",
+      "label": "Căn giữa ảnh    ",
+      "size": "normal",
+      "imageMso": "CaptionInsert",
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument",
+        "onAction": "OnChuanHoaAnh"
+      },
+      "screenTip": "Căn giữa ảnh",
+      "superTip": "Căn giữa và chỉnh vừa chiều ngang tất cả các ảnh trong bản",
+      "staticItems": [],
+      "commandContract": {
+        "commandId": "btnChuanHoaAnh",
+        "executionMode": "SIGNED_FIX_PLAN",
+        "entitlement": "IMAGE_FORMAT",
+        "riskTier": "CONFIRM",
+        "mutationScope": "AUTHORIZED_IMAGES",
+        "preconditions": [
+          "ACTIVE_DOCUMENT",
+          "DOCUMENT_WRITABLE",
+          "NOT_PROTECTED",
+          "NO_ACTIVE_MUTATION_JOB",
+          "AUTHENTICATED",
+          "DEVICE_ACTIVE",
+          "ENTITLEMENT_ACTIVE",
+          "RELEASE_ALLOWED",
+          "NETWORK_AVAILABLE",
+          "SIGNED_FIX_PLAN_VALID",
+          "DOCUMENT_FINGERPRINT_MATCH"
+        ],
+        "capability": "WORD_INLINE_AND_FLOATING_SHAPES",
+        "undoPolicy": "ONE_CUSTOM_UNDO_RECORD",
+        "backupPolicy": "REQUIRED",
+        "telemetryAllowlist": [
+          "commandId",
+          "resultCode",
+          "durationBucket",
+          "clientRelease",
+          "wordVersion",
+          "bitness"
+        ],
+        "testIds": [
+          "RIBBON-025",
+          "CONTROL-btnChuanHoaAnh"
+        ]
+      }
+    },
+    {
+      "order": 26,
+      "groupId": "grpBangBieu",
+      "parentContainerId": "boxCanO",
+      "controlType": "button",
+      "id": "btnCanDinhO",
+      "label": "Căn đỉnh ô            ",
+      "size": "normal",
+      "imageMso": "TableCellAlignTop",
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument",
+        "onAction": "OnCanDinhO"
+      },
+      "screenTip": "Căn đỉnh ô",
+      "superTip": "Căn chữ phía trên ô cho bảng hiện tại",
+      "staticItems": [],
+      "commandContract": {
+        "commandId": "btnCanDinhO",
+        "executionMode": "LOCAL_EXECUTION_GRANT",
+        "entitlement": "CELL_ALIGNMENT",
+        "riskTier": "SAFE",
+        "mutationScope": "SELECTED_TABLE_CELLS",
+        "preconditions": [
+          "ACTIVE_DOCUMENT",
+          "DOCUMENT_WRITABLE",
+          "NOT_PROTECTED",
+          "NO_ACTIVE_MUTATION_JOB",
+          "SELECTION_IN_TABLE",
+          "SIGNED_EXECUTION_GRANT_VALID"
+        ],
+        "capability": "WORD_CELL_VERTICAL_ALIGNMENT",
+        "undoPolicy": "ONE_CUSTOM_UNDO_RECORD",
+        "backupPolicy": "NOT_REQUIRED",
+        "telemetryAllowlist": [
+          "commandId",
+          "resultCode",
+          "durationBucket",
+          "clientRelease",
+          "wordVersion",
+          "bitness"
+        ],
+        "testIds": [
+          "RIBBON-026",
+          "CONTROL-btnCanDinhO"
+        ]
+      }
+    },
+    {
+      "order": 27,
+      "groupId": "grpBangBieu",
+      "parentContainerId": "boxCanO",
+      "controlType": "button",
+      "id": "btnCanGiuaO",
+      "label": "Căn giữa ô            ",
+      "size": "normal",
+      "imageMso": "TableCellAlignMiddleCenter",
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument",
+        "onAction": "OnCanGiuaO"
+      },
+      "screenTip": "Căn giữa ô",
+      "superTip": "Căn chữ ở giữa ô cho bảng hiện tại",
+      "staticItems": [],
+      "commandContract": {
+        "commandId": "btnCanGiuaO",
+        "executionMode": "LOCAL_EXECUTION_GRANT",
+        "entitlement": "CELL_ALIGNMENT",
+        "riskTier": "SAFE",
+        "mutationScope": "SELECTED_TABLE_CELLS",
+        "preconditions": [
+          "ACTIVE_DOCUMENT",
+          "DOCUMENT_WRITABLE",
+          "NOT_PROTECTED",
+          "NO_ACTIVE_MUTATION_JOB",
+          "SELECTION_IN_TABLE",
+          "SIGNED_EXECUTION_GRANT_VALID"
+        ],
+        "capability": "WORD_CELL_ALIGNMENT",
+        "undoPolicy": "ONE_CUSTOM_UNDO_RECORD",
+        "backupPolicy": "NOT_REQUIRED",
+        "telemetryAllowlist": [
+          "commandId",
+          "resultCode",
+          "durationBucket",
+          "clientRelease",
+          "wordVersion",
+          "bitness"
+        ],
+        "testIds": [
+          "RIBBON-027",
+          "CONTROL-btnCanGiuaO"
+        ]
+      }
+    },
+    {
+      "order": 28,
+      "groupId": "grpBangBieu",
+      "parentContainerId": "boxCanO",
+      "controlType": "button",
+      "id": "btnXoaKyTuThuaBangExcel",
+      "label": "Xóa ký tự thừa (Excel)",
+      "size": "normal",
+      "imageMso": "CellsDelete",
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument",
+        "onAction": "OnXoaKyTuThuaBangExcel"
+      },
+      "screenTip": "Xóa ký tự thừa (Excel)",
+      "superTip": "Xóa ký tự thừa khi dán bảng từ Excel",
+      "staticItems": [],
+      "commandContract": {
+        "commandId": "btnXoaKyTuThuaBangExcel",
+        "executionMode": "SIGNED_FIX_PLAN",
+        "entitlement": "TABLE_TEXT_CLEAN",
+        "riskTier": "CONFIRM",
+        "mutationScope": "AUTHORIZED_TABLE_CELL_RANGES",
+        "preconditions": [
+          "ACTIVE_DOCUMENT",
+          "DOCUMENT_WRITABLE",
+          "NOT_PROTECTED",
+          "NO_ACTIVE_MUTATION_JOB",
+          "AUTHENTICATED",
+          "DEVICE_ACTIVE",
+          "ENTITLEMENT_ACTIVE",
+          "RELEASE_ALLOWED",
+          "NETWORK_AVAILABLE",
+          "SIGNED_FIX_PLAN_VALID",
+          "DOCUMENT_FINGERPRINT_MATCH",
+          "SELECTION_IN_TABLE_OR_IDENTIFIED_TABLES"
+        ],
+        "capability": "PROTECTED_SPANS_V1",
+        "undoPolicy": "ONE_CUSTOM_UNDO_RECORD",
+        "backupPolicy": "REQUIRED",
+        "telemetryAllowlist": [
+          "commandId",
+          "resultCode",
+          "durationBucket",
+          "clientRelease",
+          "wordVersion",
+          "bitness"
+        ],
+        "testIds": [
+          "RIBBON-028",
+          "CONTROL-btnXoaKyTuThuaBangExcel"
+        ]
+      }
+    },
+    {
+      "order": 29,
+      "groupId": "grpBangBieu",
+      "parentContainerId": null,
+      "controlType": "button",
+      "id": "btnChenQrCode",
+      "label": "Chèn mã QR",
+      "size": "large",
+      "imageMso": "ViewFocusModeView",
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument",
+        "onAction": "OnChenQrCode"
+      },
+      "screenTip": "Chèn mã QR",
+      "superTip": "Chèn mã QR vào văn bản",
+      "staticItems": [],
+      "commandContract": {
+        "commandId": "btnChenQrCode",
+        "executionMode": "LOCAL_EXECUTION_GRANT",
+        "entitlement": "QR_INSERT",
+        "riskTier": "CONFIRM",
+        "mutationScope": "CARET_INSERTION_AND_NEW_IMAGE",
+        "preconditions": [
+          "ACTIVE_DOCUMENT",
+          "DOCUMENT_WRITABLE",
+          "NOT_PROTECTED",
+          "NO_ACTIVE_MUTATION_JOB",
+          "AUTHENTICATED",
+          "DEVICE_ACTIVE",
+          "ENTITLEMENT_ACTIVE",
+          "RELEASE_ALLOWED",
+          "SIGNED_EXECUTION_GRANT_VALID",
+          "DOCUMENT_FINGERPRINT_MATCH",
+          "VALID_SELECTION",
+          "QR_PAYLOAD_CONFIRMED"
+        ],
+        "capability": "LOCAL_QR_RENDERER",
+        "undoPolicy": "ONE_CUSTOM_UNDO_RECORD",
+        "backupPolicy": "REQUIRED",
+        "telemetryAllowlist": [
+          "commandId",
+          "resultCode",
+          "durationBucket",
+          "clientRelease",
+          "wordVersion",
+          "bitness"
+        ],
+        "testIds": [
+          "RIBBON-029",
+          "CONTROL-btnChenQrCode"
+        ]
+      }
+    },
+    {
+      "order": 30,
+      "groupId": "grpChinhTaSo",
+      "parentContainerId": null,
+      "controlType": "menu",
+      "id": "mnuBoDau",
+      "label": "Đặt dấu thanh",
+      "size": "large",
+      "imageMso": "SyntexEsign",
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument"
+      },
+      "screenTip": "Đặt dấu thanh",
+      "superTip": "Đồng nhất cách đặt dấu theo kiểu oà, uý hoặc òa, úy; không thay đổi quy tắc i/y.",
+      "staticItems": [],
+      "commandContract": {
+        "commandId": "mnuBoDau",
+        "executionMode": "CONTAINER",
+        "entitlement": "TONE_PLACEMENT",
+        "riskTier": "SAFE",
+        "mutationScope": "NONE",
+        "preconditions": [
+          "ACTIVE_DOCUMENT"
+        ],
+        "capability": "ALL_SUPPORTED_WORD",
+        "undoPolicy": "NOT_APPLICABLE",
+        "backupPolicy": "NOT_APPLICABLE",
+        "telemetryAllowlist": [
+          "commandId",
+          "resultCode",
+          "durationBucket",
+          "clientRelease",
+          "wordVersion",
+          "bitness"
+        ],
+        "testIds": [
+          "RIBBON-030",
+          "CONTROL-mnuBoDau"
+        ]
+      }
+    },
+    {
+      "order": 31,
+      "groupId": "grpChinhTaSo",
+      "parentContainerId": "mnuBoDau",
+      "controlType": "button",
+      "id": "btnKieuOaUy",
+      "label": "Kiểu oà, uý",
+      "size": null,
+      "imageMso": null,
+      "callbacks": {
+        "onAction": "OnKieuOaUy"
+      },
+      "screenTip": "Kiểu oà, uý",
+      "superTip": "Chuyển toàn bộ dấu thanh sang dạng đặt trên âm chính (theo quy định chính tả của Bộ Giáo dục và Đào tạo).",
+      "staticItems": [],
+      "commandContract": {
+        "commandId": "btnKieuOaUy",
+        "executionMode": "LOCAL_EXECUTION_GRANT",
+        "entitlement": "TONE_PLACEMENT",
+        "riskTier": "CONFIRM",
+        "mutationScope": "ALL_EDITABLE_STORIES",
+        "preconditions": [
+          "ACTIVE_DOCUMENT",
+          "DOCUMENT_WRITABLE",
+          "NOT_PROTECTED",
+          "NO_ACTIVE_MUTATION_JOB",
+          "AUTHENTICATED",
+          "DEVICE_ACTIVE",
+          "ENTITLEMENT_ACTIVE",
+          "RELEASE_ALLOWED",
+          "SIGNED_EXECUTION_GRANT_VALID",
+          "DOCUMENT_FINGERPRINT_MATCH"
+        ],
+        "capability": "VIETNAMESE_TONE_MAIN_VOWEL",
+        "undoPolicy": "ONE_CUSTOM_UNDO_RECORD",
+        "backupPolicy": "REQUIRED",
+        "telemetryAllowlist": [
+          "commandId",
+          "resultCode",
+          "durationBucket",
+          "clientRelease",
+          "wordVersion",
+          "bitness"
+        ],
+        "testIds": [
+          "RIBBON-031",
+          "CONTROL-btnKieuOaUy"
+        ]
+      }
+    },
+    {
+      "order": 32,
+      "groupId": "grpChinhTaSo",
+      "parentContainerId": "mnuBoDau",
+      "controlType": "button",
+      "id": "btnKieuOaUy2",
+      "label": "Kiểu òa, úy",
+      "size": null,
+      "imageMso": null,
+      "callbacks": {
+        "onAction": "OnKieuOaUy2"
+      },
+      "screenTip": "Kiểu òa, úy",
+      "superTip": "Chuyển toàn bộ dấu thanh sang dạng đặt trên nguyên âm đầu (theo thông lệ).",
+      "staticItems": [],
+      "commandContract": {
+        "commandId": "btnKieuOaUy2",
+        "executionMode": "LOCAL_EXECUTION_GRANT",
+        "entitlement": "TONE_PLACEMENT",
+        "riskTier": "CONFIRM",
+        "mutationScope": "ALL_EDITABLE_STORIES",
+        "preconditions": [
+          "ACTIVE_DOCUMENT",
+          "DOCUMENT_WRITABLE",
+          "NOT_PROTECTED",
+          "NO_ACTIVE_MUTATION_JOB",
+          "AUTHENTICATED",
+          "DEVICE_ACTIVE",
+          "ENTITLEMENT_ACTIVE",
+          "RELEASE_ALLOWED",
+          "SIGNED_EXECUTION_GRANT_VALID",
+          "DOCUMENT_FINGERPRINT_MATCH"
+        ],
+        "capability": "VIETNAMESE_TONE_FIRST_VOWEL",
+        "undoPolicy": "ONE_CUSTOM_UNDO_RECORD",
+        "backupPolicy": "REQUIRED",
+        "telemetryAllowlist": [
+          "commandId",
+          "resultCode",
+          "durationBucket",
+          "clientRelease",
+          "wordVersion",
+          "bitness"
+        ],
+        "testIds": [
+          "RIBBON-032",
+          "CONTROL-btnKieuOaUy2"
+        ]
+      }
+    },
+    {
+      "order": 33,
+      "groupId": "grpChinhTaSo",
+      "parentContainerId": null,
+      "controlType": "button",
+      "id": "btnDoiDauThapPhan",
+      "label": "Dấu phẩy thập phân",
+      "size": "large",
+      "imageMso": "CommaStyle",
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument",
+        "onAction": "OnDoiDauThapPhan"
+      },
+      "screenTip": "Dấu phẩy thập phân",
+      "superTip": "Chuyển kiểu viết số về chuẩn Việt Nam 1,234,567.89 → 1.234.567,89",
+      "staticItems": [],
+      "commandContract": {
+        "commandId": "btnDoiDauThapPhan",
+        "executionMode": "SIGNED_FIX_PLAN",
+        "entitlement": "DECIMAL_NORMALIZE",
+        "riskTier": "CONFIRM",
+        "mutationScope": "AUTHORIZED_NUMERIC_TEXT_RANGES",
+        "preconditions": [
+          "ACTIVE_DOCUMENT",
+          "DOCUMENT_WRITABLE",
+          "NOT_PROTECTED",
+          "NO_ACTIVE_MUTATION_JOB",
+          "AUTHENTICATED",
+          "DEVICE_ACTIVE",
+          "ENTITLEMENT_ACTIVE",
+          "RELEASE_ALLOWED",
+          "NETWORK_AVAILABLE",
+          "SIGNED_FIX_PLAN_VALID",
+          "DOCUMENT_FINGERPRINT_MATCH"
+        ],
+        "capability": "NUMERIC_PROTECTED_SPANS",
+        "undoPolicy": "ONE_CUSTOM_UNDO_RECORD",
+        "backupPolicy": "REQUIRED",
+        "telemetryAllowlist": [
+          "commandId",
+          "resultCode",
+          "durationBucket",
+          "clientRelease",
+          "wordVersion",
+          "bitness"
+        ],
+        "testIds": [
+          "RIBBON-033",
+          "CONTROL-btnDoiDauThapPhan"
+        ]
+      }
+    },
+    {
+      "order": 34,
+      "groupId": "grpHienThi",
+      "parentContainerId": "boxHienThi",
+      "controlType": "checkBox",
+      "id": "chkRanhGioiVanBan",
+      "label": "Ẩn/hiện ranh giới văn bản",
+      "size": null,
+      "imageMso": null,
+      "callbacks": {
+        "getEnabled": "GetEnabledHienThi",
+        "getPressed": "GetPressedRanhGioiVanBan",
+        "onAction": "OnRanhGioiVanBan"
+      },
+      "screenTip": "Ẩn/hiện ranh giới văn bản",
+      "superTip": "Đồng bộ với \"Show text boundaries\" trong File → Options → Advanced → Show document content",
+      "staticItems": [],
+      "commandContract": {
+        "commandId": "chkRanhGioiVanBan",
+        "executionMode": "LOCAL_WINDOW_STATE",
+        "entitlement": "VIEW_OPTIONS",
+        "riskTier": "SAFE",
+        "mutationScope": "ACTIVE_WINDOW_VIEW_ONLY",
+        "preconditions": [
+          "ACTIVE_WINDOW"
+        ],
+        "capability": "WORD_VIEW_TEXT_BOUNDARIES",
+        "undoPolicy": "NOT_APPLICABLE",
+        "backupPolicy": "NOT_APPLICABLE",
+        "telemetryAllowlist": [
+          "commandId",
+          "resultCode",
+          "durationBucket",
+          "clientRelease",
+          "wordVersion",
+          "bitness"
+        ],
+        "testIds": [
+          "RIBBON-034",
+          "CONTROL-chkRanhGioiVanBan"
+        ]
+      }
+    },
+    {
+      "order": 35,
+      "groupId": "grpHienThi",
+      "parentContainerId": "boxHienThi",
+      "controlType": "checkBox",
+      "id": "chkDauGoc",
+      "label": "Ẩn/hiện dấu góc",
+      "size": null,
+      "imageMso": null,
+      "callbacks": {
+        "getEnabled": "GetEnabledHienThi",
+        "getPressed": "GetPressedDauGoc",
+        "onAction": "OnDauGoc"
+      },
+      "screenTip": "Ẩn/hiện dấu góc",
+      "superTip": "Đồng bộ với \"Show crop marks\" trong File → Options → Advanced → Show document content",
+      "staticItems": [],
+      "commandContract": {
+        "commandId": "chkDauGoc",
+        "executionMode": "LOCAL_WINDOW_STATE",
+        "entitlement": "VIEW_OPTIONS",
+        "riskTier": "SAFE",
+        "mutationScope": "ACTIVE_WINDOW_VIEW_ONLY",
+        "preconditions": [
+          "ACTIVE_WINDOW"
+        ],
+        "capability": "WORD_VIEW_CROP_MARKS",
+        "undoPolicy": "NOT_APPLICABLE",
+        "backupPolicy": "NOT_APPLICABLE",
+        "telemetryAllowlist": [
+          "commandId",
+          "resultCode",
+          "durationBucket",
+          "clientRelease",
+          "wordVersion",
+          "bitness"
+        ],
+        "testIds": [
+          "RIBBON-035",
+          "CONTROL-chkDauGoc"
+        ]
+      }
+    },
+    {
+      "order": 36,
+      "groupId": "grpHienThi",
+      "parentContainerId": "boxHienThi",
+      "controlType": "checkBox",
+      "id": "chkKyHieuSoanThao",
+      "label": "Ẩn/hiện ký hiệu soạn thảo",
+      "size": null,
+      "imageMso": null,
+      "callbacks": {
+        "getEnabled": "GetEnabledHienThi",
+        "getPressed": "GetPressedKyHieuSoanThao",
+        "onAction": "OnKyHieuSoanThao"
+      },
+      "screenTip": "Ẩn/hiện ký hiệu soạn thảo",
+      "superTip": "Đồng bộ với \"Show all formatting marks\" trong File → Options → Display",
+      "staticItems": [],
+      "commandContract": {
+        "commandId": "chkKyHieuSoanThao",
+        "executionMode": "LOCAL_WINDOW_STATE",
+        "entitlement": "VIEW_OPTIONS",
+        "riskTier": "SAFE",
+        "mutationScope": "ACTIVE_WINDOW_VIEW_ONLY",
+        "preconditions": [
+          "ACTIVE_WINDOW"
+        ],
+        "capability": "WORD_VIEW_SHOW_ALL",
+        "undoPolicy": "NOT_APPLICABLE",
+        "backupPolicy": "NOT_APPLICABLE",
+        "telemetryAllowlist": [
+          "commandId",
+          "resultCode",
+          "durationBucket",
+          "clientRelease",
+          "wordVersion",
+          "bitness"
+        ],
+        "testIds": [
+          "RIBBON-036",
+          "CONTROL-chkKyHieuSoanThao"
+        ]
+      }
+    },
+    {
+      "order": 37,
+      "groupId": "grpAbout",
+      "parentContainerId": null,
+      "controlType": "menu",
+      "id": "mnuThongTinTienIch",
+      "label": "Thông tin tiện ích",
+      "size": "large",
+      "imageMso": "Info",
+      "callbacks": {},
+      "screenTip": "Thông tin tiện ích",
+      "superTip": "Gửi phản hồi hoặc xem thông tin sản phẩm, phiên bản, tác giả",
+      "staticItems": [],
+      "commandContract": {
+        "commandId": "mnuThongTinTienIch",
+        "executionMode": "CONTAINER",
+        "entitlement": "ABOUT",
+        "riskTier": "SAFE",
+        "mutationScope": "NONE",
+        "preconditions": [],
+        "capability": "ALL_SUPPORTED_WORD",
+        "undoPolicy": "NOT_APPLICABLE",
+        "backupPolicy": "NOT_APPLICABLE",
+        "telemetryAllowlist": [
+          "commandId",
+          "resultCode",
+          "durationBucket",
+          "clientRelease",
+          "wordVersion",
+          "bitness"
+        ],
+        "testIds": [
+          "RIBBON-037",
+          "CONTROL-mnuThongTinTienIch"
+        ]
+      }
+    },
+    {
+      "order": 38,
+      "groupId": "grpAbout",
+      "parentContainerId": "mnuThongTinTienIch",
+      "controlType": "button",
+      "id": "btnKiemTraPhienBanMoi",
+      "label": "Kiểm tra phiên bản mới",
+      "size": null,
+      "imageMso": "FileStartWorkflow",
+      "callbacks": {
+        "onAction": "OnKiemTraPhienBanMoi"
+      },
+      "screenTip": "Kiểm tra phiên bản mới",
+      "superTip": "Kiểm tra phiên bản mới và xem hướng dẫn sử dụng",
+      "staticItems": [],
+      "commandContract": {
+        "commandId": "btnKiemTraPhienBanMoi",
+        "executionMode": "REMOTE_RELEASE_STATUS",
+        "entitlement": "ABOUT",
+        "riskTier": "REPORT_ONLY",
+        "mutationScope": "NONE_READ_ONLY",
+        "preconditions": [
+          "RELEASE_METADATA_AVAILABLE_OR_REFRESHABLE"
+        ],
+        "capability": "SYSTEM_BROWSER_OPTIONAL",
+        "undoPolicy": "NOT_APPLICABLE",
+        "backupPolicy": "NOT_APPLICABLE",
+        "telemetryAllowlist": [
+          "commandId",
+          "resultCode",
+          "durationBucket",
+          "clientRelease",
+          "wordVersion",
+          "bitness"
+        ],
+        "testIds": [
+          "RIBBON-038",
+          "CONTROL-btnKiemTraPhienBanMoi"
+        ]
+      }
+    },
+    {
+      "order": 39,
+      "groupId": "grpAbout",
+      "parentContainerId": "mnuThongTinTienIch",
+      "controlType": "button",
+      "id": "btnGuiPhanHoi",
+      "label": "Gửi phản hồi",
+      "size": null,
+      "imageMso": "Callout",
+      "callbacks": {
+        "onAction": "OnGuiPhanHoi"
+      },
+      "screenTip": "Gửi phản hồi",
+      "superTip": "Gửi phản hồi hoặc báo lỗi",
+      "staticItems": [],
+      "commandContract": {
+        "commandId": "btnGuiPhanHoi",
+        "executionMode": "SYSTEM_BROWSER",
+        "entitlement": "FEEDBACK",
+        "riskTier": "REPORT_ONLY",
+        "mutationScope": "NONE_READ_ONLY",
+        "preconditions": [
+          "OFFICIAL_FEEDBACK_URL_CONFIGURED",
+          "USER_CONSENT_FOR_TECHNICAL_METADATA"
+        ],
+        "capability": "SYSTEM_BROWSER",
+        "undoPolicy": "NOT_APPLICABLE",
+        "backupPolicy": "NOT_APPLICABLE",
+        "telemetryAllowlist": [
+          "commandId",
+          "resultCode",
+          "durationBucket",
+          "clientRelease",
+          "wordVersion",
+          "bitness"
+        ],
+        "testIds": [
+          "RIBBON-039",
+          "CONTROL-btnGuiPhanHoi"
+        ]
+      }
+    },
+    {
+      "order": 40,
+      "groupId": "grpAbout",
+      "parentContainerId": "mnuThongTinTienIch",
+      "controlType": "button",
+      "id": "btnGioiThieu",
+      "label": "Thông tin tiện ích",
+      "size": null,
+      "imageMso": "Info",
+      "callbacks": {
+        "onAction": "OnGioiThieu"
+      },
+      "screenTip": "Thông tin tiện ích",
+      "superTip": "Thông tin sản phẩm, phiên bản, tác giả",
+      "staticItems": [],
+      "commandContract": {
+        "commandId": "btnGioiThieu",
+        "executionMode": "LOCAL_SIGNED_METADATA",
+        "entitlement": "ABOUT",
+        "riskTier": "REPORT_ONLY",
+        "mutationScope": "NONE_READ_ONLY",
+        "preconditions": [],
+        "capability": "TRANSIENT_DIALOG",
+        "undoPolicy": "NOT_APPLICABLE",
+        "backupPolicy": "NOT_APPLICABLE",
+        "telemetryAllowlist": [
+          "commandId",
+          "resultCode",
+          "durationBucket",
+          "clientRelease",
+          "wordVersion",
+          "bitness"
+        ],
+        "testIds": [
+          "RIBBON-040",
+          "CONTROL-btnGioiThieu"
+        ]
+      }
+    },
+    {
+      "groupId": "grpKhoiDong",
+      "parentContainerId": null,
+      "controlType": "button",
+      "id": "btnSuaLoiDangChon",
+      "label": "Sửa lỗi đang chọn",
+      "size": "large",
+      "imageMso": "ReviewAcceptChange",
+      "callbacks": {
+        "getEnabled": "GetEnabledAutoFixAll2026",
+        "onAction": "OnSuaLoiDangChon"
+      },
+      "screenTip": "Sửa lỗi đang chọn",
+      "superTip": "Bấm vào phần văn bản đang được Chuẩn hóa comment hoặc tô đỏ, sau đó bấm nút này để sửa một lỗi có phương án an toàn. Comment sẽ biến mất khi kiểm tra lại xác nhận lỗi đã hết.",
+      "staticItems": [],
+      "order": 41,
+      "commandContract": {
+        "commandId": "btnSuaLoiDangChon",
+        "executionMode": "LOCAL_SIGNED_RULE_FIX",
+        "entitlement": "AUTOFIX",
+        "riskTier": "CONFIRM",
+        "mutationScope": "SELECTED_OWNED_FINDING_ONLY",
+        "preconditions": [
+          "ACTIVE_DOCUMENT",
+          "DOCUMENT_WRITABLE",
+          "NOT_PROTECTED",
+          "NO_ACTIVE_MUTATION_JOB",
+          "ENTITLEMENT_ACTIVE",
+          "SELECTED_OWNED_FINDING",
+          "DETERMINISTIC_SAFE_FIX_AVAILABLE"
+        ],
+        "capability": "SELECTED_FINDING_FIX_V1",
+        "undoPolicy": "ONE_CUSTOM_UNDO_RECORD_WHEN_SUPPORTED",
+        "backupPolicy": "NOT_REQUIRED",
+        "telemetryAllowlist": [
+          "commandId",
+          "resultCode",
+          "durationBucket",
+          "clientRelease",
+          "wordVersion",
+          "bitness"
+        ],
+        "testIds": [
+          "RIBBON-041",
+          "CONTROL-btnSuaLoiDangChon",
+          "SELECTED-FINDING-FIX-001"
+        ]
+      }
+    }
+  ]
+}

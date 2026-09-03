@@ -1,0 +1,6 @@
+@ChuanHoa.Api_HostAddress = http://localhost:5206
+
+GET {{ChuanHoa.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
