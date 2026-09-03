@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="Current" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props"
+          Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+
+  <PropertyGroup>
+    <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
+    <Platform Condition="'$(Platform)' == ''">AnyCPU</Platform>
+    <ProjectGuid>{A8015600-924B-4F18-A5C1-4A239D302ED1}</ProjectGuid>
+    <ProjectTypeGuids>{BAA0C2D2-18E2-41B9-852F-F413020CAA33};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <OutputType>Library</OutputType>
+    <RootNamespace>ChuanHoa.AddIn.Vsto</RootNamespace>
+    <AssemblyName>ChuanHoa.AddIn.Vsto</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <OfficeApplication>Word</OfficeApplication>
+    <OfficeVersion>14.0</OfficeVersion>
+    <LoadBehavior>3</LoadBehavior>
+    <DefineConstants>VSTO40</DefineConstants>
+    <Install>true</Install>
+    <UpdateEnabled>true</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>0</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+    <BootstrapperComponentsLocation>HomeSite</BootstrapperComponentsLocation>
+    <ResolveComReferenceSilent>true</ResolveComReferenceSilent>
+    <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
+    <ClientCoreProject>$(MSBuildProjectDirectory)\..\ChuanHoa.Client.Core\ChuanHoa.Client.Core.csproj</ClientCoreProject>
+    <ClientCoreOutput>$(MSBuildProjectDirectory)\..\ChuanHoa.Client.Core\bin\$(Configuration)\netstandard2.0\ChuanHoa.Client.Core.dll</ClientCoreOutput>
+    <ClientCoreDotNetExe Condition="Exists('$(MSBuildProjectDirectory)\..\..\.tools\dotnet\dotnet.exe')">$(MSBuildProjectDirectory)\..\..\.tools\dotnet\dotnet.exe</ClientCoreDotNetExe>
+    <ClientCoreDotNetExe Condition="'$(ClientCoreDotNetExe)' == ''">dotnet</ClientCoreDotNetExe>
+    <VSTO_TrustAssembliesLocation>true</VSTO_TrustAssembliesLocation>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="QRCoder" Version="1.8.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <BootstrapperPackage Include="Microsoft.VSTORuntime.4.0">
+      <Visible>false</Visible>
+      <ProductName>Microsoft Visual Studio 2010 Tools for Office Runtime (x86 and x64)</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include=".NETFramework,Version=v4.8">
+      <Visible>false</Visible>
+      <ProductName>.NET Framework 4.8</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <WarningLevel>4</WarningLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <WarningLevel>4</WarningLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Development|AnyCPU'">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Development\</OutputPath>
+    <DefineConstants>TRACE;CHUANHOA_DEVELOPMENT</DefineConstants>
+    <WarningLevel>4</WarningLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Deployment" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Security" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="Microsoft.Office.Interop.Word">
+      <EmbedInteropTypes>true</EmbedInteropTypes>
+      <SpecificVersion>false</SpecificVersion>
+    </Reference>
+    <Reference Include="Office">
+      <EmbedInteropTypes>true</EmbedInteropTypes>
+      <SpecificVersion>false</SpecificVersion>
+    </Reference>
+    <Reference Include="Microsoft.Office.Tools.Common.v4.0.Utilities">
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="Microsoft.Office.Tools.Common">
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Tools.Applications.Runtime">
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="ChuanHoa.Client.Core">
+      <HintPath>$(ClientCoreOutput)</HintPath>
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="ThisAddIn.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ThisAddIn.Designer.cs">
+      <AutoGen>true</AutoGen>
+      <DesignTime>true</DesignTime>
+      <DependentUpon>ThisAddIn.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Ribbon\ChuanHoaRibbon.cs" />
+    <Compile Include="Ribbon\ChuanHoaRibbon.Callbacks.g.cs">
+      <AutoGen>true</AutoGen>
+      <DesignTime>true</DesignTime>
+      <DependentUpon>ChuanHoaRibbon.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Ribbon\IChuanHoaRibbonRuntime.cs" />
+    <Compile Include="Runtime\DocumentContext.cs" />
+    <Compile Include="Runtime\DocumentContextStore.cs" />
+    <Compile Include="Runtime\LocalAccessManager.cs" />
+    <Compile Include="Runtime\WordDocumentCapabilityProvider.cs" />
+    <Compile Include="Runtime\WordDocumentReadRuntime.cs" />
+    <Compile Include="Runtime\WordDocumentSnapshotBuilder.cs" />
+    <Compile Include="Runtime\RibbonRuntime.cs" />
+    <Compile Include="Runtime\WordComMutationDocumentAdapter.cs" />
+    <Compile Include="Runtime\WordFindingAnnotationAdapter.cs" />
+    <Compile Include="Runtime\WordAppendixPaginationNormalizer.cs" />
+    <Compile Include="Runtime\WordLocalCommandRuntime.cs" />
+    <Compile Include="Runtime\WordLocalScanRuntime.cs" />
+    <Compile Include="Runtime\WordOneClickRuntime.cs" />
+    <Compile Include="Runtime\QrCodeInputDialog.cs" />
+    <Compile Include="Runtime\WordRecoveryCopyManager.cs" />
+    <Compile Include="Runtime\WordTextMeasurement.cs" />
+    <Compile Include="Runtime\WordMutationRuntime.cs" />
+    <EmbeddedResource Include="Ribbon\ChuanHoaRibbon.xml">
+      <LogicalName>ChuanHoa.AddIn.Vsto.Ribbon.ChuanHoaRibbon.xml</LogicalName>
+      <ManifestResourceName>ChuanHoa.AddIn.Vsto.Ribbon.ChuanHoaRibbon.xml</ManifestResourceName>
+      <WithCulture>false</WithCulture>
+      <Type>Non-Resx</Type>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+
+  <Target Name="BuildSharedClientAssemblies" BeforeTargets="ResolveReferences">
+    <Exec Command="&quot;$(ClientCoreDotNetExe)&quot; build &quot;$(ClientCoreProject)&quot; --configuration $(Configuration) --no-restore --nologo" />
+  </Target>
+
+  <Import Project="$(VSToolsPath)\OfficeTools\Microsoft.VisualStudio.Tools.Office.targets"
+          Condition="Exists('$(VSToolsPath)\OfficeTools\Microsoft.VisualStudio.Tools.Office.targets')" />
+
+  <!--
+    OfficeTools normally rewrites HKCU\Office\Word\Addins during every Build so
+    Visual Studio can launch the project directly. Chuẩn hóa uses an explicit
+    development bootstrapper/launcher instead. Keeping this target as a no-op prevents
+    an ordinary verification build from replacing the installed Current manifest with
+    a transient bin\Development path and making the Ribbon disappear on the next Word
+    start.
+  -->
+  <Target Name="RegisterOfficeAddin" />
+
+  <Target Name="RequireVstoOfficeTools"
+          BeforeTargets="PrepareForBuild"
+          Condition="!Exists('$(VSToolsPath)\OfficeTools\Microsoft.VisualStudio.Tools.Office.targets')">
+    <Error Text="VSTO Office Developer Tools are required to build ChuanHoa.AddIn.Vsto. Install the Word VSTO workload and .NET Framework 4.8 targeting pack on the build agent." />
+  </Target>
+</Project>

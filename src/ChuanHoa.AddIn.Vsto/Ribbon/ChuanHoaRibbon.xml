@@ -1,0 +1,87 @@
+<?xml version='1.0' encoding='utf-8'?>
+<customUI xmlns="http://schemas.microsoft.com/office/2009/07/customui" onLoad="RibbonOnLoad">
+  <ribbon>
+    <tabs>
+      <tab id="tabTheThuc" label="Chuẩn hóa">
+        <group id="grpAutoFixHero" label="1-Click Auto-Fix">
+          <button id="btnAutoFixAll2026" label="CHUẨN HÓA TOÀN BỘ" size="large" imageMso="AutoFormatNow" screentip="1-Click Auto-Fix Toàn Diện (2026)" supertip="Tự động căn lề A4, đổi font Times New Roman, in đậm Quốc hiệu, kẻ đường chuẩn NĐ30/HD05, lặp header bảng, chống rách hàng và xóa trang trắng thừa chỉ với 1 click!" onAction="OnAutoFixAll2026" getEnabled="GetEnabledAutoFixAll2026" />
+        </group>
+        <group id="grpKhoiDong" label="Khởi động">
+          <box id="boxDocDuLieu" boxStyle="vertical">
+            <dropDown id="ddQuyDinh" label="Quy định:" screentip="Quy định thể thức" supertip="Chọn bộ quy định về thể thức áp dụng cho văn bản này. Add-in tự nhận diện, bạn có thể chọn lại thủ công" getEnabled="GetEnabledHasDocument" getSelectedItemIndex="GetSelectedIndexQuyDinh" onAction="OnChonQuyDinh">
+              <item id="iqdND30" label="VB hành chính (NĐ 30)" />
+              <item id="iqdVIETTEL" label="Viettel (QĐ 11095)" />
+              <item id="iqdDANG" label="VB của Đảng (HD 05)" />
+            </dropDown>
+            <dropDown id="ddLoaiVanBan" label="Loại:" screentip="Loại văn bản" supertip="Add-in tự nhận diện loại văn bản đang soạn thảo. Bạn có thể chọn lại thủ công. Danh mục thay đổi theo Quy định đang chọn (Viettel có thêm 5 loại riêng)" getEnabled="GetEnabledLoaiVanBan" getItemCount="GetItemCountLoaiVanBan" getItemLabel="GetItemLabelLoaiVanBan" getSelectedItemIndex="GetSelectedIndexLoaiVanBan" onAction="OnChonLoaiVanBan" />
+          </box>
+          <button id="btnKiemTra" label="Kiểm tra thể thức" size="large" imageMso="FileCompatibilityCheckerWord" screentip="Kiểm tra thể thức" supertip="Kiểm tra khổ giấy, lề, kiểu chữ và thành phần thể thức; thêm comment giải thích và tô đỏ đúng chỗ sai." getEnabled="GetEnabledKiemTra" onAction="OnKiemTra" />
+          <button id="btnKiemTraChinhTa" label="Kiểm tra chính tả" size="large" imageMso="SpellingAndGrammar" screentip="Kiểm tra chính tả" supertip="Kiểm tra từ điển chính tả và viết hoa; thêm comment giải thích và tô đỏ đúng chỗ sai." getEnabled="GetEnabledKiemTra" onAction="OnKiemTraChinhTa" />
+          <button id="btnChuyenDoiUnicode" label="Chuyển đổi Unicode" size="large" imageMso="ReplaceDialog" screentip="Chuyển đổi Unicode" supertip="Chuyển đổi các font chữ cũ (.VnTime, VNI-Times) sang Times New Roman" getEnabled="GetEnabledChuyenDoiUnicode" onAction="OnChuyenDoiUnicode" />
+          <button id="btnSuaLoiDangChon" label="Sửa lỗi đang chọn" size="large" imageMso="ReviewAcceptChange" screentip="Sửa lỗi đang chọn" supertip="Bấm vào phần văn bản đang được Chuẩn hóa comment hoặc tô đỏ, sau đó bấm nút này để sửa một lỗi có phương án an toàn. Comment sẽ biến mất khi kiểm tra lại xác nhận lỗi đã hết." getEnabled="GetEnabledAutoFixAll2026" onAction="OnSuaLoiDangChon" />
+        </group>
+        <group id="grpDinhDang" label="Định dạng">
+          <button id="btnDinhDangTrangGiay" label="Định dạng trang giấy" size="large" imageMso="PageSizeGallery" screentip="Định dạng trang giấy" supertip="Định dạng cỡ giấy và khoảng cách lề" getEnabled="GetEnabledHasDocument" onAction="OnDinhDangTrangGiay" />
+          <box id="boxChenTrang" boxStyle="vertical">
+            <button id="btnChenTrangNgang" label="Chèn trang ngang" size="normal" imageMso="PageOrientationLandscape" screentip="Chèn trang ngang" supertip="Chèn trang mới theo chiều ngang" getEnabled="GetEnabledHasDocument" onAction="OnChenTrangNgang" />
+            <button id="btnChenTrangDoc" label="Chèn trang dọc  " size="normal" imageMso="PageOrientationPortrait" screentip="Chèn trang dọc" supertip="Chèn trang mới theo chiều dọc" getEnabled="GetEnabledHasDocument" onAction="OnChenTrangDoc" />
+            <button id="btnXoaTrangThua" label="Xóa trang thừa  " size="normal" imageMso="ReviewRejectChangeMenu" screentip="Xóa trang thừa" supertip="Xóa trang trống thừa ở cuối văn bản" getEnabled="GetEnabledHasDocument" onAction="OnXoaTrangThua" />
+          </box>
+          <menu id="mnuDungBoStyle" label="Dựng bộ Style" size="large" imageMso="StyleGalleryClassic" screentip="Dựng bộ Style" supertip="Dựng bộ Style để soạn thảo văn bản" getEnabled="GetEnabledHasDocument">
+            <button id="btnDungBoStyleCo15" label="Cỡ chữ 15" imageMso="FontSizeIncreaseWord" screentip="Dựng bộ Style — Cỡ chữ 15" supertip="Dựng bộ Style với bộ cỡ chữ 15" getEnabled="GetEnabledCoChu15" onAction="OnDungBoStyle15" />
+            <button id="btnDungBoStyleCo14" label="Cỡ chữ 14" imageMso="ActiveXLabel" screentip="Dựng bộ Style — Cỡ chữ 14" supertip="Dựng bộ Style với bộ cỡ chữ 14" getEnabled="GetEnabledCoChu14" onAction="OnDungBoStyle14" />
+            <button id="btnDungBoStyleCo13" label="Cỡ chữ 13" imageMso="FontSizeDecreaseWord" screentip="Dựng bộ Style — Cỡ chữ 13" supertip="Dựng bộ Style với bộ cỡ chữ 13" getEnabled="GetEnabledCoChu13" onAction="OnDungBoStyle13" />
+          </menu>
+          <box id="boxCoChuGianChu" boxStyle="vertical">
+            <button id="btnCoChu15" label="Cỡ chữ 15" size="normal" imageMso="FontSizeIncreaseWord" screentip="Cỡ chữ 15" supertip="Chuyển toàn bộ văn bản thành bộ cỡ chữ 15" getEnabled="GetEnabledCoChu15" onAction="OnCoChu15" />
+            <button id="btnCoChu14" label="Cỡ chữ 14" size="normal" imageMso="ActiveXLabel" screentip="Cỡ chữ 14" supertip="Chuyển toàn bộ văn bản thành bộ cỡ chữ 14" getEnabled="GetEnabledCoChu14" onAction="OnCoChu14" />
+            <button id="btnCoChu13" label="Cỡ chữ 13" size="normal" imageMso="FontSizeDecreaseWord" screentip="Cỡ chữ 13" supertip="Chuyển toàn bộ văn bản thành bộ cỡ chữ 13" getEnabled="GetEnabledCoChu13" onAction="OnCoChu13" />
+          </box>
+          <box id="boxKeepPageNum" boxStyle="vertical">
+            <button id="btnKeepWithNext" label="Keep with next" size="normal" imageMso="FootnoteNextWord" screentip="Keep with next" supertip="Giữ đoạn hiện tại cùng trang với đoạn kế tiếp" getEnabled="GetEnabledHasDocument" onAction="OnKeepWithNext" />
+            <button id="btnChenSoTrang" label="Chèn số trang" size="normal" imageMso="HeaderFooterPageNumberInsert" screentip="Chèn số trang" supertip="Chèn số trang tự động" getEnabled="GetEnabledHasDocument" onAction="OnChenSoTrang" />
+            <box id="boxGianChu" boxStyle="horizontal">
+              <button id="btnCoChu" label="◀   " size="normal" imageMso="CharacterSpacingCondensed" screentip="Co chữ lại" supertip="Co chữ đang chọn -0,1pt" getEnabled="GetEnabledHasDocument" onAction="OnCoChu" />
+              <button id="btnGianChuNormal" label="⬤   " size="normal" imageMso="CharacterSpacingNormal" screentip="Về Normal" supertip="Bỏ co giãn chữ" getEnabled="GetEnabledHasDocument" onAction="OnGianChuNormal" />
+              <button id="btnGianChuRa" label="▶   " size="normal" imageMso="CharacterSpacingExpanded" screentip="Giãn chữ ra" supertip="Giãn chữ đang chọn +0,1pt" getEnabled="GetEnabledHasDocument" onAction="OnGianChuRa" />
+            </box>
+          </box>
+        </group>
+        <group id="grpBangBieu" label="Bảng biểu và hình ảnh">
+          <box id="boxBangCanGiua" boxStyle="vertical">
+            <button id="btnLapDongTieuDe" label="Lặp Tiêu đề bảng" size="normal" imageMso="TableRepeatHeaderRows" screentip="Lặp Tiêu đề bảng" supertip="Lặp tiêu đề tất cả các bảng trong văn bản" getEnabled="GetEnabledHasDocument" onAction="OnLapDongTieuDe" />
+            <button id="btnChuanHoaBang" label="Căn giữa bảng   " size="normal" imageMso="TableAutoFitContents" screentip="Căn giữa bảng" supertip="Căn giữa và AutoFit to Window tất cả các bảng trong văn bản" getEnabled="GetEnabledHasDocument" onAction="OnChuanHoaBang" />
+            <button id="btnChuanHoaAnh" label="Căn giữa ảnh    " size="normal" imageMso="CaptionInsert" screentip="Căn giữa ảnh" supertip="Căn giữa và chỉnh vừa chiều ngang tất cả các ảnh trong bản" getEnabled="GetEnabledHasDocument" onAction="OnChuanHoaAnh" />
+          </box>
+          <box id="boxCanO" boxStyle="vertical">
+            <button id="btnCanDinhO" label="Căn đỉnh ô            " size="normal" imageMso="TableCellAlignTop" screentip="Căn đỉnh ô" supertip="Căn chữ phía trên ô cho bảng hiện tại" getEnabled="GetEnabledHasDocument" onAction="OnCanDinhO" />
+            <button id="btnCanGiuaO" label="Căn giữa ô            " size="normal" imageMso="TableCellAlignMiddleCenter" screentip="Căn giữa ô" supertip="Căn chữ ở giữa ô cho bảng hiện tại" getEnabled="GetEnabledHasDocument" onAction="OnCanGiuaO" />
+            <button id="btnXoaKyTuThuaBangExcel" label="Xóa ký tự thừa (Excel)" size="normal" imageMso="CellsDelete" screentip="Xóa ký tự thừa (Excel)" supertip="Xóa ký tự thừa khi dán bảng từ Excel" getEnabled="GetEnabledHasDocument" onAction="OnXoaKyTuThuaBangExcel" />
+          </box>
+          <button id="btnChenQrCode" label="Chèn mã QR" size="large" imageMso="ViewFocusModeView" screentip="Chèn mã QR" supertip="Chèn mã QR vào văn bản" getEnabled="GetEnabledHasDocument" onAction="OnChenQrCode" />
+        </group>
+        <group id="grpChinhTaSo" label="Chính tả và số">
+          <menu id="mnuBoDau" label="Đặt dấu thanh" size="large" imageMso="SyntexEsign" screentip="Đặt dấu thanh" supertip="Đồng nhất cách đặt dấu theo kiểu oà, uý hoặc òa, úy; không thay đổi quy tắc i/y." getEnabled="GetEnabledHasDocument">
+            <button id="btnKieuOaUy" label="Kiểu oà, uý" screentip="Kiểu oà, uý" supertip="Chuyển toàn bộ dấu thanh sang dạng đặt trên âm chính (theo quy định chính tả của Bộ Giáo dục và Đào tạo)." onAction="OnKieuOaUy" />
+            <button id="btnKieuOaUy2" label="Kiểu òa, úy" screentip="Kiểu òa, úy" supertip="Chuyển toàn bộ dấu thanh sang dạng đặt trên nguyên âm đầu (theo thông lệ)." onAction="OnKieuOaUy2" />
+          </menu>
+          <button id="btnDoiDauThapPhan" label="Dấu phẩy thập phân" size="large" imageMso="CommaStyle" screentip="Dấu phẩy thập phân" supertip="Chuyển kiểu viết số về chuẩn Việt Nam 1,234,567.89 → 1.234.567,89" getEnabled="GetEnabledHasDocument" onAction="OnDoiDauThapPhan" />
+        </group>
+        <group id="grpHienThi" label="Hiển thị">
+          <box id="boxHienThi" boxStyle="vertical">
+            <checkBox id="chkRanhGioiVanBan" label="Ẩn/hiện ranh giới văn bản" screentip="Ẩn/hiện ranh giới văn bản" supertip="Đồng bộ với &quot;Show text boundaries&quot; trong File → Options → Advanced → Show document content" getEnabled="GetEnabledHienThi" getPressed="GetPressedRanhGioiVanBan" onAction="OnRanhGioiVanBan" />
+            <checkBox id="chkDauGoc" label="Ẩn/hiện dấu góc" screentip="Ẩn/hiện dấu góc" supertip="Đồng bộ với &quot;Show crop marks&quot; trong File → Options → Advanced → Show document content" getEnabled="GetEnabledHienThi" getPressed="GetPressedDauGoc" onAction="OnDauGoc" />
+            <checkBox id="chkKyHieuSoanThao" label="Ẩn/hiện ký hiệu soạn thảo" screentip="Ẩn/hiện ký hiệu soạn thảo" supertip="Đồng bộ với &quot;Show all formatting marks&quot; trong File → Options → Display" getEnabled="GetEnabledHienThi" getPressed="GetPressedKyHieuSoanThao" onAction="OnKyHieuSoanThao" />
+          </box>
+        </group>
+        <group id="grpAbout" label="About">
+          <menu id="mnuThongTinTienIch" label="Thông tin tiện ích" size="large" imageMso="Info" screentip="Thông tin tiện ích" supertip="Gửi phản hồi hoặc xem thông tin sản phẩm, phiên bản, tác giả">
+            <button id="btnKiemTraPhienBanMoi" label="Kiểm tra phiên bản mới" imageMso="FileStartWorkflow" screentip="Kiểm tra phiên bản mới" supertip="Kiểm tra phiên bản mới và xem hướng dẫn sử dụng" onAction="OnKiemTraPhienBanMoi" />
+            <button id="btnGuiPhanHoi" label="Gửi phản hồi" imageMso="Callout" screentip="Gửi phản hồi" supertip="Gửi phản hồi hoặc báo lỗi" onAction="OnGuiPhanHoi" />
+            <button id="btnGioiThieu" label="Thông tin tiện ích" imageMso="Info" screentip="Thông tin tiện ích" supertip="Thông tin sản phẩm, phiên bản, tác giả" onAction="OnGioiThieu" />
+          </menu>
+        </group>
+      </tab>
+    </tabs>
+  </ribbon>
+</customUI>
