@@ -58,8 +58,11 @@ namespace ChuanHoa.OneClickQa
                     var reader = new WordDocumentReadRuntime(application, access);
                     var scanner = new WordLocalScanRuntime(application, access);
                     reader.PrepareForOneClick(context, document);
-                    var p9 = context.LastLocalSnapshot.Paragraphs[8];
-                    Console.WriteLine("P9: [" + p9.Text + "] len=" + p9.Text.Length + " hex=" + BitConverter.ToString(System.Text.Encoding.UTF8.GetBytes(p9.Text)));
+                    if (context.LastLocalSnapshot.Paragraphs.Count > 8)
+                    {
+                        var p9 = context.LastLocalSnapshot.Paragraphs[8];
+                        Console.WriteLine("P9: [" + p9.Text + "] len=" + p9.Text.Length + " hex=" + BitConverter.ToString(System.Text.Encoding.UTF8.GetBytes(p9.Text)));
+                    }
                     Console.WriteLine("DETECTED_TYPE=" + context.DocumentTypeCode);
                     WriteSnapshotDiagnostics(context.LastLocalSnapshot);
                     result = new WordOneClickRuntime(application, access).Execute(context, document);
