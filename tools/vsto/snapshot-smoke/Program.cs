@@ -34,7 +34,7 @@ namespace ChuanHoa.SnapshotSmoke
                     VerifySnapshot(application, Path.GetFullPath(path));
                 }
 
-                VerifyUnsavedDocumentIsBlocked(application);
+                VerifyUnsavedDocumentIsSupported(application);
                 Console.WriteLine("SNAPSHOT_WORD_SMOKE_PASS");
                 return 0;
             }
@@ -134,7 +134,7 @@ namespace ChuanHoa.SnapshotSmoke
             }
         }
 
-        private static void VerifyUnsavedDocumentIsBlocked(Word.Application application)
+        private static void VerifyUnsavedDocumentIsSupported(Word.Application application)
         {
             Word.Document document = null;
             try
@@ -142,8 +142,9 @@ namespace ChuanHoa.SnapshotSmoke
                 document = application.Documents.Add();
                 document.Activate();
                 var capability = new WordDocumentCapabilityProvider(application).Evaluate();
-                Assert(!capability.CanReadDocument, "Unsaved document must fail closed.");
-                Assert(string.Equals(capability.ReasonCode, "DOCUMENT_MUST_BE_SAVED", StringComparison.Ordinal),
+                Assert(capability.CanReadDocument, "Unsaved document must be readable.");
+                Assert(!capability.IsSaved, "Unsaved document must report IsSaved as false.");
+                Assert(string.Equals(capability.ReasonCode, "READY", StringComparison.Ordinal),
                     "Unsaved document returned an unexpected reason code.");
             }
             finally

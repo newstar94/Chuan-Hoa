@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Runtime.InteropServices;
 using ChuanHoa.Client.Core.Safety;
 using Word = Microsoft.Office.Interop.Word;
@@ -56,7 +57,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         public string Reason { get; }
 
         public bool CanReadDocument =>
-            HasActiveDocument && HasActiveWindow && IsSaved && IsSupportedFormat;
+            HasActiveDocument && HasActiveWindow && IsSupportedFormat;
 
         public bool CanAnnotateDocument =>
             CanReadDocument && !IsReadOnly && !IsProtected;
@@ -110,9 +111,11 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 // not a missing or unsupported document.
                 var fullName = document.FullName ?? string.Empty;
                 var isSaved = !string.IsNullOrWhiteSpace(document.Path);
-                var supported = isSaved && SupportedWordDocumentFormatPolicy.IsSupported(
-                    fullName,
-                    (int)document.SaveFormat);
+                var saveFormat = (int)document.SaveFormat;
+                var extension = Path.GetExtension(fullName);
+                var supported = isSaved
+                    ? SupportedWordDocumentFormatPolicy.IsSupported(fullName, saveFormat)
+                    : (saveFormat == 0 || saveFormat == 12 || saveFormat == 16 || saveFormat == 24 || string.IsNullOrEmpty(extension));
                 var readOnly = document.ReadOnly;
                 var protectedDocument = document.ProtectionType != Word.WdProtectionType.wdNoProtection;
                 var trackChanges = document.TrackRevisions;
@@ -130,43 +133,36 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                         "ACTIVE_WINDOW_REQUIRED", "Cần một cửa sổ tài liệu Word đang hoạt động.");
                 }
 
-                if (!isSaved)
-                {
-                    return CreateBlocked(true, true, false, false, readOnly, protectedDocument,
-                        trackChanges, hasSelection, selectionIsInTable,
-                        "DOCUMENT_MUST_BE_SAVED", "Hãy lưu tài liệu dưới dạng .doc hoặc .docx trước khi sử dụng Chuẩn hóa.");
-                }
-
                 if (!supported)
                 {
-                    return CreateBlocked(true, true, false, true, readOnly, protectedDocument,
+                    return CreateBlocked(true, true, false, isSaved, readOnly, protectedDocument,
                         trackChanges, hasSelection, selectionIsInTable,
                         "DOCUMENT_FORMAT_UNSUPPORTED", "Chuẩn hóa chỉ xử lý trực tiếp tài liệu .doc và .docx.");
                 }
 
                 if (readOnly)
                 {
-                    return CreateBlocked(true, true, true, true, true, protectedDocument,
+                    return CreateBlocked(true, true, true, isSaved, true, protectedDocument,
                         trackChanges, hasSelection, selectionIsInTable,
                         "DOCUMENT_READ_ONLY", "Tài liệu đang ở chế độ chỉ đọc; có thể quét nhưng không thể ghi chú hoặc sửa.");
                 }
 
                 if (protectedDocument)
                 {
-                    return CreateBlocked(true, true, true, true, false, true,
+                    return CreateBlocked(true, true, true, isSaved, false, true,
                         trackChanges, hasSelection, selectionIsInTable,
                         "DOCUMENT_PROTECTED", "Tài liệu đang được bảo vệ; có thể quét nhưng không thể ghi chú hoặc sửa.");
                 }
 
                 if (trackChanges)
                 {
-                    return CreateBlocked(true, true, true, true, false, false,
+                    return CreateBlocked(true, true, true, isSaved, false, false,
                         true, hasSelection, selectionIsInTable,
                         "TRACK_CHANGES_ENABLED", "Đang bật Theo dõi thay đổi; lệnh sửa tài liệu sẽ bị khóa an toàn.");
                 }
 
                 return new WordDocumentCapability(
-                    true, true, true, true, false, false, false,
+                    true, true, true, isSaved, false, false, false,
                     hasSelection, selectionIsInTable, "READY", "Tài liệu sẵn sàng.");
             }
             catch (COMException)

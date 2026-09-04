@@ -22,25 +22,10 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             if (application == null) throw new ArgumentNullException(nameof(application));
             if (document == null) throw new ArgumentNullException(nameof(document));
 
-            if (string.IsNullOrWhiteSpace(ReadPath(document)))
+            if (!string.IsNullOrWhiteSpace(ReadPath(document)) && !document.Saved)
             {
-                Word.Dialog? dialog = null;
-                try
-                {
-                    dialog = application.Dialogs[Word.WdWordDialog.wdDialogFileSaveAs];
-                    object timeout = Type.Missing;
-                    var result = dialog.Show(ref timeout);
-                    if (result == 0 || string.IsNullOrWhiteSpace(ReadPath(document)))
-                        throw new InvalidOperationException("Tài liệu cần được lưu dưới dạng .doc hoặc .docx trước khi thực hiện.");
-                }
-                finally
-                {
-                    Release(dialog);
-                }
-            }
-
-            if (!document.Saved)
                 document.Save();
+            }
         }
 
         public static string Create(Word.Application application, Word.Document document, string prefix)
@@ -137,14 +122,38 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 "ch-" + Guid.NewGuid().ToString("N") + Path.GetExtension(path));
             try
             {
-                object template = source.FullName;
-                object newTemplate = false;
-                object documentType = Word.WdNewDocumentType.wdNewBlankDocument;
-                object visible = false;
-                copy = application.Documents.Add(ref template, ref newTemplate, ref documentType, ref visible);
+                var sourcePath = ReadPath(source);
+                var isSaved = !string.IsNullOrWhiteSpace(sourcePath);
+                if (isSaved)
+                {
+                    object template = source.FullName;
+                    object newTemplate = false;
+                    object documentType = Word.WdNewDocumentType.wdNewBlankDocument;
+                    object visible = false;
+                    copy = application.Documents.Add(ref template, ref newTemplate, ref documentType, ref visible);
+                }
+                else
+                {
+                    object missing = Type.Missing;
+                    object newTemplate = false;
+                    object documentType = Word.WdNewDocumentType.wdNewBlankDocument;
+                    object visible = false;
+                    copy = application.Documents.Add(ref missing, ref newTemplate, ref documentType, ref visible);
+                    try
+                    {
+                        copy.Content.FormattedText = source.Content.FormattedText;
+                    }
+                    catch (COMException)
+                    {
+                        // Fallback to text copy if formatted text copy encounters transient COM error
+                        copy.Content.Text = source.Content.Text;
+                    }
+                }
 
                 object backupFileName = wordTemporaryPath;
-                object backupFileFormat = source.SaveFormat;
+                object backupFileFormat = (int)source.SaveFormat == 0
+                    ? Word.WdSaveFormat.wdFormatDocument
+                    : Word.WdSaveFormat.wdFormatXMLDocument;
                 try
                 {
                     copy.SaveAs(ref backupFileName, ref backupFileFormat);
