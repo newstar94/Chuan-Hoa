@@ -185,6 +185,7 @@ namespace ChuanHoa.Client.Core.Scanning
             var contentParagraphs = Scannable(snapshot)
                 .Where(p => !p.IsInTable &&
                             string.Equals(p.StoryType, "wdMainTextStory", StringComparison.Ordinal) &&
+                            !string.IsNullOrWhiteSpace(p.Text) &&
                             (!endBoundary.HasValue || p.Index < endBoundary.Value) &&
                             (!roles.TryGetValue(p.Index, out var role) || !headerRoles.Contains(role)))
                 .OrderBy(p => p.Index)
@@ -194,12 +195,16 @@ namespace ChuanHoa.Client.Core.Scanning
             if (last != null)
             {
                 var text = last.Text.Trim();
-                if (!text.EndsWith(":", StringComparison.Ordinal) &&
+                if (text.Length > 0 &&
+                    !text.EndsWith(":", StringComparison.Ordinal) &&
                     (!text.EndsWith(".", StringComparison.Ordinal) ||
                      text.EndsWith("./.", StringComparison.Ordinal) ||
                      text.EndsWith(". / .", StringComparison.Ordinal)))
                 {
-                    findings.Add(Span("ND30-PL1-M2-K6E-DOTSLASH", last, Math.Max(0, text.Length - Math.Min(3, text.Length)), Math.Min(3, text.Length),
+                    var printable = TrimParagraphTerminator(last.Text).TrimEnd();
+                    var offset = Math.Max(0, printable.Length - Math.Min(3, printable.Length));
+                    var length = Math.Max(1, printable.Length - offset);
+                    findings.Add(Span("ND30-PL1-M2-K6E-DOTSLASH", last, offset, length,
                         "Kết thúc nội dung không đúng.", "Văn bản hành chính kết thúc bằng dấu chấm.", rules));
                 }
             }
@@ -370,6 +375,16 @@ namespace ChuanHoa.Client.Core.Scanning
                 : RequiredLineStatus.InvalidGeometry;
         }
 
+        private static bool IsOwnedLineForParagraph(string? name, int paragraphIndex)
+        {
+            if (name == null || name.Length == 0) return false;
+            var marker = "P" + paragraphIndex.ToString(CultureInfo.InvariantCulture);
+            return (name.StartsWith("CHUANHOA2_", StringComparison.Ordinal) ||
+                    name.StartsWith("CHUANHOA_", StringComparison.Ordinal) ||
+                    name.StartsWith("CH_L_", StringComparison.Ordinal)) &&
+                   (name.EndsWith(marker, StringComparison.Ordinal) || name.IndexOf(marker + "_", StringComparison.Ordinal) >= 0);
+        }
+
         private static bool HasRequiredLineStyle(LocalLineShapeSnapshot line)
         {
             if (!line.LineVisible) return false;
@@ -381,6 +396,8 @@ namespace ChuanHoa.Client.Core.Scanning
         private static bool IsPotentiallyAssociated(LocalLineShapeSnapshot line,
             LocalParagraphSnapshot paragraph)
         {
+            if (IsOwnedLineForParagraph(line.Name, paragraph.Index))
+                return true;
             if (line.AnchorParagraphIndex.HasValue && line.AnchorParagraphIndex.Value == paragraph.Index)
                 return true;
             if (line.AnchorParagraphIndex.HasValue &&
@@ -421,6 +438,8 @@ namespace ChuanHoa.Client.Core.Scanning
 
         private static bool IsBelow(LocalLineShapeSnapshot line, LocalParagraphSnapshot paragraph)
         {
+            if (IsOwnedLineForParagraph(line.Name, paragraph.Index))
+                return true;
             if (line.AnchorParagraphIndex.HasValue &&
                 line.AnchorParagraphIndex.Value > paragraph.Index &&
                 line.AnchorParagraphIndex.Value <= paragraph.Index + 2 &&
@@ -438,8 +457,7 @@ namespace ChuanHoa.Client.Core.Scanning
             {
                 var distance = LineVerticalCenter(line) - paragraph.PageTopPoints.Value;
                 var fontSize = paragraph.FontSizePoints.GetValueOrDefault(13d);
-                return distance >= Math.Max(5d, fontSize * .55d) &&
-                    distance <= Math.Max(32d, fontSize * 4.5d);
+                return distance >= 2d && distance <= Math.Max(48d, fontSize * 5.5d);
             }
             return IsAnchoredNear(line, paragraph) && line.TopPoints >= -6d && line.TopPoints <= 100d;
         }
@@ -466,11 +484,13 @@ namespace ChuanHoa.Client.Core.Scanning
         private static bool HasExpectedWidthAndCenter(LocalLineShapeSnapshot line, LocalParagraphSnapshot paragraph,
             double minimumWidthRatio, double maximumWidthRatio)
         {
+            if (IsOwnedLineForParagraph(line.Name, paragraph.Index))
+                return true;
             if (paragraph.TextWidthPoints.HasValue && paragraph.TextWidthPoints.Value > 0)
             {
                 var lineLength = LineLength(line);
                 var ratio = lineLength / paragraph.TextWidthPoints.Value;
-                if (ratio < minimumWidthRatio - .03d || ratio > maximumWidthRatio + .03d) return false;
+                if (ratio < minimumWidthRatio - .04d || ratio > maximumWidthRatio + .04d) return false;
                 // Legacy DOC templates commonly store a visually centered line
                 // relative to its table column (Word value 2). Word exposes that
                 // coordinate in a different local origin after repagination, so the
@@ -594,12 +614,16 @@ namespace ChuanHoa.Client.Core.Scanning
             {
                 var paragraph = bases[index];
                 CheckStyle(findings, "ND30-PL1-M2-K6A-STYLE", paragraph, rules, party ? 14 : 13, party ? 15 : 14, false, true, 3, "Căn cứ pháp lý");
-                var trimmed = paragraph.Text.Trim();
+                var printable = TrimParagraphTerminator(paragraph.Text).TrimEnd();
                 var isLast = index == bases.Length - 1;
                 var expected = isLast ? "." : ";";
-                if (!trimmed.EndsWith(expected, StringComparison.Ordinal))
-                    findings.Add(Span("ND30-PL1-M2-K6A-PUNCT", paragraph, Math.Max(0, trimmed.Length - 1), Math.Min(1, trimmed.Length),
+                if (printable.Length > 0 && !printable.EndsWith(expected, StringComparison.Ordinal))
+                {
+                    var offset = Math.Max(0, printable.Length - 1);
+                    var length = Math.Max(1, printable.Length - offset);
+                    findings.Add(Span("ND30-PL1-M2-K6A-PUNCT", paragraph, offset, length,
                         "Căn cứ pháp lý sai dấu kết thúc.", isLast ? "Kết thúc căn cứ cuối bằng dấu chấm." : "Kết thúc từng căn cứ trước bằng dấu chấm phẩy.", rules));
+                }
                 if (party && !Rx(@"^\s*[-–—]\s*").IsMatch(paragraph.Text))
                     findings.Add(Paragraph("ND30-PL1-M2-K6A-STYLE", paragraph, "Căn cứ của văn bản Đảng thiếu gạch ngang đầu dòng.", "Thêm một dấu gạch ngang trước mỗi căn cứ.", rules));
             }
@@ -1230,5 +1254,7 @@ namespace ChuanHoa.Client.Core.Scanning
             if (source.Length > 0 && char.IsUpper(source[0])) return char.ToUpper(target[0], Vietnamese) + target.Substring(1);
             return target;
         }
+
+        private static string TrimParagraphTerminator(string text) => (text ?? string.Empty).TrimEnd('\r', '\a');
     }
 }

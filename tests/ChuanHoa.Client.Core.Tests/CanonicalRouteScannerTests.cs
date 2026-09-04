@@ -128,6 +128,22 @@ public sealed class CanonicalRouteScannerTests
     }
 
     [Fact]
+    public void Owned_line_for_paragraph_is_accepted_without_false_findings()
+    {
+        var paragraph = P(1, "Độc lập - Tự do - Hạnh phúc", "nationalMotto", size: 13,
+            bold: true, alignment: 1, page: 1, left: 320, top: 80, width: 180);
+        var ownedLine = new LocalLineShapeSnapshot(1, "CHUANHOA2_TN_LINE_P1", 9, paragraph.StoryType,
+            paragraph.SectionIndex, paragraph.AbsoluteStart, paragraph.Index, paragraph.PageNumber,
+            320, 98, 180, 0, 320, 98, 1, 1, true, 1, .75, 0, 1, 1);
+        var snapshot = new LocalScanSnapshot("sha256:motto-line-owned", 1, new[] { ValidSection() },
+            new[] { paragraph }, Array.Empty<AnnotationProtectedSpan>(), new[] { ownedLine }, "STATE_ND30");
+
+        var findings = new LocalDocumentScanner().ScanFormat(snapshot, Rules()).Findings;
+
+        Assert.DoesNotContain(findings, item => item.RuleCode == "ND30-PL1-M2-K1-TN-LINE");
+    }
+
+    [Fact]
     public void Motto_line_must_match_the_rendered_text_width_closely()
     {
         var paragraph = P(1, "Độc lập - Tự do - Hạnh phúc", "nationalMotto", size: 13,
@@ -576,6 +592,28 @@ public sealed class CanonicalRouteScannerTests
         };
         var snapshot = new LocalScanSnapshot("sha256:listing-colon", 1, new[] { ValidSection() }, paragraphs,
             Array.Empty<AnnotationProtectedSpan>(), documentTypeCode: LocalDocumentTypeCodes.Decision,
+            documentTypeWasSelectedManually: true);
+
+        var findings = new LocalDocumentScanner().ScanFormat(snapshot, Rules()).Findings;
+
+        Assert.DoesNotContain(findings, item => item.RuleCode == "ND30-PL1-M2-K6E-DOTSLASH");
+    }
+
+    [Fact]
+    public void Trailing_blank_paragraph_before_recipients_does_not_produce_invalid_dotslash_anchor()
+    {
+        var paragraphs = new[]
+        {
+            P(1, "TỜ TRÌNH", "typeName", size: 14, bold: true, alignment: 1),
+            P(2, "Về việc mua sắm trang thiết bị", "subject", size: 14, bold: true, alignment: 1),
+            P(3, "Nội dung tờ trình kết thúc bằng dấu chấm.", size: 13),
+            P(4, "   \r", size: 13),
+            P(5, "Nơi nhận:", "recipientLabel", size: 12, bold: true),
+            P(6, "- Như trên;", "recipientList", size: 11),
+            P(7, "- Lưu: VT.", "recipientList", size: 11)
+        };
+        var snapshot = new LocalScanSnapshot("sha256:trailing-blank", 1, new[] { ValidSection() }, paragraphs,
+            Array.Empty<AnnotationProtectedSpan>(), documentTypeCode: "TO_TRINH",
             documentTypeWasSelectedManually: true);
 
         var findings = new LocalDocumentScanner().ScanFormat(snapshot, Rules()).Findings;

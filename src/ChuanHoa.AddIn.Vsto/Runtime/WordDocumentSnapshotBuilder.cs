@@ -531,8 +531,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                         double? pageTop = null;
                         var pageNumber = 0;
                         if (allowPageLayout && paragraphCount <= 400 &&
-                            alignment.HasValue &&
-                            ShouldCapturePageLayout(storyType, paragraphIndex, text, alignment.Value))
+                            ShouldCapturePageLayout(storyType, paragraphIndex, text, alignment.GetValueOrDefault(-1)))
                         {
                             // Word's page-relative Information properties trigger full
                             // repagination. Calling them for every cell paragraph can keep
@@ -950,13 +949,16 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 try
                 {
                     control = document.ContentControls[index];
-                    range = control.Range.Duplicate;
-                    snapshots.Add(new WordProtectedSpanSnapshot(
-                        range.StoryType.ToString(),
-                        ReadSectionIndex(range),
-                        range.Start,
-                        Math.Max(0, range.End - range.Start),
-                        "ContentControl:" + control.Type));
+                    if (control.LockContents)
+                    {
+                        range = control.Range.Duplicate;
+                        snapshots.Add(new WordProtectedSpanSnapshot(
+                            range.StoryType.ToString(),
+                            ReadSectionIndex(range),
+                            range.Start,
+                            Math.Max(0, range.End - range.Start),
+                            "ContentControl:" + control.Type));
+                    }
                 }
                 finally
                 {
@@ -1064,8 +1066,11 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             string text, int alignment)
         {
             if (storyType != Word.WdStoryType.wdMainTextStory || paragraphIndex > 150) return false;
-            if (alignment != (int)Word.WdParagraphAlignment.wdAlignParagraphCenter) return false;
             if (string.IsNullOrWhiteSpace(text) || text.Length > 500) return false;
+            // The first 40 paragraphs include all header metadata (organ name, motto, code, subject)
+            // even if their alignment is left, justify, or not yet normalized to center.
+            if (paragraphIndex <= 40) return true;
+            if (alignment != (int)Word.WdParagraphAlignment.wdAlignParagraphCenter) return false;
 
             // All NĐ30/HD05 components requiring a rendered Line Shape are centered
             // headings near the start of the main story. Limiting pagination metrics to

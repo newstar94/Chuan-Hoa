@@ -211,7 +211,10 @@ namespace ChuanHoa.Client.Core.Annotations
                 (!anchor.TableIndex.HasValue || item.TableIndex == anchor.TableIndex) &&
                 (!anchor.RowIndex.HasValue || item.RowIndex == anchor.RowIndex) &&
                 (!anchor.CellIndex.HasValue || item.CellIndex == anchor.CellIndex)).Take(2).ToList();
-            return matches.Count == 1 ? matches[0] : null;
+            if (matches.Count == 1) return matches[0];
+
+            var fallback = paragraphs.Where(item => item.ParagraphIndex == anchor.ParagraphIndex.Value).Take(2).ToList();
+            return fallback.Count == 1 ? fallback[0] : null;
         }
 
         private static IReadOnlyList<AnnotationVisualInstruction> MergeVisualRanges(

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using ChuanHoa.Client.Core.Annotations;
 using ChuanHoa.Client.Core.Scanning;
@@ -41,8 +42,33 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             var plan = _planner.CreatePlan(result.Lane, result.ScanId, result.DocumentFingerprint, result.Revision,
                 ToAnnotationSnapshot(wordSnapshot), result.Findings);
             if (plan.Unresolved.Count > 0)
+            {
+                var unresolvedIds = new HashSet<string>(plan.Unresolved.Select(u => u.FindingId), StringComparer.Ordinal);
+                var fallbackFindings = result.Findings.Select(f =>
+                {
+                    if (unresolvedIds.Contains(f.FindingId) &&
+                        f.Anchor.Kind == AnnotationAnchorKind.TextSpan &&
+                        f.Anchor.ParagraphIndex.HasValue)
+                    {
+                        return new AnnotationFinding(f.FindingId, f.RuleCode, f.Severity, f.CurrentIssue, f.Expected, f.Citation,
+                            new AnnotationAnchor(AnnotationAnchorKind.Paragraph, f.Anchor.StoryType, f.Anchor.ParagraphIndex,
+                                null, null, string.Empty, f.Anchor.SectionIndex, f.Anchor.TableIndex, f.Anchor.RowIndex, f.Anchor.CellIndex));
+                    }
+                    return f;
+                }).ToArray();
+                plan = _planner.CreatePlan(result.Lane, result.ScanId, result.DocumentFingerprint, result.Revision,
+                    ToAnnotationSnapshot(wordSnapshot), fallbackFindings);
+            }
+
+            if (plan.Comments.Count > 0 || plan.VisualRanges.Count > 0)
+            {
+                new WordFindingAnnotationAdapter(_application, document).Apply(plan);
+            }
+            else if (plan.Unresolved.Count > 0 && result.Findings.Count > 0)
+            {
                 throw new InvalidOperationException("Không thể neo chính xác " + plan.Unresolved.Count + " lỗi; tài liệu không bị đánh dấu.");
-            new WordFindingAnnotationAdapter(_application, document).Apply(plan);
+            }
+
             return result;
         }
 

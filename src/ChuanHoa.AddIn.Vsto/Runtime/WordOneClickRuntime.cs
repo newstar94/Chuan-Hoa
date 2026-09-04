@@ -601,7 +601,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 var beginX = (float)(center.Value - width / 2d);
                 var y = (float)(top + fontSize.GetValueOrDefault(13d) * 1.25d + 2d);
                 var inTable = range.get_Information(Word.WdInformation.wdWithInTable);
-                if (!inTable && TryNormalizeExistingComponentLine(document, snapshot, paragraph, ruleCode,
+                if (TryNormalizeExistingComponentLine(document, snapshot, paragraph, ruleCode,
                         beginX, y, width))
                     return true;
                 RemoveObsoleteComponentLines(document, snapshot, paragraph, ruleCode);
@@ -875,6 +875,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 "placeAndIssuedDate"
             };
 
+            var normalizedAny = false;
             foreach (Word.Table table in document.Tables)
             {
                 try
@@ -882,10 +883,16 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     if (IsHeaderLayoutTable(table, snapshot, roles, headerRoles))
                     {
                         NormalizeHeaderTable(table);
+                        normalizedAny = true;
                     }
                 }
                 catch (COMException) { }
                 finally { Release(table); }
+            }
+
+            if (normalizedAny)
+            {
+                try { document.Repaginate(); } catch (COMException) { }
             }
         }
 
@@ -931,16 +938,28 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 var pageWidth = section != null ? section.PageSetup.PageWidth : 595.3f;
                 var leftMargin = section != null ? section.PageSetup.LeftMargin : 85.05f;
                 var rightMargin = section != null ? section.PageSetup.RightMargin : 42.5f;
-                var availableWidth = Math.Max(200f, pageWidth - leftMargin - rightMargin);
 
-                table.Rows.LeftIndent = 0f;
+                // Allow table to overflow into the left margin so that left and right margins
+                // of the header table are balanced and aesthetically pleasing ("đều với 2 lề").
+                var targetLeftEdge = Math.Min(leftMargin, Math.Max(36f, rightMargin));
+                var leftIndent = (float)Math.Round(targetLeftEdge - leftMargin, 1);
+                var totalTableWidth = (float)Math.Max(200f, pageWidth - targetLeftEdge - rightMargin);
+
+                table.Rows.LeftIndent = leftIndent;
                 table.Rows.Alignment = Word.WdRowAlignment.wdAlignRowLeft;
                 try { table.Borders.Enable = 0; } catch (COMException) { }
                 table.PreferredWidthType = Word.WdPreferredWidthType.wdPreferredWidthPoints;
-                table.PreferredWidth = availableWidth;
+                table.PreferredWidth = totalTableWidth;
 
-                var col1Width = (float)Math.Round(availableWidth * 0.38d, 1);
-                var col2Width = (float)Math.Round(availableWidth - col1Width, 1);
+                // Ensure Column 2 is wide enough so "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM"
+                // (which measures ~285pt at 13pt bold) never wraps into 2 lines.
+                var col2Width = Math.Max(310f, (float)Math.Round(totalTableWidth * 0.60f, 1));
+                var col1Width = (float)Math.Round(totalTableWidth - col2Width, 1);
+                if (col1Width < 160f && totalTableWidth > 320f)
+                {
+                    col1Width = 160f;
+                    col2Width = totalTableWidth - 160f;
+                }
 
                 for (var r = 1; r <= table.Rows.Count; r++)
                 {
@@ -948,12 +967,25 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     try
                     {
                         row = table.Rows[r];
-                        row.LeftIndent = 0f;
+                        row.LeftIndent = leftIndent;
                         row.Alignment = Word.WdRowAlignment.wdAlignRowLeft;
                         if (row.Cells.Count == 2)
                         {
-                            row.Cells[1].Width = col1Width;
-                            row.Cells[2].Width = col2Width;
+                            try
+                            {
+                                row.Cells[1].LeftPadding = 2f;
+                                row.Cells[1].RightPadding = 2f;
+                                row.Cells[1].Width = col1Width;
+                            }
+                            catch (COMException) { }
+
+                            try
+                            {
+                                row.Cells[2].LeftPadding = 2f;
+                                row.Cells[2].RightPadding = 2f;
+                                row.Cells[2].Width = col2Width;
+                            }
+                            catch (COMException) { }
                         }
                     }
                     catch (COMException) { }

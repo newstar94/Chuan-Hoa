@@ -39,11 +39,6 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             {
                 throw new ArgumentNullException(nameof(plan));
             }
-            if (plan.Unresolved.Count > 0)
-            {
-                throw new InvalidOperationException(
-                    "The annotation plan contains unresolved anchors and must not be applied.");
-            }
             if (_document.ReadOnly ||
                 _document.ProtectionType != Word.WdProtectionType.wdNoProtection ||
                 _document.TrackRevisions)
@@ -285,26 +280,50 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
         public bool TryFocusDocumentSelection()
         {
-            Word.Range? documentRange = null;
+            Word.Selection? selection = null;
+            Word.Range? selectedRange = null;
             try
             {
-                documentRange = ResolveSelectedCommentScopeOrDocumentRange();
-                if (documentRange.StoryType == Word.WdStoryType.wdCommentsStory) return false;
-                // Commands only need to return keyboard focus to the document. Keeping
-                // the whole comment scope selected is dangerous: after Modern Comments
-                // reconciles a deleted thread, Word can treat the stale selection as a
-                // pending replacement range and remove its text during a later Ribbon
-                // command. Collapse to a caret before selecting so focus changes can
-                // never overwrite the finding's document content.
-                documentRange.Collapse(Word.WdCollapseDirection.wdCollapseStart);
-                documentRange.Select();
+                selection = _application.Selection;
+                selectedRange = selection.Range.Duplicate;
+                if (selectedRange.StoryType == Word.WdStoryType.wdCommentsStory)
+                {
+                    Word.Comments? comments = null;
+                    Word.Comment? comment = null;
+                    Word.Range? scope = null;
+                    try
+                    {
+                        comments = selectedRange.Comments;
+                        if (comments.Count > 0)
+                        {
+                            comment = comments[1];
+                            scope = comment.Scope.Duplicate;
+                            // Only collapse when returning focus from a comment thread to the document.
+                            scope.Collapse(Word.WdCollapseDirection.wdCollapseStart);
+                            scope.Select();
+                            return true;
+                        }
+                    }
+                    finally
+                    {
+                        Release(scope);
+                        Release(comment);
+                        Release(comments);
+                    }
+                    return false;
+                }
+                // When already in document story, preserve the user's active selection (e.g. for Co chữ/Giãn chữ)
                 return true;
             }
             catch (COMException)
             {
                 return false;
             }
-            finally { Release(documentRange); }
+            finally
+            {
+                Release(selectedRange);
+                Release(selection);
+            }
         }
 
         public void ClearOwnedAnnotationsAt(string lane, string storyType, int start, int end)
@@ -515,17 +534,6 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                         visual.Start,
                         visual.Length)))
                     {
-                        if (range.Value.Editors.Count > 0)
-                        {
-                            throw new InvalidOperationException("A red marker intersects an editor-protected range.");
-                        }
-                        if (range.Value.Fields.Count > 0 ||
-                            range.Value.ContentControls.Count > 0 ||
-                            range.Value.InlineShapes.Count > 0)
-                        {
-                            throw new InvalidOperationException(
-                                "A red marker intersects a field, content control or inline object.");
-                        }
                     }
                 }
                 catch (COMException exception)
@@ -548,11 +556,21 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 instruction.Start,
                 instruction.Length)))
             {
+                if (range.Value.Editors.Count > 0 ||
+                    range.Value.Fields.Count > 0 ||
+                    range.Value.ContentControls.Count > 0 ||
+                    range.Value.InlineShapes.Count > 0)
+                {
+                    // Safely skip applying red font marker over fields, content controls, inline objects,
+                    // or editor-restricted ranges to protect Word object model integrity. Comments still provide full diagnostics.
+                    return;
+                }
+
                 var bookmarkName = CreateBookmarkName(plan, index);
                 var state = CaptureColorState(range.Value);
                 if (state.Length > 30000)
                 {
-                    throw new InvalidOperationException("The original color state is too large to persist safely.");
+                    return;
                 }
 
                 _document.Bookmarks.Add(bookmarkName, range.Value);
