@@ -10,7 +10,7 @@
 
 ## Cập nhật source rule-only ngày 2026-09-04
 
-- `ChuanHoa.Application` đã được bỏ khỏi xung đột `*.application` trong `.gitignore`; source project có mặt trong clean clone. Clean clone restore/build/test 259/259, ba validator và VSTO Development rebuild đều PASS trước sửa registration; clean-clone gate sẽ chạy lại sau commit sửa `UnregisterOfficeAddin`.
+- `ChuanHoa.Application` đã được bỏ khỏi xung đột `*.application` trong `.gitignore`; source project có mặt trong clean clone từ commit `5967237`. Clean clone restore/build/test 259/259, ba validator và VSTO Development rebuild đều PASS; build trong clone giữ nguyên registration `.91` đã cài.
 - Runtime, tests và pipeline Development đã loại bỏ VietnameseEngine/IPC/model/training; scanner chính tả chỉ còn rule-based deterministic.
 - Từ điển cá nhân đã có NFC, giới hạn đầu vào, kết quả lỗi typed, ghi atomic, clear current/all tách biệt và document ignore được truyền vào production scanner.
 - Ribbon hiện có 42 control: QR đã bị loại bỏ hoàn toàn, ba checkbox Hiển thị vẫn được giữ; nút Từ điển cá nhân dùng icon custom nhúng assembly và mở không cần document.
