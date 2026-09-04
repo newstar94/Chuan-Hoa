@@ -123,6 +123,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 // shift formatting onto another paragraph.
                 correctedSpellingItems = ApplyDeterministicSpellingFixes(document, local,
                     formatFindings.Concat(spellingFindings).ToArray(), rules);
+                correctedSpellingItems += CollapseMultipleSpaces(document);
                 normalizedSections = NormalizeSections(document, local, rules);
                 NormalizeHeaderLayoutTables(document, local, roles);
                 foreach (var paragraph in local.Paragraphs.Where(p =>
@@ -280,9 +281,11 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                         var directText = directRange.Text ?? string.Empty;
                         var target = ResolveTargetReplacement(finding, rules);
                         var expected = finding.Anchor.ExpectedText ?? string.Empty;
-                        if (!string.IsNullOrEmpty(target) &&
+                        if (target != null &&
                             (string.Equals(directText, expected, StringComparison.Ordinal) ||
-                             string.Equals(directText.Trim(), expected.Trim(), StringComparison.OrdinalIgnoreCase)))
+                             string.Equals(directText.Trim(), expected.Trim(), StringComparison.OrdinalIgnoreCase) ||
+                             (finding.RuleCode == "LOCAL-TYPO-SPACE" && Regex.IsMatch(directText, @"^[ \t]{2,}$")) ||
+                             (finding.RuleCode == "LOCAL-TYPO-PUNCT" && string.IsNullOrWhiteSpace(directText))))
                         {
                             directRange.Text = target;
                             applied = true;
@@ -1152,6 +1155,37 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         private static string? ResolveTargetReplacement(AnnotationFinding finding, LocalRulePack rules)
         {
             var expectedText = finding.Anchor.ExpectedText ?? string.Empty;
+            switch (finding.RuleCode)
+            {
+                case "LOCAL-TYPO-SPACE":
+                    return " ";
+                case "LOCAL-TYPO-PUNCT":
+                case "LOCAL-TYPO-HIDDEN":
+                    return string.Empty;
+                case "ND30-PL1-M2-K6B-DATE":
+                    return "ngày " + expectedText;
+                case "ND30-PL2-M5-K7":
+                    return expectedText.ToLower(CultureInfo.GetCultureInfo("vi-VN"));
+            }
+
+            if (string.Equals(finding.RuleCode, "LOCAL-TYPO-TELEX", StringComparison.OrdinalIgnoreCase) && rules.TelexRules != null)
+            {
+                var telexRule = rules.TelexRules.FirstOrDefault(item =>
+                    Regex.IsMatch(expectedText, item.Pattern, RegexOptions.IgnoreCase));
+                if (telexRule != null)
+                {
+                    var rep = Regex.Replace(expectedText, telexRule.Pattern, telexRule.Replacement, RegexOptions.IgnoreCase);
+                    return ApplyCase(expectedText, rep);
+                }
+            }
+
+            if (string.Equals(finding.RuleCode, "LOCAL-TYPO-LEXICON", StringComparison.OrdinalIgnoreCase) && rules.Lexicon != null)
+            {
+                var lexicon = new VietnameseLexiconSpellChecker(rules.Lexicon);
+                var suggestion = lexicon.FindDeterministicCorrection(expectedText);
+                if (suggestion != null) return suggestion;
+            }
+
             if (rules.Capitalizations != null && rules.Capitalizations.Count > 0)
             {
                 var cap = rules.Capitalizations.FirstOrDefault(item =>
@@ -1163,7 +1197,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             if (!string.IsNullOrWhiteSpace(finding.Expected))
             {
                 var quoteMatch = Regex.Match(finding.Expected,
-                    @"(?:Viết|Sửa thành|thành)\s+[“""]([^”""]+)[”""]",
+                    @"(?:Viết|Sửa thành|thành|Dùng|Nên dùng)\s+[“""]([^”""]+)[”""]",
                     RegexOptions.IgnoreCase);
                 if (quoteMatch.Success)
                 {
@@ -1181,6 +1215,63 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             }
 
             return null;
+        }
+
+        private static int CollapseMultipleSpaces(Word.Document document)
+        {
+            var collapsed = 0;
+            try
+            {
+                for (var iteration = 0; iteration < 3; iteration++)
+                {
+                    Word.Range? content = null;
+                    Word.Find? find = null;
+                    Word.Replacement? replacement = null;
+                    try
+                    {
+                        content = document.Content;
+                        find = content.Find;
+                        find.ClearFormatting();
+                        replacement = find.Replacement;
+                        replacement.ClearFormatting();
+
+                        find.Text = "  ";
+                        replacement.Text = " ";
+                        find.Forward = true;
+                        find.Wrap = Word.WdFindWrap.wdFindStop;
+                        find.Format = false;
+                        find.MatchCase = false;
+                        find.MatchWholeWord = false;
+                        find.MatchWildcards = false;
+
+                        object replaceAll = Word.WdReplace.wdReplaceAll;
+                        object missing = Type.Missing;
+                        var found = find.Execute(ref missing, ref missing, ref missing, ref missing,
+                            ref missing, ref missing, ref missing, ref missing, ref missing,
+                            ref missing, ref replaceAll, ref missing, ref missing, ref missing, ref missing);
+                        if (found)
+                        {
+                            collapsed++;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                    catch (COMException)
+                    {
+                        break;
+                    }
+                    finally
+                    {
+                        Release(replacement);
+                        Release(find);
+                        Release(content);
+                    }
+                }
+            }
+            catch (COMException) { }
+            return collapsed;
         }
 
         private static void UpdateContextAfterSingleFix(DocumentContext context, string lane, string findingId)
