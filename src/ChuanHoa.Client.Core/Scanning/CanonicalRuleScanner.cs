@@ -872,6 +872,7 @@ namespace ChuanHoa.Client.Core.Scanning
             {
                 if (OverlapsExistingTextFinding(findings, paragraph, occurrence.Item1, occurrence.Item2)) continue;
                 var actual = paragraph.Text.Substring(occurrence.Item1, occurrence.Item2);
+                if (ChuanHoa.Client.Core.Lexicon.PersonalDictionaryManager.Instance.IsKnownOrIgnored(actual)) continue;
                 findings.Add(Span("LOCAL-TYPO-DICT", paragraph, occurrence.Item1, occurrence.Item2,
                     "Cụm từ “" + actual + "” có thể sai ngữ cảnh.",
                     "Nên dùng “" + ApplyCase(actual, pair.Value) + "”.", rules));
@@ -887,6 +888,7 @@ namespace ChuanHoa.Client.Core.Scanning
             {
                 if (!match.Success || match.Length == 0 ||
                     ShouldIgnoreLexiconToken(match.Value) || lexicon.IsKnown(match.Value) ||
+                    ChuanHoa.Client.Core.Lexicon.PersonalDictionaryManager.Instance.IsKnownOrIgnored(match.Value) ||
                     OverlapsExistingTextFinding(findings, paragraph, match.Index, match.Length))
                     continue;
                 var suggestion = lexicon.FindDeterministicCorrection(match.Value);

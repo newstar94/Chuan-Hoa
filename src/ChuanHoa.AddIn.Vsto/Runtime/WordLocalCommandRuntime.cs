@@ -489,6 +489,119 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             });
         }
 
+        public string CleanWhitespaceAndPunctuation()
+        {
+            return Execute("Dọn khoảng trắng & Dấu câu", (document, _) =>
+            {
+                var selection = _application.Selection;
+                if (selection.Start != selection.End)
+                {
+                    Word.Range? range = null;
+                    try
+                    {
+                        range = selection.Range.Duplicate;
+                        CleanWhitespaceInRange(range);
+                    }
+                    finally { Release(range); }
+                }
+                else
+                {
+                    foreach (var story in EditableStories(document))
+                    {
+                        try { CleanWhitespaceInStory(story); }
+                        finally { Release(story); }
+                    }
+                }
+            });
+        }
+
+        public string NormalizeQuotationMarks()
+        {
+            return Execute("Chuẩn hóa dấu ngoặc", (document, _) =>
+            {
+                var selection = _application.Selection;
+                if (selection.Start != selection.End)
+                {
+                    Word.Range? range = null;
+                    try
+                    {
+                        range = selection.Range.Duplicate;
+                        NormalizeQuotationMarksInRange(range);
+                    }
+                    finally { Release(range); }
+                }
+                else
+                {
+                    foreach (var story in EditableStories(document))
+                    {
+                        try { NormalizeQuotationMarksInStory(story); }
+                        finally { Release(story); }
+                    }
+                }
+            });
+        }
+
+        public void OpenCustomDictionaryDialog()
+        {
+            CustomDictionaryDialog.Prompt(null);
+        }
+
+        private static void CleanWhitespaceInStory(Word.Range story)
+        {
+            foreach (Word.Paragraph paragraph in story.Paragraphs)
+            {
+                Word.Range? range = null;
+                try
+                {
+                    range = paragraph.Range.Duplicate;
+                    CleanWhitespaceInRange(range);
+                }
+                finally
+                {
+                    Release(range);
+                    Release(paragraph);
+                }
+            }
+        }
+
+        private static void CleanWhitespaceInRange(Word.Range range)
+        {
+            var source = range.Text ?? string.Empty;
+            var cleaned = VietnameseTypographyCleaner.CleanWhitespaceAndPunctuation(source);
+            if (!string.Equals(source, cleaned, StringComparison.Ordinal))
+            {
+                range.Text = cleaned;
+            }
+        }
+
+        private static void NormalizeQuotationMarksInStory(Word.Range story)
+        {
+            foreach (Word.Paragraph paragraph in story.Paragraphs)
+            {
+                Word.Range? range = null;
+                try
+                {
+                    range = paragraph.Range.Duplicate;
+                    NormalizeQuotationMarksInRange(range);
+                }
+                finally
+                {
+                    Release(range);
+                    Release(paragraph);
+                }
+            }
+        }
+
+        private static void NormalizeQuotationMarksInRange(Word.Range range)
+        {
+            var source = range.Text ?? string.Empty;
+            var cleaned = VietnameseTypographyCleaner.NormalizeQuotationMarks(source);
+            if (!string.Equals(source, cleaned, StringComparison.Ordinal))
+            {
+                range.Text = cleaned;
+            }
+        }
+
         public string ConvertLegacyEncodingToUnicode()
         {
             return Execute("Chuyển đổi Unicode", (document, _) =>

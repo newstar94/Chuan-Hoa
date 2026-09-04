@@ -262,6 +262,7 @@ def validate() -> dict:
         "RunSelectedFindingFix": "_documentReadRuntime.Prepare(",
         "RunLocalScan": "_documentReadRuntime.Prepare(",
         "RunAnalysisBackedLocalCommand": "_documentReadRuntime.Prepare(",
+        "RunQuickFixAllSpelling": "_documentReadRuntime.Prepare(",
     }
     for command_method_name, required_call in command_analysis_calls.items():
         command_method = re.search(
@@ -273,7 +274,7 @@ def validate() -> dict:
             raise RuntimeError(
                 f"{command_method_name} must prepare its command-scoped document analysis."
             )
-    if ribbon_runtime_source.count("_documentReadRuntime.Prepare(") != 4 or \
+    if ribbon_runtime_source.count("_documentReadRuntime.Prepare(") != 6 or \
             ribbon_runtime_source.count("_documentReadRuntime.PrepareForOneClick(") != 1:
         raise RuntimeError("Unexpected command-scoped analysis call count in RibbonRuntime.")
     selected_fix_method = re.search(

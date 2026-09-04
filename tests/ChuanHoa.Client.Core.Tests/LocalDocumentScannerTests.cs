@@ -52,6 +52,23 @@ public sealed class LocalDocumentScannerTests
     }
 
     [Fact]
+    public void Spelling_scan_ignores_words_in_personal_dictionary()
+    {
+        const string customWord = "chuyengiarieng";
+        ChuanHoa.Client.Core.Lexicon.PersonalDictionaryManager.Instance.AddUserWord(customWord);
+        try
+        {
+            var paragraph = new LocalParagraphSnapshot(1, "Báo cáo " + customWord + " đầy đủ.", "wdMainTextStory", 1, 0, "Times New Roman");
+            var result = new LocalDocumentScanner().ScanSpelling(Snapshot(ValidSection(), paragraph), Rules());
+            Assert.DoesNotContain(result.Findings, item => item.Anchor.ExpectedText == customWord);
+        }
+        finally
+        {
+            ChuanHoa.Client.Core.Lexicon.PersonalDictionaryManager.Instance.RemoveUserWord(customWord);
+        }
+    }
+
+    [Fact]
     public void Format_scan_checks_component_body_code_number_and_place_date_locally()
     {
         var paragraphs = new[]

@@ -333,6 +333,73 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             }
         }
 
+        public int FixAllSpellingFindings(
+            DocumentContext context,
+            Word.Document? activeDocument = null)
+        {
+            if (context == null) throw new ArgumentNullException(nameof(context));
+            var document = activeDocument ?? _application.ActiveDocument;
+            var capability = _capabilityProvider.Evaluate(document);
+            if (!capability.CanReadDocument) throw new InvalidOperationException(capability.Reason);
+            if (capability.IsReadOnly || capability.IsProtected || capability.TrackChangesEnabled)
+                throw new InvalidOperationException("Tài liệu phải cho phép chỉnh sửa, không bảo vệ và tắt Track Changes.");
+
+            context.RequireSnapshotAnalysis();
+            context.RequireSpellingAnalysis();
+
+            var local = context.LastLocalSnapshot!;
+            var scan = context.LastSpellingScan!;
+            var findings = scan.Findings;
+            if (findings.Count == 0) return 0;
+
+            var rules = _accessManager.GetRulePack(LocalAccessManager.AutoFixFeature);
+            var annotations = new WordFindingAnnotationAdapter(_application, document);
+            var previousScreenUpdating = _application.ScreenUpdating;
+            var undoStarted = false;
+
+            try
+            {
+                _application.ScreenUpdating = false;
+                if (WordMajorVersion() >= 15)
+                {
+                    _application.UndoRecord.StartCustomRecord("Chuẩn hóa: sửa nhanh chính tả");
+                    undoStarted = true;
+                }
+
+                var fixedCount = ApplyDeterministicSpellingFixes(document, local, findings, rules);
+
+                if (undoStarted)
+                {
+                    _application.UndoRecord.EndCustomRecord();
+                    undoStarted = false;
+                }
+
+                context.ClearReadAnalysis();
+                return fixedCount;
+            }
+            catch (Exception exception)
+            {
+                if (undoStarted)
+                {
+                    try { _application.UndoRecord.EndCustomRecord(); }
+                    catch (COMException) { }
+                    undoStarted = false;
+                }
+                try
+                {
+                    object count = 1;
+                    document.Undo(ref count);
+                }
+                catch (COMException) { }
+                context.ClearReadAnalysis();
+                throw new InvalidOperationException(exception.Message, exception);
+            }
+            finally
+            {
+                _application.ScreenUpdating = previousScreenUpdating;
+            }
+        }
+
         private static Tuple<string, int, int>? FindingRange(AnnotationFinding finding,
             LocalScanSnapshot snapshot)
         {

@@ -123,6 +123,10 @@ namespace ChuanHoa.AddIn.Vsto.Ribbon
         {
             Runtime.ExecuteButton(RequireControlId(control));
         }
+        public void OnChuanHoaDauNgoac(Office.IRibbonControl control)
+        {
+            Runtime.ExecuteButton(RequireControlId(control));
+        }
         public void OnChuyenDoiUnicode(Office.IRibbonControl control)
         {
             Runtime.ExecuteButton(RequireControlId(control));
@@ -152,6 +156,10 @@ namespace ChuanHoa.AddIn.Vsto.Ribbon
             Runtime.ExecuteButton(RequireControlId(control));
         }
         public void OnDoiDauThapPhan(Office.IRibbonControl control)
+        {
+            Runtime.ExecuteButton(RequireControlId(control));
+        }
+        public void OnDonKhoangTrang(Office.IRibbonControl control)
         {
             Runtime.ExecuteButton(RequireControlId(control));
         }
@@ -220,6 +228,14 @@ namespace ChuanHoa.AddIn.Vsto.Ribbon
             Runtime.SetPressed(RequireControlId(control), pressed);
         }
         public void OnSuaLoiDangChon(Office.IRibbonControl control)
+        {
+            Runtime.ExecuteButton(RequireControlId(control));
+        }
+        public void OnSuaTatCaChinhTa(Office.IRibbonControl control)
+        {
+            Runtime.ExecuteButton(RequireControlId(control));
+        }
+        public void OnTuDienCaNhan(Office.IRibbonControl control)
         {
             Runtime.ExecuteButton(RequireControlId(control));
         }

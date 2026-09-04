@@ -94,6 +94,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 { "btnAutoFixAll2026", RunOneClick },
                 { "btnKiemTra", RunFormatScan },
                 { "btnKiemTraChinhTa", RunSpellingScan },
+                { "btnSuaTatCaChinhTa", RunQuickFixAllSpelling },
                 { "btnSuaLoiDangChon", RunSelectedFindingFix },
                 { "btnChuyenDoiUnicode", () => RunLocalCommand("Chuyển đổi Unicode", _localCommandRuntime.ConvertLegacyEncodingToUnicode) },
                 { "btnDinhDangTrangGiay", () => RunLocalCommand("Định dạng trang giấy", _localCommandRuntime.FormatPage) },
@@ -121,6 +122,9 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 { "btnKieuOaUy", () => RunLocalCommand("Kiểu oà, uý", () => _localCommandRuntime.NormalizeTonePlacement(VietnameseTonePlacementStyle.MainVowel)) },
                 { "btnKieuOaUy2", () => RunLocalCommand("Kiểu òa, úy", () => _localCommandRuntime.NormalizeTonePlacement(VietnameseTonePlacementStyle.FirstVowel)) },
                 { "btnDoiDauThapPhan", () => RunLocalCommand("Dấu phẩy thập phân", _localCommandRuntime.ConvertDecimalSeparators) },
+                { "btnDonKhoangTrang", () => RunLocalCommand("Dọn khoảng trắng & Dấu câu", _localCommandRuntime.CleanWhitespaceAndPunctuation) },
+                { "btnChuanHoaDauNgoac", () => RunLocalCommand("Chuẩn hóa dấu ngoặc", _localCommandRuntime.NormalizeQuotationMarks) },
+                { "btnTuDienCaNhan", () => _localCommandRuntime.OpenCustomDictionaryDialog() },
                 { "btnKiemTraPhienBanMoi", ShowUpdateStatus },
                 { "btnGuiPhanHoi", OpenFeedback },
                 { "btnGioiThieu", ShowAbout }
@@ -177,14 +181,9 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 return true;
             }
 
-            if (string.Equals(controlId, "btnAutoFixAll2026", StringComparison.Ordinal))
-            {
-                return canBeginSavedMutation && !capability.IsReadOnly && !capability.IsProtected &&
-                    !capability.TrackChangesEnabled &&
-                    _localAccessManager.HasCachedFeature(LocalAccessManager.AutoFixFeature);
-            }
-
-            if (string.Equals(controlId, "btnSuaLoiDangChon", StringComparison.Ordinal))
+            if (string.Equals(controlId, "btnAutoFixAll2026", StringComparison.Ordinal) ||
+                string.Equals(controlId, "btnSuaTatCaChinhTa", StringComparison.Ordinal) ||
+                string.Equals(controlId, "btnSuaLoiDangChon", StringComparison.Ordinal))
             {
                 return canBeginSavedMutation && !capability.IsReadOnly && !capability.IsProtected &&
                     !capability.TrackChangesEnabled &&
@@ -758,6 +757,56 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         private void RunSpellingScan()
         {
             RunLocalScan(true);
+        }
+
+        private void RunQuickFixAllSpelling()
+        {
+            var document = TryGetCurrentDocument();
+            if (document == null)
+            {
+                MessageBox.Show("Hãy mở một tài liệu Word.", "Chuẩn hóa", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (Interlocked.CompareExchange(ref _documentOperationInProgress, 1, 0) != 0)
+            {
+                MessageBox.Show("Ứng dụng đang xử lý tài liệu. Hãy chờ thao tác hiện tại hoàn tất.",
+                    "Chuẩn hóa", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            try
+            {
+                FocusDocumentForCommand(document);
+                var context = _contextStore.GetOrCreate(document);
+                _documentReadRuntime.Prepare(context, DocumentAnalysisScope.Spelling, document, false);
+                _localScanRuntime.ScanAndAnnotate(context, true, document);
+
+                var fixedCount = _oneClickRuntime.FixAllSpellingFindings(context, document);
+
+                _documentReadRuntime.Prepare(context, DocumentAnalysisScope.Spelling, document, false);
+                var remainingScan = _localScanRuntime.ScanAndAnnotate(context, true, document);
+
+                MessageBox.Show(
+                    "Đã sửa nhanh chính tả tại máy.\n\n" +
+                    "Số lỗi đã tự động sửa thành công: " + fixedCount + "\n" +
+                    "Số lỗi còn lại cần người dùng cân nhắc: " + remainingScan.Findings.Count + "\n\n" +
+                    "Bạn có thể hoàn tác toàn bộ bằng Ctrl+Z nếu cần.",
+                    "Sửa nhanh chính tả",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+            }
+            catch (Exception exception)
+            {
+                MessageBox.Show("Không thể sửa nhanh chính tả.\n\n" + exception.Message,
+                    "Chuẩn hóa", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                Interlocked.Exchange(ref _documentOperationInProgress, 0);
+                InvalidateRibbonCapability();
+                InvalidateAll();
+            }
         }
 
         private void RunSelectedFindingFix()

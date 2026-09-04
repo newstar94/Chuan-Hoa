@@ -146,6 +146,7 @@
     <Compile Include="Runtime\WordLocalScanRuntime.cs" />
     <Compile Include="Runtime\WordOneClickRuntime.cs" />
     <Compile Include="Runtime\QrCodeInputDialog.cs" />
+    <Compile Include="Runtime\CustomDictionaryDialog.cs" />
     <Compile Include="Runtime\WordRecoveryCopyManager.cs" />
     <Compile Include="Runtime\WordTextMeasurement.cs" />
     <Compile Include="Runtime\WordMutationRuntime.cs" />

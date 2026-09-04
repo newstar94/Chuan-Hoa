@@ -77,4 +77,24 @@ public sealed class VietnameseTextConversionTests
         Assert.Equal(source,
             VietnameseTonePlacementNormalizer.Normalize(source, VietnameseTonePlacementStyle.FirstVowel));
     }
+
+    [Theory]
+    [InlineData("Đây  là   văn   bản.", "Đây là văn bản.")]
+    [InlineData("Hà Nội , ngày 15 tháng 8 .", "Hà Nội, ngày 15 tháng 8.")]
+    [InlineData("Công tác:chỉ đạo;điều hành", "Công tác: chỉ đạo; điều hành")]
+    [InlineData("Số: 123/QĐ-UBND", "Số: 123/QĐ-UBND")]
+    [InlineData("Tỷ lệ 1,5% hoặc 10.000 đồng", "Tỷ lệ 1,5% hoặc 10.000 đồng")]
+    [InlineData("Nội dung ( trong ngoặc ) và [ ghi chú ]", "Nội dung (trong ngoặc) và [ghi chú]")]
+    public void CleanWhitespaceAndPunctuationNormalizesProperly(string source, string expected)
+    {
+        Assert.Equal(expected, VietnameseTypographyCleaner.CleanWhitespaceAndPunctuation(source));
+    }
+
+    [Theory]
+    [InlineData("\"Nội dung văn bản\"", "“Nội dung văn bản”")]
+    [InlineData("Báo cáo \" kết quả thực hiện \" năm 2026", "Báo cáo “kết quả thực hiện” năm 2026")]
+    public void NormalizeQuotationMarksConvertsToVietnameseCurlyQuotes(string source, string expected)
+    {
+        Assert.Equal(expected, VietnameseTypographyCleaner.NormalizeQuotationMarks(source));
+    }
 }
