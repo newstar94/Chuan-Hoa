@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using ChuanHoa.Client.Core.Annotations;
 using ChuanHoa.Client.Core.Rules;
 using ChuanHoa.Client.Core.Scanning;
+using ChuanHoa.Client.Core.Text;
 using Microsoft.Office.Core;
 using Word = Microsoft.Office.Interop.Word;
 
@@ -350,7 +351,6 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             var local = context.LastLocalSnapshot!;
             var scan = context.LastSpellingScan!;
             var findings = scan.Findings;
-            if (findings.Count == 0) return 0;
 
             var rules = _accessManager.GetRulePack(LocalAccessManager.AutoFixFeature);
             var annotations = new WordFindingAnnotationAdapter(_application, document);
@@ -366,7 +366,13 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     undoStarted = true;
                 }
 
-                var fixedCount = ApplyDeterministicSpellingFixes(document, local, findings, rules);
+                var fixedCount = 0;
+                if (findings.Count > 0)
+                {
+                    fixedCount += ApplyDeterministicSpellingFixes(document, local, findings, rules);
+                }
+
+                fixedCount += CleanTypographyAndQuotes(document);
 
                 if (undoStarted)
                 {
@@ -397,6 +403,77 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             finally
             {
                 _application.ScreenUpdating = previousScreenUpdating;
+            }
+        }
+
+        private static int CleanTypographyAndQuotes(Word.Document document)
+        {
+            var modifiedCount = 0;
+            foreach (var story in EditableStories(document))
+            {
+                try
+                {
+                    foreach (Word.Paragraph paragraph in story.Paragraphs)
+                    {
+                        Word.Range? range = null;
+                        try
+                        {
+                            range = paragraph.Range.Duplicate;
+                            var source = range.Text ?? string.Empty;
+                            if (string.IsNullOrWhiteSpace(source)) continue;
+
+                            var cleaned = VietnameseTypographyCleaner.CleanWhitespaceAndPunctuation(source);
+                            cleaned = VietnameseTypographyCleaner.NormalizeQuotationMarks(cleaned);
+                            if (!string.Equals(source, cleaned, StringComparison.Ordinal))
+                            {
+                                range.Text = cleaned;
+                                modifiedCount++;
+                            }
+                        }
+                        finally
+                        {
+                            Release(range);
+                            Release(paragraph);
+                        }
+                    }
+                }
+                catch (COMException) { }
+                finally
+                {
+                    Release(story);
+                }
+            }
+            return modifiedCount;
+        }
+
+        private static IEnumerable<Word.Range> EditableStories(Word.Document document)
+        {
+            var types = new[]
+            {
+                Word.WdStoryType.wdMainTextStory,
+                Word.WdStoryType.wdFootnotesStory,
+                Word.WdStoryType.wdEndnotesStory,
+                Word.WdStoryType.wdPrimaryHeaderStory,
+                Word.WdStoryType.wdPrimaryFooterStory,
+                Word.WdStoryType.wdEvenPagesHeaderStory,
+                Word.WdStoryType.wdEvenPagesFooterStory,
+                Word.WdStoryType.wdFirstPageHeaderStory,
+                Word.WdStoryType.wdFirstPageFooterStory,
+                Word.WdStoryType.wdTextFrameStory
+            };
+            foreach (var type in types)
+            {
+                Word.Range? current = null;
+                try { current = document.StoryRanges[type]; }
+                catch (COMException) { }
+                while (current != null)
+                {
+                    Word.Range? next = null;
+                    try { next = current.NextStoryRange; }
+                    catch (COMException) { }
+                    yield return current;
+                    current = next;
+                }
             }
         }
 

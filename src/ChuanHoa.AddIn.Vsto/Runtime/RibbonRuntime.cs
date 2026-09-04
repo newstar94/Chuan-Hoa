@@ -122,8 +122,6 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 { "btnKieuOaUy", () => RunLocalCommand("Kiểu oà, uý", () => _localCommandRuntime.NormalizeTonePlacement(VietnameseTonePlacementStyle.MainVowel)) },
                 { "btnKieuOaUy2", () => RunLocalCommand("Kiểu òa, úy", () => _localCommandRuntime.NormalizeTonePlacement(VietnameseTonePlacementStyle.FirstVowel)) },
                 { "btnDoiDauThapPhan", () => RunLocalCommand("Dấu phẩy thập phân", _localCommandRuntime.ConvertDecimalSeparators) },
-                { "btnDonKhoangTrang", () => RunLocalCommand("Dọn khoảng trắng & Dấu câu", _localCommandRuntime.CleanWhitespaceAndPunctuation) },
-                { "btnChuanHoaDauNgoac", () => RunLocalCommand("Chuẩn hóa dấu ngoặc", _localCommandRuntime.NormalizeQuotationMarks) },
                 { "btnTuDienCaNhan", () => _localCommandRuntime.OpenCustomDictionaryDialog() },
                 { "btnKiemTraPhienBanMoi", ShowUpdateStatus },
                 { "btnGuiPhanHoi", OpenFeedback },

@@ -48,11 +48,11 @@
   "counts": {
     "tabs": 1,
     "groups": 7,
-    "buttons": 37,
+    "buttons": 35,
     "menus": 3,
     "dropDowns": 2,
     "checkBoxes": 3,
-    "interactiveControls": 45
+    "interactiveControls": 43
   },
   "approvedProductChanges": [
     {
@@ -2146,94 +2146,6 @@
       "groupId": "grpChinhTaSo",
       "parentContainerId": null,
       "controlType": "button",
-      "id": "btnDonKhoangTrang",
-      "label": "Dọn khoảng trắng & Dấu câu",
-      "size": "large",
-      "imageMso": "ParagraphSpacingAfterNone",
-      "callbacks": {
-        "getEnabled": "GetEnabledHasDocument",
-        "onAction": "OnDonKhoangTrang"
-      },
-      "screenTip": "Dọn khoảng trắng & Dấu câu",
-      "superTip": "Tự động gộp 2 hoặc nhiều dấu cách liên tiếp thành 1, xóa khoảng trắng thừa trước các dấu câu (, . : ; ! ?), bổ sung khoảng cách sau dấu câu và xóa khoảng trắng thừa đầu/cuối đoạn văn.",
-      "staticItems": [],
-      "order": 43,
-      "commandContract": {
-        "commandId": "btnDonKhoangTrang",
-        "executionMode": "LOCAL_APPLY",
-        "entitlement": "DOCUMENT_TOOLS",
-        "riskTier": "SAFE",
-        "mutationScope": "TYPOGRAPHY_WHITESPACE",
-        "preconditions": [
-          "ACTIVE_DOCUMENT",
-          "DOCUMENT_WRITABLE",
-          "NOT_PROTECTED"
-        ],
-        "capability": "WORD_2010_OBJECT_MODEL",
-        "undoPolicy": "ONE_CUSTOM_UNDO_RECORD",
-        "backupPolicy": "NOT_APPLICABLE",
-        "telemetryAllowlist": [
-          "commandId",
-          "resultCode",
-          "durationBucket",
-          "clientRelease",
-          "wordVersion",
-          "bitness"
-        ],
-        "testIds": [
-          "RIBBON-043",
-          "CONTROL-btnDonKhoangTrang"
-        ]
-      }
-    },
-    {
-      "groupId": "grpChinhTaSo",
-      "parentContainerId": null,
-      "controlType": "button",
-      "id": "btnChuanHoaDauNgoac",
-      "label": "Dấu ngoặc chuẩn",
-      "size": "large",
-      "imageMso": "EquationFunctionsGallery",
-      "callbacks": {
-        "getEnabled": "GetEnabledHasDocument",
-        "onAction": "OnChuanHoaDauNgoac"
-      },
-      "screenTip": "Chuẩn hóa dấu ngoặc kép",
-      "superTip": "Chuyển đổi dấu ngoặc kép thẳng (\"...\") thành dấu ngoặc kép cong chuẩn tiếng Việt (“...”) và tự động dọn khoảng trắng sát mép trong của dấu ngoặc.",
-      "staticItems": [],
-      "order": 44,
-      "commandContract": {
-        "commandId": "btnChuanHoaDauNgoac",
-        "executionMode": "LOCAL_APPLY",
-        "entitlement": "DOCUMENT_TOOLS",
-        "riskTier": "SAFE",
-        "mutationScope": "TYPOGRAPHY_QUOTES",
-        "preconditions": [
-          "ACTIVE_DOCUMENT",
-          "DOCUMENT_WRITABLE",
-          "NOT_PROTECTED"
-        ],
-        "capability": "WORD_2010_OBJECT_MODEL",
-        "undoPolicy": "ONE_CUSTOM_UNDO_RECORD",
-        "backupPolicy": "NOT_APPLICABLE",
-        "telemetryAllowlist": [
-          "commandId",
-          "resultCode",
-          "durationBucket",
-          "clientRelease",
-          "wordVersion",
-          "bitness"
-        ],
-        "testIds": [
-          "RIBBON-044",
-          "CONTROL-btnChuanHoaDauNgoac"
-        ]
-      }
-    },
-    {
-      "groupId": "grpChinhTaSo",
-      "parentContainerId": null,
-      "controlType": "button",
       "id": "btnTuDienCaNhan",
       "label": "Từ điển cá nhân",
       "size": "large",
@@ -2245,7 +2157,7 @@
       "screenTip": "Quản lý từ điển cá nhân",
       "superTip": "Xem, thêm, xóa các từ riêng, từ viết tắt đặc thù cơ quan hoặc các từ chuyên ngành để bộ kiểm tra chính tả tự động bỏ qua không báo lỗi.",
       "staticItems": [],
-      "order": 45,
+      "order": 43,
       "commandContract": {
         "commandId": "btnTuDienCaNhan",
         "executionMode": "LOCAL_DIALOG",
@@ -2267,7 +2179,7 @@
           "bitness"
         ],
         "testIds": [
-          "RIBBON-045",
+          "RIBBON-043",
           "CONTROL-btnTuDienCaNhan"
         ]
       }

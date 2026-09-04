@@ -67,8 +67,6 @@
             <button id="btnKieuOaUy2" label="Kiểu òa, úy" screentip="Kiểu òa, úy" supertip="Chuyển toàn bộ dấu thanh sang dạng đặt trên nguyên âm đầu (theo thông lệ)." onAction="OnKieuOaUy2" />
           </menu>
           <button id="btnDoiDauThapPhan" label="Dấu phẩy thập phân" size="large" imageMso="CommaStyle" screentip="Dấu phẩy thập phân" supertip="Chuyển kiểu viết số về chuẩn Việt Nam 1,234,567.89 → 1.234.567,89" getEnabled="GetEnabledHasDocument" onAction="OnDoiDauThapPhan" />
-          <button id="btnDonKhoangTrang" label="Dọn khoảng trắng &amp; Dấu câu" size="large" imageMso="ParagraphSpacingAfterNone" screentip="Dọn khoảng trắng &amp; Dấu câu" supertip="Tự động gộp 2 hoặc nhiều dấu cách liên tiếp thành 1, xóa khoảng trắng thừa trước các dấu câu (, . : ; ! ?), bổ sung khoảng cách sau dấu câu và xóa khoảng trắng thừa đầu/cuối đoạn văn." getEnabled="GetEnabledHasDocument" onAction="OnDonKhoangTrang" />
-          <button id="btnChuanHoaDauNgoac" label="Dấu ngoặc chuẩn" size="large" imageMso="EquationFunctionsGallery" screentip="Chuẩn hóa dấu ngoặc kép" supertip="Chuyển đổi dấu ngoặc kép thẳng (&quot;...&quot;) thành dấu ngoặc kép cong chuẩn tiếng Việt (“...”) và tự động dọn khoảng trắng sát mép trong của dấu ngoặc." getEnabled="GetEnabledHasDocument" onAction="OnChuanHoaDauNgoac" />
           <button id="btnTuDienCaNhan" label="Từ điển cá nhân" size="large" imageMso="SpellingOptions" screentip="Quản lý từ điển cá nhân" supertip="Xem, thêm, xóa các từ riêng, từ viết tắt đặc thù cơ quan hoặc các từ chuyên ngành để bộ kiểm tra chính tả tự động bỏ qua không báo lỗi." getEnabled="GetEnabledHasDocument" onAction="OnTuDienCaNhan" />
         </group>
         <group id="grpHienThi" label="Hiển thị">
