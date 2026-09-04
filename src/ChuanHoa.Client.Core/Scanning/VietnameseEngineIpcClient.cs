@@ -38,22 +38,22 @@ namespace ChuanHoa.Client.Core.Scanning
 
         public bool IsCircuitBroken => _consecutiveFailures >= MaxConsecutiveFailures;
 
-        public async Task<bool> PingAsync(int timeoutMs = 500)
+        public bool Ping(int timeoutMs = 500)
         {
-            if (IsCircuitBroken) return false;
+            if (IsCircuitBroken || !IsEngineProcessRunning()) return false;
 
             try
             {
-                using (var cts = new CancellationTokenSource(timeoutMs))
-                using (var client = new NamedPipeClientStream(".", PipeName, PipeDirection.InOut, PipeOptions.Asynchronous))
+                using (var client = new NamedPipeClientStream(".", PipeName, PipeDirection.InOut))
                 {
-                    await client.ConnectAsync(timeoutMs, cts.Token).ConfigureAwait(false);
+                    client.Connect(timeoutMs);
                     using (var reader = new StreamReader(client, Encoding.UTF8))
                     using (var writer = new StreamWriter(client, Encoding.UTF8) { AutoFlush = true })
                     {
                         var requestId = Guid.NewGuid().ToString("N");
-                        await writer.WriteLineAsync("{\"action\":\"ping\",\"requestId\":\"" + requestId + "\"}").ConfigureAwait(false);
-                        var line = await reader.ReadLineAsync().ConfigureAwait(false);
+                        writer.WriteLine("{\"action\":\"ping\",\"requestId\":\"" + requestId + "\"}");
+                        writer.Flush();
+                        var line = reader.ReadLine();
                         var ok = !string.IsNullOrEmpty(line) && line.Contains(requestId);
                         if (ok) _consecutiveFailures = 0;
                         return ok;
@@ -67,23 +67,28 @@ namespace ChuanHoa.Client.Core.Scanning
             }
         }
 
-        public async Task<IReadOnlyList<EngineFindingResult>> CheckAsync(
+        public Task<bool> PingAsync(int timeoutMs = 500) => Task.Run(() => Ping(timeoutMs));
+
+        public void EnsureEngineRunning()
+        {
+            if (IsEngineProcessRunning()) return;
+            Task.Run(() => EnsureProcessStarted());
+        }
+
+        public IReadOnlyList<EngineFindingResult> Check(
             string text,
             int paragraphIndex = 0,
             string documentHash = "",
-            int timeoutMs = 2000)
+            int timeoutMs = 250)
         {
-            if (string.IsNullOrWhiteSpace(text) || IsCircuitBroken)
+            if (string.IsNullOrWhiteSpace(text) || IsCircuitBroken || !IsEngineProcessRunning())
                 return Array.Empty<EngineFindingResult>();
 
             try
             {
-                EnsureProcessStarted();
-
-                using (var cts = new CancellationTokenSource(timeoutMs))
-                using (var client = new NamedPipeClientStream(".", PipeName, PipeDirection.InOut, PipeOptions.Asynchronous))
+                using (var client = new NamedPipeClientStream(".", PipeName, PipeDirection.InOut))
                 {
-                    await client.ConnectAsync(timeoutMs, cts.Token).ConfigureAwait(false);
+                    client.Connect(timeoutMs);
                     using (var reader = new StreamReader(client, Encoding.UTF8))
                     using (var writer = new StreamWriter(client, Encoding.UTF8) { AutoFlush = true })
                     {
@@ -93,8 +98,9 @@ namespace ChuanHoa.Client.Core.Scanning
                                           ",\"documentHash\":\"" + JsonEscape(documentHash) +
                                           "\",\"text\":\"" + JsonEscape(text) + "\"}";
 
-                        await writer.WriteLineAsync(jsonRequest).ConfigureAwait(false);
-                        var responseLine = await reader.ReadLineAsync().ConfigureAwait(false);
+                        writer.WriteLine(jsonRequest);
+                        writer.Flush();
+                        var responseLine = reader.ReadLine();
 
                         if (string.IsNullOrEmpty(responseLine))
                             return Array.Empty<EngineFindingResult>();
@@ -109,6 +115,15 @@ namespace ChuanHoa.Client.Core.Scanning
                 _consecutiveFailures++;
                 return Array.Empty<EngineFindingResult>();
             }
+        }
+
+        public Task<IReadOnlyList<EngineFindingResult>> CheckAsync(
+            string text,
+            int paragraphIndex = 0,
+            string documentHash = "",
+            int timeoutMs = 2000)
+        {
+            return Task.Run(() => Check(text, paragraphIndex, documentHash, timeoutMs));
         }
 
         public void ResetCircuitBreaker()
@@ -174,6 +189,18 @@ namespace ChuanHoa.Client.Core.Scanning
             catch
             {
                 // Fallback gracefully without throwing
+            }
+        }
+
+        private static bool IsEngineProcessRunning()
+        {
+            try
+            {
+                return Process.GetProcessesByName("VietnameseEngine").Length > 0;
+            }
+            catch
+            {
+                return false;
             }
         }
 

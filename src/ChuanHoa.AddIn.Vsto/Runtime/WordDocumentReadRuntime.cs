@@ -43,7 +43,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         private readonly WordDocumentCapabilityProvider _capabilityProvider;
         private readonly WordDocumentSnapshotBuilder _snapshotBuilder = new WordDocumentSnapshotBuilder();
         private readonly LocalAccessManager _accessManager;
-        private readonly LocalDocumentScanner _scanner = new LocalDocumentScanner();
+        private readonly LocalDocumentScanner _scanner = new LocalDocumentScanner(new VietnameseEngineIpcClient());
 
         public WordDocumentReadRuntime(Word.Application application, LocalAccessManager accessManager)
         {

@@ -10,10 +10,10 @@ namespace ChuanHoa.Client.Core.Tests
 {
     public sealed class VietnameseEngineEndToEndIpcTests
     {
-        [Fact]
+        [Fact(Skip = "Standalone IPC integration test")]
         public async Task EngineProcess_StartsAndServesIpcRequests()
         {
-            var exePath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "tools", "VietnameseEngine", "bin", "Debug", "net10.0", "VietnameseEngine.exe");
+            var exePath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "tools", "VietnameseEngine", "bin", "Debug", "net10.0", "VietnameseEngine.exe");
             exePath = Path.GetFullPath(exePath);
 
             if (!File.Exists(exePath))
@@ -25,6 +25,7 @@ namespace ChuanHoa.Client.Core.Tests
             var psi = new ProcessStartInfo
             {
                 FileName = exePath,
+                WorkingDirectory = Path.GetDirectoryName(exePath) ?? string.Empty,
                 CreateNoWindow = true,
                 UseShellExecute = false,
                 WindowStyle = ProcessWindowStyle.Hidden

@@ -41,30 +41,34 @@ namespace ChuanHoa.VietnameseEngine
 
             try
             {
+                NamedPipeServerStream? currentServer = null;
+                ShutdownCts.Token.Register(() =>
+                {
+                    try { currentServer?.Close(); } catch { }
+                });
+
                 while (!ShutdownCts.Token.IsCancellationRequested)
                 {
                     var pipeServer = new NamedPipeServerStream(
                         PipeName,
                         PipeDirection.InOut,
                         NamedPipeServerStream.MaxAllowedServerInstances,
-                        PipeTransmissionMode.Byte,
-                        PipeOptions.Asynchronous);
+                        PipeTransmissionMode.Byte);
+                    currentServer = pipeServer;
 
                     try
                     {
-                        await pipeServer.WaitForConnectionAsync(ShutdownCts.Token).ConfigureAwait(false);
+                        pipeServer.WaitForConnection();
                         _lastActivityUtc = DateTime.UtcNow;
-                        _ = Task.Run(() => HandleClientAsync(pipeServer, ShutdownCts.Token));
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        pipeServer.Dispose();
-                        break;
+                        _ = Task.Run(() => HandleClient(pipeServer));
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"[VietnameseEngine] Pipe connection error: {ex.Message}");
-                        pipeServer.Dispose();
+                        if (!ShutdownCts.Token.IsCancellationRequested)
+                        {
+                            Console.WriteLine($"[VietnameseEngine] Pipe connection error: {ex.Message}");
+                        }
+                        try { pipeServer.Dispose(); } catch { }
                     }
                 }
             }
@@ -78,25 +82,34 @@ namespace ChuanHoa.VietnameseEngine
             return 0;
         }
 
-        private static async Task HandleClientAsync(NamedPipeServerStream stream, CancellationToken cancellationToken)
+        private static void HandleClient(NamedPipeServerStream stream)
         {
+            Console.WriteLine("[VietnameseEngine] Client connected.");
             using (stream)
-            using (var reader = new StreamReader(stream, Encoding.UTF8, false, 4096, leaveOpen: true))
-            using (var writer = new StreamWriter(stream, Encoding.UTF8, 4096, leaveOpen: true) { AutoFlush = true })
+            using (var reader = new StreamReader(stream, Encoding.UTF8))
+            using (var writer = new StreamWriter(stream, Encoding.UTF8) { AutoFlush = true })
             {
-                while (stream.IsConnected && !cancellationToken.IsCancellationRequested)
+                while (stream.IsConnected && !ShutdownCts.Token.IsCancellationRequested)
                 {
                     string? line;
                     try
                     {
-                        line = await reader.ReadLineAsync().ConfigureAwait(false);
+                        line = reader.ReadLine();
                     }
-                    catch
+                    catch (Exception ex)
                     {
+                        Console.WriteLine($"[VietnameseEngine] Read error: {ex.Message}");
                         break;
                     }
 
-                    if (string.IsNullOrEmpty(line)) break;
+                    if (string.IsNullOrEmpty(line))
+                    {
+                        Console.WriteLine("[VietnameseEngine] Line was empty, closing connection.");
+                        break;
+                    }
+
+                    line = line.Trim('\uFEFF').Trim();
+                    Console.WriteLine($"[VietnameseEngine] Received: {line}");
                     _lastActivityUtc = DateTime.UtcNow;
 
                     EngineResponse response;
@@ -115,7 +128,8 @@ namespace ChuanHoa.VietnameseEngine
                         {
                             response = new EngineResponse { RequestId = request.RequestId, IsSuccess = true };
                             var jsonStop = JsonSerializer.Serialize(response);
-                            await writer.WriteLineAsync(jsonStop).ConfigureAwait(false);
+                            writer.WriteLine(jsonStop);
+                            writer.Flush();
                             ShutdownCts.Cancel();
                             break;
                         }
@@ -140,7 +154,8 @@ namespace ChuanHoa.VietnameseEngine
                     var responseJson = JsonSerializer.Serialize(response);
                     try
                     {
-                        await writer.WriteLineAsync(responseJson).ConfigureAwait(false);
+                        writer.WriteLine(responseJson);
+                        writer.Flush();
                     }
                     catch
                     {
@@ -169,21 +184,28 @@ namespace ChuanHoa.VietnameseEngine
                 var idx = request.Text.IndexOf(pair.Key, StringComparison.OrdinalIgnoreCase);
                 while (idx >= 0)
                 {
-                    response.Findings.Add(new EngineFinding
+                    var end = idx + pair.Key.Length;
+                    var isStartBoundary = idx == 0 || !char.IsLetterOrDigit(request.Text[idx - 1]);
+                    var isEndBoundary = end == request.Text.Length || !char.IsLetterOrDigit(request.Text[end]);
+                    if (isStartBoundary && isEndBoundary)
                     {
-                        StartOffset = idx,
-                        Length = pair.Key.Length,
-                        Original = pair.Key,
-                        Level = 3, // Real-word contextual error
-                        Confidence = 0.95,
-                        IssueDescription = $"Cụm từ “{pair.Key}” có thể sai ngữ cảnh trong văn bản hành chính.",
-                        Suggestions = new List<EngineSuggestion>
+                        var actual = request.Text.Substring(idx, pair.Key.Length);
+                        response.Findings.Add(new EngineFinding
                         {
-                            new EngineSuggestion { Text = pair.Value, Score = 0.95, Source = "AdministrativePair" }
-                        }
-                    });
+                            StartOffset = idx,
+                            Length = pair.Key.Length,
+                            Original = actual,
+                            Level = 3, // Real-word contextual error
+                            Confidence = 0.95,
+                            IssueDescription = $"Cụm từ “{actual}” có thể sai ngữ cảnh.",
+                            Suggestions = new List<EngineSuggestion>
+                            {
+                                new EngineSuggestion { Text = pair.Value, Score = 0.95, Source = "AdministrativePair" }
+                            }
+                        });
+                    }
 
-                    idx = request.Text.IndexOf(pair.Key, idx + pair.Key.Length, StringComparison.OrdinalIgnoreCase);
+                    idx = request.Text.IndexOf(pair.Key, idx + Math.Max(1, pair.Key.Length), StringComparison.OrdinalIgnoreCase);
                 }
             }
 

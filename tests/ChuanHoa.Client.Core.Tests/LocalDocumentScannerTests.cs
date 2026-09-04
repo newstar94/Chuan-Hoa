@@ -41,6 +41,17 @@ public sealed class LocalDocumentScannerTests
     }
 
     [Fact]
+    public void Spelling_scan_detects_contextual_confusion_pair_ban_giao_tai_nieu()
+    {
+        var paragraph = new LocalParagraphSnapshot(1, "Bàn giao tài niệu", "wdMainTextStory", 1, 0, "Times New Roman");
+        var result = new LocalDocumentScanner().ScanSpelling(Snapshot(ValidSection(), paragraph), Rules());
+
+        var finding = Assert.Single(result.Findings, item => item.RuleCode == "LOCAL-TYPO-DICT");
+        Assert.Equal("tài niệu", finding.Anchor.ExpectedText);
+        Assert.Contains("tài liệu", finding.Expected);
+    }
+
+    [Fact]
     public void Format_scan_checks_component_body_code_number_and_place_date_locally()
     {
         var paragraphs = new[]

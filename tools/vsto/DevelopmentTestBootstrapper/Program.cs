@@ -65,6 +65,7 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
                     "ChuanHoa",
                     "DevelopmentInstaller");
                 UninstallClickOnceDevelopmentAddIn(baseDirectory);
+                StopRunningEngineProcesses();
                 var installDirectory = Path.Combine(baseDirectory, "Current");
                 ResetInstallDirectory(baseDirectory, installDirectory);
                 ExtractPayload(installDirectory);
@@ -133,6 +134,18 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
                 throw new InvalidOperationException("Unsafe installer extraction directory.");
             if (Directory.Exists(installDirectory)) Directory.Delete(installDirectory, true);
             Directory.CreateDirectory(installDirectory);
+        }
+
+        private static void StopRunningEngineProcesses()
+        {
+            try
+            {
+                foreach (var p in Process.GetProcessesByName("VietnameseEngine"))
+                {
+                    try { p.Kill(); p.WaitForExit(1000); } catch { }
+                }
+            }
+            catch { }
         }
 
         private static void EnsureRequiredRuntimes()
