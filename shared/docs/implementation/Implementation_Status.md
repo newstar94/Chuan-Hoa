@@ -10,7 +10,7 @@
 
 ## Cập nhật source rule-only ngày 2026-09-04
 
-- `ChuanHoa.Application` đã được bỏ khỏi xung đột `*.application` trong `.gitignore`; source project hiện xuất hiện trong Git worktree. Clean-clone gate sẽ được chạy lại từ commit cuối; VSTO build dependency Core chạy trước `ResolveAssemblyReferences`, không còn phụ thuộc binary cũ trên máy.
+- `ChuanHoa.Application` đã được bỏ khỏi xung đột `*.application` trong `.gitignore`; source project có mặt trong clean clone từ commit `d9c0e72`. Clean clone restore/build/test 259/259, ba validator và VSTO Development rebuild đều PASS; VSTO build dependency Core chạy trước `ResolveAssemblyReferences`, không còn phụ thuộc binary cũ trên máy.
 - Runtime, tests và pipeline Development đã loại bỏ VietnameseEngine/IPC/model/training; scanner chính tả chỉ còn rule-based deterministic.
 - Từ điển cá nhân đã có NFC, giới hạn đầu vào, kết quả lỗi typed, ghi atomic, clear current/all tách biệt và document ignore được truyền vào production scanner.
 - Ribbon hiện có 42 control: QR đã bị loại bỏ hoàn toàn, ba checkbox Hiển thị vẫn được giữ; nút Từ điển cá nhân dùng icon custom nhúng assembly và mở không cần document.
