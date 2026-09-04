@@ -203,16 +203,6 @@ namespace ChuanHoa.LocalCommandSmoke
                     document.Save();
 
                     document.Range(document.Content.End - 1, document.Content.End - 1).Select();
-                    var imageCount = document.InlineShapes.Count;
-                    AssertNoBackup(commands.InsertQrCode("https://ngoctien.id.vn/chuan-hoa-the-thuc/feedback"), "InsertQrCode");
-                    Assert(document.InlineShapes.Count == imageCount + 1, "The QR image was not inserted.");
-                    var qr = document.InlineShapes[document.InlineShapes.Count];
-                    Assert(Math.Abs(qr.Width - 50f * 72f / 25.4f) < 2f && Math.Abs(qr.Height - 50f * 72f / 25.4f) < 2f,
-                        "The QR image is not 5 x 5 cm.");
-                    Release(qr);
-                    document.Save();
-
-                    document.Range(document.Content.End - 1, document.Content.End - 1).Select();
                     var sectionCount = document.Sections.Count;
                     AssertNoBackup(commands.InsertSection(true), "InsertSection");
                     Assert(document.Sections.Count == sectionCount + 1, "Landscape section was not inserted.");

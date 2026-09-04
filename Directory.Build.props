@@ -1,5 +1,10 @@
 <Project>
   <PropertyGroup>
+    <ProductVersion>1.0.0.82</ProductVersion>
+    <Version>$(ProductVersion)</Version>
+    <AssemblyVersion>$(ProductVersion)</AssemblyVersion>
+    <FileVersion>$(ProductVersion)</FileVersion>
+    <InformationalVersion>$(ProductVersion)</InformationalVersion>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>

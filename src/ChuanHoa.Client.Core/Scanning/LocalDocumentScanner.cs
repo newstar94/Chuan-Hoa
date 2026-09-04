@@ -3,15 +3,16 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 using ChuanHoa.Client.Core.Annotations;
+using ChuanHoa.Client.Core.Lexicon;
 using ChuanHoa.Client.Core.Rules;
 
 namespace ChuanHoa.Client.Core.Scanning
 {
     public sealed class LocalDocumentScanner
     {
-        private readonly CanonicalRuleScanner _canonical = new CanonicalRuleScanner();
-        private readonly VietnameseEngineIpcClient? _engineClient;
+        private readonly CanonicalRuleScanner _canonical;
         private const double PointsPerMillimeter = 72.0d / 25.4d;
         private static readonly Regex RepeatedWhitespace = new Regex("[ \\t]{2,}", RegexOptions.CultureInvariant);
         private static readonly Regex WhitespaceBeforePunctuation = new Regex("[ \\t]+(?=[,.;:!?])", RegexOptions.CultureInvariant);
@@ -20,77 +21,25 @@ namespace ChuanHoa.Client.Core.Scanning
         private static readonly Regex CodeNumber = new Regex(@"^\s*Số\s*:?[ \t]*(?<number>\d+)(?<notation>[^\r\n]*)$", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
         private static readonly Regex PlaceDate = new Regex(@"^\s*(?<place>[^,]+)(?<comma>,?)[ \t]*ngày[ \t]+(?<day>\d{1,2})[ \t]+tháng[ \t]+(?<month>\d{1,2})[ \t]+năm[ \t]+(?<year>\d{4})", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
 
-        public LocalDocumentScanner(VietnameseEngineIpcClient? engineClient = null)
+        public LocalDocumentScanner(PersonalDictionaryManager? personalDictionary = null)
         {
-            _engineClient = engineClient;
+            _canonical = new CanonicalRuleScanner(personalDictionary);
         }
 
-        public LocalScanResult ScanFormat(LocalScanSnapshot snapshot, LocalRulePack rules)
+        public LocalScanResult ScanFormat(LocalScanSnapshot snapshot, LocalRulePack rules,
+            CancellationToken cancellationToken = default(CancellationToken))
         {
             Validate(snapshot, rules);
-            var findings = _canonical.ScanFormat(snapshot, rules);
+            var findings = _canonical.ScanFormat(snapshot, rules, cancellationToken);
             return Result("format", snapshot, rules, findings);
         }
 
-        public LocalScanResult ScanSpelling(LocalScanSnapshot snapshot, LocalRulePack rules)
+        public LocalScanResult ScanSpelling(LocalScanSnapshot snapshot, LocalRulePack rules,
+            CancellationToken cancellationToken = default(CancellationToken))
         {
             Validate(snapshot, rules);
-            var findings = new List<AnnotationFinding>(_canonical.ScanSpelling(snapshot, rules));
-            CheckWithAiEngine(findings, snapshot, rules);
-            return Result("spelling", snapshot, rules, findings);
-        }
-
-        private void CheckWithAiEngine(List<AnnotationFinding> findings, LocalScanSnapshot snapshot, LocalRulePack rules)
-        {
-            if (_engineClient == null || _engineClient.IsCircuitBroken) return;
-
-            foreach (var paragraph in Scannable(snapshot))
-            {
-                if (string.IsNullOrWhiteSpace(paragraph.Text) || paragraph.Text.Length < 3) continue;
-
-                try
-                {
-                    var results = _engineClient.Check(paragraph.Text, paragraph.Index, snapshot.DocumentFingerprint, 1500);
-                    if (results == null || results.Count == 0) continue;
-
-                    foreach (var r in results)
-                    {
-                        if (r.Length <= 0 || string.IsNullOrEmpty(r.BestSuggestion)) continue;
-                        if (findings.Any(f => f.Anchor.ParagraphIndex == paragraph.Index &&
-                                              f.Anchor.StartOffset.HasValue && f.Anchor.Length.HasValue &&
-                                              f.Anchor.StartOffset.Value < r.StartOffset + r.Length &&
-                                              r.StartOffset < f.Anchor.StartOffset.Value + f.Anchor.Length.Value))
-                        {
-                            continue;
-                        }
-
-                        var textLen = paragraph.Text.Length;
-                        var start = Math.Min(Math.Max(0, r.StartOffset), textLen);
-                        var len = Math.Min(r.Length, textLen - start);
-                        var actualText = len > 0 ? paragraph.Text.Substring(start, len) : r.Original;
-
-                        findings.Add(new AnnotationFinding(
-                            Guid.NewGuid().ToString("N"),
-                            "LOCAL-TYPO-AI",
-                            "Warning",
-                            string.IsNullOrEmpty(r.Description) ? $"Từ hoặc cụm từ “{actualText}” có thể sai ngữ cảnh." : r.Description,
-                            $"Sửa thành “{r.BestSuggestion}”.",
-                            "Bộ sửa lỗi chính tả ngữ cảnh AI",
-                            new AnnotationAnchor(
-                                AnnotationAnchorKind.TextSpan,
-                                paragraph.StoryType,
-                                paragraph.Index,
-                                start,
-                                len,
-                                actualText,
-                                paragraph.SectionIndex)));
-                    }
-                }
-                catch
-                {
-                    // Fail open: AI engine runs out of process, scanning never crashes
-                }
-            }
+            return Result("spelling", snapshot, rules,
+                _canonical.ScanSpelling(snapshot, rules, cancellationToken));
         }
 
         private static IEnumerable<LocalParagraphSnapshot> Scannable(LocalScanSnapshot snapshot) =>

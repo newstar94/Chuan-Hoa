@@ -320,7 +320,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         public WordDocumentSnapshot Build(
             Word.Document document,
             DocumentContext context,
-            WordDocumentCapability capability)
+            WordDocumentCapability capability,
+            DocumentOperationSession? operation = null)
         {
             if (document == null)
             {
@@ -339,13 +340,20 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     : capability.Reason);
             }
 
-            var sections = CaptureSections(document);
+            operation?.Transition(DocumentOperationState.Capturing, "đọc section");
+            var sections = CaptureSections(document, operation);
+            operation?.Checkpoint();
             var allowPageLayout = IsPageLayoutCaptureSafe(document);
-            var paragraphs = CaptureParagraphs(document, allowPageLayout);
-            var lineShapes = CaptureLineShapes(document, sections, paragraphs);
-            var tables = CaptureTables(document);
-            var protectedSpans = CaptureProtectedSpans(document);
+            var paragraphs = CaptureParagraphs(document, allowPageLayout, operation);
+            operation?.ReportProgress(paragraphs.Count, paragraphs.Count, "đọc đường kẻ");
+            var lineShapes = CaptureLineShapes(document, sections, paragraphs, operation);
+            operation?.ReportProgress(paragraphs.Count, paragraphs.Count, "đọc bảng");
+            var tables = CaptureTables(document, operation);
+            operation?.ReportProgress(paragraphs.Count, paragraphs.Count, "đọc vùng được bảo vệ");
+            var protectedSpans = CaptureProtectedSpans(document, operation);
+            operation?.ReportProgress(paragraphs.Count, paragraphs.Count, "tạo dấu nhận dạng tài liệu");
             var fingerprint = CaptureFingerprint(document, sections, paragraphs, lineShapes, tables, protectedSpans);
+            operation?.Checkpoint();
             var preflight = new WordDocumentPreflight(
                 capability.IsReadOnly,
                 capability.IsProtected,
@@ -370,11 +378,13 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 protectedSpans);
         }
 
-        private static IReadOnlyList<WordSectionSnapshot> CaptureSections(Word.Document document)
+        private static IReadOnlyList<WordSectionSnapshot> CaptureSections(Word.Document document,
+            DocumentOperationSession? operation)
         {
             var snapshots = new List<WordSectionSnapshot>();
             for (var index = 1; index <= document.Sections.Count; index++)
             {
+                operation?.ReportProgress(index - 1, document.Sections.Count, "đọc section");
                 Word.Section? section = null;
                 Word.PageSetup? setup = null;
                 try
@@ -404,7 +414,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         }
 
         private static IReadOnlyList<WordParagraphSnapshot> CaptureParagraphs(Word.Document document,
-            bool allowPageLayout)
+            bool allowPageLayout, DocumentOperationSession? operation)
         {
             var snapshots = new List<WordParagraphSnapshot>();
             var paragraphIndex = 0;
@@ -429,7 +439,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                         try
                         {
                             CaptureStoryParagraphs(story, storyType, snapshots, ref paragraphIndex,
-                                allowPageLayout, application);
+                                allowPageLayout, application, operation);
                             nextStory = story.NextStoryRange;
                         }
                         finally
@@ -456,7 +466,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             ICollection<WordParagraphSnapshot> snapshots,
             ref int paragraphIndex,
             bool allowPageLayout,
-            Word.Application application)
+            Word.Application application,
+            DocumentOperationSession? operation)
         {
             var paragraphs = story.Paragraphs;
             try
@@ -468,7 +479,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 if (largeStory)
                 {
                     CaptureLargeStoryParagraphs(story, storyType, snapshots, ref paragraphIndex,
-                        application, paragraphCount);
+                        application, paragraphCount, operation);
                     return;
                 }
                 var currentSectionIndex = ReadSectionIndex(story);
@@ -477,7 +488,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 {
                     storyParagraphIndex++;
                     if (storyParagraphIndex == 1 || storyParagraphIndex % 25 == 0)
-                        PulseWordUi(application, paragraphIndex, paragraphCount, storyType);
+                        PulseWordUi(application, storyParagraphIndex, paragraphCount, storyType, operation);
                     Word.Paragraph? paragraph = paragraphItem;
                     Word.Range? range = null;
                     Word.Font? font = null;
@@ -594,7 +605,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
         private static void CaptureLargeStoryParagraphs(Word.Range story, Word.WdStoryType storyType,
             ICollection<WordParagraphSnapshot> snapshots, ref int paragraphIndex,
-            Word.Application application, int expectedParagraphCount)
+            Word.Application application, int expectedParagraphCount,
+            DocumentOperationSession? operation)
         {
             var tableSpans = CaptureTableSpans(story);
             var storyParagraphIndex = 0;
@@ -614,7 +626,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                         storyParagraphIndex++;
                         paragraphIndex++;
                         if (storyParagraphIndex == 1 || storyParagraphIndex % 25 == 0)
-                            PulseWordUi(application, paragraphIndex, expectedParagraphCount, storyType);
+                            PulseWordUi(application, storyParagraphIndex, expectedParagraphCount, storyType, operation);
 
                         // Range.Text cannot be used as a coordinate map for tables.
                         // A cell terminator is returned as CR + BEL (two chars), while
@@ -721,8 +733,15 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         }
 
         private static void PulseWordUi(Word.Application application, int completedParagraphs,
-            int storyParagraphs, Word.WdStoryType storyType)
+            int storyParagraphs, Word.WdStoryType storyType,
+            DocumentOperationSession? operation)
         {
+            if (operation != null)
+            {
+                operation.ReportProgress(completedParagraphs, storyParagraphs,
+                    "vùng " + storyType);
+                return;
+            }
             try
             {
                 application.StatusBar = string.Format(CultureInfo.CurrentCulture,
@@ -733,16 +752,16 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             {
             }
 
-            // Snapshot capture runs on Word's STA thread. Yielding its Windows message
-            // queue at bounded intervals keeps the host responsive on long table stories;
-            // RibbonRuntime's operation guard rejects re-entrant add-in commands.
-            System.Windows.Forms.Application.DoEvents();
+            // Snapshot capture stays on Word's STA thread. Do not pump the Windows
+            // message queue here: doing so can re-enter another Ribbon callback while
+            // Word still owns transient Range/Table RCWs from this capture batch.
         }
 
         private static IReadOnlyList<WordLineShapeSnapshot> CaptureLineShapes(
             Word.Document document,
             IReadOnlyList<WordSectionSnapshot> sections,
-            IReadOnlyList<WordParagraphSnapshot> paragraphs)
+            IReadOnlyList<WordParagraphSnapshot> paragraphs,
+            DocumentOperationSession? operation)
         {
             var snapshots = new List<WordLineShapeSnapshot>();
             var seen = new HashSet<string>(StringComparer.Ordinal);
@@ -750,7 +769,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             try
             {
                 documentShapes = document.Shapes;
-                CaptureShapeCollection(documentShapes, sections, paragraphs, snapshots, seen);
+                CaptureShapeCollection(documentShapes, sections, paragraphs, snapshots, seen, operation);
             }
             catch (COMException)
             {
@@ -762,12 +781,15 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
             for (var sectionIndex = 1; sectionIndex <= document.Sections.Count; sectionIndex++)
             {
+                if (sectionIndex == 1 || sectionIndex % 25 == 0)
+                    operation?.ReportProgress(sectionIndex - 1, document.Sections.Count,
+                        "đọc đường kẻ trong section");
                 Word.Section? section = null;
                 try
                 {
                     section = document.Sections[sectionIndex];
-                    CaptureHeaderFooterShapes(section.Headers, sections, paragraphs, snapshots, seen);
-                    CaptureHeaderFooterShapes(section.Footers, sections, paragraphs, snapshots, seen);
+                    CaptureHeaderFooterShapes(section.Headers, sections, paragraphs, snapshots, seen, operation);
+                    CaptureHeaderFooterShapes(section.Footers, sections, paragraphs, snapshots, seen, operation);
                 }
                 catch (COMException)
                 {
@@ -783,7 +805,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
         private static void CaptureHeaderFooterShapes(Word.HeadersFooters collection,
             IReadOnlyList<WordSectionSnapshot> sections, IReadOnlyList<WordParagraphSnapshot> paragraphs,
-            ICollection<WordLineShapeSnapshot> snapshots, ISet<string> seen)
+            ICollection<WordLineShapeSnapshot> snapshots, ISet<string> seen,
+            DocumentOperationSession? operation)
         {
             try
             {
@@ -794,6 +817,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     Word.WdHeaderFooterIndex.wdHeaderFooterEvenPages
                 })
                 {
+                    operation?.Checkpoint();
                     Word.HeaderFooter? headerFooter = null;
                     Word.Shapes? shapes = null;
                     try
@@ -801,7 +825,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                         headerFooter = collection[index];
                         if (!headerFooter.Exists) continue;
                         shapes = headerFooter.Shapes;
-                        CaptureShapeCollection(shapes, sections, paragraphs, snapshots, seen);
+                        CaptureShapeCollection(shapes, sections, paragraphs, snapshots, seen, operation);
                     }
                     catch (COMException)
                     {
@@ -821,10 +845,14 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
         private static void CaptureShapeCollection(Word.Shapes shapes,
             IReadOnlyList<WordSectionSnapshot> sections, IReadOnlyList<WordParagraphSnapshot> paragraphs,
-            ICollection<WordLineShapeSnapshot> snapshots, ISet<string> seen)
+            ICollection<WordLineShapeSnapshot> snapshots, ISet<string> seen,
+            DocumentOperationSession? operation)
         {
-            for (var index = 1; index <= shapes.Count; index++)
+            var shapeCount = shapes.Count;
+            for (var index = 1; index <= shapeCount; index++)
             {
+                if (index == 1 || index % 25 == 0)
+                    operation?.ReportProgress(index - 1, shapeCount, "đọc đường kẻ");
                 Word.Shape? shape = null;
                 Word.Range? anchor = null;
                 Word.LineFormat? line = null;
@@ -881,18 +909,24 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             }
         }
 
-        private static IReadOnlyList<WordTableSnapshot> CaptureTables(Word.Document document)
+        private static IReadOnlyList<WordTableSnapshot> CaptureTables(Word.Document document,
+            DocumentOperationSession? operation)
         {
             var snapshots = new List<WordTableSnapshot>();
-            for (var index = 1; index <= document.Tables.Count; index++)
+            var tableCount = document.Tables.Count;
+            for (var index = 1; index <= tableCount; index++)
             {
+                operation?.ReportProgress(index - 1, tableCount, "đọc bảng");
                 Word.Table? table = null;
                 try
                 {
                     table = document.Tables[index];
                     var headerRows = new List<int>();
-                    for (var rowIndex = 1; rowIndex <= table.Rows.Count; rowIndex++)
+                    var rowCount = table.Rows.Count;
+                    for (var rowIndex = 1; rowIndex <= rowCount; rowIndex++)
                     {
+                        if (rowIndex == 1 || rowIndex % 25 == 0)
+                            operation?.Checkpoint();
                         Word.Row? row = null;
                         try
                         {
@@ -924,7 +958,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
                     snapshots.Add(new WordTableSnapshot(
                         index,
-                        table.Rows.Count,
+                        rowCount,
                         table.Columns.Count,
                         hasMergedCells,
                         table.NestingLevel > 1,
@@ -939,11 +973,15 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             return snapshots;
         }
 
-        private static IReadOnlyList<WordProtectedSpanSnapshot> CaptureProtectedSpans(Word.Document document)
+        private static IReadOnlyList<WordProtectedSpanSnapshot> CaptureProtectedSpans(Word.Document document,
+            DocumentOperationSession? operation)
         {
             var snapshots = new List<WordProtectedSpanSnapshot>();
-            for (var index = 1; index <= document.ContentControls.Count; index++)
+            var controlCount = document.ContentControls.Count;
+            for (var index = 1; index <= controlCount; index++)
             {
+                if (index == 1 || index % 25 == 0)
+                    operation?.ReportProgress(index - 1, controlCount, "đọc vùng được bảo vệ");
                 Word.ContentControl? control = null;
                 Word.Range? range = null;
                 try

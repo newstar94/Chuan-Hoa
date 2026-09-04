@@ -36,10 +36,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="QRCoder" Version="1.8.0" />
-  </ItemGroup>
-
-  <ItemGroup>
     <BootstrapperPackage Include="Microsoft.VSTORuntime.4.0">
       <Visible>false</Visible>
       <ProductName>Microsoft Visual Studio 2010 Tools for Office Runtime (x86 and x64)</ProductName>
@@ -134,6 +130,7 @@
     <Compile Include="Ribbon\IChuanHoaRibbonRuntime.cs" />
     <Compile Include="Runtime\DocumentContext.cs" />
     <Compile Include="Runtime\DocumentContextStore.cs" />
+    <Compile Include="Runtime\DocumentOperationSession.cs" />
     <Compile Include="Runtime\LocalAccessManager.cs" />
     <Compile Include="Runtime\WordDocumentCapabilityProvider.cs" />
     <Compile Include="Runtime\WordDocumentReadRuntime.cs" />
@@ -145,16 +142,22 @@
     <Compile Include="Runtime\WordLocalCommandRuntime.cs" />
     <Compile Include="Runtime\WordLocalScanRuntime.cs" />
     <Compile Include="Runtime\WordOneClickRuntime.cs" />
-    <Compile Include="Runtime\QrCodeInputDialog.cs" />
     <Compile Include="Runtime\CustomDictionaryDialog.cs" />
     <Compile Include="Runtime\WordRecoveryCopyManager.cs" />
     <Compile Include="Runtime\WordTextMeasurement.cs" />
     <Compile Include="Runtime\WordMutationRuntime.cs" />
+    <Compile Include="Runtime\RibbonImageProvider.cs" />
     <EmbeddedResource Include="Ribbon\ChuanHoaRibbon.xml">
       <LogicalName>ChuanHoa.AddIn.Vsto.Ribbon.ChuanHoaRibbon.xml</LogicalName>
       <ManifestResourceName>ChuanHoa.AddIn.Vsto.Ribbon.ChuanHoaRibbon.xml</ManifestResourceName>
       <WithCulture>false</WithCulture>
       <Type>Non-Resx</Type>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\Icons\personal-dictionary-16.png">
+      <LogicalName>ChuanHoa.AddIn.Vsto.Resources.Icons.personal-dictionary-16.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\Icons\personal-dictionary-32.png">
+      <LogicalName>ChuanHoa.AddIn.Vsto.Resources.Icons.personal-dictionary-32.png</LogicalName>
     </EmbeddedResource>
   </ItemGroup>
 
@@ -162,6 +165,20 @@
 
   <Target Name="BuildSharedClientAssemblies" BeforeTargets="ResolveReferences">
     <Exec Command="&quot;$(ClientCoreDotNetExe)&quot; build &quot;$(ClientCoreProject)&quot; --configuration $(Configuration) --no-restore --nologo" />
+  </Target>
+
+  <Target Name="GenerateProductVersionAssemblyInfo" BeforeTargets="CoreCompile">
+    <ItemGroup>
+      <_ProductVersionAssemblyInfo Include="[assembly: System.Reflection.AssemblyVersionAttribute(&quot;$(ProductVersion)&quot;)]" />
+      <_ProductVersionAssemblyInfo Include="[assembly: System.Reflection.AssemblyFileVersionAttribute(&quot;$(ProductVersion)&quot;)]" />
+      <_ProductVersionAssemblyInfo Include="[assembly: System.Reflection.AssemblyInformationalVersionAttribute(&quot;$(ProductVersion)&quot;)]" />
+      <Compile Include="$(IntermediateOutputPath)ChuanHoa.ProductVersion.g.cs" />
+    </ItemGroup>
+    <WriteLinesToFile
+      File="$(IntermediateOutputPath)ChuanHoa.ProductVersion.g.cs"
+      Lines="@(_ProductVersionAssemblyInfo)"
+      Overwrite="true"
+      Encoding="UTF-8" />
   </Target>
 
   <Import Project="$(VSToolsPath)\OfficeTools\Microsoft.VisualStudio.Tools.Office.targets"

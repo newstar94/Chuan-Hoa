@@ -19,7 +19,7 @@
           <button id="btnKiemTraChinhTa" label="Kiểm tra chính tả" size="large" imageMso="SpellingAndGrammar" screentip="Kiểm tra chính tả" supertip="Kiểm tra từ điển chính tả và viết hoa; thêm comment giải thích và tô đỏ đúng chỗ sai." getEnabled="GetEnabledKiemTra" onAction="OnKiemTraChinhTa" />
           <button id="btnChuyenDoiUnicode" label="Chuyển đổi Unicode" size="large" imageMso="ReplaceDialog" screentip="Chuyển đổi Unicode" supertip="Chuyển đổi các font chữ cũ (.VnTime, VNI-Times) sang Times New Roman" getEnabled="GetEnabledChuyenDoiUnicode" onAction="OnChuyenDoiUnicode" />
           <button id="btnSuaLoiDangChon" label="Sửa lỗi đang chọn" size="large" imageMso="ReviewAcceptChange" screentip="Sửa lỗi đang chọn" supertip="Bấm vào phần văn bản đang được Chuẩn hóa comment hoặc tô đỏ, sau đó bấm nút này để sửa một lỗi có phương án an toàn. Comment sẽ biến mất khi kiểm tra lại xác nhận lỗi đã hết." getEnabled="GetEnabledAutoFixAll2026" onAction="OnSuaLoiDangChon" />
-          <button id="btnSuaTatCaChinhTa" label="Sửa nhanh chính tả" size="large" imageMso="AutoCorrect" screentip="Sửa nhanh toàn bộ lỗi chính tả an toàn" supertip="Tự động quét và áp dụng tất cả các phương án sửa lỗi chính tả có độ tin cậy cao trên toàn bộ văn bản chỉ với 1 click, không thay đổi cỡ chữ, lề giấy hay bảng biểu." getEnabled="GetEnabledAutoFixAll2026" onAction="OnSuaTatCaChinhTa" />
+          <button id="btnSuaTatCaChinhTa" label="Sửa nhanh chính tả" size="large" imageMso="AutoCorrect" screentip="Sửa nhanh toàn bộ lỗi chính tả an toàn" supertip="Quét và áp dụng các phương án sửa chính tả rule-based có độ tin cậy cao." getEnabled="GetEnabledAutoFixAll2026" onAction="OnSuaTatCaChinhTa" />
         </group>
         <group id="grpDinhDang" label="Định dạng">
           <button id="btnDinhDangTrangGiay" label="Định dạng trang giấy" size="large" imageMso="PageSizeGallery" screentip="Định dạng trang giấy" supertip="Định dạng cỡ giấy và khoảng cách lề" getEnabled="GetEnabledHasDocument" onAction="OnDinhDangTrangGiay" />
@@ -66,7 +66,14 @@
             <button id="btnKieuOaUy2" label="Kiểu òa, úy" screentip="Kiểu òa, úy" supertip="Chuyển toàn bộ dấu thanh sang dạng đặt trên nguyên âm đầu (theo thông lệ)." onAction="OnKieuOaUy2" />
           </menu>
           <button id="btnDoiDauThapPhan" label="Dấu phẩy thập phân" size="large" imageMso="CommaStyle" screentip="Dấu phẩy thập phân" supertip="Chuyển kiểu viết số về chuẩn Việt Nam 1,234,567.89 → 1.234.567,89" getEnabled="GetEnabledHasDocument" onAction="OnDoiDauThapPhan" />
-          <button id="btnTuDienCaNhan" label="Từ điển cá nhân" size="large" imageMso="SpellingOptions" screentip="Quản lý từ điển cá nhân" supertip="Xem, thêm, xóa các từ riêng, từ viết tắt đặc thù cơ quan hoặc các từ chuyên ngành để bộ kiểm tra chính tả tự động bỏ qua không báo lỗi." getEnabled="GetEnabledHasDocument" onAction="OnTuDienCaNhan" />
+          <button id="btnTuDienCaNhan" label="Từ điển cá nhân" size="large" screentip="Quản lý từ điển cá nhân" supertip="Xem, thêm và xóa thuật ngữ riêng mà bộ kiểm tra chính tả cần bỏ qua." getEnabled="GetEnabledAlways" getImage="GetImageTuDienCaNhan" onAction="OnTuDienCaNhan" />
+        </group>
+        <group id="grpHienThi" label="Hiển thị">
+          <box id="boxHienThi" boxStyle="vertical">
+            <checkBox id="chkRanhGioiVanBan" label="Ẩn/hiện ranh giới văn bản" screentip="Ẩn/hiện ranh giới văn bản" supertip="Đồng bộ với &quot;Show text boundaries&quot; trong File → Options → Advanced → Show document content" getEnabled="GetEnabledHienThi" getPressed="GetPressedRanhGioiVanBan" onAction="OnRanhGioiVanBan" />
+            <checkBox id="chkDauGoc" label="Ẩn/hiện dấu góc" screentip="Ẩn/hiện dấu góc" supertip="Đồng bộ với &quot;Show crop marks&quot; trong File → Options → Advanced → Show document content" getEnabled="GetEnabledHienThi" getPressed="GetPressedDauGoc" onAction="OnDauGoc" />
+            <checkBox id="chkKyHieuSoanThao" label="Ẩn/hiện ký hiệu soạn thảo" screentip="Ẩn/hiện ký hiệu soạn thảo" supertip="Đồng bộ với &quot;Show all formatting marks&quot; trong File → Options → Display" getEnabled="GetEnabledHienThi" getPressed="GetPressedKyHieuSoanThao" onAction="OnKyHieuSoanThao" />
+          </box>
         </group>
         <group id="grpAbout" label="About">
           <menu id="mnuThongTinTienIch" label="Thông tin tiện ích" size="large" imageMso="Info" screentip="Thông tin tiện ích" supertip="Gửi phản hồi hoặc xem thông tin sản phẩm, phiên bản, tác giả">

@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
+using System.Threading;
 using ChuanHoa.Client.Core.Annotations;
 using ChuanHoa.Client.Core.Rules;
 using ChuanHoa.Client.Core.Scanning;
@@ -10,6 +12,34 @@ namespace ChuanHoa.Client.Core.Tests;
 public sealed class LocalDocumentScannerTests
 {
     private static readonly DateTimeOffset Now = DateTimeOffset.Parse("2026-09-02T00:00:00Z");
+
+    [Fact]
+    public void Format_scan_honors_a_pre_cancelled_operation()
+    {
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+
+        Assert.Throws<OperationCanceledException>(() =>
+            new LocalDocumentScanner().ScanFormat(
+                Snapshot(ValidSection(), new LocalParagraphSnapshot(
+                    1, "Nội dung", "wdMainTextStory", 1, 0, "Times New Roman")),
+                Rules(),
+                cancellation.Token));
+    }
+
+    [Fact]
+    public void Spelling_scan_honors_a_pre_cancelled_operation()
+    {
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+
+        Assert.Throws<OperationCanceledException>(() =>
+            new LocalDocumentScanner().ScanSpelling(
+                Snapshot(ValidSection(), new LocalParagraphSnapshot(
+                    1, "Nội dung", "wdMainTextStory", 1, 0, "Times New Roman")),
+                Rules(),
+                cancellation.Token));
+    }
 
     [Fact]
     public void Format_scan_returns_exact_font_and_section_findings()
@@ -65,6 +95,39 @@ public sealed class LocalDocumentScannerTests
         finally
         {
             ChuanHoa.Client.Core.Lexicon.PersonalDictionaryManager.Instance.RemoveUserWord(customWord);
+        }
+    }
+
+    [Fact]
+    public void Spelling_scan_honors_document_scoped_ignore_using_snapshot_fingerprint()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), "ChuanHoaTestDict_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            var manager = new ChuanHoa.Client.Core.Lexicon.PersonalDictionaryManager(tempDir);
+            const string fingerprint = "sha256:document-a";
+            Assert.True(manager.IgnoreWordForDocument(fingerprint, "nhậnn").Succeeded);
+            var paragraph = new LocalParagraphSnapshot(1, "Văn bản nhậnn.", "wdMainTextStory", 1, 0,
+                "Times New Roman");
+            var snapshot = new LocalScanSnapshot(fingerprint, 1, new[] { ValidSection() }, new[] { paragraph },
+                Array.Empty<AnnotationProtectedSpan>());
+            var rules = new LocalRulePack("TEST", "1.0.0", Now.AddDays(-1), Now.AddDays(30), "1.0.0.0",
+                210, 297, 20, 25, 20, 25, 30, 35, 15, 20, "Times New Roman",
+                Array.Empty<TextCorrectionRule>(), Array.Empty<TelexRule>(), Array.Empty<char>(),
+                lexicon: new[] { "văn", "bản", "nhận" });
+
+            var findings = new LocalDocumentScanner(manager).ScanSpelling(snapshot, rules).Findings;
+            Assert.DoesNotContain(findings, item => item.Anchor.ExpectedText == "nhậnn");
+
+            var otherSnapshot = new LocalScanSnapshot("sha256:document-b", 1,
+                new[] { ValidSection() }, new[] { paragraph }, Array.Empty<AnnotationProtectedSpan>());
+            Assert.Contains(new LocalDocumentScanner(manager).ScanSpelling(otherSnapshot, rules).Findings,
+                item => item.Anchor.ExpectedText == "nhậnn");
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
         }
     }
 
@@ -182,6 +245,45 @@ public sealed class LocalDocumentScannerTests
         Assert.Equal(text.IndexOf(expectedLetter, StringComparison.Ordinal), finding.Anchor.StartOffset);
         Assert.Equal("Chữ cái đầu nội dung sau ký hiệu chỉ mục chưa viết hoa.", finding.CurrentIssue);
         Assert.Equal("Viết hoa chữ cái đầu nội dung sau ký hiệu chỉ mục.", finding.Expected);
+    }
+
+    [Theory]
+    [InlineData("a) Nội dung")]
+    [InlineData("b) Giải pháp")]
+    [InlineData("c) Cách thức")]
+    [InlineData("a. Nội dung")]
+    [InlineData("1. Nội dung")]
+    [InlineData("(1) Nội dung")]
+    [InlineData("1. a) Nội dung")]
+    public void Spelling_lexicon_ignores_leading_list_marker_but_checks_the_content(string text)
+    {
+        var paragraph = new LocalParagraphSnapshot(1, text, "wdMainTextStory", 1, 0, "Times New Roman");
+        var rules = new LocalRulePack("TEST", "1.0.0", Now.AddDays(-1), Now.AddDays(30), "1.0.0.0",
+            210, 297, 20, 25, 20, 25, 30, 35, 15, 20, "Times New Roman",
+            Array.Empty<TextCorrectionRule>(), Array.Empty<TelexRule>(), Array.Empty<char>(),
+            lexicon: new[] { "nội", "dung", "giải", "pháp", "cách", "thức" });
+
+        var result = new LocalDocumentScanner().ScanSpelling(Snapshot(ValidSection(), paragraph), rules);
+
+        Assert.DoesNotContain(result.Findings, item => item.RuleCode == "LOCAL-TYPO-LEXICON" &&
+            (item.Anchor.ExpectedText == "a" || item.Anchor.ExpectedText == "b" || item.Anchor.ExpectedText == "c"));
+        Assert.DoesNotContain(result.Findings, item => item.RuleCode == "LOCAL-TYPO-LEXICON");
+    }
+
+    [Fact]
+    public void Spelling_lexicon_still_checks_unknown_content_after_a_list_marker()
+    {
+        var paragraph = new LocalParagraphSnapshot(1, "b) nhậnn", "wdMainTextStory", 1, 0, "Times New Roman");
+        var rules = new LocalRulePack("TEST", "1.0.0", Now.AddDays(-1), Now.AddDays(30), "1.0.0.0",
+            210, 297, 20, 25, 20, 25, 30, 35, 15, 20, "Times New Roman",
+            Array.Empty<TextCorrectionRule>(), Array.Empty<TelexRule>(), Array.Empty<char>(),
+            lexicon: new[] { "nhận" });
+
+        var result = new LocalDocumentScanner().ScanSpelling(Snapshot(ValidSection(), paragraph), rules);
+
+        Assert.DoesNotContain(result.Findings, item => item.Anchor.ExpectedText == "b");
+        Assert.Contains(result.Findings, item => item.RuleCode == "LOCAL-TYPO-LEXICON" &&
+            item.Anchor.ExpectedText == "nhậnn");
     }
 
     private static LocalScanSnapshot Snapshot(LocalSectionSnapshot section, LocalParagraphSnapshot paragraph) =>

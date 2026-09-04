@@ -95,6 +95,9 @@ $certificate = Get-ChildItem Cert:\CurrentUser\My |
     Select-Object -First 1
 if ($null -eq $certificate) { throw 'The Chuan Hoa Local Development certificate was not found.' }
 
+& $msbuild $vstoProject /t:Restore /p:Configuration=Development /p:Platform=AnyCPU /m /nologo /v:minimal
+if ($LASTEXITCODE -ne 0) { throw 'The Development VSTO restore failed.' }
+
 & $msbuild $vstoProject /t:Build /p:Configuration=Development /p:Platform=AnyCPU `
     /p:SignManifests=true /p:ManifestCertificateThumbprint=$($certificate.Thumbprint) /m /nologo /v:minimal
 if ($LASTEXITCODE -ne 0) { throw 'The Development VSTO build failed.' }

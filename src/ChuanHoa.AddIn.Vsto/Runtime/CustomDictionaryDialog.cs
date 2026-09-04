@@ -1,6 +1,7 @@
 using System;
 using System.Drawing;
 using System.Linq;
+using System.Text;
 using System.Windows.Forms;
 using ChuanHoa.Client.Core.Lexicon;
 
@@ -12,15 +13,21 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         private readonly TextBox _searchBox;
         private readonly TextBox _newWordBox;
         private readonly Label _countLabel;
+        private readonly Label _statusLabel;
+        private readonly Button _deleteButton;
+        private readonly string? _currentDocumentId;
 
-        private CustomDictionaryDialog()
+        private CustomDictionaryDialog(string? currentDocumentId)
         {
+            _currentDocumentId = currentDocumentId;
             Text = "Quản lý Từ điển cá nhân & Danh sách bỏ qua";
             StartPosition = FormStartPosition.CenterParent;
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
             MinimizeBox = false;
             ShowInTaskbar = false;
+            AutoScaleMode = AutoScaleMode.Dpi;
+            AutoScaleDimensions = new SizeF(96F, 96F);
             ClientSize = new Size(540, 440);
             Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
 
@@ -59,13 +66,16 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 Text = "Tổng số từ: 0"
             };
 
-            var btnDelete = new Button
+            _deleteButton = new Button
             {
                 Text = "Xóa từ",
                 Location = new Point(416, 68),
-                Size = new Size(108, 30)
+                Size = new Size(108, 30),
+                Enabled = false
             };
-            btnDelete.Click += (s, e) => DeleteSelectedWord();
+            _deleteButton.Click += (s, e) => DeleteSelectedWord();
+            _wordListBox.SelectedIndexChanged += (s, e) =>
+                _deleteButton.Enabled = _wordListBox.SelectedItem != null;
 
             var btnClearIgnores = new Button
             {
@@ -113,17 +123,26 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 Size = new Size(108, 32)
             };
 
+            _statusLabel = new Label
+            {
+                AutoSize = false,
+                Location = new Point(16, 390),
+                Size = new Size(390, 38),
+                ForeColor = Color.Firebrick
+            };
+
             Controls.Add(titleLabel);
             Controls.Add(searchLabel);
             Controls.Add(_searchBox);
             Controls.Add(_wordListBox);
             Controls.Add(_countLabel);
-            Controls.Add(btnDelete);
+            Controls.Add(_deleteButton);
             Controls.Add(btnClearIgnores);
             Controls.Add(newWordLabel);
             Controls.Add(_newWordBox);
             Controls.Add(btnAdd);
             Controls.Add(btnClose);
+            Controls.Add(_statusLabel);
 
             CancelButton = btnClose;
 
@@ -132,8 +151,10 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
         private void RefreshWordList()
         {
-            var filter = _searchBox.Text.Trim();
-            var allWords = PersonalDictionaryManager.Instance.GetUserWords();
+            var filter = _searchBox.Text.Trim().Normalize(NormalizationForm.FormC);
+            var snapshot = PersonalDictionaryManager.Instance.GetUserWordsResult();
+            var allWords = snapshot.Words;
+            ShowResult(snapshot.Persistence);
             _wordListBox.BeginUpdate();
             _wordListBox.Items.Clear();
 
@@ -157,10 +178,12 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 return;
             }
 
-            PersonalDictionaryManager.Instance.AddUserWord(word);
+            var result = PersonalDictionaryManager.Instance.AddUserWord(word);
+            ShowResult(result);
+            if (!result.Succeeded || result.Status == PersonalDictionaryStatus.Duplicate) return;
             _newWordBox.Clear();
             RefreshWordList();
-            _wordListBox.SelectedItem = word;
+            _wordListBox.SelectedItem = word.Normalize(NormalizationForm.FormC);
         }
 
         private void DeleteSelectedWord()
@@ -175,31 +198,51 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             var word = _wordListBox.SelectedItem.ToString();
             if (!string.IsNullOrEmpty(word))
             {
-                PersonalDictionaryManager.Instance.RemoveUserWord(word);
+                var confirm = MessageBox.Show(this,
+                    "Xóa mục đang chọn khỏi Từ điển cá nhân?",
+                    "Từ điển cá nhân", MessageBoxButtons.YesNo, MessageBoxIcon.Question,
+                    MessageBoxDefaultButton.Button2);
+                if (confirm != DialogResult.Yes) return;
+                var result = PersonalDictionaryManager.Instance.RemoveUserWord(word);
+                ShowResult(result);
+                if (!result.Succeeded) return;
                 RefreshWordList();
             }
         }
 
         private void ClearDocumentIgnores()
         {
-            var result = MessageBox.Show(this,
-                "Bạn có muốn đặt lại danh sách các từ đã tạm bỏ qua trong các tài liệu hiện tại không?",
-                "Danh sách bỏ qua",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Question);
-
-            if (result == DialogResult.Yes)
+            if (string.IsNullOrWhiteSpace(_currentDocumentId))
             {
-                // Clear any document session ignores
-                PersonalDictionaryManager.Instance.ClearDocumentIgnores(string.Empty);
-                MessageBox.Show(this, "Đã xóa toàn bộ danh sách từ bỏ qua tạm thời.", "Từ điển cá nhân",
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                var clearAll = MessageBox.Show(this,
+                    "Không có dữ liệu quét của tài liệu hiện tại. Xóa danh sách bỏ qua tạm thời của toàn bộ phiên Word?",
+                    "Danh sách bỏ qua", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                if (clearAll == DialogResult.Yes)
+                    ShowResult(PersonalDictionaryManager.Instance.ClearAllDocumentIgnores());
+                return;
             }
+
+            var result = MessageBox.Show(this,
+                "Chọn Có để xóa danh sách bỏ qua của tài liệu hiện tại.\n" +
+                "Chọn Không để xóa danh sách bỏ qua của toàn bộ phiên Word.\n" +
+                "Chọn Hủy để giữ nguyên.",
+                "Danh sách bỏ qua", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
+            if (result == DialogResult.Yes)
+                ShowResult(PersonalDictionaryManager.Instance.ClearDocumentIgnores(_currentDocumentId));
+            else if (result == DialogResult.No)
+                ShowResult(PersonalDictionaryManager.Instance.ClearAllDocumentIgnores());
         }
 
-        public static void Prompt(IWin32Window? owner = null)
+        private void ShowResult(PersonalDictionaryResult result)
         {
-            using (var dialog = new CustomDictionaryDialog())
+            _statusLabel.Text = result.Status == PersonalDictionaryStatus.Duplicate
+                ? result.Message
+                : result.Succeeded ? string.Empty : result.Message;
+        }
+
+        public static void Prompt(IWin32Window? owner = null, string? currentDocumentId = null)
+        {
+            using (var dialog = new CustomDictionaryDialog(currentDocumentId))
             {
                 ((Form)dialog).ShowDialog(owner);
             }

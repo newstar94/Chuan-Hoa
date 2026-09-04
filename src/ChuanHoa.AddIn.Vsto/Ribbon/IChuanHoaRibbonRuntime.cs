@@ -20,6 +20,8 @@ namespace ChuanHoa.AddIn.Vsto.Ribbon
 
         string GetItemLabel(string controlId, int index);
 
+        object GetImage(string controlId);
+
         void ExecuteButton(string controlId);
     }
 }

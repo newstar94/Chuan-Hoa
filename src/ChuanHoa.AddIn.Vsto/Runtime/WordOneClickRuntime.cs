@@ -74,7 +74,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             _accessManager = accessManager ?? throw new ArgumentNullException(nameof(accessManager));
         }
 
-        public OneClickResult Execute(DocumentContext context, Word.Document? activeDocument = null)
+        public OneClickResult Execute(DocumentContext context, Word.Document? activeDocument = null,
+            DocumentOperationSession? operation = null)
         {
             if (context == null) throw new ArgumentNullException(nameof(context));
             var document = activeDocument ?? _application.ActiveDocument;
@@ -106,6 +107,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
             try
             {
+                operation?.Transition(DocumentOperationState.Mutating,
+                    "chuẩn hóa toàn bộ", cancellationEnabled: false);
                 _application.ScreenUpdating = false;
                 _application.DisplayAlerts = Word.WdAlertLevel.wdAlertsNone;
                 if (WordMajorVersion() >= 15)
@@ -203,7 +206,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             string selectedStory,
             int selectedStart,
             int selectedEnd,
-            Word.Document? activeDocument = null)
+            Word.Document? activeDocument = null,
+            DocumentOperationSession? operation = null)
         {
             if (context == null) throw new ArgumentNullException(nameof(context));
             var document = activeDocument ?? _application.ActiveDocument;
@@ -262,6 +266,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             var undoStarted = false;
             try
             {
+                operation?.Transition(DocumentOperationState.Mutating,
+                    "sửa lỗi đang chọn", cancellationEnabled: false);
                 _application.ScreenUpdating = false;
                 if (WordMajorVersion() >= 15)
                 {
@@ -336,7 +342,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
         public int FixAllSpellingFindings(
             DocumentContext context,
-            Word.Document? activeDocument = null)
+            Word.Document? activeDocument = null,
+            DocumentOperationSession? operation = null)
         {
             if (context == null) throw new ArgumentNullException(nameof(context));
             var document = activeDocument ?? _application.ActiveDocument;
@@ -359,6 +366,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
             try
             {
+                operation?.Transition(DocumentOperationState.Mutating,
+                    "sửa nhanh chính tả", cancellationEnabled: false);
                 _application.ScreenUpdating = false;
                 if (WordMajorVersion() >= 15)
                 {
@@ -502,7 +511,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             // This is classified as a format finding, but its safe correction is a
             // deterministic text insertion. Reuse the same guarded edit path as
             // 1-Click so the comment is removed only after "số" was actually added.
-            if (string.Equals(finding.RuleCode, "ND30-PL1-M2-K6B-SO", StringComparison.Ordinal))
+            if (string.Equals(finding.RuleCode, "ND30-PL1-M2-K6B-SO", StringComparison.Ordinal) ||
+                string.Equals(finding.RuleCode, "ND30-PL1-M2-K6A-PUNCT", StringComparison.Ordinal))
                 return ApplyDeterministicSpellingFixes(document, snapshot,
                     new[] { finding }, rules) > 0;
             if (!finding.Anchor.ParagraphIndex.HasValue) return false;
@@ -557,6 +567,16 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             {
                 range = ResolveCurrentMainParagraphRange(document, paragraph);
                 var party = IsParty(snapshot);
+                // A point is defined by its structural marker, not by a guessed
+                // semantic role. Prioritize this deterministic correction so a stale
+                // or overly broad role can never prevent 1-Click/selected-fix from
+                // removing bold and italic formatting from the whole point.
+                if (!paragraph.IsInTable && IsLegalPointParagraph(paragraph.Text))
+                {
+                    range.Font.Bold = 0;
+                    range.Font.Italic = 0;
+                    return range.Font.Bold == 0 && range.Font.Italic == 0;
+                }
                 if (string.IsNullOrEmpty(role))
                 {
                     if (paragraph.IsInTable || !IsBodyParagraph(paragraph)) return false;
@@ -564,7 +584,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     range.Font.Color = Word.WdColor.wdColorAutomatic;
                     range.Font.Size = party ? 14f : ValidOr(paragraph.FontSizePoints, 13, 14, 14);
                     range.ParagraphFormat.Alignment = Word.WdParagraphAlignment.wdAlignParagraphJustify;
-                    range.ParagraphFormat.FirstLineIndent = 10f * PointsPerMillimeter;
+                    ApplyBodyParagraphIndent(range, paragraph.Text);
                     range.ParagraphFormat.SpaceAfter = 6f;
                     if (party)
                     {
@@ -596,6 +616,40 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 return true;
             }
             finally { Release(range); }
+        }
+
+        private static void ApplyBodyParagraphIndent(Word.Range range, string text)
+        {
+            Word.ParagraphFormat? format = null;
+            Word.TabStops? tabStops = null;
+            Word.TabStop? tabStop = null;
+            try
+            {
+                format = range.ParagraphFormat;
+                format.RightIndent = 0f;
+                tabStops = format.TabStops;
+                tabStops.ClearAll();
+
+                if (ParagraphIndentPolicy.IsDashListParagraph(text))
+                {
+                    var textPosition = (float)(ParagraphIndentPolicy.ListTextMillimeters * PointsPerMillimeter);
+                    var markerPosition = (float)(ParagraphIndentPolicy.ListMarkerMillimeters * PointsPerMillimeter);
+                    format.LeftIndent = textPosition;
+                    format.FirstLineIndent = markerPosition - textPosition;
+                    tabStop = tabStops.Add(textPosition, Word.WdTabAlignment.wdAlignTabLeft,
+                        Word.WdTabLeader.wdTabLeaderSpaces);
+                    return;
+                }
+
+                format.LeftIndent = 0f;
+                format.FirstLineIndent = (float)(ParagraphIndentPolicy.BodyFirstLineMillimeters * PointsPerMillimeter);
+            }
+            finally
+            {
+                Release(tabStop);
+                Release(tabStops);
+                Release(format);
+            }
         }
 
         private static ParagraphStyle? StyleFor(string role, bool party, LocalParagraphSnapshot paragraph,
@@ -1238,6 +1292,15 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             var length = finding.Anchor.Length.GetValueOrDefault();
             switch (finding.RuleCode)
             {
+                case "ND30-PL1-M2-K6A-PUNCT":
+                    var requiredPunctuation = finding.Expected.IndexOf("chấm phẩy", StringComparison.OrdinalIgnoreCase) >= 0
+                        ? ";"
+                        : ".";
+                    var replacesPunctuation = expectedText.Length == 1 &&
+                        ".;,:".IndexOf(expectedText[0]) >= 0;
+                    return replacesPunctuation
+                        ? new SpellingEdit(start, length, requiredPunctuation, expectedText, 15)
+                        : new SpellingEdit(start + length, 0, requiredPunctuation, string.Empty, 15);
                 case "LOCAL-TYPO-PUNCT":
                     return new SpellingEdit(start, length, string.Empty,
                         expectedText, 50);
@@ -1311,6 +1374,10 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             var expectedText = finding.Anchor.ExpectedText ?? string.Empty;
             switch (finding.RuleCode)
             {
+                case "ND30-PL1-M2-K6A-PUNCT":
+                    return finding.Expected.IndexOf("chấm phẩy", StringComparison.OrdinalIgnoreCase) >= 0
+                        ? ";"
+                        : ".";
                 case "LOCAL-TYPO-SPACE":
                     return " ";
                 case "LOCAL-TYPO-PUNCT":
@@ -1508,9 +1575,16 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             var text = paragraph.Text.Trim();
             if (text.Length < 20 || text.Length > 5000) return false;
             if (text.Where(char.IsLetter).Any() && text.Where(char.IsLetter).All(char.IsUpper)) return false;
-            if (Regex.IsMatch(text, @"^(Điều\s+\d+|\d+\.\s|[a-zđ]\)\s|[-–—]?\s*(Căn cứ|Xét|Theo đề nghị))\b",
+            if (Regex.IsMatch(text, @"^(Điều\s+\d+|\d+\.\s|[a-zđ]\)\s)\b",
                 RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)) return false;
             return true;
+        }
+
+        private static bool IsLegalPointParagraph(string text)
+        {
+            return Regex.IsMatch(text ?? string.Empty, @"^\s*[a-zđ]\)\s+\p{L}",
+                RegexOptions.IgnoreCase | RegexOptions.CultureInvariant,
+                TimeSpan.FromMilliseconds(200));
         }
 
         private static string OwnedLineName(string ruleCode, int paragraphIndex)

@@ -1,12 +1,17 @@
 param(
     [Parameter(Mandatory = $false)]
-    [ValidatePattern('^\d+\.\d+\.\d+\.\d+$')]
-    [string]$ApplicationVersion = '1.0.0.16'
+    [ValidatePattern('^$|^\d+\.\d+\.\d+\.\d+$')]
+    [string]$ApplicationVersion = ''
 )
 
 $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
+if ([string]::IsNullOrWhiteSpace($ApplicationVersion)) {
+    [xml]$versionProps = Get-Content -LiteralPath (Join-Path $root 'Directory.Build.props')
+    $ApplicationVersion = [string]$versionProps.Project.PropertyGroup.ProductVersion
+}
 $publishDirectory = Join-Path $root "artifacts\vsto-development-test\$ApplicationVersion"
+$publishScript = Join-Path $root 'tools\vsto\publish_development_test.ps1'
 $runtimeDirectory = Join-Path $root 'src\ChuanHoa.AddIn.Vsto\bin\Development'
 $bootstrapperProject = Join-Path $root 'tools\vsto\DevelopmentTestBootstrapper\DevelopmentTestBootstrapper.csproj'
 $bootstrapperSource = Join-Path $root 'tools\vsto\DevelopmentTestBootstrapper\Program.cs'
@@ -16,8 +21,26 @@ $outputName = "ChuanHoa_Development_Test_Setup_$ApplicationVersion.exe"
 $outputPath = Join-Path $outputDirectory $outputName
 $msbuild = 'C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\MSBuild.exe'
 
-if (!(Test-Path -LiteralPath $publishDirectory)) {
-    throw "The published Development package was not found: $publishDirectory"
+if (Test-Path -LiteralPath $publishDirectory) {
+    # A payload audit can fail after Publish but before the single-file installer
+    # exists. That directory was never released, so it is safe to discard and
+    # rebuild the same source-of-truth version. A completed installer remains
+    # immutable and still requires a new ProductVersion.
+    if (Test-Path -LiteralPath $outputPath) {
+        throw "The Development version already has build output. Use a newer ProductVersion instead of reusing binaries: $publishDirectory"
+    }
+    $resolvedPublish = [System.IO.Path]::GetFullPath($publishDirectory)
+    $resolvedPublishRoot = [System.IO.Path]::GetFullPath(
+        (Join-Path $root 'artifacts\vsto-development-test')).TrimEnd('\') + '\'
+    if (!$resolvedPublish.StartsWith($resolvedPublishRoot,
+            [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "Refusing to clean an incomplete publish outside the artifact root: $resolvedPublish"
+    }
+    [System.IO.Directory]::Delete($resolvedPublish, $true)
+}
+& $publishScript -ApplicationVersion $ApplicationVersion
+if ($LASTEXITCODE -ne 0 -or !(Test-Path -LiteralPath $publishDirectory)) {
+    throw "Fresh VSTO Development publish failed for $ApplicationVersion."
 }
 $runtimeManifest = Join-Path $runtimeDirectory 'ChuanHoa.AddIn.Vsto.vsto'
 if (!(Test-Path -LiteralPath $runtimeManifest) -or
@@ -66,8 +89,7 @@ try {
         'ChuanHoa.AddIn.Vsto.dll.manifest',
         'ChuanHoa.AddIn.Vsto.dll',
         'ChuanHoa.Client.Core.dll',
-        'Microsoft.Office.Tools.Common.v4.0.Utilities.dll',
-        'QRCoder.dll'
+        'Microsoft.Office.Tools.Common.v4.0.Utilities.dll'
     )) {
         $runtimePath = Join-Path $runtimeDirectory $runtimeFile
         if (!(Test-Path -LiteralPath $runtimePath)) {
@@ -79,32 +101,39 @@ try {
     $supportDirectory = Join-Path $payloadDirectory 'DevelopmentSupport'
     New-Item -ItemType Directory -Path $supportDirectory -Force | Out-Null
     Copy-Item -LiteralPath $trustedKeyPath -Destination (Join-Path $supportDirectory 'trusted-key.xml')
-    $cacheDir = Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'ChuanHoa\Cache'
-    foreach ($cacheFile in @('lease.xml', 'rules.xml', 'server-time.txt')) {
-        $sourceCache = Join-Path $cacheDir $cacheFile
-        if (Test-Path -LiteralPath $sourceCache) {
-            Copy-Item -LiteralPath $sourceCache -Destination (Join-Path $supportDirectory $cacheFile)
-        }
-    }
-
-    # Package AI VietnameseEngine and models into payload
-    $engineOutputDir = Join-Path $root 'tools\VietnameseEngine\bin\Release\net48'
-    if (!(Test-Path -LiteralPath (Join-Path $engineOutputDir 'VietnameseEngine.exe'))) {
-        & dotnet build (Join-Path $root 'tools\VietnameseEngine\VietnameseEngine.csproj') -c Release -f net48
-        if ($LASTEXITCODE -ne 0) {
-            throw "Failed to build VietnameseEngine for net48"
-        }
-    }
-    $payloadEngineDir = Join-Path $payloadDirectory 'Engine'
-    New-Item -ItemType Directory -Path $payloadEngineDir -Force | Out-Null
-    Copy-Item -Path (Join-Path $engineOutputDir '*') -Destination $payloadEngineDir -Recurse -Force
-    $modelDir = Join-Path $root 'artifacts\models'
-    if (Test-Path -LiteralPath $modelDir) {
-        Copy-Item -Path (Join-Path $modelDir '*') -Destination $payloadEngineDir -Force
-    }
 
     Set-Content -LiteralPath $versionFile -Value $ApplicationVersion -Encoding ASCII -NoNewline
     Compress-Archive -Path (Join-Path $payloadDirectory '*') -DestinationPath $payloadZip -CompressionLevel Optimal
+
+    $forbiddenPayloadPatterns = @(
+        'VietnameseEngine',
+        'LOCAL-TYPO-AI',
+        '.onnx',
+        '.onnx.data',
+        'onnxruntime',
+        'model_manifest',
+        'training',
+        'QRCoder',
+        'btnChenQrCode',
+        'QrCodeInputDialog',
+        'InsertQrCode'
+    )
+    $payloadEntries = Get-ChildItem -LiteralPath $payloadDirectory -Recurse -File
+    foreach ($entry in $payloadEntries) {
+        $relativePath = $entry.FullName.Substring($payloadDirectory.Length).TrimStart('\')
+        foreach ($pattern in $forbiddenPayloadPatterns) {
+            if ($relativePath.IndexOf($pattern, [System.StringComparison]::OrdinalIgnoreCase) -ge 0) {
+                throw "Forbidden retired/AI artifact in Development installer payload: $relativePath"
+            }
+            $payloadBytes = [System.IO.File]::ReadAllBytes($entry.FullName)
+            $asciiPayload = [System.Text.Encoding]::ASCII.GetString($payloadBytes)
+            $unicodePayload = [System.Text.Encoding]::Unicode.GetString($payloadBytes)
+            if ($asciiPayload.IndexOf($pattern, [System.StringComparison]::OrdinalIgnoreCase) -ge 0 -or
+                $unicodePayload.IndexOf($pattern, [System.StringComparison]::OrdinalIgnoreCase) -ge 0) {
+                throw "Forbidden retired/AI marker in Development installer payload file: $relativePath"
+            }
+        }
+    }
 
     & $msbuild $bootstrapperProject /t:Build /p:Configuration=Release /p:Platform=AnyCPU `
         /p:PayloadZip="$payloadZip" /p:VersionFile="$versionFile" /p:OutputPath="$buildDirectory\" `

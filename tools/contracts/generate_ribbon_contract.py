@@ -17,10 +17,12 @@ REMOVED_OPTIONAL_LANGUAGE_CONTROL_IDS = {
     "btnKieuY",
 }
 REMOVED_MANUAL_READ_CONTROL_IDS = {"btnDocDuLieu"}
+REMOVED_QR_CONTROL_IDS = {"btnChenQrCode"}
 REMOVED_TARGET_CONTROL_IDS = (
     REMOVED_SAVE_CONTROL_IDS
     | REMOVED_OPTIONAL_LANGUAGE_CONTROL_IDS
     | REMOVED_MANUAL_READ_CONTROL_IDS
+    | REMOVED_QR_CONTROL_IDS
 )
 
 
@@ -108,7 +110,6 @@ CONTROL_META: dict[str, dict[str, Any]] = {
     "btnCanDinhO": meta("LOCAL_EXECUTION_GRANT", "CELL_ALIGNMENT", "SAFE", "SELECTED_TABLE_CELLS", TABLE_SELECTION_REQUIRED + ["SIGNED_EXECUTION_GRANT_VALID"], "WORD_CELL_VERTICAL_ALIGNMENT", "ONE_CUSTOM_UNDO_RECORD", "NOT_REQUIRED"),
     "btnCanGiuaO": meta("LOCAL_EXECUTION_GRANT", "CELL_ALIGNMENT", "SAFE", "SELECTED_TABLE_CELLS", TABLE_SELECTION_REQUIRED + ["SIGNED_EXECUTION_GRANT_VALID"], "WORD_CELL_ALIGNMENT", "ONE_CUSTOM_UNDO_RECORD", "NOT_REQUIRED"),
     "btnXoaKyTuThuaBangExcel": meta("SIGNED_FIX_PLAN", "TABLE_TEXT_CLEAN", "CONFIRM", "AUTHORIZED_TABLE_CELL_RANGES", REMOTE_MUTATION + ["SELECTION_IN_TABLE_OR_IDENTIFIED_TABLES"], "PROTECTED_SPANS_V1", "ONE_CUSTOM_UNDO_RECORD", "REQUIRED"),
-    "btnChenQrCode": meta("LOCAL_EXECUTION_GRANT", "QR_INSERT", "CONFIRM", "CARET_INSERTION_AND_NEW_IMAGE", LOCAL_GRANT_MUTATION + ["VALID_SELECTION", "QR_PAYLOAD_CONFIRMED"], "LOCAL_QR_RENDERER", "ONE_CUSTOM_UNDO_RECORD", "REQUIRED"),
     "mnuBoDau": meta("CONTAINER", "TONE_PLACEMENT", "SAFE", "NONE", ["ACTIVE_DOCUMENT"], "ALL_SUPPORTED_WORD", "NOT_APPLICABLE", "NOT_APPLICABLE"),
     "btnKieuOaUy": meta("LOCAL_EXECUTION_GRANT", "TONE_PLACEMENT", "CONFIRM", "ALL_EDITABLE_STORIES", LOCAL_GRANT_MUTATION, "VIETNAMESE_TONE_MAIN_VOWEL", "ONE_CUSTOM_UNDO_RECORD", "REQUIRED"),
     "btnKieuOaUy2": meta("LOCAL_EXECUTION_GRANT", "TONE_PLACEMENT", "CONFIRM", "ALL_EDITABLE_STORIES", LOCAL_GRANT_MUTATION, "VIETNAMESE_TONE_FIRST_VOWEL", "ONE_CUSTOM_UNDO_RECORD", "REQUIRED"),
@@ -151,6 +152,51 @@ SELECTED_FINDING_META = meta(
     "SELECTED_FINDING_FIX_V1",
     "ONE_CUSTOM_UNDO_RECORD_WHEN_SUPPORTED",
     "NOT_REQUIRED",
+)
+
+QUICK_SPELLING_CONTROL: dict[str, Any] = {
+    "groupId": "grpKhoiDong",
+    "parentContainerId": None,
+    "controlType": "button",
+    "id": "btnSuaTatCaChinhTa",
+    "label": "Sửa nhanh chính tả",
+    "size": "large",
+    "imageMso": "AutoCorrect",
+    "callbacks": {
+        "getEnabled": "GetEnabledAutoFixAll2026",
+        "onAction": "OnSuaTatCaChinhTa",
+    },
+    "screenTip": "Sửa nhanh toàn bộ lỗi chính tả an toàn",
+    "superTip": "Quét và áp dụng các phương án sửa chính tả rule-based có độ tin cậy cao.",
+    "staticItems": [],
+}
+
+QUICK_SPELLING_META = meta(
+    "LOCAL_APPLY", "AUTOFIX", "CONFIRM", "SPELLING_FINDINGS_ONLY",
+    WRITABLE_DOCUMENT, "WORD_2010_OBJECT_MODEL", "ONE_CUSTOM_UNDO_RECORD", "NOT_APPLICABLE"
+)
+
+PERSONAL_DICTIONARY_CONTROL: dict[str, Any] = {
+    "groupId": "grpChinhTaSo",
+    "parentContainerId": None,
+    "controlType": "button",
+    "id": "btnTuDienCaNhan",
+    "label": "Từ điển cá nhân",
+    "size": "large",
+    "imageMso": None,
+    "callbacks": {
+        "getEnabled": "GetEnabledAlways",
+        "getImage": "GetImageTuDienCaNhan",
+        "onAction": "OnTuDienCaNhan",
+    },
+    "screenTip": "Quản lý từ điển cá nhân",
+    "superTip": "Xem, thêm và xóa thuật ngữ riêng mà bộ kiểm tra chính tả cần bỏ qua.",
+    "staticItems": [],
+}
+
+PERSONAL_DICTIONARY_META = meta(
+    "LOCAL_DIALOG", "DOCUMENT_TOOLS", "SAFE", "NONE", [],
+    "WINFORMS_MODAL_DIALOG", "NOT_APPLICABLE", "NOT_APPLICABLE"
 )
 
 TARGET_CONTROL_OVERRIDES: dict[str, dict[str, str]] = {
@@ -221,10 +267,25 @@ def main() -> None:
     }
     controls.append(selected_finding)
 
+    for synthetic_control, synthetic_meta in (
+        (QUICK_SPELLING_CONTROL, QUICK_SPELLING_META),
+        (PERSONAL_DICTIONARY_CONTROL, PERSONAL_DICTIONARY_META),
+    ):
+        target = dict(synthetic_control)
+        target["callbacks"] = dict(synthetic_control["callbacks"])
+        target["order"] = len(controls) + 1
+        target["commandContract"] = {
+            "commandId": target["id"],
+            **synthetic_meta,
+            "telemetryAllowlist": ["commandId", "resultCode", "durationBucket", "clientRelease", "wordVersion", "bitness"],
+            "testIds": [f"RIBBON-{target['order']:03d}", f"CONTROL-{target['id']}"],
+        }
+        controls.append(target)
+
     button_controls = [control for control in controls if control["controlType"] == "button"]
     menu_controls = [control for control in controls if control["controlType"] == "menu"]
-    if len(controls) != 41 or len(button_controls) != 33 or len(menu_controls) != 3:
-        raise RuntimeError("Ribbon contract không đạt 41 controls, 33 button commands và 3 menu containers")
+    if len(controls) != 42 or len(button_controls) != 34 or len(menu_controls) != 3:
+        raise RuntimeError("Ribbon contract không đạt 42 controls, 34 button commands và 3 menu containers")
     if any("onAction" not in control["callbacks"] for control in button_controls):
         raise RuntimeError("Có button thiếu onAction trong contract đích")
     if any(control["commandContract"]["executionMode"] != "CONTAINER" for control in menu_controls):
@@ -258,7 +319,7 @@ def main() -> None:
                 "preserveCurrentDocumentFormat": True,
             },
             {
-                "changeId": "REMOVE_TONE_AND_IY_NORMALIZATION",
+                "changeId": "REMOVE_IY_NORMALIZATION_KEEP_TONE_PLACEMENT",
                 "removedControlIds": sorted(REMOVED_OPTIONAL_LANGUAGE_CONTROL_IDS),
             },
             {
@@ -270,6 +331,11 @@ def main() -> None:
                 "removedControlIds": sorted(REMOVED_MANUAL_READ_CONTROL_IDS),
                 "documentReadPolicy": "USER_INITIATED_COMMAND_ONLY",
                 "analysisPolicy": "MINIMUM_REQUIRED_LANES",
+            },
+            {
+                "changeId": "REMOVE_QR_FEATURE",
+                "removedControlIds": sorted(REMOVED_QR_CONTROL_IDS),
+                "productDecision": "QR is intentionally retired from the current product",
             },
         ],
         "invariants": [

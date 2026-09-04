@@ -1,11 +1,15 @@
 param(
     [Parameter(Mandatory = $false)]
-    [ValidatePattern('^\d+\.\d+\.\d+\.\d+$')]
-    [string]$ApplicationVersion = '1.0.0.16'
+    [ValidatePattern('^$|^\d+\.\d+\.\d+\.\d+$')]
+    [string]$ApplicationVersion = ''
 )
 
 $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
+if ([string]::IsNullOrWhiteSpace($ApplicationVersion)) {
+    [xml]$versionProps = Get-Content -LiteralPath (Join-Path $root 'Directory.Build.props')
+    $ApplicationVersion = [string]$versionProps.Project.PropertyGroup.ProductVersion
+}
 $project = Join-Path $root 'src\ChuanHoa.AddIn.Vsto\ChuanHoa.AddIn.Vsto.csproj'
 $publishRoot = Join-Path $root 'artifacts\vsto-development-test'
 $publishDirectory = Join-Path $publishRoot $ApplicationVersion
@@ -63,6 +67,27 @@ $buildArguments = @(
     '/nologo',
     '/v:minimal'
 )
+
+# A clean checkout has no VSTO project.assets.json because the SDK solution does
+# not include this legacy Office project. Restore it explicitly before build.
+# Remove NuGet's generated dependency snapshot first. When the final
+# PackageReference is removed, NuGet reports "Nothing to do" and otherwise
+# leaves the old dependency in the VSTO deployment manifest.
+foreach ($generatedNuGetFile in @(
+    'obj\project.assets.json',
+    'obj\ChuanHoa.AddIn.Vsto.csproj.nuget.dgspec.json',
+    'obj\ChuanHoa.AddIn.Vsto.csproj.nuget.g.props',
+    'obj\ChuanHoa.AddIn.Vsto.csproj.nuget.g.targets'
+)) {
+    $generatedNuGetPath = Join-Path (Split-Path -Parent $project) $generatedNuGetFile
+    if (Test-Path -LiteralPath $generatedNuGetPath) {
+        Remove-Item -LiteralPath $generatedNuGetPath -Force
+    }
+}
+& $msbuild $project /t:Restore /p:RestoreForce=true /p:Configuration=Development /p:Platform=AnyCPU /m /nologo /v:minimal
+if ($LASTEXITCODE -ne 0) {
+    throw "VSTO Development restore failed with exit code $LASTEXITCODE."
+}
 
 # Always rebuild before publishing. An incremental Publish can otherwise reuse a
 # stale VSTO assembly when a non-resx embedded Ribbon resource changes.

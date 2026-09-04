@@ -374,6 +374,120 @@ public sealed class CanonicalRouteScannerTests
     }
 
     [Fact]
+    public void A_single_legal_basis_block_must_end_with_a_period()
+    {
+        var paragraph = P(1, "Căn cứ Hợp đồng số 129/2026/HĐTV/CĐCS-BMC;", "legalBasis",
+            size: 14, italic: true, alignment: 3);
+        var snapshot = new LocalScanSnapshot("sha256:single-legal-basis", 1,
+            new[] { ValidSection() }, new[] { paragraph }, Array.Empty<AnnotationProtectedSpan>());
+
+        var finding = Assert.Single(new LocalDocumentScanner().ScanFormat(snapshot, Rules()).Findings,
+            item => item.RuleCode == "ND30-PL1-M2-K6A-PUNCT");
+
+        Assert.Equal(";", finding.Anchor.ExpectedText);
+        Assert.Contains("dấu chấm (.)", finding.Expected, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Legal_basis_punctuation_is_resolved_per_consecutive_block()
+    {
+        var paragraphs = new[]
+        {
+            P(1, "Căn cứ Luật Đấu thầu.", "legalBasis", size: 14, italic: true, alignment: 3),
+            P(2, "Căn cứ Nghị định số 30/2020/NĐ-CP;", "legalBasis", size: 14, italic: true, alignment: 3),
+            P(3, "QUYẾT ĐỊNH", "structuralTitle", size: 14, bold: true, alignment: 1),
+            P(4, "Nội dung giải trình của tổ thẩm định.", size: 14),
+            P(5, "Căn cứ Hợp đồng số 129/2026/HĐTV/CĐCS-BMC;", "legalBasis",
+                size: 14, italic: true, alignment: 3),
+            P(6, "b) Thành phần đơn vị thẩm định", size: 14)
+        };
+        var snapshot = new LocalScanSnapshot("sha256:legal-basis-blocks", 1,
+            new[] { ValidSection() }, paragraphs, Array.Empty<AnnotationProtectedSpan>());
+
+        var findings = new LocalDocumentScanner().ScanFormat(snapshot, Rules()).Findings
+            .Where(item => item.RuleCode == "ND30-PL1-M2-K6A-PUNCT")
+            .ToArray();
+
+        Assert.Equal(3, findings.Length);
+        Assert.Contains(findings, item => item.Anchor.ParagraphIndex == 1 &&
+            item.Expected.Contains("chấm phẩy (;)", StringComparison.Ordinal));
+        Assert.Contains(findings, item => item.Anchor.ParagraphIndex == 2 &&
+            item.Expected.Contains("dấu chấm (.)", StringComparison.Ordinal));
+        Assert.Contains(findings, item => item.Anchor.ParagraphIndex == 5 &&
+            item.Expected.Contains("dấu chấm (.)", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Body_sentence_starting_with_căn_cứ_is_not_checked_as_a_legal_basis()
+    {
+        var paragraphs = new[]
+        {
+            P(1, "BÁO CÁO", size: 14, bold: true, alignment: 1),
+            P(2, "Về kết quả thẩm định hồ sơ mời thầu", size: 14, bold: true, alignment: 1),
+            P(3, "1. NỘI DUNG THẨM ĐỊNH", size: 14, bold: true),
+            P(4, "a) Ý kiến thẩm định về cơ sở pháp lý:", size: 14),
+            P(5, "Căn cứ các tài liệu được cung cấp, kết quả thẩm định được tổng hợp tại Bảng số 01.",
+                size: 14, italic: true, alignment: 3)
+        };
+        var snapshot = new LocalScanSnapshot("sha256:body-căn-cứ", 1,
+            new[] { ValidSection() }, paragraphs, Array.Empty<AnnotationProtectedSpan>());
+
+        var findings = new LocalDocumentScanner().ScanFormat(snapshot, Rules()).Findings;
+
+        Assert.DoesNotContain(findings, item => item.Anchor.ParagraphIndex == 5 &&
+            (item.RuleCode == "ND30-PL1-M2-K6A-PUNCT" || item.RuleCode == "ND30-PL1-M2-K6A-STYLE"));
+    }
+
+    [Fact]
+    public void Narrative_căn_cứ_after_subject_is_not_checked_as_a_legal_basis()
+    {
+        var paragraphs = new[]
+        {
+            P(1, "BÁO CÁO", size: 14, bold: true, alignment: 1),
+            P(2, "Về kết quả thẩm định hồ sơ mời thầu", size: 14, bold: true, alignment: 1),
+            P(3, "Căn cứ các tài liệu được cung cấp, kết quả thẩm định được tổng hợp tại Bảng số 01.",
+                size: 14, italic: true, alignment: 3)
+        };
+        var snapshot = new LocalScanSnapshot("sha256:narrative-căn-cứ-after-subject", 1,
+            new[] { ValidSection() }, paragraphs, Array.Empty<AnnotationProtectedSpan>());
+
+        var findings = new LocalDocumentScanner().ScanFormat(snapshot, Rules()).Findings;
+
+        Assert.DoesNotContain(findings, item => item.Anchor.ParagraphIndex == 3 &&
+            item.RuleCode.StartsWith("ND30-PL1-M2-K6A", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Point_style_finding_reports_actual_format_and_an_explicit_fix()
+    {
+        var point = P(1, "b) Ý kiến thẩm định về nội dung không tuân thủ", size: 14,
+            bold: true, italic: true);
+        var snapshot = new LocalScanSnapshot("sha256:point-style", 1,
+            new[] { ValidSection() }, new[] { point }, Array.Empty<AnnotationProtectedSpan>());
+
+        var finding = Assert.Single(new LocalDocumentScanner().ScanFormat(snapshot, Rules()).Findings,
+            item => item.RuleCode == "ND30-PL1-M2-K6D-POINT");
+
+        Assert.Equal("Điểm sai kiểu chữ: đang in đậm, đang in nghiêng.", finding.CurrentIssue);
+        Assert.Equal("Bỏ in đậm và in nghiêng cho toàn bộ điểm; trình bày bằng chữ đứng, không đậm.",
+            finding.Expected);
+    }
+
+    [Fact]
+    public void Point_style_finding_detects_mixed_bold_or_italic_formatting()
+    {
+        var point = P(1, "c) Cách thức làm việc", size: 14, bold: null, italic: null);
+        var snapshot = new LocalScanSnapshot("sha256:mixed-point-style", 1,
+            new[] { ValidSection() }, new[] { point }, Array.Empty<AnnotationProtectedSpan>());
+
+        var finding = Assert.Single(new LocalDocumentScanner().ScanFormat(snapshot, Rules()).Findings,
+            item => item.RuleCode == "ND30-PL1-M2-K6D-POINT");
+
+        Assert.Contains("đậm/không đậm chưa đồng nhất", finding.CurrentIssue, StringComparison.Ordinal);
+        Assert.Contains("nghiêng/đứng chưa đồng nhất", finding.CurrentIssue, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Place_and_issued_date_is_centered_under_the_national_identity_block()
     {
         var paragraph = P(1, "Hà Nội, ngày 02 tháng 09 năm 2026", "placeAndIssuedDate",

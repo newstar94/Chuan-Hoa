@@ -31,6 +31,12 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             _contexts.Remove(GetComIdentity(document));
         }
 
+        public void ClearAllReadAnalysis()
+        {
+            ThrowIfDisposed();
+            foreach (var context in _contexts.Values) context.ClearReadAnalysis();
+        }
+
         public void Dispose()
         {
             if (_disposed)

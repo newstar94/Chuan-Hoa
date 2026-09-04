@@ -10,6 +10,7 @@ using System.Deployment.Application;
 using ChuanHoa.AddIn.Vsto.Ribbon;
 using ChuanHoa.Client.Core.Scanning;
 using ChuanHoa.Client.Core.Text;
+using ChuanHoa.Client.Core.Lexicon;
 using Office = Microsoft.Office.Core;
 using Word = Microsoft.Office.Interop.Word;
 
@@ -57,6 +58,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         private readonly WordLocalScanRuntime _localScanRuntime;
         private readonly WordLocalCommandRuntime _localCommandRuntime;
         private readonly WordOneClickRuntime _oneClickRuntime;
+        private readonly RibbonImageProvider _imageProvider = new RibbonImageProvider();
         private readonly Dictionary<string, Action> _buttonCommands;
         private readonly Dictionary<string, string> _viewProperties;
         private readonly System.Windows.Forms.Timer _accessRefreshTimer;
@@ -67,6 +69,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         private long _ribbonCapabilityTimestamp;
         private int _accessRefreshCompleted;
         private int _documentOperationInProgress;
+        private DocumentOperationSession? _currentDocumentOperation;
         private bool _disposed;
 
         public RibbonRuntime(
@@ -82,9 +85,11 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             _localAccessManager = new LocalAccessManager(assemblyVersion == null ? "1.0.0.0" : assemblyVersion.ToString());
             _documentReadRuntime = new WordDocumentReadRuntime(_application, _localAccessManager);
             _localScanRuntime = new WordLocalScanRuntime(_application, _localAccessManager);
-            _localCommandRuntime = new WordLocalCommandRuntime(_application, _localAccessManager, TryGetCurrentDocument);
+            _localCommandRuntime = new WordLocalCommandRuntime(_application, _localAccessManager,
+                TryGetCurrentDocument, TryGetCurrentDocumentFingerprint);
             _oneClickRuntime = new WordOneClickRuntime(_application, _localAccessManager);
             _localAccessManager.CacheStateChanged += OnCacheStateChanged;
+            PersonalDictionaryManager.Instance.Changed += OnPersonalDictionaryChanged;
             _accessRefreshTimer = new System.Windows.Forms.Timer { Interval = 500 };
             _accessRefreshTimer.Tick += OnAccessRefreshTimerTick;
             _accessRefreshTimer.Start();
@@ -126,7 +131,12 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 { "btnGuiPhanHoi", OpenFeedback },
                 { "btnGioiThieu", ShowAbout }
             };
-            _viewProperties = new Dictionary<string, string>(StringComparer.Ordinal);
+            _viewProperties = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                { "chkRanhGioiVanBan", "ShowTextBoundaries" },
+                { "chkDauGoc", "ShowCropMarks" },
+                { "chkKyHieuSoanThao", "ShowAll" }
+            };
         }
 
         public void AttachRibbon(Office.IRibbonUI ribbonUi)
@@ -141,6 +151,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             if (string.Equals(controlId, "btnGioiThieu", StringComparison.Ordinal) ||
                 string.Equals(controlId, "btnKiemTraPhienBanMoi", StringComparison.Ordinal) ||
                 string.Equals(controlId, "btnGuiPhanHoi", StringComparison.Ordinal) ||
+                string.Equals(controlId, "btnTuDienCaNhan", StringComparison.Ordinal) ||
                 string.Equals(controlId, "mnuThongTinTienIch", StringComparison.Ordinal))
             {
                 return true;
@@ -296,6 +307,17 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             command();
         }
 
+        public object GetImage(string controlId)
+        {
+            if (_disposed) return null!;
+            try { return _imageProvider.GetImage(controlId); }
+            catch (Exception exception)
+            {
+                Trace.TraceError("ChuanHoa Ribbon image callback failed: {0}", exception);
+                return null!;
+            }
+        }
+
         public void OnDocumentBeforeClose(Word.Document document)
         {
             if (_disposed || document == null)
@@ -367,6 +389,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             _ribbonCapabilityDocument = null;
             _ribbonCapability = null;
             _localAccessManager.CacheStateChanged -= OnCacheStateChanged;
+            PersonalDictionaryManager.Instance.Changed -= OnPersonalDictionaryChanged;
+            _imageProvider.Dispose();
             _accessRefreshTimer.Stop();
             _accessRefreshTimer.Tick -= OnAccessRefreshTimerTick;
             _accessRefreshTimer.Dispose();
@@ -381,12 +405,20 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             Interlocked.Exchange(ref _accessRefreshCompleted, 1);
         }
 
+        private void OnPersonalDictionaryChanged(object? sender, EventArgs eventArgs)
+        {
+            // Dictionary changes are raised by the modal dialog on Word's UI thread.
+            // Cached spelling results must never outlive the dictionary that produced them.
+            _contextStore.ClearAllReadAnalysis();
+            InvalidateAll();
+        }
+
         private void OnAccessRefreshTimerTick(object? sender, EventArgs eventArgs)
         {
             if (_disposed || Interlocked.Exchange(ref _accessRefreshCompleted, 0) == 0) return;
             // The refreshed lease can unlock every DOCUMENT_TOOLS command, not only
             // the scanners and 1-Click. Refresh the complete Ribbon so newly ported
-            // style, Unicode, font-size, QR and tone commands do not remain grey.
+            // style, Unicode, font-size and tone commands do not remain grey.
             InvalidateAll();
         }
 
@@ -401,6 +433,14 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             {
                 return null;
             }
+        }
+
+        private string? TryGetCurrentDocumentFingerprint()
+        {
+            var context = TryGetActiveContext();
+            return context == null || context.LastLocalSnapshot == null
+                ? null
+                : context.LastLocalSnapshot.DocumentFingerprint;
         }
 
         private Word.Document? TryGetCurrentDocument()
@@ -529,18 +569,19 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             UpdateCapabilityContext(capability);
         }
 
-        private void FocusDocumentForCommand(Word.Document document)
+        private void FocusDocumentForCommand(Word.Document document, bool collapseDocumentSelection = false,
+            bool allowDocumentStartFallback = false)
         {
             if (document == null) throw new ArgumentNullException(nameof(document));
             var annotations = new WordFindingAnnotationAdapter(_application, document);
             // Document.Activate itself is rejected while Modern Comments owns focus.
             // Selecting the comment's document scope is Word's supported focus hand-off
             // and does not read or scan any unrelated document content.
-            if (!annotations.TryFocusDocumentSelection())
+            if (!annotations.TryFocusDocumentSelection(collapseDocumentSelection) &&
+                (!allowDocumentStartFallback || !annotations.TryFocusDocumentStart()))
                 throw new InvalidOperationException(
                     "Word đang hoàn tất chuyển tiêu điểm từ khung comment. Hãy thử lại thao tác.");
             _lastActivatedDocument = document;
-            System.Windows.Forms.Application.DoEvents();
         }
 
         private DocumentContext RequireActiveContext()
@@ -548,13 +589,6 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             var context = TryGetActiveContext();
             if (context == null) throw new InvalidOperationException("Hãy mở một tài liệu Word.");
             return context;
-        }
-
-        private void InsertQrCode()
-        {
-            var content = QrCodeInputDialog.Prompt(null);
-            if (content == null) return;
-            RunLocalCommand("Chèn mã QR", () => _localCommandRuntime.InsertQrCode(content));
         }
 
         private static void OpenFeedback()
@@ -699,14 +733,20 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
             try
             {
+                _currentDocumentOperation = new DocumentOperationSession(
+                    _application, "Chuẩn hóa toàn bộ", DocumentOperationState.Capturing);
                 var activeDocument = TryGetCurrentDocument();
                 if (activeDocument == null) throw new InvalidOperationException("Hãy mở một tài liệu Word.");
-                FocusDocumentForCommand(activeDocument);
+                // 1-Click operates on the whole document and does not depend on the
+                // current text selection. If Modern Comments cannot map its transient
+                // selection back to a comment scope, move to a safe collapsed range at
+                // the start of this same document instead of aborting the command.
+                FocusDocumentForCommand(activeDocument, true, true);
                 // Resolve the context again after the confirmation dialog so this
                 // command cannot carry state from a previously active document.
                 context = _contextStore.GetOrCreate(activeDocument);
-                _documentReadRuntime.PrepareForOneClick(context, activeDocument);
-                var result = _oneClickRuntime.Execute(context, activeDocument);
+                _documentReadRuntime.PrepareForOneClick(context, activeDocument, _currentDocumentOperation);
+                var result = _oneClickRuntime.Execute(context, activeDocument, _currentDocumentOperation);
                 // Rebuild from the mutated document and re-apply only findings that are
                 // still present. This guarantees that a comment is never removed merely
                 // because 1-Click attempted a fix. It also proves deterministic edits,
@@ -715,9 +755,12 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     context,
                     DocumentAnalysisScope.Full,
                     activeDocument,
-                    false);
-                var remainingFormat = _localScanRuntime.ScanAndAnnotate(context, false, activeDocument);
-                var remainingSpelling = _localScanRuntime.ScanAndAnnotate(context, true, activeDocument);
+                    false,
+                    _currentDocumentOperation);
+                var remainingFormat = _localScanRuntime.ScanAndAnnotate(context, false, activeDocument,
+                    _currentDocumentOperation);
+                var remainingSpelling = _localScanRuntime.ScanAndAnnotate(context, true, activeDocument,
+                    _currentDocumentOperation);
                 var remainingFindingCount = remainingFormat.Findings.Count + remainingSpelling.Findings.Count;
                 SynchronizeDocumentTypeSelection(context);
                 MessageBox.Show(
@@ -733,13 +776,23 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     "\n\nBản sao khôi phục:\n" + result.BackupPath,
                     "Chuẩn hóa", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
+            catch (OperationCanceledException)
+            {
+                _currentDocumentOperation?.MarkFailedRecoverable();
+                context.ClearReadAnalysis();
+                MessageBox.Show("Đã hủy trước khi chỉnh sửa tài liệu. Tài liệu chưa bị thay đổi.",
+                    "Chuẩn hóa", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
             catch (Exception exception)
             {
+                _currentDocumentOperation?.MarkFailedRecoverable();
                 MessageBox.Show("Không thể chuẩn hóa toàn bộ.\n\n" + exception.Message,
                     "Chuẩn hóa", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally
             {
+                _currentDocumentOperation?.Dispose();
+                _currentDocumentOperation = null;
                 Interlocked.Exchange(ref _documentOperationInProgress, 0);
                 InvalidateRibbonCapability();
                 InvalidateAll();
@@ -769,15 +822,21 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
             try
             {
+                _currentDocumentOperation = new DocumentOperationSession(
+                    _application, "Sửa nhanh chính tả", DocumentOperationState.Capturing);
                 FocusDocumentForCommand(document);
                 var context = _contextStore.GetOrCreate(document);
-                _documentReadRuntime.Prepare(context, DocumentAnalysisScope.Spelling, document, false);
-                _localScanRuntime.ScanAndAnnotate(context, true, document);
+                _documentReadRuntime.Prepare(context, DocumentAnalysisScope.Spelling, document, false,
+                    _currentDocumentOperation);
+                _localScanRuntime.ScanAndAnnotate(context, true, document, _currentDocumentOperation);
 
-                var fixedCount = _oneClickRuntime.FixAllSpellingFindings(context, document);
+                var fixedCount = _oneClickRuntime.FixAllSpellingFindings(context, document,
+                    _currentDocumentOperation);
 
-                _documentReadRuntime.Prepare(context, DocumentAnalysisScope.Spelling, document, false);
-                var remainingScan = _localScanRuntime.ScanAndAnnotate(context, true, document);
+                _documentReadRuntime.Prepare(context, DocumentAnalysisScope.Spelling, document, false,
+                    _currentDocumentOperation);
+                var remainingScan = _localScanRuntime.ScanAndAnnotate(context, true, document,
+                    _currentDocumentOperation);
 
                 MessageBox.Show(
                     "Đã sửa nhanh chính tả tại máy.\n\n" +
@@ -788,13 +847,23 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Information);
             }
+            catch (OperationCanceledException)
+            {
+                _currentDocumentOperation?.MarkFailedRecoverable();
+                _contextStore.GetOrCreate(document).ClearReadAnalysis();
+                MessageBox.Show("Đã hủy trước khi chỉnh sửa tài liệu. Tài liệu chưa bị thay đổi.",
+                    "Chuẩn hóa", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
             catch (Exception exception)
             {
+                _currentDocumentOperation?.MarkFailedRecoverable();
                 MessageBox.Show("Không thể sửa nhanh chính tả.\n\n" + exception.Message,
                     "Chuẩn hóa", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally
             {
+                _currentDocumentOperation?.Dispose();
+                _currentDocumentOperation = null;
                 Interlocked.Exchange(ref _documentOperationInProgress, 0);
                 InvalidateRibbonCapability();
                 InvalidateAll();
@@ -850,6 +919,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
             try
             {
+                _currentDocumentOperation = new DocumentOperationSession(
+                    _application, "Sửa lỗi đang chọn", DocumentOperationState.Capturing);
                 DocumentAnalysisScope scope;
                 if (string.Equals(selectedLane, "spelling", StringComparison.OrdinalIgnoreCase))
                 {
@@ -864,7 +935,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     throw new InvalidOperationException(
                         "Comment đang chọn không thuộc nhóm lỗi Chuẩn hóa hỗ trợ.");
                 }
-                FocusDocumentForCommand(document);
+                FocusDocumentForCommand(document, true);
                 var context = _contextStore.GetOrCreate(document);
                 var scan = string.Equals(selectedLane, "spelling", StringComparison.OrdinalIgnoreCase)
                     ? context.LastSpellingScan
@@ -873,11 +944,13 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     scan.Findings.Any(item => string.Equals(item.FindingId, selectedFindingId, StringComparison.Ordinal));
                 if (!hasFinding)
                 {
-                    _documentReadRuntime.Prepare(context, scope, document);
+                    _documentReadRuntime.Prepare(context, scope, document, true,
+                        _currentDocumentOperation);
                 }
                 var result = _oneClickRuntime.ExecuteSelectedFinding(
                     context, selectedLane, selectedFindingId,
-                    selectedStory, selectedStart, selectedEnd, document);
+                    selectedStory, selectedStart, selectedEnd, document,
+                    _currentDocumentOperation);
                 if (!result.Resolved)
                 {
                     MessageBox.Show(
@@ -886,13 +959,21 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                         "Chuẩn hóa", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
             }
+            catch (OperationCanceledException)
+            {
+                _currentDocumentOperation?.MarkFailedRecoverable();
+                _contextStore.GetOrCreate(document).ClearReadAnalysis();
+            }
             catch (Exception exception)
             {
+                _currentDocumentOperation?.MarkFailedRecoverable();
                 MessageBox.Show("Không thể sửa lỗi đang chọn.\n\n" + exception.Message,
                     "Chuẩn hóa", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
             finally
             {
+                _currentDocumentOperation?.Dispose();
+                _currentDocumentOperation = null;
                 Interlocked.Exchange(ref _documentOperationInProgress, 0);
                 InvalidateRibbonCapability();
                 InvalidateAll();
@@ -920,13 +1001,20 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
             try
             {
+                _currentDocumentOperation = new DocumentOperationSession(
+                    _application,
+                    spelling ? "Kiểm tra chính tả" : "Kiểm tra thể thức",
+                    DocumentOperationState.Capturing);
                 FocusDocumentForCommand(document);
                 var context = _contextStore.GetOrCreate(document);
                 _documentReadRuntime.Prepare(
                     context,
                     spelling ? DocumentAnalysisScope.Spelling : DocumentAnalysisScope.Format,
-                    document);
-                var result = _localScanRuntime.ScanAndAnnotate(context, spelling, document);
+                    document,
+                    true,
+                    _currentDocumentOperation);
+                var result = _localScanRuntime.ScanAndAnnotate(context, spelling, document,
+                    _currentDocumentOperation);
                 SynchronizeDocumentTypeSelection(context);
                 MessageBox.Show(
                     "Đã kiểm tra " + (spelling ? "chính tả" : "thể thức") + " hoàn toàn tại máy.\n" +
@@ -937,8 +1025,19 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Information);
             }
+            catch (OperationCanceledException)
+            {
+                _currentDocumentOperation?.MarkFailedRecoverable();
+                _contextStore.GetOrCreate(document).ClearReadAnalysis();
+                MessageBox.Show(
+                    "Đã hủy kiểm tra. Tài liệu chưa bị thay đổi.",
+                    "Chuẩn hóa",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+            }
             catch (Exception exception)
             {
+                _currentDocumentOperation?.MarkFailedRecoverable();
                 MessageBox.Show(
                     "Không thể chạy kiểm tra. Tài liệu chưa bị thay đổi.\n\n" + exception.Message,
                     "Chuẩn hóa",
@@ -947,6 +1046,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             }
             finally
             {
+                _currentDocumentOperation?.Dispose();
+                _currentDocumentOperation = null;
                 Interlocked.Exchange(ref _documentOperationInProgress, 0);
                 InvalidateRibbonCapability();
                 InvalidateAll();
@@ -965,6 +1066,10 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             var completed = false;
             try
             {
+                _currentDocumentOperation = new DocumentOperationSession(
+                    _application, title, DocumentOperationState.Mutating);
+                _currentDocumentOperation.Transition(DocumentOperationState.Mutating,
+                    cancellationEnabled: false);
                 var document = TryGetCurrentDocument();
                 if (document == null) throw new InvalidOperationException("Hãy mở một tài liệu Word.");
                 FocusDocumentForCommand(document);
@@ -985,6 +1090,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             }
             catch (Exception exception)
             {
+                _currentDocumentOperation?.MarkFailedRecoverable();
                 MessageBox.Show(
                     "Không thể thực hiện “" + title + "”.\n\n" + exception.Message,
                     "Chuẩn hóa",
@@ -998,6 +1104,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     var context = TryGetActiveContext();
                     if (context != null) context.ClearReadAnalysis();
                 }
+                _currentDocumentOperation?.Dispose();
+                _currentDocumentOperation = null;
                 Interlocked.Exchange(ref _documentOperationInProgress, 0);
                 InvalidateRibbonCapability();
                 InvalidateAll();
@@ -1014,11 +1122,17 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 var document = TryGetCurrentDocument();
                 if (document == null) throw new InvalidOperationException("Hãy mở một tài liệu Word.");
                 var context = _contextStore.GetOrCreate(document);
+                _currentDocumentOperation?.Transition(DocumentOperationState.Capturing,
+                    "chuẩn bị dữ liệu");
                 _documentReadRuntime.Prepare(
                     context,
                     DocumentAnalysisScope.SnapshotOnly,
-                    document);
+                    document,
+                    true,
+                    _currentDocumentOperation);
                 SynchronizeDocumentTypeSelection(context);
+                _currentDocumentOperation?.Transition(DocumentOperationState.Mutating,
+                    cancellationEnabled: false);
                 return command(context);
             });
         }

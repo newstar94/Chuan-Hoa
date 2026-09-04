@@ -8,9 +8,6 @@
     <WarningLevel>4</WarningLevel><TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="QRCoder" Version="1.8.0" />
-  </ItemGroup>
-  <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Drawing" />
     <Reference Include="Microsoft.Office.Interop.Word"><HintPath>C:\Program Files (x86)\Microsoft Visual Studio\Shared\Visual Studio Tools for Office\PIA\Office15\Microsoft.Office.Interop.Word.dll</HintPath><EmbedInteropTypes>true</EmbedInteropTypes><Private>false</Private></Reference>

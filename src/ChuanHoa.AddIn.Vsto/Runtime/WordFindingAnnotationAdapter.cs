@@ -33,7 +33,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             _supportsCustomUndoRecord = ReadWordMajorVersion(application) >= 15;
         }
 
-        public void Apply(AnnotationPlan plan)
+        public void Apply(AnnotationPlan plan, DocumentOperationSession? operation = null)
         {
             if (plan == null)
             {
@@ -57,15 +57,23 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     undoStarted = true;
                 }
 
-                ClearLane(plan.Lane);
+                operation?.Checkpoint();
+                ClearLane(plan.Lane, operation);
                 for (var index = 0; index < plan.VisualRanges.Count; index++)
                 {
+                    if (index == 0 || index % 25 == 0)
+                        operation?.ReportProgress(index,
+                            plan.VisualRanges.Count + plan.Comments.Count, "tô đỏ");
                     ApplyRedMarker(plan, plan.VisualRanges[index], index);
                 }
                 for (var index = 0; index < plan.Comments.Count; index++)
                 {
+                    if (index == 0 || index % 25 == 0)
+                        operation?.ReportProgress(plan.VisualRanges.Count + index,
+                            plan.VisualRanges.Count + plan.Comments.Count, "thêm comment");
                     AddComment(plan, plan.Comments[index], index);
                 }
+                operation?.Checkpoint();
             }
             catch
             {
@@ -91,17 +99,21 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             }
         }
 
-        public void ClearLane(string lane)
+        public void ClearLane(string lane, DocumentOperationSession? operation = null)
         {
             var normalizedLane = AnnotationOwnershipPolicy.NormalizeLane(lane);
-            var registeredCommentSignatures = ReadRegisteredCommentSignaturesExcluding(normalizedLane);
-            ClearRegisteredComments(normalizedLane);
+            operation?.Checkpoint();
+            var registeredCommentSignatures = ReadRegisteredCommentSignaturesExcluding(normalizedLane, operation);
+            ClearRegisteredComments(normalizedLane, operation);
 
             // Remove comments produced by versions that persisted a hidden marker in
             // the comment body. New comments use an external registry so Word's Modern
             // Comments pane no longer displays the misleading "Missing content" card.
-            for (var index = _document.Comments.Count; index >= 1; index--)
+            var legacyCommentCount = _document.Comments.Count;
+            for (var index = legacyCommentCount; index >= 1; index--)
             {
+                if (index == legacyCommentCount || index % 25 == 0)
+                    operation?.Checkpoint();
                 Word.Comment? comment = null;
                 Word.Range? commentRange = null;
                 try
@@ -127,8 +139,11 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             // cleared. Such an orphan has no usable finding identity and makes
             // "Sửa lỗi đang chọn" fail forever. Remove only the add-in's exact author,
             // initials and two-line presentation; user comments are left untouched.
-            for (var index = _document.Comments.Count; index >= 1; index--)
+            var orphanCommentCount = _document.Comments.Count;
+            for (var index = orphanCommentCount; index >= 1; index--)
             {
+                if (index == orphanCommentCount || index % 25 == 0)
+                    operation?.Checkpoint();
                 Word.Comment? comment = null;
                 Word.Range? commentRange = null;
                 try
@@ -152,8 +167,11 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             }
 
             var variableNamePrefix = VariablePrefix + normalizedLane + "_";
-            for (var index = _document.Variables.Count; index >= 1; index--)
+            var variableCount = _document.Variables.Count;
+            for (var index = variableCount; index >= 1; index--)
             {
+                if (index == variableCount || index % 25 == 0)
+                    operation?.Checkpoint();
                 Word.Variable? variable = null;
                 try
                 {
@@ -172,12 +190,16 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             }
         }
 
-        private HashSet<string> ReadRegisteredCommentSignaturesExcluding(string normalizedLane)
+        private HashSet<string> ReadRegisteredCommentSignaturesExcluding(string normalizedLane,
+            DocumentOperationSession? operation)
         {
             var signatures = new HashSet<string>(StringComparer.Ordinal);
             var excludedPrefix = CommentVariablePrefix + normalizedLane + "_";
-            for (var index = 1; index <= _document.Variables.Count; index++)
+            var variableCount = _document.Variables.Count;
+            for (var index = 1; index <= variableCount; index++)
             {
+                if (index == 1 || index % 25 == 0)
+                    operation?.Checkpoint();
                 Word.Variable? variable = null;
                 try
                 {
@@ -284,39 +306,30 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
         public bool TryFocusDocumentSelection()
         {
-            Word.Selection? selection = null;
+            return TryFocusDocumentSelection(false);
+        }
+
+        public bool TryFocusDocumentSelection(bool collapseDocumentSelection)
+        {
             Word.Range? selectedRange = null;
             try
             {
-                selection = _application.Selection;
-                selectedRange = selection.Range.Duplicate;
-                if (selectedRange.StoryType == Word.WdStoryType.wdCommentsStory)
+                // ResolveSelectedCommentScopeOrDocumentRange also handles the Modern
+                // Comments state where Selection is in wdCommentsStory but its local
+                // Comments collection is empty. In that case it maps the comment body
+                // back to the authoritative document scope by scanning document comments.
+                selectedRange = ResolveSelectedCommentScopeOrDocumentRange();
+                if (selectedRange.StoryType == Word.WdStoryType.wdCommentsStory) return false;
+                // Most commands must preserve an intentional text selection (for
+                // example Co chữ/Giãn chữ). Selected-finding repair captures its
+                // authoritative range first, then explicitly collapses here so Word
+                // cannot replace the whole red/commented span when focus returns from
+                // Modern Comments.
+                if (collapseDocumentSelection && selectedRange.Start != selectedRange.End)
                 {
-                    Word.Comments? comments = null;
-                    Word.Comment? comment = null;
-                    Word.Range? scope = null;
-                    try
-                    {
-                        comments = selectedRange.Comments;
-                        if (comments.Count > 0)
-                        {
-                            comment = comments[1];
-                            scope = comment.Scope.Duplicate;
-                            // Only collapse when returning focus from a comment thread to the document.
-                            scope.Collapse(Word.WdCollapseDirection.wdCollapseStart);
-                            scope.Select();
-                            return true;
-                        }
-                    }
-                    finally
-                    {
-                        Release(scope);
-                        Release(comment);
-                        Release(comments);
-                    }
-                    return false;
+                    selectedRange.Collapse(Word.WdCollapseDirection.wdCollapseStart);
+                    selectedRange.Select();
                 }
-                // When already in document story, preserve the user's active selection (e.g. for Co chữ/Giãn chữ)
                 return true;
             }
             catch (COMException)
@@ -326,8 +339,23 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             finally
             {
                 Release(selectedRange);
-                Release(selection);
             }
+        }
+
+        public bool TryFocusDocumentStart()
+        {
+            Word.Range? start = null;
+            try
+            {
+                start = _document.Range(0, 0);
+                start.Select();
+                return true;
+            }
+            catch (COMException)
+            {
+                return false;
+            }
+            finally { Release(start); }
         }
 
         public void ClearOwnedAnnotationsAt(string lane, string storyType, int start, int end)
@@ -457,11 +485,15 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             return leftStart < rightEnd && rightStart < leftEnd;
         }
 
-        private void ClearRegisteredComments(string normalizedLane)
+        private void ClearRegisteredComments(string normalizedLane,
+            DocumentOperationSession? operation)
         {
             var prefix = CommentVariablePrefix + normalizedLane + "_";
-            for (var variableIndex = _document.Variables.Count; variableIndex >= 1; variableIndex--)
+            var variableCount = _document.Variables.Count;
+            for (var variableIndex = variableCount; variableIndex >= 1; variableIndex--)
             {
+                if (variableIndex == variableCount || variableIndex % 25 == 0)
+                    operation?.Checkpoint();
                 Word.Variable? variable = null;
                 Word.Bookmark? bookmark = null;
                 Word.Range? bookmarkRange = null;
@@ -477,7 +509,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     {
                         bookmark = _document.Bookmarks[bookmarkName];
                         bookmarkRange = bookmark.Range.Duplicate;
-                        DeleteRegisteredComment(bookmarkRange, signature);
+                        DeleteRegisteredComment(bookmarkRange, signature, operation);
                         bookmark.Delete();
                     }
                     variable.Delete();
@@ -491,10 +523,14 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             }
         }
 
-        private void DeleteRegisteredComment(Word.Range bookmarkRange, string signature)
+        private void DeleteRegisteredComment(Word.Range bookmarkRange, string signature,
+            DocumentOperationSession? operation = null)
         {
-            for (var commentIndex = _document.Comments.Count; commentIndex >= 1; commentIndex--)
+            var commentCount = _document.Comments.Count;
+            for (var commentIndex = commentCount; commentIndex >= 1; commentIndex--)
             {
+                if (commentIndex == commentCount || commentIndex % 25 == 0)
+                    operation?.Checkpoint();
                 Word.Comment? comment = null;
                 Word.Range? scope = null;
                 Word.Range? body = null;

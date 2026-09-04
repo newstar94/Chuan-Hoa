@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import struct
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
@@ -24,6 +25,10 @@ WORD_SNAPSHOT_BUILDER_PATH = VSTO_ROOT / "Runtime" / "WordDocumentSnapshotBuilde
 WORD_LOCAL_COMMAND_PATH = VSTO_ROOT / "Runtime" / "WordLocalCommandRuntime.cs"
 WORD_ONE_CLICK_PATH = VSTO_ROOT / "Runtime" / "WordOneClickRuntime.cs"
 WORD_APPENDIX_PAGINATION_PATH = VSTO_ROOT / "Runtime" / "WordAppendixPaginationNormalizer.cs"
+DOCUMENT_OPERATION_SESSION_PATH = VSTO_ROOT / "Runtime" / "DocumentOperationSession.cs"
+RIBBON_RUNTIME_INTERFACE_PATH = VSTO_ROOT / "Ribbon" / "IChuanHoaRibbonRuntime.cs"
+PERSONAL_DICTIONARY_ICON_16 = VSTO_ROOT / "Resources" / "Icons" / "personal-dictionary-16.png"
+PERSONAL_DICTIONARY_ICON_32 = VSTO_ROOT / "Resources" / "Icons" / "personal-dictionary-32.png"
 EVIDENCE_PATH = (
     ROOT
     / "shared"
@@ -61,9 +66,11 @@ def validate() -> dict:
     ribbon_source = RIBBON_SOURCE_PATH.read_text(encoding="utf-8")
     this_addin_source = THIS_ADDIN_PATH.read_text(encoding="utf-8")
     project_source = PROJECT_PATH.read_text(encoding="utf-8")
+    ribbon_runtime_interface = RIBBON_RUNTIME_INTERFACE_PATH.read_text(encoding="utf-8")
     word_local_command_source = WORD_LOCAL_COMMAND_PATH.read_text(encoding="utf-8")
     word_one_click_source = WORD_ONE_CLICK_PATH.read_text(encoding="utf-8")
     word_appendix_pagination_source = WORD_APPENDIX_PAGINATION_PATH.read_text(encoding="utf-8")
+    document_operation_source = DOCUMENT_OPERATION_SESSION_PATH.read_text(encoding="utf-8")
     for resource_contract in (
         '<EmbeddedResource Include="Ribbon\\ChuanHoaRibbon.xml">',
         "<LogicalName>ChuanHoa.AddIn.Vsto.Ribbon.ChuanHoaRibbon.xml</LogicalName>",
@@ -79,11 +86,53 @@ def validate() -> dict:
         raise RuntimeError(
             "Verification builds must not replace the installed Word add-in manifest registration."
         )
+    dictionary_control = next(
+        control for control in contract["controls"] if control["id"] == "btnTuDienCaNhan"
+    )
+    if dictionary_control.get("imageMso") is not None or \
+            dictionary_control["callbacks"].get("getImage") != "GetImageTuDienCaNhan":
+        raise RuntimeError("Personal dictionary must use its custom Ribbon image callback only.")
+    if dictionary_control["callbacks"].get("getEnabled") != "GetEnabledAlways" or \
+            dictionary_control["commandContract"].get("preconditions"):
+        raise RuntimeError("Personal dictionary management must work without an active document.")
+    for icon_path, expected_size in (
+        (PERSONAL_DICTIONARY_ICON_16, 16),
+        (PERSONAL_DICTIONARY_ICON_32, 32),
+    ):
+        data = icon_path.read_bytes()
+        if data[:8] != b"\x89PNG\r\n\x1a\n":
+            raise RuntimeError(f"Ribbon icon is not a PNG: {icon_path}")
+        width, height = struct.unpack(">II", data[16:24])
+        if (width, height) != (expected_size, expected_size) or data[25] not in {4, 6}:
+            raise RuntimeError(
+                f"Ribbon icon must be {expected_size}x{expected_size} with alpha: {icon_path}"
+            )
+        resource_include = (
+            f'<EmbeddedResource Include="Resources\\Icons\\{icon_path.name}">'
+        )
+        if resource_include not in project_source:
+            raise RuntimeError(f"Ribbon icon is not embedded in the VSTO assembly: {icon_path.name}")
+    if "object GetImage(string controlId);" not in ribbon_runtime_interface:
+        raise RuntimeError("Ribbon runtime interface is missing the custom image contract.")
     all_vsto_source = "\n".join(
         path.read_text(encoding="utf-8")
         for path in sorted(VSTO_ROOT.rglob("*"))
         if path.is_file() and path.suffix.lower() in {".cs", ".xml", ".csproj"}
     )
+    retired_qr_markers = (
+        "btnChenQrCode",
+        "InsertQrCode",
+        "QrCodeInputDialog",
+        "QRCoder",
+    )
+    retired_qr_hits = [marker for marker in retired_qr_markers if marker in all_vsto_source]
+    if retired_qr_hits:
+        raise RuntimeError(
+            "QR is retired and must not reappear in current VSTO product source: "
+            + ", ".join(retired_qr_hits)
+        )
+    if any(control["id"] == "btnChenQrCode" for control in contract["controls"]):
+        raise RuntimeError("QR is retired and must not reappear in the Ribbon contract.")
 
     controls = []
     callback_names = set()
@@ -292,7 +341,7 @@ def validate() -> dict:
     for required_selected_capture in (
         "TryGetSelectedFinding(out selectedLane, out selectedFindingId)",
         "TryGetSelectedDocumentRange(out selectedStory, out selectedStart, out selectedEnd)",
-        "FocusDocumentForCommand(document)",
+        "FocusDocumentForCommand(document, true)",
         "selectedStory, selectedStart, selectedEnd, document",
     ):
         if required_selected_capture not in selected_fix_body:
@@ -301,7 +350,7 @@ def validate() -> dict:
                 + required_selected_capture
             )
     if selected_fix_body.index("TryGetSelectedDocumentRange") > selected_fix_body.index(
-        "FocusDocumentForCommand(document)"
+        "FocusDocumentForCommand(document, true)"
     ):
         raise RuntimeError(
             "Selected finding range must be captured before document activation changes Selection."
@@ -345,6 +394,11 @@ def validate() -> dict:
         raise RuntimeError(
             "Ribbon commands must leave Modern Comments through its captured document range, not Document.Activate."
         )
+    if "TryFocusDocumentStart()" not in annotation_adapter_source or \
+            "FocusDocumentForCommand(activeDocument, true, true)" not in ribbon_runtime_source:
+        raise RuntimeError(
+            "Whole-document 1-Click must have a selection-independent Modern Comments focus fallback."
+        )
     if "if (_lastActivatedDocument != null)" not in activation_method.group(1) or \
             "if (document.Windows.Count == 0) return;" not in activation_method.group(1):
         raise RuntimeError(
@@ -375,12 +429,60 @@ def validate() -> dict:
         "CaptureLargeStoryParagraphs(story, storyType",
         "range = paragraph.Range.Duplicate",
         "authoritative Word coordinate",
-        "System.Windows.Forms.Application.DoEvents()",
     ):
         if required_heavy_document_guard not in snapshot_builder_source:
             raise RuntimeError(
                 "The snapshot builder is missing its table-heavy pagination guard: "
                 + required_heavy_document_guard
+            )
+    if "Application.DoEvents()" in all_vsto_source:
+        raise RuntimeError("VSTO source must not pump messages and re-enter Word commands.")
+    if re.search(r"\bTask\.Run\s*\(", all_vsto_source):
+        raise RuntimeError("Word COM work must not be moved to Task.Run or a worker thread.")
+    for operation_state in (
+        "Idle", "Capturing", "Scanning", "Annotating", "Mutating", "Cancelling",
+        "FailedRecoverable",
+    ):
+        if re.search(rf"\b{operation_state}\s*=", document_operation_source) is None:
+            raise RuntimeError("Document operation state is missing: " + operation_state)
+    for operation_contract in (
+        "Environment.CurrentManagedThreadId",
+        "GetAsyncKeyState(VirtualKeyEscape)",
+        "_cancellationPermanentlyDisabled",
+        "state == DocumentOperationState.Mutating",
+        "CancellationToken => _cancellation.Token",
+        "_application.StatusBar = string.Empty",
+    ):
+        if operation_contract not in document_operation_source:
+            raise RuntimeError("Document operation contract is missing: " + operation_contract)
+    for snapshot_cancellation_contract in (
+        "CaptureLineShapes(document, sections, paragraphs, operation)",
+        "CaptureTables(document, operation)",
+        "CaptureProtectedSpans(document, operation)",
+        "operation?.Checkpoint();",
+        "operation?.ReportProgress(",
+    ):
+        if snapshot_cancellation_contract not in snapshot_builder_source:
+            raise RuntimeError(
+                "Snapshot capture is missing a bounded cancellation seam: "
+                + snapshot_cancellation_contract
+            )
+    if "ClearLane(plan.Lane, operation);" not in annotation_adapter_source or \
+            "public void ClearLane(string lane, DocumentOperationSession? operation = null)" not in annotation_adapter_source:
+        raise RuntimeError("Annotation cleanup must honor command-scoped cancellation checkpoints.")
+    for operation_method_name in (
+        "RunOneClick", "RunQuickFixAllSpelling", "RunSelectedFindingFix", "RunLocalScan",
+        "RunLocalCommand",
+    ):
+        operation_method = re.search(
+            rf"private void {operation_method_name}\(.*?\)(.*?)(?=\n        private void )",
+            ribbon_runtime_source,
+            re.DOTALL,
+        )
+        if operation_method is None or "finally" not in operation_method.group(1) or \
+                "_currentDocumentOperation?.Dispose();" not in operation_method.group(1):
+            raise RuntimeError(
+                operation_method_name + " must dispose its document operation from finally."
             )
     if (
         'RunLocalCommand("Co chữ", () => _localCommandRuntime.SetCharacterSpacing(-0.1f, false), '
@@ -403,6 +505,28 @@ def validate() -> dict:
         raise RuntimeError(
             "Local and 1-Click trailing blank-page cleanup must use the shared bounded implementation."
         )
+    for paragraph_indent_contract in (
+        "ApplyBodyParagraphIndent(range, paragraph.Text);",
+        "ParagraphIndentPolicy.IsDashListParagraph(text)",
+        "tabStops.ClearAll();",
+        "format.LeftIndent = textPosition;",
+        "format.FirstLineIndent = markerPosition - textPosition;",
+    ):
+        if paragraph_indent_contract not in word_one_click_source:
+            raise RuntimeError(
+                "Body/list paragraph tab-stop normalization is missing: "
+                + paragraph_indent_contract
+            )
+    for point_autofix_contract in (
+        "IsLegalPointParagraph(paragraph.Text)",
+        "range.Font.Bold = 0;",
+        "range.Font.Italic = 0;",
+    ):
+        if point_autofix_contract not in word_one_click_source:
+            raise RuntimeError(
+                "1-Click is missing deterministic point-style normalization: "
+                + point_autofix_contract
+            )
     for appendix_pagination_guard in (
         "WordAppendixPaginationNormalizer.Normalize(document, roles)",
         "HasSamePageGeometry",
@@ -543,12 +667,15 @@ def validate() -> dict:
             "commandScopedMinimumAnalysis": True,
             "noManualReadDataPrerequisite": True,
             "tableHeavyPaginationGuard": True,
+            "bodyListTabStopNormalization": True,
+            "pointStyleAutoFix": True,
             "trailingBlankPageTerminationGuard": True,
             "appendixPaginationPreservesOrientation": True,
             "verificationBuildDoesNotRewriteInstalledManifest": True,
             "characterCondenseSuccessIsSilent": True,
             "selectedFindingFixSuccessIsSilent": True,
             "modernCommentsStableCapabilityBaseline": True,
+            "oneClickModernCommentsFocusFallback": True,
             "perDocumentContextStore": True,
             "unregisteredCommandsFailClosed": True,
             "wordComAdapterConnected": True,

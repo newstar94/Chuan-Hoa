@@ -115,6 +115,86 @@ public sealed class DocumentRoleDetectorTests
         Assert.Equal("legalBasis", roles[6]);
     }
 
+    [Fact]
+    public void Recognizes_legal_basis_only_inside_the_formal_preamble_window()
+    {
+        var paragraphs = new[]
+        {
+            Paragraph(1, "BÁO CÁO"),
+            Paragraph(2, "Về kết quả thẩm định hồ sơ mời thầu"),
+            Paragraph(3, "Căn cứ Nghị định số 30/2020/NĐ-CP;"),
+            Paragraph(4, "Theo đề nghị của Tổ thẩm định."),
+            Paragraph(5, "1. NỘI DUNG THẨM ĐỊNH"),
+            Paragraph(6, "a) Ý kiến thẩm định về cơ sở pháp lý:"),
+            Paragraph(7, "Căn cứ các tài liệu được cung cấp, kết quả thẩm định được tổng hợp tại Bảng số 01.")
+        };
+        var snapshot = new LocalScanSnapshot("sha256:contextual-legal-basis", 1,
+            new[] { new LocalSectionSnapshot(1, 595, 842, 57, 57, 85, 43, false) },
+            paragraphs, Array.Empty<AnnotationProtectedSpan>());
+
+        var roles = new DocumentRoleDetector().Detect(snapshot);
+
+        Assert.Equal("legalBasis", roles[3]);
+        Assert.Equal("legalBasis", roles[4]);
+        Assert.False(roles.ContainsKey(7));
+    }
+
+    [Fact]
+    public void Does_not_treat_the_first_căn_cứ_phrase_as_a_component_without_a_formal_title()
+    {
+        var snapshot = new LocalScanSnapshot("sha256:body-only-căn-cứ", 1,
+            new[] { new LocalSectionSnapshot(1, 595, 842, 57, 57, 85, 43, false) },
+            new[]
+            {
+                Paragraph(1, "2. Nội dung của hồ sơ mời thầu"),
+                Paragraph(2, "Căn cứ các tài liệu được cung cấp, kết quả được tổng hợp tại Bảng số 02.")
+            }, Array.Empty<AnnotationProtectedSpan>());
+
+        var roles = new DocumentRoleDetector().Detect(snapshot);
+
+        Assert.False(roles.ContainsKey(2));
+    }
+
+    [Fact]
+    public void Narrative_căn_cứ_immediately_after_subject_is_not_a_formal_legal_basis()
+    {
+        var paragraphs = new[]
+        {
+            Paragraph(1, "BÁO CÁO"),
+            Paragraph(2, "Về kết quả thẩm định hồ sơ mời thầu"),
+            Paragraph(3, "Căn cứ các tài liệu được cung cấp, kết quả thẩm định được tổng hợp tại Bảng số 01.")
+        };
+        var snapshot = new LocalScanSnapshot("sha256:narrative-after-subject", 1,
+            new[] { new LocalSectionSnapshot(1, 595, 842, 57, 57, 85, 43, false) },
+            paragraphs, Array.Empty<AnnotationProtectedSpan>());
+
+        var roles = new DocumentRoleDetector().Detect(snapshot);
+
+        Assert.False(roles.ContainsKey(3));
+    }
+
+    [Theory]
+    [InlineData("Căn cứ Luật Đấu thầu số 22/2023/QH15;")]
+    [InlineData("Căn cứ Hợp đồng số 129/2026/HĐTV/CĐCS-BMC;")]
+    [InlineData("Căn cứ chức năng, nhiệm vụ và thẩm quyền được giao;")]
+    [InlineData("Theo đề nghị của Tổ thẩm định.")]
+    public void Recognizes_supported_formal_legal_basis_sources_after_subject(string legalBasis)
+    {
+        var paragraphs = new[]
+        {
+            Paragraph(1, "QUYẾT ĐỊNH"),
+            Paragraph(2, "Về việc phê duyệt hồ sơ mời thầu"),
+            Paragraph(3, legalBasis)
+        };
+        var snapshot = new LocalScanSnapshot("sha256:formal-source", 1,
+            new[] { new LocalSectionSnapshot(1, 595, 842, 57, 57, 85, 43, false) },
+            paragraphs, Array.Empty<AnnotationProtectedSpan>());
+
+        var roles = new DocumentRoleDetector().Detect(snapshot);
+
+        Assert.Equal("legalBasis", roles[3]);
+    }
+
     private static LocalScanSnapshot Snapshot(string text,
         string documentTypeCode = LocalDocumentTypeCodes.Unknown,
         bool selectedManually = false)

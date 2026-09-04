@@ -24,7 +24,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         public LocalScanResult ScanAndAnnotate(
             DocumentContext context,
             bool spelling,
-            Word.Document? activeDocument = null)
+            Word.Document? activeDocument = null,
+            DocumentOperationSession? operation = null)
         {
             var document = activeDocument ?? _application.ActiveDocument;
             var capability = _capabilityProvider.Evaluate(document);
@@ -62,7 +63,9 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
             if (plan.Comments.Count > 0 || plan.VisualRanges.Count > 0)
             {
-                new WordFindingAnnotationAdapter(_application, document).Apply(plan);
+                operation?.Transition(DocumentOperationState.Annotating,
+                    "comment và tô đỏ " + result.Findings.Count + " lỗi");
+                new WordFindingAnnotationAdapter(_application, document).Apply(plan, operation);
             }
             else if (plan.Unresolved.Count > 0 && result.Findings.Count > 0)
             {

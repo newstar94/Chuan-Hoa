@@ -43,7 +43,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         private readonly WordDocumentCapabilityProvider _capabilityProvider;
         private readonly WordDocumentSnapshotBuilder _snapshotBuilder = new WordDocumentSnapshotBuilder();
         private readonly LocalAccessManager _accessManager;
-        private readonly LocalDocumentScanner _scanner = new LocalDocumentScanner(new VietnameseEngineIpcClient());
+        private readonly LocalDocumentScanner _scanner = new LocalDocumentScanner();
 
         public WordDocumentReadRuntime(Word.Application application, LocalAccessManager accessManager)
         {
@@ -66,7 +66,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             DocumentContext context,
             DocumentAnalysisScope scope,
             Word.Document? activeDocument = null,
-            bool allowSavedDocumentCache = true)
+            bool allowSavedDocumentCache = true,
+            DocumentOperationSession? operation = null)
         {
             if (context == null) throw new ArgumentNullException(nameof(context));
             var document = activeDocument ?? _application.ActiveDocument;
@@ -90,19 +91,30 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     spellingRules?.PackId))
                 return true;
 
-            var snapshot = _snapshotBuilder.Build(document, context, capability);
+            var snapshot = _snapshotBuilder.Build(document, context, capability, operation);
             var initialLocal = WordLocalScanRuntime.ToLocalSnapshot(snapshot, context);
             WordDocumentTypeClassifier.DetectAndApply(context, initialLocal, false);
             var local = WordLocalScanRuntime.ToLocalSnapshot(snapshot, context);
-            var formatScan = formatRules == null ? null : _scanner.ScanFormat(local, formatRules);
-            var spellingScan = spellingRules == null ? null : _scanner.ScanSpelling(local, spellingRules);
+            operation?.Transition(DocumentOperationState.Scanning,
+                requireFormat && requireSpelling ? "kiểm tra thể thức và chính tả" :
+                requireFormat ? "kiểm tra thể thức" :
+                requireSpelling ? "kiểm tra chính tả" : "chuẩn bị dữ liệu");
+            var formatScan = formatRules == null ? null :
+                _scanner.ScanFormat(local, formatRules,
+                    operation == null ? default(System.Threading.CancellationToken) : operation.CancellationToken);
+            operation?.Checkpoint();
+            var spellingScan = spellingRules == null ? null :
+                _scanner.ScanSpelling(local, spellingRules,
+                    operation == null ? default(System.Threading.CancellationToken) : operation.CancellationToken);
+            operation?.Checkpoint();
             context.SetAnalysis(snapshot, local, formatScan, spellingScan, documentIsSaved);
             return false;
         }
 
         public void PrepareForOneClick(
             DocumentContext context,
-            Word.Document? activeDocument = null)
+            Word.Document? activeDocument = null,
+            DocumentOperationSession? operation = null)
         {
             if (context == null) throw new ArgumentNullException(nameof(context));
             var document = activeDocument ?? _application.ActiveDocument;
@@ -113,7 +125,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             // between Prepare and WordOneClickRuntime.Execute.
             WordRecoveryCopyManager.EnsurePersistentDocument(_application, document);
             context.ClearReadAnalysis();
-            Prepare(context, DocumentAnalysisScope.Full, document, false);
+            Prepare(context, DocumentAnalysisScope.Full, document, false, operation);
             context.RequireFullAnalysis();
         }
 

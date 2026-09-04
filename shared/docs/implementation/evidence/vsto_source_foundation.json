@@ -7,10 +7,10 @@
     "buttons": 34,
     "menus": 3,
     "dropDowns": 2,
-    "checkBoxes": 0,
-    "interactiveControls": 39
+    "checkBoxes": 3,
+    "interactiveControls": 42
   },
-  "callbackMethods": 49,
+  "callbackMethods": 58,
   "invariants": {
     "exactlyOneRibbonTab": true,
     "autoFixDedicatedCallback": true,
@@ -23,12 +23,15 @@
     "commandScopedMinimumAnalysis": true,
     "noManualReadDataPrerequisite": true,
     "tableHeavyPaginationGuard": true,
+    "bodyListTabStopNormalization": true,
+    "pointStyleAutoFix": true,
     "trailingBlankPageTerminationGuard": true,
     "appendixPaginationPreservesOrientation": true,
     "verificationBuildDoesNotRewriteInstalledManifest": true,
     "characterCondenseSuccessIsSilent": true,
     "selectedFindingFixSuccessIsSilent": true,
     "modernCommentsStableCapabilityBaseline": true,
+    "oneClickModernCommentsFocusFallback": true,
     "perDocumentContextStore": true,
     "unregisteredCommandsFailClosed": true,
     "wordComAdapterConnected": true,
@@ -38,15 +41,15 @@
     "findingAnnotationCommandFailClosed": true
   },
   "hashes": {
-    "ribbonXmlSha256": "105902416B28AD8721CDF485DDC2EF635D7D3BF027321FC25F3AB3AFD44760E7",
-    "generatedCallbacksSha256": "735292E893DFF972E644F180F9D60741BFF49E4F5583F92D8961A65C8B604C52",
-    "projectSha256": "79832CA630463BAAC5A45574099344047F21661E3AFC5173C29B3E9BEC5735BB",
+    "ribbonXmlSha256": "D3F8E9502F12964F9B7EC2D6BE21DAADDD694F90E4BF2C5BDA4995A5931CD808",
+    "generatedCallbacksSha256": "16711724E8399B60AC93C0D95499B4B5F34458A86F8ABD749764D8080AE114F3",
+    "projectSha256": "C3895F9754903BFD0A26CD9E7734FD5AD1F2565C85D5A53E68B3017E0E99B80C",
     "wordAdapterSha256": "8546553DBB0F85C6FCBAD46D41D4B797B4D4AAC4475D06B993D5F98F62748F03",
     "wordMutationRuntimeSha256": "45DAF1EFE5D6E047C3BF09D14F76B00B61118AA605E8EF0BFF96AA36DBCB99B5",
-    "wordFindingAnnotationAdapterSha256": "75F933ABAEBB55C48B7CA8B47A48C7860F7E6D2FCBB7F878DAC24CDF85A578F5",
-    "wordSnapshotBuilderSha256": "9D7C643C57F10B46F2065BA64434AF9AC603105A75A4CB5C41E77DEDD336D654"
+    "wordFindingAnnotationAdapterSha256": "7D0467A6767418C406B2FDA5BDC77749E2198CF3D1F29BB10E3EFA3581A8941E",
+    "wordSnapshotBuilderSha256": "2084FF86E71EED6C0F4F31A68F4DBC766F5A9DE68A53383C267F30D835E2A8C9"
   },
-  "buildGate": "NOT_RUN",
+  "buildGate": "PASS_LOCAL_DEVELOPMENT",
   "loadGate": "NOT_RUN",
-  "buildEvidenceStatus": "Stored VSTO build artifacts are stale or unavailable."
+  "buildEvidenceStatus": "Local development build evidence verified by artifact hashes; current Word visual/load smoke remains NOT_RUN."
 }

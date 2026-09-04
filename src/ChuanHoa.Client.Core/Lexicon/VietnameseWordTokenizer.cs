@@ -48,7 +48,7 @@ namespace ChuanHoa.Client.Core.Lexicon
             @"(?<url>https?://[^\s/$.?#].[^\s]*|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})|" +
             @"(?<space>[ \t\r\n]+)|" +
             @"(?<number>\d+(?:[.,]\d+)*)|" +
-            @"(?<word>[a-zA-Z\u00C0-\u1EF9]+(?:[-'][a-zA-Z\u00C0-\u1EF9]+)*)|" +
+            @"(?<word>[\p{L}\p{M}]+(?:[-'][\p{L}\p{M}]+)*)|" +
             @"(?<punct>[,.;:!?()[\]{}/\\""“”—–…\-])|" +
             @"(?<other>[^\s])",
             RegexOptions.Compiled | RegexOptions.CultureInvariant);

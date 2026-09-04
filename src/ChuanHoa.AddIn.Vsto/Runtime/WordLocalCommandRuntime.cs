@@ -8,7 +8,6 @@ using System.Text.RegularExpressions;
 using ChuanHoa.Client.Core.Rules;
 using ChuanHoa.Client.Core.Scanning;
 using ChuanHoa.Client.Core.Text;
-using QRCoder;
 using Word = Microsoft.Office.Interop.Word;
 
 namespace ChuanHoa.AddIn.Vsto.Runtime
@@ -25,22 +24,25 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         private readonly WordDocumentCapabilityProvider _capabilityProvider;
         private readonly LocalAccessManager _accessManager;
         private readonly Func<Word.Document?>? _documentProvider;
+        private readonly Func<string?>? _documentFingerprintProvider;
         private readonly DocumentRoleDetector _roleDetector = new DocumentRoleDetector();
 
         public WordLocalCommandRuntime(Word.Application application, LocalAccessManager accessManager)
-            : this(application, accessManager, null)
+            : this(application, accessManager, null, null)
         {
         }
 
         internal WordLocalCommandRuntime(
             Word.Application application,
             LocalAccessManager accessManager,
-            Func<Word.Document?>? documentProvider)
+            Func<Word.Document?>? documentProvider,
+            Func<string?>? documentFingerprintProvider = null)
         {
             _application = application ?? throw new ArgumentNullException(nameof(application));
             _capabilityProvider = new WordDocumentCapabilityProvider(application);
             _accessManager = accessManager ?? throw new ArgumentNullException(nameof(accessManager));
             _documentProvider = documentProvider;
+            _documentFingerprintProvider = documentFingerprintProvider;
         }
 
         public string FormatPage()
@@ -543,7 +545,21 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
         public void OpenCustomDictionaryDialog()
         {
-            CustomDictionaryDialog.Prompt(null);
+            var handle = NativeMethods.GetForegroundWindow();
+            CustomDictionaryDialog.Prompt(handle == IntPtr.Zero ? null : new WindowHandle(handle),
+                _documentFingerprintProvider == null ? null : _documentFingerprintProvider());
+        }
+
+        private sealed class WindowHandle : System.Windows.Forms.IWin32Window
+        {
+            public WindowHandle(IntPtr handle) { Handle = handle; }
+            public IntPtr Handle { get; }
+        }
+
+        private static class NativeMethods
+        {
+            [DllImport("user32.dll")]
+            internal static extern IntPtr GetForegroundWindow();
         }
 
         private static void CleanWhitespaceInStory(Word.Range story)
@@ -648,40 +664,6 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     finally { Release(story); }
                 }
             }, createBackup: true);
-        }
-
-        public string InsertQrCode(string content)
-        {
-            if (string.IsNullOrWhiteSpace(content)) throw new ArgumentException("Nội dung mã QR không được để trống.", nameof(content));
-            if (content.Length > 800) throw new ArgumentException("Nội dung mã QR không được vượt quá 800 ký tự.", nameof(content));
-            return Execute("Chèn mã QR", (document, _) =>
-            {
-                var temporaryPath = Path.Combine(Path.GetTempPath(), "chuanhoa-qr-" + Guid.NewGuid().ToString("N") + ".png");
-                Word.Range? insertionRange = null;
-                Word.InlineShape? shape = null;
-                try
-                {
-                    using (var generator = new QRCodeGenerator())
-                    using (var data = generator.CreateQrCode(content, QRCodeGenerator.ECCLevel.M))
-                    using (var qr = new PngByteQRCode(data))
-                        File.WriteAllBytes(temporaryPath, qr.GetGraphic(20));
-
-                    insertionRange = _application.Selection.Range.Duplicate;
-                    insertionRange.Collapse(Word.WdCollapseDirection.wdCollapseStart);
-                    shape = document.InlineShapes.AddPicture(temporaryPath, false, true, insertionRange);
-                    shape.LockAspectRatio = Microsoft.Office.Core.MsoTriState.msoTrue;
-                    shape.Width = 50f * PointsPerMillimeter;
-                    shape.Height = 50f * PointsPerMillimeter;
-                }
-                finally
-                {
-                    Release(shape);
-                    Release(insertionRange);
-                    try { if (File.Exists(temporaryPath)) File.Delete(temporaryPath); }
-                    catch (IOException) { }
-                    catch (UnauthorizedAccessException) { }
-                }
-            });
         }
 
         private void ApplyFontSizeSetCore(Word.Document document, DocumentContext context, float mainSize, string fontName)

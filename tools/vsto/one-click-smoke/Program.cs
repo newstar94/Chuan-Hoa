@@ -107,19 +107,32 @@ namespace ChuanHoa.OneClickSmoke
                 identityTable.Cell(3, 1).Range.Text = "Số: 01/QĐ-UBND";
                 identityTable.Cell(3, 2).Range.Text = "Huyện Mẫu, ngày 02 tháng 9 năm 2026";
 
-                insertion = document.Range(document.Content.End - 1, document.Content.End - 1);
-                insertion.InsertAfter("\rQUYẾT ĐỊNH\rVề việc phê duyệt báo cáo kinh tế - kỹ thuật\r" +
+                // Insert the body after the identity layout table. Content.End - 1
+                // points at the final cell marker and would incorrectly make every
+                // body paragraph part of that table in the smoke fixture.
+                identityTable.Range.InsertParagraphAfter();
+                insertion = document.Range(identityTable.Range.End, identityTable.Range.End);
+                insertion.InsertAfter("QUYẾT ĐỊNH\rVề việc phê duyệt báo cáo kinh tế - kỹ thuật\r" +
                     "Căn cứ Nghị định 214/2025/NĐ-CP ngày 05 tháng 3 năm 2025 của Chính phủ;\r" +
                     "Căn cứ hồ sơ và đề nghị của cơ quan chuyên môn.\r" +
+                    "2. NỘI DUNG THẨM ĐỊNH\r" +
+                    "b) Ý kiến thẩm định về cơ sở pháp lý:\r" +
+                    "Căn cứ các tài liệu được cung cấp, kết quả thẩm định được tổng hợp tại Bảng số 01.\r" +
                     "nội dung quyết định này  có cụm từ cần giữ in đậm , có cách viết sát nhập và hạn 05/03/2020. " +
-                    "Quyết định xố, ự án cần kiểm tra.\r");
+                    "Quyết định xố, ự án cần kiểm tra.\r" +
+                    "-\tNguồn vốn: Nguồn vốn của các công đoàn và đơn vị thành viên được trình bày trên nhiều dòng để kiểm tra thụt lề treo.\r");
                 Release(insertion); insertion = null;
+                ConfigureLegacyDashListTabs(document);
 
                 var bodyText = document.Content.Text;
                 var emphasizedStart = bodyText.IndexOf("cần giữ in đậm", StringComparison.Ordinal);
                 emphasized = document.Range(emphasizedStart, emphasizedStart + "cần giữ in đậm".Length);
                 emphasized.Font.Bold = -1;
                 Release(emphasized); emphasized = null;
+                var pointParagraph = FindParagraph(document, "b)");
+                pointParagraph.Range.Font.Bold = -1;
+                pointParagraph.Range.Font.Italic = -1;
+                Release(pointParagraph);
 
                 insertion = document.Range(document.Content.End - 1, document.Content.End - 1);
                 dataTable = document.Tables.Add(insertion, 2, 2);
@@ -160,6 +173,18 @@ namespace ChuanHoa.OneClickSmoke
                     var runtime = new WordOneClickRuntime(application, access);
                     var readRuntime = new WordDocumentReadRuntime(application, access);
                     readRuntime.Read(context, document);
+                    Assert(!context.LastFormatScan.Findings.Any(item =>
+                            item.RuleCode.StartsWith("ND30-PL1-M2-K6A", StringComparison.Ordinal) &&
+                            item.Anchor.ExpectedText != null &&
+                            item.Anchor.ExpectedText.IndexOf("tổng hợp tại Bảng", StringComparison.OrdinalIgnoreCase) >= 0),
+                        "A body sentence beginning with Căn cứ was misclassified as the formal legal-basis component.");
+                    Assert(context.LastFormatScan.Findings.Any(item =>
+                            item.RuleCode == "ND30-PL1-M2-K6D-POINT" &&
+                            item.Anchor.ParagraphIndex.HasValue &&
+                            context.LastLocalSnapshot.Paragraphs.Any(paragraph =>
+                                paragraph.Index == item.Anchor.ParagraphIndex.Value &&
+                                paragraph.Text.StartsWith("b)", StringComparison.Ordinal))),
+                        "The deliberately bold/italic legal point was not reported before 1-Click.");
                     var spellingScan = new WordLocalScanRuntime(application, access)
                         .ScanAndAnnotate(context, true, document);
                     var spellingCommentCountBeforeFix = Enumerable.Range(1, document.Variables.Count)
@@ -221,7 +246,7 @@ namespace ChuanHoa.OneClickSmoke
                     missingSoSelection.Select();
                     Release(missingSoSelection);
                     var focusAdapter = new WordFindingAnnotationAdapter(application, document);
-                    Assert(focusAdapter.TryFocusDocumentSelection(),
+                    Assert(focusAdapter.TryFocusDocumentSelection(true),
                         "Modern Comments focus could not return to the document.");
                     Assert(application.Selection.Range.Start == application.Selection.Range.End,
                         "Modern Comments focus left the finding text selected and vulnerable to replacement.");
@@ -303,6 +328,11 @@ namespace ChuanHoa.OneClickSmoke
                 emphasized = document.Range(normalized.IndexOf("cần giữ in đậm", StringComparison.Ordinal),
                     normalized.IndexOf("cần giữ in đậm", StringComparison.Ordinal) + "cần giữ in đậm".Length);
                 Assert(emphasized.Font.Bold != 0, "Intentional inline bold formatting was removed from body text.");
+                pointParagraph = FindParagraph(document, "b)");
+                Assert(pointParagraph.Range.Font.Bold == 0 && pointParagraph.Range.Font.Italic == 0,
+                    "1-Click did not normalize the legal point to upright, non-bold text.");
+                Release(pointParagraph);
+                AssertNormalizedDashListIndent(document);
                 Assert(Enumerable.Range(1, document.Shapes.Count)
                     .Select(index => document.Shapes[index].Name)
                     .Count(name => name.StartsWith("CHUANHOA2_", StringComparison.Ordinal)) >= 3,
@@ -341,6 +371,80 @@ namespace ChuanHoa.OneClickSmoke
                 Release(paragraph);
             }
             throw new InvalidOperationException("Paragraph not found: " + prefix);
+        }
+
+        private static void ConfigureLegacyDashListTabs(Word.Document document)
+        {
+            const float pointsPerMillimeter = 72f / 25.4f;
+            Word.Paragraph paragraph = null;
+            Word.Range range = null;
+            Word.ParagraphFormat format = null;
+            Word.TabStops tabStops = null;
+            try
+            {
+                paragraph = FindParagraph(document, "-");
+                range = paragraph.Range.Duplicate;
+                format = range.ParagraphFormat;
+                format.LeftIndent = 0f;
+                format.FirstLineIndent = 10f * pointsPerMillimeter;
+                tabStops = format.TabStops;
+                tabStops.ClearAll();
+                tabStops.Add(80f * pointsPerMillimeter, Word.WdTabAlignment.wdAlignTabLeft,
+                    Word.WdTabLeader.wdTabLeaderSpaces);
+            }
+            finally
+            {
+                Release(tabStops);
+                Release(format);
+                Release(range);
+                Release(paragraph);
+            }
+        }
+
+        private static void AssertNormalizedDashListIndent(Word.Document document)
+        {
+            const float pointsPerMillimeter = 72f / 25.4f;
+            Word.Paragraph paragraph = null;
+            Word.Range range = null;
+            Word.ParagraphFormat format = null;
+            Word.TabStops tabStops = null;
+            Word.TabStop tabStop = null;
+            try
+            {
+                paragraph = FindParagraph(document, "-");
+                range = paragraph.Range.Duplicate;
+                format = range.ParagraphFormat;
+                Assert(Math.Abs(format.LeftIndent - 15f * pointsPerMillimeter) < .5f,
+                    "Dash-list continuation does not align at 15 mm.");
+                Assert(Math.Abs(format.FirstLineIndent + 5f * pointsPerMillimeter) < .5f,
+                    "Dash-list marker does not use the expected 5 mm hanging indent.");
+                Assert(Math.Abs(format.RightIndent) < .1f,
+                    "Dash-list retained a stale right indent.");
+                tabStops = format.TabStops;
+                var expectedPosition = 15f * pointsPerMillimeter;
+                var stalePosition = 80f * pointsPerMillimeter;
+                var foundExpected = false;
+                var foundStale = false;
+                for (var index = 1; index <= tabStops.Count; index++)
+                {
+                    Release(tabStop);
+                    tabStop = tabStops[index];
+                    if (Math.Abs(tabStop.Position - expectedPosition) < .5f) foundExpected = true;
+                    if (Math.Abs(tabStop.Position - stalePosition) < .5f) foundStale = true;
+                }
+                Assert(foundExpected,
+                    "Dash-list tab stop is not aligned with continuation text.");
+                Assert(!foundStale,
+                    "Dash-list retained the stale 80 mm custom tab stop.");
+            }
+            finally
+            {
+                Release(tabStop);
+                Release(tabStops);
+                Release(format);
+                Release(range);
+                Release(paragraph);
+            }
         }
 
         private static void AssertRenderedOwnedLine(Word.Document document, string namePrefix,

@@ -10,14 +10,14 @@
 ## ADR-002 — Signed rules, local-authoritative document processing
 
 - Trạng thái: SUPERSEDED ngày 2026-09-02 bởi yêu cầu sản phẩm.
-- Quyết định hiện hành: toàn bộ đọc snapshot, detector, kiểm tra thể thức/chính tả, lập finding và mutation tài liệu chạy trong Word/VSTO tại local. Server không nhận nội dung, filename, path, binary DOC/DOCX, ảnh, comments, chữ ký, con dấu hoặc QR payload.
+- Quyết định hiện hành: toàn bộ đọc snapshot, detector, kiểm tra thể thức/chính tả, lập finding và mutation tài liệu chạy trong Word/VSTO tại local. Server không nhận nội dung, filename, path, binary DOC/DOCX, ảnh, comments, chữ ký hoặc con dấu.
 - Server xác minh identity/device/entitlement/release và phát hành rule pack ký RS256 cùng offline lease ký RS256 tối đa 7 ngày. Client kiểm tra signature, key id, loại artefact, thời gian, thiết bị, phiên bản và feature trước khi dùng.
 - Hệ quả: khi mất mạng, cache hợp lệ tiếp tục chạy đến hết hạn lease; sau đó feature có phí fail closed nhưng Word vẫn mở. Startup không chờ mạng; refresh chạy nền và Ribbon được invalidate trên UI thread.
 
 ## ADR-003 — Một Ribbon, không persistent task pane
 
 - Trạng thái: ACCEPTED.
-- Quyết định: đúng một tab Ribbon theo artefact VBA; chỉ dialog tạm thời cho login, progress, preview, warning, QR và About.
+- Quyết định: đúng một tab Ribbon theo artefact VBA; chỉ dialog tạm thời cho login, progress, preview, warning và About.
 - Hệ quả: `TaskPaneControl` của prototype bị RETIRE sau khi đối chiếu, không được đưa vào project VSTO mới.
 
 ## ADR-004 — CORRECTION-RULE-ROUTE-BASELINE-001
@@ -54,8 +54,8 @@
 ## ADR-008 — VSTO source foundation fail closed
 
 - Trạng thái: ACCEPTED_TECHNICAL.
-- Quyết định: project production mới ở `src/ChuanHoa.AddIn.Vsto` dùng đúng một Ribbon 38 control, không task pane và không giữ `Word.Document` tĩnh.
-- Command chưa port hoặc chưa vượt exit gate bị disabled và không có handler mô phỏng. About, ba tùy chọn hiển thị, đọc dữ liệu, hai lane scan và các tiện ích Word local đã có handler thật; mỗi mutation local yêu cầu signed `DOCUMENT_TOOLS` và preflight. Chỉ `Chuẩn hóa toàn bộ` cùng hai lệnh đổi cách đặt dấu tạo recovery copy; thao tác cục bộ dùng Word Undo và không clone/save cưỡng bức.
+- Quyết định: project production mới ở `src/ChuanHoa.AddIn.Vsto` dùng đúng một Ribbon 42 control, không task pane và không giữ `Word.Document` tĩnh.
+- Command chưa port hoặc chưa vượt exit gate bị disabled và không có handler mô phỏng. About, ba tùy chọn hiển thị, hai lane scan và các tiện ích Word local đã có handler thật; không còn nút `Đọc dữ liệu`, mỗi command tự chuẩn bị đúng lane cần dùng. Mỗi mutation local yêu cầu signed `DOCUMENT_TOOLS` và preflight. Chỉ `Chuẩn hóa toàn bộ` cùng hai lệnh đổi cách đặt dấu tạo recovery copy; thao tác cục bộ dùng Word Undo và không clone/save cưỡng bức.
 - AutoFix dùng callback riêng `OnAutoFixAll2026`; không còn nối nhầm vào định dạng trang giấy.
 - Evidence: `VSTO-SOURCE-001` PASS; `VSTO-BUILD-001` PASS_LOCAL_DEVELOPMENT; `VSTO-WORD16-X64-001` PASS_LOCAL_SMOKE. Production signing, Word 2010/x86, Word COM safety adapter và command parity vẫn chưa đạt.
 
@@ -67,11 +67,11 @@
 - Không tự chuyển `.doc` sang `.docx`, không thay đổi định dạng lưu hiện tại. `.docm`, template, RTF, tài liệu chưa lưu hoặc extension/SaveFormat không khớp đều fail closed.
 - Compatibility Mode không phải blocker. Mọi mutation vẫn phải vượt authorization, backup, fingerprint, Undo/rollback và exit gate hiện hữu.
 
-## ADR-011 — Bỏ chuẩn hóa dấu thanh và i/y
+## ADR-011 — Bỏ i/y, giữ hai lệnh đồng nhất vị trí dấu thanh
 
 - Trạng thái: ACCEPTED_PRODUCT ngày 2026-09-01.
-- Quyết định: loại bỏ `mnuBoDau`, `btnKieuOaUy`, `btnKieuOaUy2`, `mnuIY`, `btnKieuI` và `btnKieuY` khỏi target VSTO và command catalog.
-- Hệ quả: không phát hành entitlement/capability/handler cho `TONE_NORMALIZE` hoặc `IY_NORMALIZE`; nhóm “Chính tả và số” vẫn tồn tại cho chuẩn hóa số thập phân.
+- Quyết định cập nhật theo yêu cầu sản phẩm: loại bỏ `mnuIY`, `btnKieuI` và `btnKieuY`; giữ `mnuBoDau`, `btnKieuOaUy` và `btnKieuOaUy2` để người dùng chủ động đồng nhất `oà/uý` hoặc `òa/úy`.
+- Hệ quả: không phát hành handler cho `IY_NORMALIZE`; lệnh đặt dấu là mutation toàn tài liệu nên có recovery copy trong Windows Temp.
 - VBA extracted và `ribbon_actual.json` giữ nguyên làm provenance, không còn là target sản phẩm.
 
 ## ADR-012 — Tên sản phẩm hiển thị là “Chuẩn hóa”
@@ -105,3 +105,10 @@
 - Baseline logic path chỉ là provenance observation, không đồng nghĩa implementation đã verified.
 - Release `Published` yêu cầu từng rule active, legal traceability approved, detector/engine verified, đủ positive/negative/boundary fixtures approved và fix policy không blocked.
 - Evidence: `RULE-CANONICAL-001` PASS; baseline 96 rule là `PASS_DRAFT_ONLY` và `publishable=false`.
+
+## ADR-015 — Loại bỏ hoàn toàn tính năng QR
+
+- Trạng thái: ACCEPTED_PRODUCT ngày 2026-09-04.
+- Quyết định: QR không còn thuộc sản phẩm hiện tại. Loại `btnChenQrCode`, callback, dialog, renderer, QRCoder, test thao tác QR và binary QR khỏi installer.
+- Ba checkbox nhóm Hiển thị vẫn được giữ; target Ribbon có 34 button, 3 menu, 2 dropdown, 3 checkbox và 42 control tương tác.
+- VBA extracted, `ribbon_actual.json` và migration ledger được giữ làm provenance, không được dùng để tự sinh lại QR vào target.

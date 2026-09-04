@@ -1,11 +1,15 @@
 param(
     [Parameter(Mandatory = $false)]
-    [ValidatePattern('^\d+\.\d+\.\d+\.\d+$')]
-    [string]$ApplicationVersion = '1.0.0.14'
+    [ValidatePattern('^$|^\d+\.\d+\.\d+\.\d+$')]
+    [string]$ApplicationVersion = ''
 )
 
 $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
+if ([string]::IsNullOrWhiteSpace($ApplicationVersion)) {
+    [xml]$versionProps = Get-Content -LiteralPath (Join-Path $root 'Directory.Build.props')
+    $ApplicationVersion = [string]$versionProps.Project.PropertyGroup.ProductVersion
+}
 $project = Join-Path $root 'src\ChuanHoa.AddIn.Vsto\ChuanHoa.AddIn.Vsto.csproj'
 $publishDirectory = Join-Path $root 'artifacts\vsto-dev-publish-local'
 $publishAlias = 'D:\ChuanHoaPublishLocal'
@@ -56,6 +60,22 @@ $buildArguments = @(
     '/nologo',
     '/v:minimal'
 )
+
+foreach ($generatedNuGetFile in @(
+    'obj\project.assets.json',
+    'obj\ChuanHoa.AddIn.Vsto.csproj.nuget.dgspec.json',
+    'obj\ChuanHoa.AddIn.Vsto.csproj.nuget.g.props',
+    'obj\ChuanHoa.AddIn.Vsto.csproj.nuget.g.targets'
+)) {
+    $generatedNuGetPath = Join-Path (Split-Path -Parent $project) $generatedNuGetFile
+    if (Test-Path -LiteralPath $generatedNuGetPath) {
+        Remove-Item -LiteralPath $generatedNuGetPath -Force
+    }
+}
+& $msbuild $project /t:Restore /p:RestoreForce=true /p:Configuration=Development /p:Platform=AnyCPU /m /nologo /v:minimal
+if ($LASTEXITCODE -ne 0) {
+    throw "VSTO Development restore failed with exit code $LASTEXITCODE."
+}
 
 & $msbuild @buildArguments /t:Rebuild
 if ($LASTEXITCODE -ne 0) {

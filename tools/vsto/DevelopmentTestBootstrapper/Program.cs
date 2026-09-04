@@ -65,15 +65,16 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
                     "ChuanHoa",
                     "DevelopmentInstaller");
                 UninstallClickOnceDevelopmentAddIn(baseDirectory);
-                StopRunningEngineProcesses();
                 var installDirectory = Path.Combine(baseDirectory, "Current");
-                ResetInstallDirectory(baseDirectory, installDirectory);
-                ExtractPayload(installDirectory);
+                var stagingDirectory = Path.Combine(baseDirectory, "Staging-" + Guid.NewGuid().ToString("N"));
+                PrepareStagingDirectory(baseDirectory, stagingDirectory);
+                ExtractPayload(stagingDirectory);
 
-                var certificatePath = Path.Combine(installDirectory, "ChuanHoa.LocalDevelopment.Public.cer");
+                var certificatePath = Path.Combine(stagingDirectory, "ChuanHoa.LocalDevelopment.Public.cer");
                 TrustDevelopmentCertificate(certificatePath);
-                InstallTrustedDevelopmentKey(installDirectory);
+                InstallTrustedDevelopmentKey(stagingDirectory);
                 EnsureRequiredRuntimes();
+                VerifyStagedPayload(stagingDirectory);
 
                 if (!quiet && !IsDevelopmentApiAvailable())
                 {
@@ -85,6 +86,7 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
                         MessageBoxIcon.Information);
                 }
 
+                ActivateStagingDirectory(baseDirectory, stagingDirectory, installDirectory);
                 ClearWordRibbonValidationCache();
                 ClearWordResiliencyAndVstoSolutionMetadata();
                 RegisterInstalledDevelopmentManifest(installDirectory);
@@ -125,27 +127,48 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
             }
         }
 
-        private static void ResetInstallDirectory(string baseDirectory, string installDirectory)
+        private static void PrepareStagingDirectory(string baseDirectory, string stagingDirectory)
         {
             Directory.CreateDirectory(baseDirectory);
             var normalizedBase = Path.GetFullPath(baseDirectory).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
-            var normalizedTarget = Path.GetFullPath(installDirectory).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            var normalizedTarget = Path.GetFullPath(stagingDirectory).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
             if (!normalizedTarget.StartsWith(normalizedBase, StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException("Unsafe installer extraction directory.");
-            if (Directory.Exists(installDirectory)) Directory.Delete(installDirectory, true);
-            Directory.CreateDirectory(installDirectory);
+            Directory.CreateDirectory(stagingDirectory);
         }
 
-        private static void StopRunningEngineProcesses()
+        private static void VerifyStagedPayload(string stagingDirectory)
         {
+            foreach (var required in new[]
+            {
+                "ChuanHoa.AddIn.Vsto.vsto",
+                "ChuanHoa.AddIn.Vsto.dll.manifest",
+                "ChuanHoa.AddIn.Vsto.dll",
+                "ChuanHoa.Client.Core.dll",
+                "ChuanHoa.LocalDevelopment.Public.cer"
+            })
+            {
+                if (!File.Exists(Path.Combine(stagingDirectory, required)))
+                    throw new InvalidOperationException("Bộ cài thiếu tệp bắt buộc: " + required);
+            }
+        }
+
+        private static void ActivateStagingDirectory(string baseDirectory, string stagingDirectory,
+            string installDirectory)
+        {
+            var previousDirectory = Path.Combine(baseDirectory, "Previous");
+            if (Directory.Exists(previousDirectory)) Directory.Delete(previousDirectory, true);
+            if (Directory.Exists(installDirectory)) Directory.Move(installDirectory, previousDirectory);
             try
             {
-                foreach (var p in Process.GetProcessesByName("VietnameseEngine"))
-                {
-                    try { p.Kill(); p.WaitForExit(1000); } catch { }
-                }
+                Directory.Move(stagingDirectory, installDirectory);
             }
-            catch { }
+            catch
+            {
+                if (!Directory.Exists(installDirectory) && Directory.Exists(previousDirectory))
+                    Directory.Move(previousDirectory, installDirectory);
+                throw;
+            }
         }
 
         private static void EnsureRequiredRuntimes()
@@ -457,20 +480,6 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
             Directory.CreateDirectory(destinationDirectory);
             File.Copy(source, Path.Combine(destinationDirectory, "trusted-key.xml"), true);
 
-            var supportDir = Path.Combine(installDirectory, "DevelopmentSupport");
-            var cacheDir = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "ChuanHoa",
-                "Cache");
-            Directory.CreateDirectory(cacheDir);
-            foreach (var file in new[] { "lease.xml", "rules.xml", "server-time.txt" })
-            {
-                var srcFile = Path.Combine(supportDir, file);
-                if (File.Exists(srcFile))
-                {
-                    File.Copy(srcFile, Path.Combine(cacheDir, file), true);
-                }
-            }
         }
 
         private static bool IsDevelopmentApiAvailable()

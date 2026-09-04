@@ -139,6 +139,8 @@ namespace ChuanHoa.AddIn.Vsto.Ribbon
 
             public string GetItemLabel(string controlId, int index) => string.Empty;
 
+            public object GetImage(string controlId) => null!;
+
             public void ExecuteButton(string controlId)
             {
             }

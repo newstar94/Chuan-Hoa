@@ -4,6 +4,8 @@
 **/dist/
 **/coverage/
 **/TestResults/
+**/__pycache__/
+*.pyc
 
 # Dependencies
 **/node_modules/
@@ -37,6 +39,9 @@ publish/
 !**/ChuanHoa.AddIn.Vsto/
 *.dll.manifest
 *.application
+!src/ChuanHoa.Application/
+!src/ChuanHoa.Application/**/*.cs
+!src/ChuanHoa.Application/ChuanHoa.Application.csproj
 *.msi
 *.msix
 

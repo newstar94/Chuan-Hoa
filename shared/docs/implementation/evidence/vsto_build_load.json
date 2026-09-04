@@ -1,80 +1,73 @@
 {
   "testId": "VSTO-BUILD-LOAD-001",
-  "status": "PASS_LOCAL_DEVELOPMENT",
+  "status": "PASS_LOCAL_DEVELOPMENT_COM_LOAD_VISUAL_PENDING",
+  "verifiedAt": "2026-09-04",
   "environment": {
     "visualStudioBuildTools": "17.14.37614.0",
     "targetFramework": "net48",
     "minimumOfficeVersionDeclared": "14.0",
-    "wordVersion": "16.0.20326.20112",
+    "wordVersion": "16.0.20326",
     "wordPlatform": "x64"
   },
   "build": {
     "configuration": "Development",
+    "version": "1.0.0.82",
+    "assemblyVersion": "1.0.0.82",
+    "fileVersion": "1.0.0.82",
+    "productVersion": "1.0.0.82",
     "warnings": 0,
     "errors": 0,
     "artifacts": [
       {
         "path": "src/ChuanHoa.AddIn.Vsto/bin/Development/ChuanHoa.AddIn.Vsto.dll",
-        "length": 277504,
-        "sha256": "28DED9CC6F8E1DAB28AE92B977A6DA79711DB24BCA77808416B907BDC9560AA7"
+        "length": 300544,
+        "sha256": "D790CB9983559C55DAF33A49CE7C51543C546926F4FE6583E6DDA99658273B4D"
       },
       {
         "path": "src/ChuanHoa.AddIn.Vsto/bin/Development/ChuanHoa.AddIn.Vsto.dll.manifest",
-        "length": 17022,
-        "sha256": "D2FD815525596150033CCE6D8BA98D8AAF305D2D031FC5269934AE432D578B76"
+        "length": 15593,
+        "sha256": "EF64852E75B598CA6312496C96C4B89689894775958F3676E7A48245E8E443C3"
       },
       {
         "path": "src/ChuanHoa.AddIn.Vsto/bin/Development/ChuanHoa.AddIn.Vsto.vsto",
         "length": 7744,
-        "sha256": "B1ED23A1CC929A6978917FA5A931DDCE990F1C36152F60EBF1683063A4CCF579"
+        "sha256": "8F6169E85F1C5B7878D7A3A43F92F1AB2B9AC8938F39DCB2E24AAF3A6C6D2DDA"
       }
     ],
     "manifestSigning": "LOCAL_SELF_SIGNED_DEVELOPMENT_CERTIFICATE",
     "privateKey": "CURRENT_USER_NON_EXPORTABLE",
     "productionSigningSatisfied": false
   },
-  "localPublish": {
-    "version": "1.0.0.59",
-    "path": "artifacts/vsto-development-test/1.0.0.59",
-    "setupExeSha256": "997ECBB2CED7659BFC7BCCACD704D1494A4513D80829523413F73ECBD6561E01",
-    "deploymentManifestSha256": "9F8FE572C79D8C4A08C1A75EF52D52B89009205615401BC1480CA392373D449C",
-    "developmentInstallerSha256": "F6DB0FE9EA2C92A0AFF5335CC7FEDCFEB44861A5CC939FA319EFA2C14092F5A0",
-    "prerequisites": [
-      ".NET Framework 4.8",
-      "Visual Studio 2010 Tools for Office Runtime"
-    ],
+  "developmentInstaller": {
+    "version": "1.0.0.82",
+    "path": "artifacts/installers/development/ChuanHoa_Development_Test_Setup_1.0.0.82.exe",
+    "sizeBytes": 250152,
+    "sha256": "7209D8A9D5006724E44DB992FF21E6D693B98FBAFF6BA45E4C43FCD14DC9BEF4",
+    "signatureStatus": "Valid",
+    "signer": "CN=Chuan Hoa Local Development",
+    "payloadFiles": 7,
+    "forbiddenAiOnnxQrHits": 0,
     "installSmokeExecuted": true,
-    "installAttempt": {
-      "command": "ChuanHoa_Development_Test_Setup_1.0.0.59.exe /quiet",
-      "result": "PASS_DIRECT_DEVELOPMENT_BOOTSTRAPPER",
-      "exitCode": 0,
-      "reason": "Development bootstrapper installed Current, registered the vstolocal manifest, and retained LoadBehavior=3."
-    },
+    "installedCurrentVersion": "1.0.0.82",
+    "loadBehavior": 3,
     "vstoAutomaticUpdateEnabled": false,
     "productionReady": false
   },
   "wordSmoke": {
     "comAddInConnected": true,
-    "loadBehavior": 3,
-    "vstoErrorLogCreatedAfterFix": false,
-    "singleCustomRibbonTabVisible": true,
-    "ribbonGroupsVisible": 7,
-    "ribbonInteractiveControls": 41,
-    "saveAsDocxControlVisible": false,
-    "visualInspectionPerformed": true,
-    "ribbonXmlSha256": "3E184ADADB9E3FD48F88C69DDC7D891CD901AF23AEBD63D9F9F551ADEF917540",
-    "allButtonHandlersPresent": true,
-    "deferredRuntimeInitialization": true,
-    "launchCount": 4,
-    "consecutiveLaunchesWithRibbon": 4,
-    "launchesWithOfficeCustomUiCacheAlreadyPresent": 3,
-    "documentMutationExecuted": false,
-    "screenshot": null
+    "wordVersion": "16.0.20326",
+    "docAndDocxOneClick": "PASS",
+    "docAndDocxLocalScanRerun": "PASS",
+    "docAndDocxLocalCommandChain": "PASS",
+    "annotationRerun": "PASS",
+    "singleCustomRibbonTabVisible": null,
+    "personalDictionaryIconVisible": null,
+    "visualInspectionPerformed": false
   },
   "limitations": [
     "This is local development signing, not production Authenticode/KMS signing.",
     "Word 2010 and x86 compatibility lanes have not been executed.",
-    "The four-launch visual smoke used empty Document1 instances and did not exercise mutations on a user document.",
+    "Direct visual confirmation of the Ribbon and personal dictionary icon remains pending.",
     "Production identity, payment, key rotation, and signed grant/rule issuance remain open."
   ]
 }
