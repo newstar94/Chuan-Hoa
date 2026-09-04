@@ -2,8 +2,6 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
-using System.Net;
-using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Windows.Forms;
@@ -87,16 +85,7 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
                 InstallTrustedDevelopmentKey(stagingDirectory);
                 EnsureRequiredRuntimes();
                 VerifyStagedPayload(stagingDirectory);
-
-                if (!quiet && !IsDevelopmentApiAvailable())
-                {
-                    MessageBox.Show(
-                        "Add-in s\u1EBD \u0111\u01B0\u1EE3c c\u00E0i, nh\u01B0ng m\u00E1y ch\u1EE7 Development c\u1EE5c b\u1ED9 ch\u01B0a ch\u1EA1y. " +
-                        "C\u00E1c n\u00FAt c\u00F3 th\u1EC3 b\u1ECB kh\u00F3a sau khi gi\u1EA5y ph\u00E9p t\u1EA1m th\u1EDDi h\u1EBFt h\u1EA1n.",
-                        Title,
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Information);
-                }
+                EnsureDevelopmentAccess(stagingDirectory, version);
 
                 ActivateStagingDirectory(baseDirectory, stagingDirectory, installDirectory);
                 ClearWordRibbonValidationCache();
@@ -109,7 +98,7 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
                 {
                     MessageBox.Show(
                         "\u0110\u00E3 c\u00E0i add-in Chu\u1EA9n h\u00F3a Development Test " + version + ".\n\n" +
-                        "H\u00E3y m\u1EDF Microsoft Word v\u00E0 m\u1EDF m\u1ED9t t\u1EC7p .doc ho\u1EB7c .docx \u0111\u00E3 l\u01B0u \u0111\u1EC3 th\u1EED nghi\u1EC7m.",
+                        "H\u00E3y m\u1EDF Microsoft Word. C\u00E1c ch\u1EE9c n\u0103ng h\u1ED7 tr\u1EE3 c\u1EA3 t\u00E0i li\u1EC7u .doc/.docx \u0111\u00E3 l\u01B0u v\u00E0 v\u0103n b\u1EA3n m\u1EDBi ch\u01B0a l\u01B0u.",
                         Title,
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Information);
@@ -118,6 +107,7 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
             }
             catch (Exception exception)
             {
+                if (quiet) Console.Error.WriteLine(exception);
                 if (!quiet)
                 {
                     MessageBox.Show(
@@ -245,6 +235,7 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
                 "ChuanHoa.AddIn.Vsto.dll.manifest",
                 "ChuanHoa.AddIn.Vsto.dll",
                 "ChuanHoa.Client.Core.dll",
+                "ChuanHoa.DevelopmentAccessSmoke.exe",
                 "ChuanHoa.LocalDevelopment.Public.cer"
             })
             {
@@ -582,20 +573,33 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
 
         }
 
-        private static bool IsDevelopmentApiAvailable()
+        private static void EnsureDevelopmentAccess(string installDirectory, string version)
         {
-            try
+            var verifierPath = Path.Combine(installDirectory, "ChuanHoa.DevelopmentAccessSmoke.exe");
+            var process = Process.Start(new ProcessStartInfo
             {
-                var request = WebRequest.CreateHttp("http://127.0.0.1:5206/health");
-                request.Method = "GET";
-                request.Timeout = 1500;
-                using (var response = (HttpWebResponse)request.GetResponse())
-                    return response.StatusCode == HttpStatusCode.OK;
-            }
-            catch
+                FileName = verifierPath,
+                WorkingDirectory = installDirectory,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            });
+            if (process == null)
+                throw new InvalidOperationException("Không khởi động được bước xác minh giấy phép Development.");
+            var output = process.StandardOutput.ReadToEnd();
+            var error = process.StandardError.ReadToEnd();
+            if (!process.WaitForExit(15000))
             {
-                return false;
+                try { process.Kill(); } catch { }
+                throw new TimeoutException("Xác minh giấy phép Development quá thời gian 15 giây.");
             }
+            if (process.ExitCode != 0 ||
+                output.IndexOf("DEVELOPMENT_ACCESS_SMOKE_PASS", StringComparison.Ordinal) < 0)
+                throw new InvalidOperationException(
+                    "Không thể kích hoạt giấy phép và gói quy tắc cho đúng phiên bản " +
+                    version + ". Hãy khởi động máy chủ Development rồi chạy lại bộ cài.\n\n" +
+                    (string.IsNullOrWhiteSpace(error) ? output : error));
         }
     }
 }

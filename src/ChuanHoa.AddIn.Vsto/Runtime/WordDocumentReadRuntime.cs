@@ -131,7 +131,13 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
         private static bool ReadSavedState(Word.Document document)
         {
-            try { return document.Saved; }
+            try
+            {
+                // Document.Saved only means "no pending edits". A brand-new blank
+                // Document1 can report true while it still has no persistent path.
+                // Never treat that transient in-memory document as cacheable-on-disk.
+                return !string.IsNullOrWhiteSpace(document.Path) && document.Saved;
+            }
             catch (System.Runtime.InteropServices.COMException) { return false; }
         }
     }

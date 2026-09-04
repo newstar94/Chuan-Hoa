@@ -696,7 +696,7 @@ def validate() -> dict:
             word_smoke.get("visualInspectionPerformed") is True
             and word_smoke.get("ribbonXmlSha256") == sha256(RIBBON_XML_PATH)
             and word_smoke.get("singleCustomRibbonTabVisible") is True
-            and word_smoke.get("ribbonGroupsVisible") == 7
+            and word_smoke.get("ribbonGroupsVisible") == 6
             and word_smoke.get("saveAsDocxControlVisible") is False
             and word_smoke.get("documentMutationExecuted") is False
         )

@@ -53,7 +53,8 @@ namespace ChuanHoa.OneClickSmoke
                     Word.WdSaveFormat.wdFormatXMLDocument);
                 RunQuickSpellingTypography(Path.Combine(directory, "quick-spelling.doc"),
                     Word.WdSaveFormat.wdFormatDocument97);
-                Console.WriteLine("ONE_CLICK_WORD_SMOKE_PASS DOC DOCX MULTIPLE_DOCUMENTS DASHED_MOTTO_LINE QUICK_SPELLING_TYPOGRAPHY");
+                RunUnsavedDocument();
+                Console.WriteLine("ONE_CLICK_WORD_SMOKE_PASS DOC DOCX UNSAVED MULTIPLE_DOCUMENTS DASHED_MOTTO_LINE QUICK_SPELLING_TYPOGRAPHY");
                 return 0;
             }
             catch (Exception exception)
@@ -64,6 +65,97 @@ namespace ChuanHoa.OneClickSmoke
             finally
             {
                 try { Directory.Delete(directory, true); } catch { }
+            }
+        }
+
+        private static void RunUnsavedDocument()
+        {
+            Word.Application application = null;
+            Word.Document document = null;
+            string backupPath = null;
+            try
+            {
+                application = new Word.Application
+                {
+                    Visible = false,
+                    DisplayAlerts = Word.WdAlertLevel.wdAlertsNone
+                };
+                document = application.Documents.Add();
+                document.Content.Text =
+                    "CƠ QUAN BAN HÀNH\r" +
+                    "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\r" +
+                    "Độc lập - Tự do - Hạnh phúc\r" +
+                    "Số: 01/QĐ-CQ\r" +
+                    "Hà Nội, ngày 05 tháng 09 năm 2026\r" +
+                    "QUYẾT ĐỊNH\r" +
+                    "Về việc kiểm tra văn bản mới chưa lưu\r" +
+                    "Căn cứ quy định hiện hành.\r" +
+                    "Điều 1. Tổ chức thực hiện.\r";
+                document.Content.Font.Name = "Arial";
+                document.Content.Font.Size = 10f;
+                var originalName = document.Name;
+                Assert(string.IsNullOrWhiteSpace(document.Path),
+                    "The unsaved smoke fixture unexpectedly has a persistent path.");
+
+                var capability = new WordDocumentCapabilityProvider(application).Evaluate(document);
+                Assert(capability.CanReadDocument && !capability.IsSaved,
+                    "A new unsaved Word document was not reported as usable.");
+
+                var context = new DocumentContext(document.GetHashCode())
+                {
+                    RegimeCode = "ND30",
+                    DocumentTypeCode = LocalDocumentTypeCodes.Unknown,
+                    RegimeWasSelectedManually = true,
+                    DocumentTypeWasSelectedManually = false
+                };
+                using (var access = new LocalAccessManager(
+                    typeof(LocalAccessManager).Assembly.GetName().Version.ToString()))
+                {
+                    var reader = new WordDocumentReadRuntime(application, access);
+                    reader.PrepareForOneClick(context, document);
+                    context.RequireFullAnalysis();
+                    var result = new WordOneClickRuntime(application, access)
+                        .Execute(context, document);
+                    backupPath = result.BackupPath;
+
+                    Assert(File.Exists(backupPath),
+                        "1-Click did not create a recovery copy for the unsaved document.");
+                    Assert(string.Equals(Path.GetExtension(backupPath), ".docx",
+                            StringComparison.OrdinalIgnoreCase),
+                        "A new unsaved document did not receive a DOCX recovery copy.");
+                    Assert(string.IsNullOrWhiteSpace(document.Path) &&
+                           string.Equals(document.Name, originalName, StringComparison.Ordinal),
+                        "1-Click forced Save As or replaced the user's unsaved document.");
+
+                    var commandRuntime = new WordLocalCommandRuntime(application, access);
+                    Assert(string.IsNullOrWhiteSpace(commandRuntime.FormatPage()),
+                        "A local command unexpectedly created a recovery copy.");
+                    Assert(string.IsNullOrWhiteSpace(document.Path),
+                        "A local command forced the unsaved document to disk.");
+
+                    reader.Prepare(context, DocumentAnalysisScope.Spelling, document, false);
+                    new WordLocalScanRuntime(application, access)
+                        .ScanAndAnnotate(context, true, document);
+                    Assert(string.IsNullOrWhiteSpace(document.Path),
+                        "A scan forced the unsaved document to disk.");
+                }
+            }
+            finally
+            {
+                if (!string.IsNullOrWhiteSpace(backupPath))
+                    try { if (File.Exists(backupPath)) File.Delete(backupPath); } catch { }
+                if (document != null)
+                {
+                    object save = Word.WdSaveOptions.wdDoNotSaveChanges;
+                    document.Close(ref save);
+                }
+                if (application != null)
+                {
+                    object save = Word.WdSaveOptions.wdDoNotSaveChanges;
+                    application.Quit(ref save);
+                }
+                Release(document);
+                Release(application);
             }
         }
 

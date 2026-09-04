@@ -123,12 +123,6 @@ namespace ChuanHoa.AddIn.Vsto.Ribbon
 
             public bool IsEnabled(string controlId) => false;
 
-            public bool GetPressed(string controlId) => false;
-
-            public void SetPressed(string controlId, bool pressed)
-            {
-            }
-
             public int GetSelectedItemIndex(string controlId) => 0;
 
             public void SelectDropDownItem(string controlId, string selectedId, int selectedIndex)

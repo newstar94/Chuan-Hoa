@@ -3,7 +3,7 @@
 | Phase | Workstream | Trạng thái | Exit gate/evidence |
 | ---: | --- | --- | --- |
 | 0 | Product decisions và threat model | IN_PROGRESS | ADR nền đã ghi; production decisions còn BLOCKED_DECISION |
-| 1 | Ribbon contract và VBA baseline | IN_PROGRESS | Baseline VBA 45 control được giữ làm provenance; target hiện hành 42 control (34 button, 3 menu, 2 dropdown, 3 checkbox), bỏ Save-as-DOCX, `Đọc dữ liệu`, i/y và QR; gộp dọn khoảng trắng/dấu câu/dấu ngoặc vào `Sửa nhanh chính tả`; 68-module ledger có đủ; cần golden parity, visual bản hiện tại, Word 2010/x86 và sign-off |
+| 1 | Ribbon contract và VBA baseline | IN_PROGRESS | Baseline VBA 45 control được giữ làm provenance; target hiện hành 39 control (34 button, 3 menu, 2 dropdown, không checkbox), bỏ Save-as-DOCX, `Đọc dữ liệu`, i/y, QR và nhóm Hiển thị; gộp dọn khoảng trắng/dấu câu/dấu ngoặc vào `Sửa nhanh chính tả`; 68-module ledger có đủ; cần golden parity, visual bản hiện tại, Word 2010/x86 và sign-off |
 | 2 | Canonical rules và corpus | IN_PROGRESS | Closed schema/parser và draft 96 rule đã có; legal/detector/golden corpus chưa đạt |
 | 3 | VSTO production foundation | IN_PROGRESS | DOC/DOCX, signed local lease/rules, background refresh, exact-anchor annotation, 34/34 button có handler và local scan E2E đã có; Word 16 x64 COM load và smoke command PASS. Cần injected-failure rollback, production key/signing, visual bản hiện tại và Word 2010/x86 |
 | 4 | Server, identity, security, Admin A | IN_PROGRESS | .NET 10/API/PostgreSQL nền; Development Admin local có user/trial/versioned price. Production identity/MFA/RBAC/audit/API đầy đủ còn thiếu |

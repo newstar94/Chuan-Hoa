@@ -35,11 +35,6 @@
       "label": "Chính tả và số"
     },
     {
-      "order": 6,
-      "id": "grpHienThi",
-      "label": "Hiển thị"
-    },
-    {
       "order": 7,
       "id": "grpAbout",
       "label": "About"
@@ -47,12 +42,12 @@
   ],
   "counts": {
     "tabs": 1,
-    "groups": 7,
+    "groups": 6,
     "buttons": 34,
     "menus": 3,
     "dropDowns": 2,
-    "checkBoxes": 3,
-    "interactiveControls": 42
+    "checkBoxes": 0,
+    "interactiveControls": 39
   },
   "approvedProductChanges": [
     {
@@ -92,6 +87,12 @@
         "btnChenQrCode"
       ],
       "productDecision": "QR is intentionally retired from the current product"
+    },
+    {
+      "changeId": "REMOVE_VIEW_OPTIONS_GROUP",
+      "removedControlCount": 3,
+      "removedGroupCount": 1,
+      "productDecision": "Word view toggles are intentionally left to Word Options"
     },
     {
       "changeId": "MERGE_TYPOGRAPHY_INTO_QUICK_SPELLING",
@@ -1727,135 +1728,6 @@
     },
     {
       "order": 33,
-      "groupId": "grpHienThi",
-      "parentContainerId": "boxHienThi",
-      "controlType": "checkBox",
-      "id": "chkRanhGioiVanBan",
-      "label": "Ẩn/hiện ranh giới văn bản",
-      "size": null,
-      "imageMso": null,
-      "callbacks": {
-        "getEnabled": "GetEnabledHienThi",
-        "getPressed": "GetPressedRanhGioiVanBan",
-        "onAction": "OnRanhGioiVanBan"
-      },
-      "screenTip": "Ẩn/hiện ranh giới văn bản",
-      "superTip": "Đồng bộ với \"Show text boundaries\" trong File → Options → Advanced → Show document content",
-      "staticItems": [],
-      "commandContract": {
-        "commandId": "chkRanhGioiVanBan",
-        "executionMode": "LOCAL_WINDOW_STATE",
-        "entitlement": "VIEW_OPTIONS",
-        "riskTier": "SAFE",
-        "mutationScope": "ACTIVE_WINDOW_VIEW_ONLY",
-        "preconditions": [
-          "ACTIVE_WINDOW"
-        ],
-        "capability": "WORD_VIEW_TEXT_BOUNDARIES",
-        "undoPolicy": "NOT_APPLICABLE",
-        "backupPolicy": "NOT_APPLICABLE",
-        "telemetryAllowlist": [
-          "commandId",
-          "resultCode",
-          "durationBucket",
-          "clientRelease",
-          "wordVersion",
-          "bitness"
-        ],
-        "testIds": [
-          "RIBBON-033",
-          "CONTROL-chkRanhGioiVanBan"
-        ]
-      }
-    },
-    {
-      "order": 34,
-      "groupId": "grpHienThi",
-      "parentContainerId": "boxHienThi",
-      "controlType": "checkBox",
-      "id": "chkDauGoc",
-      "label": "Ẩn/hiện dấu góc",
-      "size": null,
-      "imageMso": null,
-      "callbacks": {
-        "getEnabled": "GetEnabledHienThi",
-        "getPressed": "GetPressedDauGoc",
-        "onAction": "OnDauGoc"
-      },
-      "screenTip": "Ẩn/hiện dấu góc",
-      "superTip": "Đồng bộ với \"Show crop marks\" trong File → Options → Advanced → Show document content",
-      "staticItems": [],
-      "commandContract": {
-        "commandId": "chkDauGoc",
-        "executionMode": "LOCAL_WINDOW_STATE",
-        "entitlement": "VIEW_OPTIONS",
-        "riskTier": "SAFE",
-        "mutationScope": "ACTIVE_WINDOW_VIEW_ONLY",
-        "preconditions": [
-          "ACTIVE_WINDOW"
-        ],
-        "capability": "WORD_VIEW_CROP_MARKS",
-        "undoPolicy": "NOT_APPLICABLE",
-        "backupPolicy": "NOT_APPLICABLE",
-        "telemetryAllowlist": [
-          "commandId",
-          "resultCode",
-          "durationBucket",
-          "clientRelease",
-          "wordVersion",
-          "bitness"
-        ],
-        "testIds": [
-          "RIBBON-034",
-          "CONTROL-chkDauGoc"
-        ]
-      }
-    },
-    {
-      "order": 35,
-      "groupId": "grpHienThi",
-      "parentContainerId": "boxHienThi",
-      "controlType": "checkBox",
-      "id": "chkKyHieuSoanThao",
-      "label": "Ẩn/hiện ký hiệu soạn thảo",
-      "size": null,
-      "imageMso": null,
-      "callbacks": {
-        "getEnabled": "GetEnabledHienThi",
-        "getPressed": "GetPressedKyHieuSoanThao",
-        "onAction": "OnKyHieuSoanThao"
-      },
-      "screenTip": "Ẩn/hiện ký hiệu soạn thảo",
-      "superTip": "Đồng bộ với \"Show all formatting marks\" trong File → Options → Display",
-      "staticItems": [],
-      "commandContract": {
-        "commandId": "chkKyHieuSoanThao",
-        "executionMode": "LOCAL_WINDOW_STATE",
-        "entitlement": "VIEW_OPTIONS",
-        "riskTier": "SAFE",
-        "mutationScope": "ACTIVE_WINDOW_VIEW_ONLY",
-        "preconditions": [
-          "ACTIVE_WINDOW"
-        ],
-        "capability": "WORD_VIEW_SHOW_ALL",
-        "undoPolicy": "NOT_APPLICABLE",
-        "backupPolicy": "NOT_APPLICABLE",
-        "telemetryAllowlist": [
-          "commandId",
-          "resultCode",
-          "durationBucket",
-          "clientRelease",
-          "wordVersion",
-          "bitness"
-        ],
-        "testIds": [
-          "RIBBON-035",
-          "CONTROL-chkKyHieuSoanThao"
-        ]
-      }
-    },
-    {
-      "order": 36,
       "groupId": "grpAbout",
       "parentContainerId": null,
       "controlType": "menu",
@@ -1886,13 +1758,13 @@
           "bitness"
         ],
         "testIds": [
-          "RIBBON-036",
+          "RIBBON-033",
           "CONTROL-mnuThongTinTienIch"
         ]
       }
     },
     {
-      "order": 37,
+      "order": 34,
       "groupId": "grpAbout",
       "parentContainerId": "mnuThongTinTienIch",
       "controlType": "button",
@@ -1927,13 +1799,13 @@
           "bitness"
         ],
         "testIds": [
-          "RIBBON-037",
+          "RIBBON-034",
           "CONTROL-btnKiemTraPhienBanMoi"
         ]
       }
     },
     {
-      "order": 38,
+      "order": 35,
       "groupId": "grpAbout",
       "parentContainerId": "mnuThongTinTienIch",
       "controlType": "button",
@@ -1969,13 +1841,13 @@
           "bitness"
         ],
         "testIds": [
-          "RIBBON-038",
+          "RIBBON-035",
           "CONTROL-btnGuiPhanHoi"
         ]
       }
     },
     {
-      "order": 39,
+      "order": 36,
       "groupId": "grpAbout",
       "parentContainerId": "mnuThongTinTienIch",
       "controlType": "button",
@@ -2008,7 +1880,7 @@
           "bitness"
         ],
         "testIds": [
-          "RIBBON-039",
+          "RIBBON-036",
           "CONTROL-btnGioiThieu"
         ]
       }
@@ -2028,7 +1900,7 @@
       "screenTip": "Sửa lỗi đang chọn",
       "superTip": "Bấm vào phần văn bản đang được Chuẩn hóa comment hoặc tô đỏ, sau đó bấm nút này để sửa một lỗi có phương án an toàn. Comment sẽ biến mất khi kiểm tra lại xác nhận lỗi đã hết.",
       "staticItems": [],
-      "order": 40,
+      "order": 37,
       "commandContract": {
         "commandId": "btnSuaLoiDangChon",
         "executionMode": "LOCAL_SIGNED_RULE_FIX",
@@ -2056,7 +1928,7 @@
           "bitness"
         ],
         "testIds": [
-          "RIBBON-040",
+          "RIBBON-037",
           "CONTROL-btnSuaLoiDangChon",
           "SELECTED-FINDING-FIX-001"
         ]
@@ -2077,7 +1949,7 @@
       "screenTip": "Sửa nhanh chính tả và dọn lỗi gõ",
       "superTip": "Sửa các lỗi chính tả rule-based có phương án an toàn; đồng thời dọn khoảng trắng, khoảng cách dấu câu và chuẩn hóa dấu ngoặc.",
       "staticItems": [],
-      "order": 41,
+      "order": 38,
       "commandContract": {
         "commandId": "btnSuaTatCaChinhTa",
         "executionMode": "LOCAL_APPLY",
@@ -2102,7 +1974,7 @@
           "bitness"
         ],
         "testIds": [
-          "RIBBON-041",
+          "RIBBON-038",
           "CONTROL-btnSuaTatCaChinhTa"
         ]
       }
@@ -2123,7 +1995,7 @@
       "screenTip": "Quản lý từ điển cá nhân",
       "superTip": "Xem, thêm và xóa thuật ngữ riêng mà bộ kiểm tra chính tả cần bỏ qua.",
       "staticItems": [],
-      "order": 42,
+      "order": 39,
       "commandContract": {
         "commandId": "btnTuDienCaNhan",
         "executionMode": "LOCAL_DIALOG",
@@ -2143,7 +2015,7 @@
           "bitness"
         ],
         "testIds": [
-          "RIBBON-042",
+          "RIBBON-039",
           "CONTROL-btnTuDienCaNhan"
         ]
       }

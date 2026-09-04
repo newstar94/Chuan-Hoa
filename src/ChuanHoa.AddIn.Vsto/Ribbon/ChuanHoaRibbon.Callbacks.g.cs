@@ -43,10 +43,6 @@ namespace ChuanHoa.AddIn.Vsto.Ribbon
         {
             return Runtime.IsEnabled(RequireControlId(control));
         }
-        public bool GetEnabledHienThi(Office.IRibbonControl control)
-        {
-            return Runtime.IsEnabled(RequireControlId(control));
-        }
         public bool GetEnabledKiemTra(Office.IRibbonControl control)
         {
             return Runtime.IsEnabled(RequireControlId(control));
@@ -66,18 +62,6 @@ namespace ChuanHoa.AddIn.Vsto.Ribbon
         public string GetItemLabelLoaiVanBan(Office.IRibbonControl control, int index)
         {
             return Runtime.GetItemLabel(RequireControlId(control), index);
-        }
-        public bool GetPressedDauGoc(Office.IRibbonControl control)
-        {
-            return Runtime.GetPressed(RequireControlId(control));
-        }
-        public bool GetPressedKyHieuSoanThao(Office.IRibbonControl control)
-        {
-            return Runtime.GetPressed(RequireControlId(control));
-        }
-        public bool GetPressedRanhGioiVanBan(Office.IRibbonControl control)
-        {
-            return Runtime.GetPressed(RequireControlId(control));
         }
         public int GetSelectedIndexLoaiVanBan(Office.IRibbonControl control)
         {
@@ -147,10 +131,6 @@ namespace ChuanHoa.AddIn.Vsto.Ribbon
         {
             Runtime.ExecuteButton(RequireControlId(control));
         }
-        public void OnDauGoc(Office.IRibbonControl control, bool pressed)
-        {
-            Runtime.SetPressed(RequireControlId(control), pressed);
-        }
         public void OnDinhDangTrangGiay(Office.IRibbonControl control)
         {
             Runtime.ExecuteButton(RequireControlId(control));
@@ -211,17 +191,9 @@ namespace ChuanHoa.AddIn.Vsto.Ribbon
         {
             Runtime.ExecuteButton(RequireControlId(control));
         }
-        public void OnKyHieuSoanThao(Office.IRibbonControl control, bool pressed)
-        {
-            Runtime.SetPressed(RequireControlId(control), pressed);
-        }
         public void OnLapDongTieuDe(Office.IRibbonControl control)
         {
             Runtime.ExecuteButton(RequireControlId(control));
-        }
-        public void OnRanhGioiVanBan(Office.IRibbonControl control, bool pressed)
-        {
-            Runtime.SetPressed(RequireControlId(control), pressed);
         }
         public void OnSuaLoiDangChon(Office.IRibbonControl control)
         {

@@ -54,7 +54,7 @@
 ## ADR-008 — VSTO source foundation fail closed
 
 - Trạng thái: ACCEPTED_TECHNICAL.
-- Quyết định: project production mới ở `src/ChuanHoa.AddIn.Vsto` dùng đúng một Ribbon 42 control, không task pane và không giữ `Word.Document` tĩnh.
+- Quyết định: project production mới ở `src/ChuanHoa.AddIn.Vsto` dùng đúng một Ribbon 39 control, không task pane và không giữ `Word.Document` tĩnh.
 - Command chưa port hoặc chưa vượt exit gate bị disabled và không có handler mô phỏng. About, ba tùy chọn hiển thị, hai lane scan và các tiện ích Word local đã có handler thật; không còn nút `Đọc dữ liệu`, mỗi command tự chuẩn bị đúng lane cần dùng. Mỗi mutation local yêu cầu signed `DOCUMENT_TOOLS` và preflight. Chỉ `Chuẩn hóa toàn bộ` cùng hai lệnh đổi cách đặt dấu tạo recovery copy; thao tác cục bộ dùng Word Undo và không clone/save cưỡng bức.
 - AutoFix dùng callback riêng `OnAutoFixAll2026`; không còn nối nhầm vào định dạng trang giấy.
 - Evidence: `VSTO-SOURCE-001` PASS; `VSTO-BUILD-001` PASS_LOCAL_DEVELOPMENT; `VSTO-WORD16-X64-001` PASS_LOCAL_SMOKE. Production signing, Word 2010/x86, Word COM safety adapter và command parity vẫn chưa đạt.
@@ -110,5 +110,5 @@
 
 - Trạng thái: ACCEPTED_PRODUCT ngày 2026-09-04.
 - Quyết định: QR không còn thuộc sản phẩm hiện tại. Loại `btnChenQrCode`, callback, dialog, renderer, QRCoder, test thao tác QR và binary QR khỏi installer.
-- Ba checkbox nhóm Hiển thị vẫn được giữ; target Ribbon có 34 button, 3 menu, 2 dropdown, 3 checkbox và 42 control tương tác.
+- Theo quyết định sản phẩm ngày 2026-09-05, nhóm Hiển thị và ba checkbox bị loại; target Ribbon có 34 button, 3 menu, 2 dropdown, không checkbox và 39 control tương tác.
 - VBA extracted, `ribbon_actual.json` và migration ledger được giữ làm provenance, không được dùng để tự sinh lại QR vào target.

@@ -18,11 +18,17 @@ REMOVED_OPTIONAL_LANGUAGE_CONTROL_IDS = {
 }
 REMOVED_MANUAL_READ_CONTROL_IDS = {"btnDocDuLieu"}
 REMOVED_QR_CONTROL_IDS = {"btnChenQrCode"}
+REMOVED_VIEW_CONTROL_IDS = {
+    "chkRanhGioiVanBan",
+    "chkDauGoc",
+    "chkKyHieuSoanThao",
+}
 REMOVED_TARGET_CONTROL_IDS = (
     REMOVED_SAVE_CONTROL_IDS
     | REMOVED_OPTIONAL_LANGUAGE_CONTROL_IDS
     | REMOVED_MANUAL_READ_CONTROL_IDS
     | REMOVED_QR_CONTROL_IDS
+    | REMOVED_VIEW_CONTROL_IDS
 )
 
 
@@ -114,9 +120,6 @@ CONTROL_META: dict[str, dict[str, Any]] = {
     "btnKieuOaUy": meta("LOCAL_EXECUTION_GRANT", "TONE_PLACEMENT", "CONFIRM", "ALL_EDITABLE_STORIES", LOCAL_GRANT_MUTATION, "VIETNAMESE_TONE_MAIN_VOWEL", "ONE_CUSTOM_UNDO_RECORD", "REQUIRED"),
     "btnKieuOaUy2": meta("LOCAL_EXECUTION_GRANT", "TONE_PLACEMENT", "CONFIRM", "ALL_EDITABLE_STORIES", LOCAL_GRANT_MUTATION, "VIETNAMESE_TONE_FIRST_VOWEL", "ONE_CUSTOM_UNDO_RECORD", "REQUIRED"),
     "btnDoiDauThapPhan": meta("SIGNED_FIX_PLAN", "DECIMAL_NORMALIZE", "CONFIRM", "AUTHORIZED_NUMERIC_TEXT_RANGES", REMOTE_MUTATION, "NUMERIC_PROTECTED_SPANS", "ONE_CUSTOM_UNDO_RECORD", "REQUIRED"),
-    "chkRanhGioiVanBan": meta("LOCAL_WINDOW_STATE", "VIEW_OPTIONS", "SAFE", "ACTIVE_WINDOW_VIEW_ONLY", ["ACTIVE_WINDOW"], "WORD_VIEW_TEXT_BOUNDARIES", "NOT_APPLICABLE", "NOT_APPLICABLE"),
-    "chkDauGoc": meta("LOCAL_WINDOW_STATE", "VIEW_OPTIONS", "SAFE", "ACTIVE_WINDOW_VIEW_ONLY", ["ACTIVE_WINDOW"], "WORD_VIEW_CROP_MARKS", "NOT_APPLICABLE", "NOT_APPLICABLE"),
-    "chkKyHieuSoanThao": meta("LOCAL_WINDOW_STATE", "VIEW_OPTIONS", "SAFE", "ACTIVE_WINDOW_VIEW_ONLY", ["ACTIVE_WINDOW"], "WORD_VIEW_SHOW_ALL", "NOT_APPLICABLE", "NOT_APPLICABLE"),
     "mnuThongTinTienIch": meta("CONTAINER", "ABOUT", "SAFE", "NONE", [], "ALL_SUPPORTED_WORD", "NOT_APPLICABLE", "NOT_APPLICABLE"),
     "btnKiemTraPhienBanMoi": meta("REMOTE_RELEASE_STATUS", "ABOUT", "REPORT_ONLY", "NONE_READ_ONLY", ["RELEASE_METADATA_AVAILABLE_OR_REFRESHABLE"], "SYSTEM_BROWSER_OPTIONAL", "NOT_APPLICABLE", "NOT_APPLICABLE"),
     "btnGuiPhanHoi": meta("SYSTEM_BROWSER", "FEEDBACK", "REPORT_ONLY", "NONE_READ_ONLY", ["OFFICIAL_FEEDBACK_URL_CONFIGURED", "USER_CONSENT_FOR_TECHNICAL_METADATA"], "SYSTEM_BROWSER", "NOT_APPLICABLE", "NOT_APPLICABLE"),
@@ -287,8 +290,8 @@ def main() -> None:
 
     button_controls = [control for control in controls if control["controlType"] == "button"]
     menu_controls = [control for control in controls if control["controlType"] == "menu"]
-    if len(controls) != 42 or len(button_controls) != 34 or len(menu_controls) != 3:
-        raise RuntimeError("Ribbon contract không đạt 42 controls, 34 button commands và 3 menu containers")
+    if len(controls) != 39 or len(button_controls) != 34 or len(menu_controls) != 3:
+        raise RuntimeError("Ribbon contract không đạt 39 controls, 34 button commands và 3 menu containers")
     if any("onAction" not in control["callbacks"] for control in button_controls):
         raise RuntimeError("Có button thiếu onAction trong contract đích")
     if any(control["commandContract"]["executionMode"] != "CONTAINER" for control in menu_controls):
@@ -304,10 +307,10 @@ def main() -> None:
             **actual["tab"],
             "label": TARGET_PRODUCT_LABEL,
         },
-        "groups": actual["groups"],
+        "groups": [group for group in actual["groups"] if group["id"] != "grpHienThi"],
         "counts": {
             "tabs": 1,
-            "groups": 7,
+            "groups": 6,
             "buttons": len(button_controls),
             "menus": len(menu_controls),
             "dropDowns": sum(control["controlType"] == "dropDown" for control in controls),
@@ -339,6 +342,12 @@ def main() -> None:
                 "changeId": "REMOVE_QR_FEATURE",
                 "removedControlIds": sorted(REMOVED_QR_CONTROL_IDS),
                 "productDecision": "QR is intentionally retired from the current product",
+            },
+            {
+                "changeId": "REMOVE_VIEW_OPTIONS_GROUP",
+                "removedControlCount": len(REMOVED_VIEW_CONTROL_IDS),
+                "removedGroupCount": 1,
+                "productDecision": "Word view toggles are intentionally left to Word Options",
             },
             {
                 "changeId": "MERGE_TYPOGRAPHY_INTO_QUICK_SPELLING",

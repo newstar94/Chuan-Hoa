@@ -23,6 +23,7 @@ $expectedEntries = @(
     'ChuanHoa.AddIn.Vsto.dll.manifest',
     'ChuanHoa.AddIn.Vsto.dll',
     'ChuanHoa.Client.Core.dll',
+    'ChuanHoa.DevelopmentAccessSmoke.exe',
     'Microsoft.Office.Tools.Common.v4.0.Utilities.dll',
     'ChuanHoa.LocalDevelopment.Public.cer',
     'DevelopmentSupport/trusted-key.xml'

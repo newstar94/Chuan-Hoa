@@ -8,10 +8,6 @@ namespace ChuanHoa.AddIn.Vsto.Ribbon
 
         bool IsEnabled(string controlId);
 
-        bool GetPressed(string controlId);
-
-        void SetPressed(string controlId, bool pressed);
-
         int GetSelectedItemIndex(string controlId);
 
         void SelectDropDownItem(string controlId, string selectedId, int selectedIndex);

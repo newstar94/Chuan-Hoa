@@ -68,13 +68,6 @@
           <button id="btnDoiDauThapPhan" label="Dấu phẩy thập phân" size="large" imageMso="CommaStyle" screentip="Dấu phẩy thập phân" supertip="Chuyển kiểu viết số về chuẩn Việt Nam 1,234,567.89 → 1.234.567,89" getEnabled="GetEnabledHasDocument" onAction="OnDoiDauThapPhan" />
           <button id="btnTuDienCaNhan" label="Từ điển cá nhân" size="large" screentip="Quản lý từ điển cá nhân" supertip="Xem, thêm và xóa thuật ngữ riêng mà bộ kiểm tra chính tả cần bỏ qua." getEnabled="GetEnabledAlways" getImage="GetImageTuDienCaNhan" onAction="OnTuDienCaNhan" />
         </group>
-        <group id="grpHienThi" label="Hiển thị">
-          <box id="boxHienThi" boxStyle="vertical">
-            <checkBox id="chkRanhGioiVanBan" label="Ẩn/hiện ranh giới văn bản" screentip="Ẩn/hiện ranh giới văn bản" supertip="Đồng bộ với &quot;Show text boundaries&quot; trong File → Options → Advanced → Show document content" getEnabled="GetEnabledHienThi" getPressed="GetPressedRanhGioiVanBan" onAction="OnRanhGioiVanBan" />
-            <checkBox id="chkDauGoc" label="Ẩn/hiện dấu góc" screentip="Ẩn/hiện dấu góc" supertip="Đồng bộ với &quot;Show crop marks&quot; trong File → Options → Advanced → Show document content" getEnabled="GetEnabledHienThi" getPressed="GetPressedDauGoc" onAction="OnDauGoc" />
-            <checkBox id="chkKyHieuSoanThao" label="Ẩn/hiện ký hiệu soạn thảo" screentip="Ẩn/hiện ký hiệu soạn thảo" supertip="Đồng bộ với &quot;Show all formatting marks&quot; trong File → Options → Display" getEnabled="GetEnabledHienThi" getPressed="GetPressedKyHieuSoanThao" onAction="OnKyHieuSoanThao" />
-          </box>
-        </group>
         <group id="grpAbout" label="About">
           <menu id="mnuThongTinTienIch" label="Thông tin tiện ích" size="large" imageMso="Info" screentip="Thông tin tiện ích" supertip="Gửi phản hồi hoặc xem thông tin sản phẩm, phiên bản, tác giả">
             <button id="btnKiemTraPhienBanMoi" label="Kiểm tra phiên bản mới" imageMso="FileStartWorkflow" screentip="Kiểm tra phiên bản mới" supertip="Kiểm tra phiên bản mới và xem hướng dẫn sử dụng" onAction="OnKiemTraPhienBanMoi" />

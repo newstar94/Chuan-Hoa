@@ -7,10 +7,10 @@
     "buttons": 34,
     "menus": 3,
     "dropDowns": 2,
-    "checkBoxes": 3,
-    "interactiveControls": 42
+    "checkBoxes": 0,
+    "interactiveControls": 39
   },
-  "callbackMethods": 58,
+  "callbackMethods": 51,
   "invariants": {
     "exactlyOneRibbonTab": true,
     "autoFixDedicatedCallback": true,
@@ -41,8 +41,8 @@
     "findingAnnotationCommandFailClosed": true
   },
   "hashes": {
-    "ribbonXmlSha256": "D7E3FB982DDE85C08FB7BA748E073CB6F7A682BBC511F9AB40C0A8658F3474C9",
-    "generatedCallbacksSha256": "16711724E8399B60AC93C0D95499B4B5F34458A86F8ABD749764D8080AE114F3",
+    "ribbonXmlSha256": "52DAE1400663BB50C73DBC5E971CA2407298FC38F6E1BACA9BC46AE1F2D83104",
+    "generatedCallbacksSha256": "7F49CB35C9D9CE293165A41A828401C9F8045505F36FDCA8B4903004EAA63EA0",
     "projectSha256": "1394811043011571FE41D01E92128F4280932A607AE2A84BF91EBF95CBF40C83",
     "wordAdapterSha256": "8546553DBB0F85C6FCBAD46D41D4B797B4D4AAC4475D06B993D5F98F62748F03",
     "wordMutationRuntimeSha256": "45DAF1EFE5D6E047C3BF09D14F76B00B61118AA605E8EF0BFF96AA36DBCB99B5",

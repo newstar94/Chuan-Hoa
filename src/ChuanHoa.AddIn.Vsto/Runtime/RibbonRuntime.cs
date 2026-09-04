@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows.Forms;
@@ -60,7 +59,6 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         private readonly WordOneClickRuntime _oneClickRuntime;
         private readonly RibbonImageProvider _imageProvider = new RibbonImageProvider();
         private readonly Dictionary<string, Action> _buttonCommands;
-        private readonly Dictionary<string, string> _viewProperties;
         private readonly System.Windows.Forms.Timer _accessRefreshTimer;
         private Office.IRibbonUI? _ribbonUi;
         private Word.Document? _lastActivatedDocument;
@@ -131,12 +129,6 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 { "btnGuiPhanHoi", OpenFeedback },
                 { "btnGioiThieu", ShowAbout }
             };
-            _viewProperties = new Dictionary<string, string>(StringComparer.Ordinal)
-            {
-                { "chkRanhGioiVanBan", "ShowTextBoundaries" },
-                { "chkDauGoc", "ShowCropMarks" },
-                { "chkKyHieuSoanThao", "ShowAll" }
-            };
         }
 
         public void AttachRibbon(Office.IRibbonUI ribbonUi)
@@ -163,13 +155,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             }
 
             var capability = EvaluateRibbonCapability();
-            var canBeginSavedMutation = capability.CanReadDocument ||
-                (capability.HasActiveDocument && capability.HasActiveWindow && !capability.IsSaved);
-
-            if (_viewProperties.ContainsKey(controlId))
-            {
-                return capability.HasActiveWindow;
-            }
+            var canBeginMutation = capability.CanReadDocument;
 
             if (string.Equals(controlId, "btnKiemTra", StringComparison.Ordinal) ||
                 string.Equals(controlId, "btnKiemTraChinhTa", StringComparison.Ordinal) ||
@@ -188,52 +174,27 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 string.Equals(controlId, "btnSuaTatCaChinhTa", StringComparison.Ordinal) ||
                 string.Equals(controlId, "btnSuaLoiDangChon", StringComparison.Ordinal))
             {
-                return canBeginSavedMutation && !capability.IsReadOnly && !capability.IsProtected &&
+                return canBeginMutation && !capability.IsReadOnly && !capability.IsProtected &&
                     !capability.TrackChangesEnabled &&
                     _localAccessManager.HasCachedFeature(LocalAccessManager.AutoFixFeature);
             }
 
-            if (string.Equals(controlId, "mnuBoDau", StringComparison.Ordinal))
+            if (string.Equals(controlId, "mnuBoDau", StringComparison.Ordinal) ||
+                string.Equals(controlId, "mnuDungBoStyle", StringComparison.Ordinal))
             {
-                return canBeginSavedMutation && !capability.IsReadOnly && !capability.IsProtected &&
+                return canBeginMutation && !capability.IsReadOnly && !capability.IsProtected &&
                     !capability.TrackChangesEnabled &&
                     _localAccessManager.HasCachedFeature(LocalAccessManager.DocumentToolsFeature);
             }
 
             if (_buttonCommands.ContainsKey(controlId))
             {
-                return canBeginSavedMutation && !capability.IsReadOnly && !capability.IsProtected &&
+                return canBeginMutation && !capability.IsReadOnly && !capability.IsProtected &&
                     !capability.TrackChangesEnabled &&
                     _localAccessManager.HasCachedFeature(LocalAccessManager.DocumentToolsFeature);
             }
 
             return false;
-        }
-
-        public bool GetPressed(string controlId)
-        {
-            ThrowIfDisposed();
-            string propertyName;
-            if (!_viewProperties.TryGetValue(controlId, out propertyName))
-            {
-                return false;
-            }
-
-            return ReadBooleanViewProperty(propertyName);
-        }
-
-        public void SetPressed(string controlId, bool pressed)
-        {
-            ThrowIfDisposed();
-            string propertyName;
-            if (!_viewProperties.TryGetValue(controlId, out propertyName))
-            {
-                FailClosed(controlId);
-                return;
-            }
-
-            WriteBooleanViewProperty(propertyName, pressed);
-            Invalidate(controlId);
         }
 
         public int GetSelectedItemIndex(string controlId)
@@ -609,42 +570,6 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
             }
-        }
-
-        private bool ReadBooleanViewProperty(string propertyName)
-        {
-            try
-            {
-                var view = _application.ActiveWindow.View;
-                var property = view.GetType().GetProperty(
-                    propertyName,
-                    BindingFlags.Public | BindingFlags.Instance);
-                if (property == null || property.PropertyType != typeof(bool))
-                {
-                    return false;
-                }
-
-                return (bool)property.GetValue(view, null);
-            }
-            catch (COMException)
-            {
-                return false;
-            }
-        }
-
-        private void WriteBooleanViewProperty(string propertyName, bool value)
-        {
-            var view = _application.ActiveWindow.View;
-            var property = view.GetType().GetProperty(
-                propertyName,
-                BindingFlags.Public | BindingFlags.Instance);
-            if (property == null || !property.CanWrite || property.PropertyType != typeof(bool))
-            {
-                throw new NotSupportedException(
-                    "The current Word window does not expose view option " + propertyName + ".");
-            }
-
-            property.SetValue(view, value, null);
         }
 
         private void ShowAbout()

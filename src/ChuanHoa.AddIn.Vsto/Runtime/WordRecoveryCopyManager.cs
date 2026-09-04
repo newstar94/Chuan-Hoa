@@ -222,6 +222,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 case (int)Word.WdSaveFormat.wdFormatDocument:
                     return ".doc";
                 case (int)Word.WdSaveFormat.wdFormatXMLDocument:
+                case (int)Word.WdSaveFormat.wdFormatDocumentDefault:
                 case (int)Word.WdSaveFormat.wdFormatStrictOpenXMLDocument:
                     return ".docx";
                 default:

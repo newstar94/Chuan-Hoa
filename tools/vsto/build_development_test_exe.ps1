@@ -15,6 +15,8 @@ $publishScript = Join-Path $root 'tools\vsto\publish_development_test.ps1'
 $runtimeDirectory = Join-Path $root 'src\ChuanHoa.AddIn.Vsto\bin\Development'
 $bootstrapperProject = Join-Path $root 'tools\vsto\DevelopmentTestBootstrapper\DevelopmentTestBootstrapper.csproj'
 $bootstrapperSource = Join-Path $root 'tools\vsto\DevelopmentTestBootstrapper\Program.cs'
+$accessSmokeProject = Join-Path $root 'tools\vsto\development-access-smoke\ChuanHoa.DevelopmentAccessSmoke.csproj'
+$accessSmokeExecutable = Join-Path $root 'tools\vsto\development-access-smoke\bin\Development\ChuanHoa.DevelopmentAccessSmoke.exe'
 $trustedKeyPath = Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'ChuanHoa\Development\trusted-key.xml'
 $outputDirectory = Join-Path $root 'artifacts\installers\development'
 $outputName = "ChuanHoa_Development_Test_Setup_$ApplicationVersion.exe"
@@ -97,6 +99,11 @@ try {
         }
         Copy-Item -LiteralPath $runtimePath -Destination $payloadDirectory
     }
+    & $msbuild $accessSmokeProject /t:Build /p:Configuration=Development /m /nologo /v:minimal
+    if ($LASTEXITCODE -ne 0 -or !(Test-Path -LiteralPath $accessSmokeExecutable)) {
+        throw 'The Development access verifier build failed.'
+    }
+    Copy-Item -LiteralPath $accessSmokeExecutable -Destination $payloadDirectory
     Copy-Item -LiteralPath (Join-Path $publishDirectory 'ChuanHoa.LocalDevelopment.Public.cer') -Destination $payloadDirectory
     $supportDirectory = Join-Path $payloadDirectory 'DevelopmentSupport'
     New-Item -ItemType Directory -Path $supportDirectory -Force | Out-Null

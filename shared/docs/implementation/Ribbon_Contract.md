@@ -24,14 +24,14 @@ Nguồn layout VBA cũ là `shared/ChuanHoaTheThuc_Full_Ribbon.dotm`. Bản trí
 | Menu | 3 |
 | DropDown | 2 |
 | CheckBox | 3 |
-| Control tương tác | 42 |
+| Control tương tác | 39 |
 
 - Loại bỏ `btnLuuDocx`; add-in không còn chức năng hoặc callback chuyển/lưu thành DOCX.
 - Thực hiện trực tiếp trên tài liệu đã lưu `.doc` hoặc `.docx`, kể cả Compatibility Mode; giữ nguyên định dạng hiện tại khi lưu.
 - `.docm`, template, RTF, tài liệu chưa lưu và định dạng khác fail closed cho xử lý tài liệu.
 - Loại bỏ menu “i/y” và hai lựa chọn i/y; giữ menu đặt dấu với hai lệnh chủ động đồng nhất oà/uý hoặc òa/úy.
 - Loại bỏ hoàn toàn `btnChenQrCode`, callback, dialog, renderer và dependency QR theo quyết định sản phẩm mới nhất; chỉ giữ VBA extracted và evidence baseline làm provenance.
-- Giữ ba checkbox nhóm Hiển thị; generator không được làm rơi các control này.
+- Nhóm `Hiển thị` và ba checkbox đổi tùy chọn View đã được loại khỏi sản phẩm; người dùng dùng trực tiếp Word Options khi cần.
 - `btnTuDienCaNhan` mở không cần tài liệu và dùng PNG custom nhúng trong assembly qua `getImage`.
 - Tab sản phẩm hiển thị đúng tên “Chuẩn hóa”, không kèm “thể thức” hoặc năm.
 
@@ -47,4 +47,4 @@ Nguồn layout VBA cũ là `shared/ChuanHoaTheThuc_Full_Ribbon.dotm`. Bản trí
 
 ## Visual gate
 
-Baseline target cũ đã load trên Word 16.0 x64. Sau thay đổi target 42-control, loại QR và dùng icon custom, visual smoke mới phải chạy lại trước khi ghi PASS cho release mới.
+Baseline target cũ đã load trên Word 16.0 x64. Sau thay đổi target 39-control, loại QR/nhóm Hiển thị và dùng icon custom, visual smoke mới phải chạy lại trước khi ghi PASS cho release mới.
