@@ -163,7 +163,7 @@
 
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 
-  <Target Name="BuildSharedClientAssemblies" BeforeTargets="ResolveReferences">
+  <Target Name="BuildSharedClientAssemblies" BeforeTargets="ResolveAssemblyReferences">
     <Exec Command="&quot;$(ClientCoreDotNetExe)&quot; build &quot;$(ClientCoreProject)&quot; --configuration $(Configuration) --no-restore --nologo" />
   </Target>
 

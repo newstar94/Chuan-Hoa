@@ -25,13 +25,13 @@
       },
       {
         "path": "src/ChuanHoa.AddIn.Vsto/bin/Development/ChuanHoa.AddIn.Vsto.dll.manifest",
-        "length": 15593,
-        "sha256": "EF64852E75B598CA6312496C96C4B89689894775958F3676E7A48245E8E443C3"
+        "length": 15590,
+        "sha256": "ED09A7215F48CCA66455C46D0526E7C6F0D4A15EA9215E7CC1DAA589F61ED6D3"
       },
       {
         "path": "src/ChuanHoa.AddIn.Vsto/bin/Development/ChuanHoa.AddIn.Vsto.vsto",
-        "length": 7744,
-        "sha256": "8F6169E85F1C5B7878D7A3A43F92F1AB2B9AC8938F39DCB2E24AAF3A6C6D2DDA"
+        "length": 7741,
+        "sha256": "C02D825796F3FEB91C5E588AD362E0331B35E65CE6A329104B99684AF8F8AAFD"
       }
     ],
     "manifestSigning": "LOCAL_SELF_SIGNED_DEVELOPMENT_CERTIFICATE",
