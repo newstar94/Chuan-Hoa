@@ -11,27 +11,27 @@
   },
   "build": {
     "configuration": "Development",
-    "version": "1.0.0.90",
-    "assemblyVersion": "1.0.0.90",
-    "fileVersion": "1.0.0.90",
-    "productVersion": "1.0.0.90",
+    "version": "1.0.0.91",
+    "assemblyVersion": "1.0.0.91",
+    "fileVersion": "1.0.0.91",
+    "productVersion": "1.0.0.91",
     "warnings": 0,
     "errors": 0,
     "artifacts": [
       {
         "path": "src/ChuanHoa.AddIn.Vsto/bin/Development/ChuanHoa.AddIn.Vsto.dll",
         "length": 308736,
-        "sha256": "DF216AFF03AB73A2CC20581E7A7A93C3C98E54B69206C0BEE7A193F5DA8C7F43"
+        "sha256": "0593944B89ED0CAC120CD057ED595393AAC846F4BDE2B25D7609DDFA74D57784"
       },
       {
         "path": "src/ChuanHoa.AddIn.Vsto/bin/Development/ChuanHoa.AddIn.Vsto.dll.manifest",
         "length": 15590,
-        "sha256": "E5E2538169F88F131010016C1E4D1E0B8D82E8151A82147FB3786DB4E160C188"
+        "sha256": "A6A5FB8E59BA65C22C4DDC224B4F6BA04E44AB12FFE2D0F1B7F9E23A74615E04"
       },
       {
         "path": "src/ChuanHoa.AddIn.Vsto/bin/Development/ChuanHoa.AddIn.Vsto.vsto",
         "length": 7741,
-        "sha256": "5C88C98D7782CC28C0403F3DB8C21CB1ACB95B05668815370CBF5D374BE0BBF1"
+        "sha256": "E150C9DC0D305ADA5D2E99A3CA712DD2A7306D6F8BD5889FFB131482832676AA"
       }
     ],
     "manifestSigning": "LOCAL_SELF_SIGNED_DEVELOPMENT_CERTIFICATE",
@@ -39,23 +39,24 @@
     "productionSigningSatisfied": false
   },
   "developmentInstaller": {
-    "version": "1.0.0.90",
-    "path": "artifacts/installers/development/ChuanHoa_Development_Test_Setup_1.0.0.90.exe",
+    "version": "1.0.0.91",
+    "path": "artifacts/installers/development/ChuanHoa_Development_Test_Setup_1.0.0.91.exe",
     "sizeBytes": 259368,
-    "sha256": "B84F90689C80312218E722254F20E5581C75179603FCF52DB9D0AA413C147318",
+    "sha256": "A831A16796BA233DCC444B9673DAD7468B0E46DD7FD54E1788CE5BD35AC69B12",
     "signatureStatus": "SignedDevelopmentCertificateChainNotProductionTrusted",
     "signer": "CN=Chuan Hoa Local Development",
     "payloadFiles": 7,
     "forbiddenAiOnnxQrHits": 0,
     "installSmokeExecuted": true,
-    "installedCurrentVersion": "1.0.0.90",
+    "installedCurrentVersion": "1.0.0.91",
     "loadBehavior": 3,
     "vstoAutomaticUpdateEnabled": false,
     "productionReady": false,
     "repairSmokeExecuted": true,
     "uninstallSmokeExecuted": true,
     "freshReinstallSmokeExecuted": true,
-    "personalDictionaryPreserved": true
+    "personalDictionaryPreserved": true,
+    "verificationRebuildPreservedInstalledRegistration": true
   },
   "wordSmoke": {
     "comAddInConnected": true,

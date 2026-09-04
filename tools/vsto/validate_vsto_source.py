@@ -90,9 +90,16 @@ def validate() -> dict:
             raise RuntimeError(
                 f"VSTO project is missing the embedded Ribbon resource contract: {resource_contract}"
             )
-    if '<Target Name="RegisterOfficeAddin" />' not in project_source:
+    if any(
+        target not in project_source
+        for target in (
+            '<Target Name="RegisterOfficeAddin" />',
+            '<Target Name="UnregisterOfficeAddin" />',
+            '<Target Name="RemoveOfficeAddInSecurity" />',
+        )
+    ):
         raise RuntimeError(
-            "Verification builds must not replace the installed Word add-in manifest registration."
+            "Verification builds must not replace/delete the installed Word add-in registration or trust."
         )
     dictionary_control = next(
         control for control in contract["controls"] if control["id"] == "btnTuDienCaNhan"

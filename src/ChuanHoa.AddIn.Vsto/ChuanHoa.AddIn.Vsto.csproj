@@ -185,14 +185,15 @@
           Condition="Exists('$(VSToolsPath)\OfficeTools\Microsoft.VisualStudio.Tools.Office.targets')" />
 
   <!--
-    OfficeTools normally rewrites HKCU\Office\Word\Addins during every Build so
-    Visual Studio can launch the project directly. Chuẩn hóa uses an explicit
-    development bootstrapper/launcher instead. Keeping this target as a no-op prevents
-    an ordinary verification build from replacing the installed Current manifest with
-    a transient bin\Development path and making the Ribbon disappear on the next Word
-    start.
+    OfficeTools normally rewrites HKCU\Office\Word\Addins during Build and deletes
+    the same registration during Clean/Rebuild. Chuẩn hóa uses an explicit
+    development bootstrapper/launcher instead. Keeping all three targets as no-ops
+    prevents verification builds from replacing or deleting the installed Current
+    manifest and its VSTO inclusion-list trust.
   -->
   <Target Name="RegisterOfficeAddin" />
+  <Target Name="UnregisterOfficeAddin" />
+  <Target Name="RemoveOfficeAddInSecurity" />
 
   <Target Name="RequireVstoOfficeTools"
           BeforeTargets="PrepareForBuild"

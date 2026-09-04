@@ -10,7 +10,7 @@
 | 5 | Local compliance engine và signed rules | COMPLETE_SOURCE_IN_PROGRESS_APPROVAL | 73/73 route baseline còn trong sản phẩm đã port local, cộng 4 detector Line Shape có nguồn trực tiếp và exact anchors; 2 route tone/i-y đã loại; rule pack và lease RS256. Chờ legal review, golden corpus và Word 2010/x86 evidence |
 | 6 | Command waves A–E | COMPLETE_DEVELOPMENT_WORD16_X64 | Chuyển Unicode, ba bộ style, ba cỡ chữ, tiện ích bảng/shape, `Sửa nhanh chính tả` và 1-Click đã nối local; QR retired; DOC/DOCX command smoke PASS. Word 2010/x86 và golden parity vẫn mở |
 | 7 | Trial, commercial, Admin B/C/D, Customer Portal | IN_PROGRESS_FOUNDATION | Domain trial/offer và Development Admin có; production IdP/DB/RBAC/provider/date/price vẫn blocked |
-| 8 | Signing, update, Admin E, installer | COMPLETE_DEVELOPMENT_BLOCKED_PRODUCTION | EXE Development rule-only `.90` đã build/cài/repair/gỡ/cài lại; payload allowlist 7 file, không AI/ONNX/QR. Production certificate, HTTPS immutable release và KMS/HSM vẫn blocked |
+| 8 | Signing, update, Admin E, installer | COMPLETE_DEVELOPMENT_BLOCKED_PRODUCTION | EXE Development rule-only `.91` đã build/upgrade/repair/gỡ/cài lại; payload allowlist 7 file, không AI/ONNX/QR; verification `Rebuild` không còn xóa registration. Production certificate, HTTPS immutable release và KMS/HSM vẫn blocked |
 | 9 | Pilot, Admin F, migration, launch | PENDING_DEPENDENCY | Chờ toàn bộ exit gates và VM/pentest evidence |
 
 Board chỉ chuyển phase khi exit gate có file, test ID và evidence thực tế.

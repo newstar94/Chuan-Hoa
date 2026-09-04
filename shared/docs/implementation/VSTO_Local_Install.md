@@ -38,18 +38,18 @@ Version lấy từ `Directory.Build.props`. Script luôn rebuild source, publish
 
 ```powershell
 # Cài hoặc nâng cấp không hiện hộp thoại
-& '.\ChuanHoa_Development_Test_Setup_1.0.0.90.exe' /quiet
+& '.\ChuanHoa_Development_Test_Setup_1.0.0.91.exe' /quiet
 
 # Repair
-& '.\ChuanHoa_Development_Test_Setup_1.0.0.90.exe' /repair /quiet
+& '.\ChuanHoa_Development_Test_Setup_1.0.0.91.exe' /repair /quiet
 
 # Gỡ bản Development; giữ từ điển cá nhân và tài liệu
-& '.\ChuanHoa_Development_Test_Setup_1.0.0.90.exe' /uninstall /quiet
+& '.\ChuanHoa_Development_Test_Setup_1.0.0.91.exe' /uninstall /quiet
 ```
 
 ## Giới hạn evidence
 
 - Build Publish hiện đã đạt 0 warning/0 error và có `setup.exe`, top-level `.vsto`, version directory cùng các dependency `.deploy`.
-- Fresh install, repair, uninstall và reinstall của EXE Development 1.0.0.90 đã PASS; đây không phải silent enterprise install.
+- Upgrade, repair, uninstall và fresh reinstall của EXE Development 1.0.0.91 đã PASS; VSTO `Rebuild` sau cài không làm mất registration. Đây không phải silent enterprise install.
 - Word 2010 và Office x86 chưa có VM evidence.
 - Production vẫn cần certificate tin cậy có timestamp, HTTPS immutable version directory và CI signing identity.

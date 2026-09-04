@@ -45,4 +45,4 @@
 
 ## Trạng thái hiện tại
 
-Build/load local không còn bị chặn bởi toolchain: bản Development 1.0.0.90 đã được ký bằng certificate development, kiểm tra payload, cài/repair/gỡ/cài lại và smoke-test trên Word 16 x64. Release production vẫn bị chặn vì chưa có production code-signing certificate/CI signing identity, HTTPS deployment URL bất biến, KMS/HSM cho grant/FixPlan/rule và VM Word 2010/x86. Certificate development tự ký không được dùng để promote production.
+Build/load local không còn bị chặn bởi toolchain: bản Development 1.0.0.91 đã được ký bằng certificate development, kiểm tra payload, upgrade/repair/gỡ/cài lại và smoke-test trên Word 16 x64. Build/Rebuild kiểm chứng không được đăng ký, hủy đăng ký hoặc xóa inclusion-list trust; chỉ launcher/bootstrapper được quản lý registration. Release production vẫn bị chặn vì chưa có production code-signing certificate/CI signing identity, HTTPS deployment URL bất biến, KMS/HSM cho grant/FixPlan/rule và VM Word 2010/x86. Certificate development tự ký không được dùng để promote production.
