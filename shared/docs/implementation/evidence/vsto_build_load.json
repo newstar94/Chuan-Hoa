@@ -1,6 +1,6 @@
 {
   "testId": "VSTO-BUILD-LOAD-001",
-  "status": "PASS_LOCAL_DEVELOPMENT_COM_LOAD_VISUAL_PENDING",
+  "status": "PASS_LOCAL_DEVELOPMENT_INSTALL_LIFECYCLE_COM_LOAD_VISUAL_PENDING",
   "verifiedAt": "2026-09-04",
   "environment": {
     "visualStudioBuildTools": "17.14.37614.0",
@@ -11,27 +11,27 @@
   },
   "build": {
     "configuration": "Development",
-    "version": "1.0.0.82",
-    "assemblyVersion": "1.0.0.82",
-    "fileVersion": "1.0.0.82",
-    "productVersion": "1.0.0.82",
+    "version": "1.0.0.90",
+    "assemblyVersion": "1.0.0.90",
+    "fileVersion": "1.0.0.90",
+    "productVersion": "1.0.0.90",
     "warnings": 0,
     "errors": 0,
     "artifacts": [
       {
         "path": "src/ChuanHoa.AddIn.Vsto/bin/Development/ChuanHoa.AddIn.Vsto.dll",
-        "length": 300544,
-        "sha256": "D790CB9983559C55DAF33A49CE7C51543C546926F4FE6583E6DDA99658273B4D"
+        "length": 308736,
+        "sha256": "DF216AFF03AB73A2CC20581E7A7A93C3C98E54B69206C0BEE7A193F5DA8C7F43"
       },
       {
         "path": "src/ChuanHoa.AddIn.Vsto/bin/Development/ChuanHoa.AddIn.Vsto.dll.manifest",
         "length": 15590,
-        "sha256": "ED09A7215F48CCA66455C46D0526E7C6F0D4A15EA9215E7CC1DAA589F61ED6D3"
+        "sha256": "E5E2538169F88F131010016C1E4D1E0B8D82E8151A82147FB3786DB4E160C188"
       },
       {
         "path": "src/ChuanHoa.AddIn.Vsto/bin/Development/ChuanHoa.AddIn.Vsto.vsto",
         "length": 7741,
-        "sha256": "C02D825796F3FEB91C5E588AD362E0331B35E65CE6A329104B99684AF8F8AAFD"
+        "sha256": "5C88C98D7782CC28C0403F3DB8C21CB1ACB95B05668815370CBF5D374BE0BBF1"
       }
     ],
     "manifestSigning": "LOCAL_SELF_SIGNED_DEVELOPMENT_CERTIFICATE",
@@ -39,27 +39,36 @@
     "productionSigningSatisfied": false
   },
   "developmentInstaller": {
-    "version": "1.0.0.82",
-    "path": "artifacts/installers/development/ChuanHoa_Development_Test_Setup_1.0.0.82.exe",
-    "sizeBytes": 250152,
-    "sha256": "7209D8A9D5006724E44DB992FF21E6D693B98FBAFF6BA45E4C43FCD14DC9BEF4",
-    "signatureStatus": "Valid",
+    "version": "1.0.0.90",
+    "path": "artifacts/installers/development/ChuanHoa_Development_Test_Setup_1.0.0.90.exe",
+    "sizeBytes": 259368,
+    "sha256": "B84F90689C80312218E722254F20E5581C75179603FCF52DB9D0AA413C147318",
+    "signatureStatus": "SignedDevelopmentCertificateChainNotProductionTrusted",
     "signer": "CN=Chuan Hoa Local Development",
     "payloadFiles": 7,
     "forbiddenAiOnnxQrHits": 0,
     "installSmokeExecuted": true,
-    "installedCurrentVersion": "1.0.0.82",
+    "installedCurrentVersion": "1.0.0.90",
     "loadBehavior": 3,
     "vstoAutomaticUpdateEnabled": false,
-    "productionReady": false
+    "productionReady": false,
+    "repairSmokeExecuted": true,
+    "uninstallSmokeExecuted": true,
+    "freshReinstallSmokeExecuted": true,
+    "personalDictionaryPreserved": true
   },
   "wordSmoke": {
     "comAddInConnected": true,
     "wordVersion": "16.0.20326",
     "docAndDocxOneClick": "PASS",
+    "docAndDocxQuickSpellingTypography": "PASS",
+    "multipleLogicalDocuments": "PASS",
+    "dashedMottoLineDetectionAndRepair": "PASS",
     "docAndDocxLocalScanRerun": "PASS",
     "docAndDocxLocalCommandChain": "PASS",
     "annotationRerun": "PASS",
+    "heavySnapshot10_50_100Pages": "PASS_PROGRESS_CANCEL_SECOND_SCAN_SAVE_AS_TABLES_SHAPES_SECTIONS",
+    "personalDictionaryDialogContractDpi100To200": "PASS",
     "singleCustomRibbonTabVisible": null,
     "personalDictionaryIconVisible": null,
     "visualInspectionPerformed": false

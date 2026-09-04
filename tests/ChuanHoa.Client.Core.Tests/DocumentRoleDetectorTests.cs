@@ -195,6 +195,85 @@ public sealed class DocumentRoleDetectorTests
         Assert.Equal("legalBasis", roles[3]);
     }
 
+    [Fact]
+    public void Detects_roles_independently_for_two_documents_in_one_word_file()
+    {
+        var paragraphs = new[]
+        {
+            Paragraph(1, "CÔNG TY TNHH THỨ NHẤT", page: 1),
+            Paragraph(2, "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM", page: 1),
+            Paragraph(3, "Độc lập - Tự do - Hạnh phúc", page: 1),
+            Paragraph(4, "Số: 01/QĐ-CT1", page: 1),
+            Paragraph(5, "Hà Nội, ngày 01 tháng 09 năm 2026", page: 1),
+            Paragraph(6, "QUYẾT ĐỊNH", page: 1),
+            Paragraph(7, "Về việc phê duyệt kế hoạch", page: 1),
+            Paragraph(8, "Căn cứ Luật Đấu thầu số 22/2023/QH15;", page: 1),
+            Paragraph(20, "CÔNG TY TNHH THỨ HAI", page: 2),
+            Paragraph(21, "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM", page: 2),
+            Paragraph(22, "Độc lập - Tự do - Hạnh phúc", page: 2),
+            Paragraph(23, "Số: 02/TB-CT2", page: 2),
+            Paragraph(24, "Hà Nội, ngày 02 tháng 09 năm 2026", page: 2),
+            Paragraph(25, "THÔNG BÁO", page: 2),
+            Paragraph(26, "Về việc triển khai nhiệm vụ", page: 2),
+            Paragraph(27, "Căn cứ Nghị định số 30/2020/NĐ-CP;", page: 2)
+        };
+        var snapshot = new LocalScanSnapshot("sha256:two-documents", 1,
+            new[] { new LocalSectionSnapshot(1, 595, 842, 57, 57, 85, 43, false) },
+            paragraphs, Array.Empty<AnnotationProtectedSpan>());
+
+        var detector = new DocumentRoleDetector();
+        var blocks = detector.DetectBlocks(snapshot);
+        var roles = detector.Detect(snapshot);
+
+        Assert.Equal(2, blocks.Count);
+        Assert.Equal(LocalDocumentTypeCodes.Decision, blocks[0].DocumentTypeCode);
+        Assert.Equal(LocalDocumentTypeCodes.Notice, blocks[1].DocumentTypeCode);
+        Assert.Equal("organName", roles[1]);
+        Assert.Equal("typeName", roles[6]);
+        Assert.Equal("legalBasis", roles[8]);
+        Assert.Equal("organName", roles[20]);
+        Assert.Equal("typeName", roles[25]);
+        Assert.Equal("subject", roles[26]);
+        Assert.Equal("legalBasis", roles[27]);
+    }
+
+    [Fact]
+    public void Repeated_decision_formula_stays_inside_its_document_block()
+    {
+        var paragraphs = new[]
+        {
+            Paragraph(1, "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM", page: 1),
+            Paragraph(2, "Độc lập - Tự do - Hạnh phúc", page: 1),
+            Paragraph(3, "Số: 01/QĐ-ABC", page: 1),
+            Paragraph(4, "QUYẾT ĐỊNH", page: 1),
+            Paragraph(5, "Về việc phê duyệt", page: 1),
+            Paragraph(6, "Căn cứ Luật Đấu thầu số 22/2023/QH15;", page: 1),
+            Paragraph(7, "QUYẾT ĐỊNH", page: 1),
+            Paragraph(8, "Điều 1. Phê duyệt kế hoạch.", page: 1)
+        };
+        var snapshot = new LocalScanSnapshot("sha256:one-document-operative-formula", 1,
+            new[] { new LocalSectionSnapshot(1, 595, 842, 57, 57, 85, 43, false) },
+            paragraphs, Array.Empty<AnnotationProtectedSpan>());
+
+        var detector = new DocumentRoleDetector();
+        var blocks = detector.DetectBlocks(snapshot);
+        var roles = detector.Detect(snapshot);
+
+        Assert.Single(blocks);
+        Assert.Equal("typeName", roles[4]);
+        Assert.Equal("structuralTitle", roles[7]);
+    }
+
+    [Theory]
+    [InlineData("Số: 129/2026/QĐ-TTĐ.BMC", "QĐ", "Số: 129/QĐ-TTĐ-BMC")]
+    [InlineData("Số 5 qđ abc", "QĐ", "Số: 05/QĐ-ABC")]
+    public void Normalizes_nd30_code_number_as_one_atomic_component(string source,
+        string abbreviation, string expected)
+    {
+        Assert.Equal(expected,
+            LocalAdministrativeTextNormalizer.NormalizeCodeNumber(source, false, abbreviation));
+    }
+
     private static LocalScanSnapshot Snapshot(string text,
         string documentTypeCode = LocalDocumentTypeCodes.Unknown,
         bool selectedManually = false)
@@ -208,7 +287,8 @@ public sealed class DocumentRoleDetectorTests
             documentTypeWasSelectedManually: selectedManually);
     }
 
-    private static LocalParagraphSnapshot Paragraph(int index, string text) =>
+    private static LocalParagraphSnapshot Paragraph(int index, string text, int page = 0) =>
         new(index, text, "wdMainTextStory", 1, index * 100,
-            "Times New Roman", fontSizePoints: 14, bold: true, alignment: 1);
+            "Times New Roman", fontSizePoints: 14, bold: true, alignment: 1,
+            pageNumber: page);
 }

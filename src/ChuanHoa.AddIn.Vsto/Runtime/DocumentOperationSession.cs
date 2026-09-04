@@ -99,6 +99,20 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             _cancellation.Token.ThrowIfCancellationRequested();
         }
 
+        /// <summary>
+        /// Requests cooperative cancellation from an explicit UI command or a smoke
+        /// harness. Cancellation is accepted only before the first mutation boundary.
+        /// </summary>
+        public void RequestCancellation()
+        {
+            EnsureOwnerThread();
+            ThrowIfDisposed();
+            if (Volatile.Read(ref _cancellationEnabled) == 0) return;
+            Volatile.Write(ref _state, (int)DocumentOperationState.Cancelling);
+            _cancellation.Cancel();
+            _cancellation.Token.ThrowIfCancellationRequested();
+        }
+
         public void MarkFailedRecoverable()
         {
             if (Volatile.Read(ref _disposed) != 0) return;

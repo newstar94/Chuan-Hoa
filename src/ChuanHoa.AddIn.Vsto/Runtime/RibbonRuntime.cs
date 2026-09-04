@@ -325,6 +325,11 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 return;
             }
 
+            // Document-scoped dictionary ignores are session-only. Remove the exact
+            // stable scope while the COM identity is still valid, then discard the
+            // document context so the cache cannot grow for the lifetime of Word.
+            var closingContext = _contextStore.GetOrCreate(document);
+            PersonalDictionaryManager.Instance.ClearDocumentIgnores(closingContext.DictionaryScopeId);
             _contextStore.Remove(document);
             if (IsSameComDocument(_lastActivatedDocument, document))
             {
@@ -438,9 +443,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         private string? TryGetCurrentDocumentFingerprint()
         {
             var context = TryGetActiveContext();
-            return context == null || context.LastLocalSnapshot == null
-                ? null
-                : context.LastLocalSnapshot.DocumentFingerprint;
+            return context == null ? null : context.DictionaryScopeId;
         }
 
         private Word.Document? TryGetCurrentDocument()

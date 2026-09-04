@@ -16,10 +16,12 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         private readonly Label _statusLabel;
         private readonly Button _deleteButton;
         private readonly string? _currentDocumentId;
+        private readonly string? _selectedText;
 
-        private CustomDictionaryDialog(string? currentDocumentId)
+        private CustomDictionaryDialog(string? currentDocumentId, string? selectedText)
         {
             _currentDocumentId = currentDocumentId;
+            _selectedText = NormalizeOptionalEntry(selectedText);
             Text = "Quản lý Từ điển cá nhân & Danh sách bỏ qua";
             StartPosition = FormStartPosition.CenterParent;
             FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -47,16 +49,22 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
             _searchBox = new TextBox
             {
+                Name = "txtDictionarySearch",
+                AccessibleName = "Tìm kiếm trong từ điển cá nhân",
                 Location = new Point(80, 37),
-                Size = new Size(444, 25)
+                Size = new Size(444, 25),
+                TabIndex = 0
             };
             _searchBox.TextChanged += (s, e) => RefreshWordList();
 
             _wordListBox = new ListBox
             {
+                Name = "lstDictionaryWords",
+                AccessibleName = "Danh sách từ điển cá nhân",
                 Location = new Point(16, 68),
                 Size = new Size(390, 260),
-                IntegralHeight = false
+                IntegralHeight = false,
+                TabIndex = 1
             };
 
             _countLabel = new Label
@@ -68,10 +76,12 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
             _deleteButton = new Button
             {
+                Name = "btnDeleteDictionaryWord",
                 Text = "Xóa từ",
                 Location = new Point(416, 68),
                 Size = new Size(108, 30),
-                Enabled = false
+                Enabled = false,
+                TabIndex = 2
             };
             _deleteButton.Click += (s, e) => DeleteSelectedWord();
             _wordListBox.SelectedIndexChanged += (s, e) =>
@@ -79,11 +89,36 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
             var btnClearIgnores = new Button
             {
+                Name = "btnClearDocumentIgnores",
                 Text = "Xóa bỏ qua...",
                 Location = new Point(416, 106),
-                Size = new Size(108, 30)
+                Size = new Size(108, 30),
+                TabIndex = 3
             };
             btnClearIgnores.Click += (s, e) => ClearDocumentIgnores();
+
+            var btnAddSelection = new Button
+            {
+                Name = "btnAddSelectedText",
+                Text = "Thêm phần chọn",
+                Location = new Point(416, 144),
+                Size = new Size(108, 38),
+                Enabled = !string.IsNullOrWhiteSpace(_selectedText),
+                TabIndex = 4
+            };
+            btnAddSelection.Click += (s, e) => AddSelectedText();
+
+            var btnIgnoreSelection = new Button
+            {
+                Name = "btnIgnoreSelectedText",
+                Text = "Bỏ qua tài liệu",
+                Location = new Point(416, 190),
+                Size = new Size(108, 38),
+                Enabled = !string.IsNullOrWhiteSpace(_selectedText) &&
+                    !string.IsNullOrWhiteSpace(_currentDocumentId),
+                TabIndex = 5
+            };
+            btnIgnoreSelection.Click += (s, e) => IgnoreSelectedText();
 
             var newWordLabel = new Label
             {
@@ -94,8 +129,11 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
             _newWordBox = new TextBox
             {
+                Name = "txtNewDictionaryWord",
+                AccessibleName = "Từ hoặc cụm từ mới",
                 Location = new Point(105, 357),
-                Size = new Size(301, 25)
+                Size = new Size(301, 25),
+                TabIndex = 6
             };
             _newWordBox.KeyDown += (s, e) =>
             {
@@ -109,18 +147,22 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
             var btnAdd = new Button
             {
+                Name = "btnAddDictionaryWord",
                 Text = "Thêm",
                 Location = new Point(416, 355),
-                Size = new Size(108, 28)
+                Size = new Size(108, 28),
+                TabIndex = 7
             };
             btnAdd.Click += (s, e) => AddNewWord();
 
             var btnClose = new Button
             {
+                Name = "btnCloseDictionary",
                 Text = "Đóng",
                 DialogResult = DialogResult.OK,
                 Location = new Point(416, 396),
-                Size = new Size(108, 32)
+                Size = new Size(108, 32),
+                TabIndex = 8
             };
 
             _statusLabel = new Label
@@ -138,6 +180,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             Controls.Add(_countLabel);
             Controls.Add(_deleteButton);
             Controls.Add(btnClearIgnores);
+            Controls.Add(btnAddSelection);
+            Controls.Add(btnIgnoreSelection);
             Controls.Add(newWordLabel);
             Controls.Add(_newWordBox);
             Controls.Add(btnAdd);
@@ -210,6 +254,24 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             }
         }
 
+        private void AddSelectedText()
+        {
+            if (string.IsNullOrWhiteSpace(_selectedText)) return;
+            var result = PersonalDictionaryManager.Instance.AddUserWord(_selectedText);
+            ShowResult(result);
+            if (!result.Succeeded || result.Status == PersonalDictionaryStatus.Duplicate) return;
+            _searchBox.Clear();
+            RefreshWordList();
+            _wordListBox.SelectedItem = _selectedText;
+        }
+
+        private void IgnoreSelectedText()
+        {
+            if (string.IsNullOrWhiteSpace(_selectedText) || string.IsNullOrWhiteSpace(_currentDocumentId)) return;
+            ShowResult(PersonalDictionaryManager.Instance.IgnoreWordForDocument(
+                _currentDocumentId, _selectedText));
+        }
+
         private void ClearDocumentIgnores()
         {
             if (string.IsNullOrWhiteSpace(_currentDocumentId))
@@ -240,9 +302,16 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 : result.Succeeded ? string.Empty : result.Message;
         }
 
-        public static void Prompt(IWin32Window? owner = null, string? currentDocumentId = null)
+        private static string? NormalizeOptionalEntry(string? value)
         {
-            using (var dialog = new CustomDictionaryDialog(currentDocumentId))
+            if (string.IsNullOrWhiteSpace(value)) return null;
+            return value!.Trim(' ', '\t', '\r', '\n', '\a').Normalize(NormalizationForm.FormC);
+        }
+
+        public static void Prompt(IWin32Window? owner = null, string? currentDocumentId = null,
+            string? selectedText = null)
+        {
+            using (var dialog = new CustomDictionaryDialog(currentDocumentId, selectedText))
             {
                 ((Form)dialog).ShowDialog(owner);
             }

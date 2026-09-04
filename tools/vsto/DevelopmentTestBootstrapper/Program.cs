@@ -28,7 +28,9 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
             var quiet = Array.Exists(
                 args ?? new string[0],
                 value => string.Equals(value, "/quiet", StringComparison.OrdinalIgnoreCase) ||
-                         string.Equals(value, "/silent", StringComparison.OrdinalIgnoreCase));
+                          string.Equals(value, "/silent", StringComparison.OrdinalIgnoreCase));
+            var uninstall = Array.Exists(args ?? new string[0],
+                value => string.Equals(value, "/uninstall", StringComparison.OrdinalIgnoreCase));
 
             try
             {
@@ -43,6 +45,20 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
                             MessageBoxIcon.Warning);
                     }
                     return 2;
+                }
+
+                var baseDirectory = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "ChuanHoa",
+                    "DevelopmentInstaller");
+                if (uninstall)
+                {
+                    UninstallDevelopmentChannel(baseDirectory);
+                    if (!quiet)
+                        MessageBox.Show(
+                            "Đã gỡ add-in Chuẩn hóa Development Test. Từ điển cá nhân và tài liệu của bạn được giữ nguyên.",
+                            Title, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return 0;
                 }
 
                 if (!quiet)
@@ -60,10 +76,6 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
                 }
 
                 var version = ReadTextResource(VersionResource).Trim();
-                var baseDirectory = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    "ChuanHoa",
-                    "DevelopmentInstaller");
                 UninstallClickOnceDevelopmentAddIn(baseDirectory);
                 var installDirectory = Path.Combine(baseDirectory, "Current");
                 var stagingDirectory = Path.Combine(baseDirectory, "Staging-" + Guid.NewGuid().ToString("N"));
@@ -115,6 +127,94 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
                         MessageBoxIcon.Error);
                 }
                 return 10;
+            }
+        }
+
+        private static void UninstallDevelopmentChannel(string baseDirectory)
+        {
+            UninstallClickOnceDevelopmentAddIn(baseDirectory);
+            var certificateThumbprints = ReadOwnedDevelopmentCertificateThumbprints(baseDirectory);
+            RemoveDirectRegistrationIfOwned(baseDirectory);
+            using (var currentUser = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Default))
+                currentUser.DeleteSubKeyTree(@"Software\ChuanHoa\DevelopmentInstaller", false);
+
+            if (Directory.Exists(baseDirectory))
+            {
+                var normalizedBase = Path.GetFullPath(baseDirectory)
+                    .TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+                foreach (var directory in Directory.GetDirectories(baseDirectory))
+                {
+                    var normalized = Path.GetFullPath(directory)
+                        .TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+                    var name = Path.GetFileName(directory);
+                    if (!normalized.StartsWith(normalizedBase, StringComparison.OrdinalIgnoreCase) ||
+                        !(string.Equals(name, "Current", StringComparison.OrdinalIgnoreCase) ||
+                          string.Equals(name, "Previous", StringComparison.OrdinalIgnoreCase) ||
+                          name.StartsWith("Staging-", StringComparison.OrdinalIgnoreCase)))
+                        continue;
+                    Directory.Delete(directory, true);
+                }
+                if (Directory.GetFileSystemEntries(baseDirectory).Length == 0)
+                    Directory.Delete(baseDirectory);
+            }
+
+            var trustedKeyPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "ChuanHoa", "Development", "trusted-key.xml");
+            if (File.Exists(trustedKeyPath)) File.Delete(trustedKeyPath);
+            foreach (var thumbprint in certificateThumbprints)
+            {
+                RemoveCertificate(StoreName.Root, thumbprint);
+                RemoveCertificate(StoreName.TrustedPublisher, thumbprint);
+            }
+            ClearWordRibbonValidationCache();
+        }
+
+        private static string[] ReadOwnedDevelopmentCertificateThumbprints(string baseDirectory)
+        {
+            var result = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var name in new[] { "Current", "Previous" })
+            {
+                var path = Path.Combine(baseDirectory, name, "ChuanHoa.LocalDevelopment.Public.cer");
+                if (!File.Exists(path)) continue;
+                var certificate = new X509Certificate2(path);
+                if (string.Equals(certificate.Subject, ExpectedCertificateSubject, StringComparison.Ordinal) &&
+                    !string.IsNullOrWhiteSpace(certificate.Thumbprint))
+                    result.Add(certificate.Thumbprint);
+            }
+            return new System.Collections.Generic.List<string>(result).ToArray();
+        }
+
+        private static void RemoveDirectRegistrationIfOwned(string baseDirectory)
+        {
+            using (var currentUser = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Default))
+            using (var addIn = currentUser.OpenSubKey(
+                @"Software\Microsoft\Office\Word\Addins\ChuanHoa.AddIn.Vsto"))
+            {
+                if (addIn == null) return;
+                var manifest = Convert.ToString(addIn.GetValue("Manifest")) ?? string.Empty;
+                if (manifest.EndsWith("|vstolocal", StringComparison.OrdinalIgnoreCase))
+                    manifest = manifest.Substring(0, manifest.Length - "|vstolocal".Length);
+                Uri uri;
+                if (!Uri.TryCreate(manifest, UriKind.Absolute, out uri) || !uri.IsFile) return;
+                var normalizedBase = Path.GetFullPath(baseDirectory)
+                    .TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+                var registeredPath = Path.GetFullPath(uri.LocalPath);
+                if (!registeredPath.StartsWith(normalizedBase, StringComparison.OrdinalIgnoreCase)) return;
+            }
+            using (var currentUser = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Default))
+                currentUser.DeleteSubKeyTree(
+                    @"Software\Microsoft\Office\Word\Addins\ChuanHoa.AddIn.Vsto", false);
+        }
+
+        private static void RemoveCertificate(StoreName storeName, string thumbprint)
+        {
+            using (var store = new X509Store(storeName, StoreLocation.CurrentUser))
+            {
+                store.Open(OpenFlags.ReadWrite);
+                var matches = store.Certificates.Find(
+                    X509FindType.FindByThumbprint, thumbprint, false);
+                foreach (X509Certificate2 certificate in matches) store.Remove(certificate);
             }
         }
 

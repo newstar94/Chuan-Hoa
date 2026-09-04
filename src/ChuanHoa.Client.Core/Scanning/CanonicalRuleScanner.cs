@@ -65,16 +65,17 @@ namespace ChuanHoa.Client.Core.Scanning
         {
             var findings = new List<AnnotationFinding>();
             cancellationToken.ThrowIfCancellationRequested();
-            var roles = _roleDetector.Detect(snapshot);
+            var blocks = _roleDetector.DetectBlocks(snapshot);
+            var roles = MergeRoles(blocks);
             CheckPageSetup(findings, snapshot, rules);
             cancellationToken.ThrowIfCancellationRequested();
             CheckBodyTypography(findings, snapshot, rules, roles);
             cancellationToken.ThrowIfCancellationRequested();
             CheckComponents(findings, snapshot, rules, roles);
-            CheckHeaderFontSizeTier(findings, snapshot, rules, roles);
+            CheckHeaderFontSizeTier(findings, snapshot, rules, blocks);
             CheckRequiredLineShapes(findings, snapshot, rules, roles);
             cancellationToken.ThrowIfCancellationRequested();
-            CheckCodeNumber(findings, snapshot, rules, roles);
+            CheckCodeNumber(findings, snapshot, rules, blocks);
             CheckPlaceDate(findings, snapshot, rules, roles);
             CheckTypeAndSubject(findings, snapshot, rules, roles);
             cancellationToken.ThrowIfCancellationRequested();
@@ -101,8 +102,8 @@ namespace ChuanHoa.Client.Core.Scanning
                 AddMatches(findings, paragraph, Rx(@"[ \t]{2,}"), "LOCAL-TYPO-SPACE", "Có khoảng trắng thừa.", "Chỉ để một khoảng trắng.", rules);
                 AddMatches(findings, paragraph, Rx(@"[ \t]+(?=[,.;:!?])"), "LOCAL-TYPO-PUNCT", "Có khoảng trắng trước dấu câu.", "Xóa khoảng trắng trước dấu câu.", rules);
                 CheckHiddenCharacters(findings, paragraph, rules);
-                CheckDictionary(findings, paragraph, rules, snapshot.DocumentFingerprint, _personalDictionary);
-                CheckLexicon(findings, paragraph, rules, lexicon, snapshot.DocumentFingerprint, _personalDictionary);
+                CheckDictionary(findings, paragraph, rules, snapshot.DictionaryScopeId, _personalDictionary);
+                CheckLexicon(findings, paragraph, rules, lexicon, snapshot.DictionaryScopeId, _personalDictionary);
                 CheckTelex(findings, paragraph, rules);
                 CheckBareShortDates(findings, paragraph, rules);
                 CheckSentenceCapitalization(findings, paragraph, rules, roles);
@@ -262,13 +263,11 @@ namespace ChuanHoa.Client.Core.Scanning
             LocalRulePack rules, IDictionary<int, string> roles)
         {
             var party = IsParty(snapshot);
-            var motto = FindComponent(snapshot, roles, "nationalMotto",
-                text => text.IndexOf("Độc lập", StringComparison.OrdinalIgnoreCase) >= 0 &&
-                    text.IndexOf("Hạnh phúc", StringComparison.OrdinalIgnoreCase) >= 0);
-            if (!party && motto != null)
-                AddRequiredLineFinding(findings, snapshot, motto, rules.MottoLineMinRatio,
-                    rules.MottoLineMaxRatio, "ND30-PL1-M2-K1-TN-LINE", "Tiêu ngữ",
-                    "dài bằng dòng Tiêu ngữ", rules);
+            if (!party)
+                foreach (var motto in WithRole(snapshot, roles, "nationalMotto"))
+                    AddRequiredLineFinding(findings, snapshot, motto, rules.MottoLineMinRatio,
+                        rules.MottoLineMaxRatio, "ND30-PL1-M2-K1-TN-LINE", "Tiêu ngữ",
+                        "dài bằng dòng Tiêu ngữ", rules);
 
             foreach (var organ in WithRole(snapshot, roles, "organName"))
                 if (!party)
@@ -285,25 +284,29 @@ namespace ChuanHoa.Client.Core.Scanning
                         "dài từ 1/3 đến 1/2 dòng trích yếu", rules);
                 }
 
-            var partyTitle = FindComponent(snapshot, roles, "partyTitle",
-                text => string.Equals(Collapse(text), "ĐẢNG CỘNG SẢN VIỆT NAM", StringComparison.OrdinalIgnoreCase));
-            if (partyTitle != null)
+            foreach (var partyTitle in WithRole(snapshot, roles, "partyTitle"))
                 AddRequiredLineFinding(findings, snapshot, partyTitle, rules.PartyTitleLineMinRatio,
                     rules.PartyTitleLineMaxRatio, "HD05-M1-TITLE-LINE", "tiêu đề Đảng",
                     "dài bằng tiêu đề ĐẢNG CỘNG SẢN VIỆT NAM", rules);
         }
 
         private static void CheckHeaderFontSizeTier(ICollection<AnnotationFinding> findings,
-            LocalScanSnapshot snapshot, LocalRulePack rules, IDictionary<int, string> roles)
+            LocalScanSnapshot snapshot, LocalRulePack rules,
+            IReadOnlyList<LogicalDocumentBlock> blocks)
         {
             if (IsParty(snapshot)) return;
-            var tier = Nd30HeaderFontSizeTierResolver.Resolve(snapshot, roles);
-            CheckTierRole(findings, snapshot, rules, roles, "nationalTitle", tier.NationalTitle,
-                "Quốc hiệu", tier);
-            CheckTierRole(findings, snapshot, rules, roles, "nationalMotto", tier.NationalMotto,
-                "Tiêu ngữ", tier);
-            CheckTierRole(findings, snapshot, rules, roles, "placeAndIssuedDate", tier.PlaceAndIssuedDate,
-                "Địa danh và ngày tháng", tier);
+            foreach (var block in blocks)
+            {
+                var tier = Nd30HeaderFontSizeTierResolver.Resolve(snapshot, block.Roles,
+                    block.StartParagraphIndex, block.EndParagraphIndex);
+                var roles = block.Roles.ToDictionary(item => item.Key, item => item.Value);
+                CheckTierRole(findings, snapshot, rules, roles, "nationalTitle", tier.NationalTitle,
+                    "Quốc hiệu", tier);
+                CheckTierRole(findings, snapshot, rules, roles, "nationalMotto", tier.NationalMotto,
+                    "Tiêu ngữ", tier);
+                CheckTierRole(findings, snapshot, rules, roles, "placeAndIssuedDate", tier.PlaceAndIssuedDate,
+                    "Địa danh và ngày tháng", tier);
+            }
         }
 
         private static void CheckTierRole(ICollection<AnnotationFinding> findings,
@@ -340,6 +343,10 @@ namespace ChuanHoa.Client.Core.Scanning
                     issue = "Đã có Line Shape dưới " + componentName +
                         " nhưng đường kẻ không phải nét liền, đang có mũi tên hoặc đang bị ẩn.";
                     break;
+                case RequiredLineStatus.TextualSubstitute:
+                    issue = "Đường dưới " + componentName +
+                        " đang dùng chuỗi dấu gạch/chấm thay cho Line Shape nét liền.";
+                    break;
                 case RequiredLineStatus.InvalidPosition:
                     issue = "Đã có Line Shape gần " + componentName +
                         " nhưng chưa đặt đúng vị trí bên dưới.";
@@ -359,17 +366,13 @@ namespace ChuanHoa.Client.Core.Scanning
                 rules, "Error"));
         }
 
-        private static LocalParagraphSnapshot FindComponent(LocalScanSnapshot snapshot,
-            IDictionary<int, string> roles, string role, Func<string, bool> fallback)
-        {
-            var byRole = WithRole(snapshot, roles, role).FirstOrDefault();
-            return byRole ?? Scannable(snapshot).FirstOrDefault(item => fallback(item.Text));
-        }
-
         private static RequiredLineStatus EvaluateRequiredLine(LocalScanSnapshot snapshot,
             LocalParagraphSnapshot paragraph,
             double minimumWidthRatio, double maximumWidthRatio)
         {
+            if (HasTextualLineSubstitute(snapshot, paragraph))
+                return RequiredLineStatus.TextualSubstitute;
+
             var associated = new List<LocalLineShapeSnapshot>();
             foreach (var line in snapshot.LineShapes)
             {
@@ -408,9 +411,57 @@ namespace ChuanHoa.Client.Core.Scanning
         private static bool HasRequiredLineStyle(LocalLineShapeSnapshot line)
         {
             if (!line.LineVisible) return false;
-            if (line.DashStyle.HasValue && line.DashStyle.Value != 1) return false;
-            if (line.BeginArrowheadStyle.HasValue && line.BeginArrowheadStyle.Value != 1) return false;
-            return !line.EndArrowheadStyle.HasValue || line.EndArrowheadStyle.Value == 1;
+            // Office.MsoLineDashStyle.msoLineSolid == 1.  An unknown value must
+            // fail closed: treating a COM read failure as solid previously let a
+            // dashed separator pass the NĐ30 check without a finding.
+            if (!line.DashStyle.HasValue || line.DashStyle.Value != 1) return false;
+            if (!line.BeginArrowheadStyle.HasValue || line.BeginArrowheadStyle.Value != 1) return false;
+            return line.EndArrowheadStyle.HasValue && line.EndArrowheadStyle.Value == 1;
+        }
+
+        private static bool HasTextualLineSubstitute(LocalScanSnapshot snapshot,
+            LocalParagraphSnapshot paragraph)
+        {
+            var embeddedLines = paragraph.Text.Split(new[] { '\v', '\n' },
+                StringSplitOptions.RemoveEmptyEntries);
+            if (embeddedLines.Skip(1).Any(IsTextualLineSeparator)) return true;
+
+            return snapshot.Paragraphs.Any(candidate =>
+                candidate.Index > paragraph.Index && candidate.Index <= paragraph.Index + 2 &&
+                string.Equals(candidate.StoryType, paragraph.StoryType, StringComparison.Ordinal) &&
+                candidate.SectionIndex == paragraph.SectionIndex &&
+                SameTextContainer(candidate, paragraph) &&
+                IsTextualLineSeparator(candidate.Text));
+        }
+
+        private static bool SameTextContainer(LocalParagraphSnapshot left,
+            LocalParagraphSnapshot right)
+        {
+            if (!left.IsInTable && !right.IsInTable) return true;
+            return left.IsInTable && right.IsInTable &&
+                left.TableIndex == right.TableIndex &&
+                left.RowIndex == right.RowIndex &&
+                left.CellIndex == right.CellIndex;
+        }
+
+        private static bool IsTextualLineSeparator(string text)
+        {
+            var value = (text ?? string.Empty).Trim(' ', '\t', '\r', '\n', '\v', '\a');
+            if (value.Length < 3 || value.Length > 120) return false;
+            var marks = 0;
+            foreach (var character in value)
+            {
+                if (character == ' ' || character == '\t') continue;
+                if (character == '-' || character == '_' || character == '.' ||
+                    character == '\u2010' || character == '\u2011' || character == '\u2012' ||
+                    character == '\u2013' || character == '\u2014' || character == '\u2015')
+                {
+                    marks++;
+                    continue;
+                }
+                return false;
+            }
+            return marks >= 3;
         }
 
         private static bool IsPotentiallyAssociated(LocalLineShapeSnapshot line,
@@ -535,16 +586,19 @@ namespace ChuanHoa.Client.Core.Scanning
         {
             Missing,
             InvalidStyle,
+            TextualSubstitute,
             InvalidPosition,
             InvalidGeometry,
             Valid
         }
 
         private static void CheckCodeNumber(ICollection<AnnotationFinding> findings, LocalScanSnapshot snapshot,
-            LocalRulePack rules, IDictionary<int, string> roles)
+            LocalRulePack rules, IReadOnlyList<LogicalDocumentBlock> blocks)
         {
             var party = IsParty(snapshot);
-            foreach (var paragraph in WithRole(snapshot, roles, "codeNumber"))
+            foreach (var block in blocks)
+            foreach (var paragraph in snapshot.Paragraphs.Where(item =>
+                block.Roles.TryGetValue(item.Index, out var role) && role == "codeNumber"))
             {
                 var match = CodeNumber.Match(paragraph.Text);
                 if (!match.Success) continue;
@@ -568,7 +622,8 @@ namespace ChuanHoa.Client.Core.Scanning
                     findings.Add(Span("ND30-PL1-M2-K3-SPACE", paragraph, notation.Index, notation.Length, "Ký hiệu có khoảng trắng.", "Không để khoảng trắng trong ký hiệu.", rules));
                 if (notation.Value.Any(char.IsLower))
                     findings.Add(Span("ND30-PL1-M2-K3-CASE", paragraph, notation.Index, notation.Length, "Ký hiệu có chữ thường.", "Viết hoa ký hiệu, trừ viết tắt được quy định riêng.", rules));
-                var type = WithRole(snapshot, roles, "typeName").FirstOrDefault();
+                var type = snapshot.Paragraphs.FirstOrDefault(item =>
+                    block.Roles.TryGetValue(item.Index, out var role) && role == "typeName");
                 if (type != null)
                 {
                     var entry = rules.DocumentTypeAbbreviations.FirstOrDefault(x => Eq(Collapse(type.Text).Trim('.', ':'), x.TypeName));
@@ -906,6 +961,7 @@ namespace ChuanHoa.Client.Core.Scanning
             foreach (var occurrence in WholePhraseMatches(paragraph.Text, correction.Wrong))
             {
                 var actual = paragraph.Text.Substring(occurrence.Item1, occurrence.Item2);
+                if (personalDictionary.IsKnownOrIgnored(actual, documentId)) continue;
                 findings.Add(Span("LOCAL-TYPO-DICT", paragraph, occurrence.Item1, occurrence.Item2, "Cụm từ có thể sai chính tả.", "Nên dùng “" + ApplyCase(actual, correction.Replacement) + "”.", rules));
             }
 
@@ -927,6 +983,8 @@ namespace ChuanHoa.Client.Core.Scanning
             PersonalDictionaryManager personalDictionary)
         {
             if (lexicon.Count == 0) return;
+            var protectedDictionaryPhrases = FindPersonalDictionaryPhraseSpans(
+                paragraph.Text, personalDictionary.GetUserWords());
             var leadingMarker = LeadingListMarkers.Match(paragraph.Text);
             var contentStart = leadingMarker.Success ? leadingMarker.Groups["letter"].Index : -1;
             foreach (var token in VietnameseWordTokenizer.TokenizeParagraph(paragraph.Text, paragraph.Index))
@@ -934,6 +992,7 @@ namespace ChuanHoa.Client.Core.Scanning
                 var normalizedToken = token.Text.Normalize(NormalizationForm.FormC);
                 if (token.Kind != VietnameseTokenKind.Word || token.Length == 0 ||
                     (contentStart >= 0 && token.StartOffset + token.Length <= contentStart) ||
+                    IsCoveredBySpan(token.StartOffset, token.Length, protectedDictionaryPhrases) ||
                     ShouldIgnoreLexiconToken(normalizedToken) || lexicon.IsKnown(normalizedToken) ||
                     personalDictionary.IsKnownOrIgnored(normalizedToken, documentId) ||
                     OverlapsExistingTextFinding(findings, paragraph, token.StartOffset, token.Length))
@@ -946,6 +1005,23 @@ namespace ChuanHoa.Client.Core.Scanning
                         : "Sửa thành “" + suggestion + "”.",
                     rules));
             }
+        }
+
+        private static IReadOnlyList<Tuple<int, int>> FindPersonalDictionaryPhraseSpans(
+            string text, IEnumerable<string> entries)
+        {
+            var spans = new List<Tuple<int, int>>();
+            foreach (var entry in entries.Where(item => item.Any(char.IsWhiteSpace)))
+            foreach (var occurrence in WholePhraseMatches(text, entry))
+                spans.Add(occurrence);
+            return spans;
+        }
+
+        private static bool IsCoveredBySpan(int start, int length,
+            IEnumerable<Tuple<int, int>> spans)
+        {
+            var end = start + length;
+            return spans.Any(span => start >= span.Item1 && end <= span.Item1 + span.Item2);
         }
 
         private static bool ShouldIgnoreLexiconToken(string value)
@@ -1124,6 +1200,16 @@ namespace ChuanHoa.Client.Core.Scanning
 
         private static IEnumerable<LocalParagraphSnapshot> Scannable(LocalScanSnapshot snapshot) =>
             snapshot.Paragraphs.Where(p => !string.IsNullOrWhiteSpace(p.Text));
+
+        private static Dictionary<int, string> MergeRoles(
+            IEnumerable<LogicalDocumentBlock> blocks)
+        {
+            var roles = new Dictionary<int, string>();
+            foreach (var block in blocks)
+                foreach (var role in block.Roles)
+                    roles[role.Key] = role.Value;
+            return roles;
+        }
 
         private static IEnumerable<LocalParagraphSnapshot> WithRole(LocalScanSnapshot snapshot, IDictionary<int, string> roles, string role) =>
             snapshot.Paragraphs.Where(p => roles.ContainsKey(p.Index) && roles[p.Index] == role);
@@ -1329,15 +1415,20 @@ namespace ChuanHoa.Client.Core.Scanning
         private static IEnumerable<Tuple<int, int>> WholePhraseMatches(string text, string phrase)
         {
             if (string.IsNullOrWhiteSpace(phrase)) yield break;
+            var mapped = NormalizedTextOffsetMap.Create(text);
+            var normalizedText = mapped.Normalized;
+            var normalizedPhrase = phrase.Normalize(NormalizationForm.FormC);
             var offset = 0;
-            while (offset <= text.Length - phrase.Length)
+            while (offset <= normalizedText.Length - normalizedPhrase.Length)
             {
-                var index = Vietnamese.CompareInfo.IndexOf(text, phrase, offset, CompareOptions.IgnoreCase);
+                var index = Vietnamese.CompareInfo.IndexOf(
+                    normalizedText, normalizedPhrase, offset, CompareOptions.IgnoreCase);
                 if (index < 0) yield break;
-                var end = index + phrase.Length;
-                if ((index == 0 || !char.IsLetterOrDigit(text[index - 1])) && (end == text.Length || !char.IsLetterOrDigit(text[end])))
-                    yield return Tuple.Create(index, phrase.Length);
-                offset = index + Math.Max(1, phrase.Length);
+                var end = index + normalizedPhrase.Length;
+                if ((index == 0 || !char.IsLetterOrDigit(normalizedText[index - 1])) &&
+                    (end == normalizedText.Length || !char.IsLetterOrDigit(normalizedText[end])))
+                    yield return mapped.MapSpan(index, normalizedPhrase.Length);
+                offset = index + Math.Max(1, normalizedPhrase.Length);
             }
         }
         private static string ApplyCase(string source, string target)

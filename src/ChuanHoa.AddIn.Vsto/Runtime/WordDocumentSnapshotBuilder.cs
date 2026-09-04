@@ -865,7 +865,25 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     var key = anchor.StoryType + ":" + anchor.Start + ":" + shape.Name;
                     if (!seen.Add(key)) continue;
                     line = shape.Line;
-                    color = line.ForeColor;
+                    var lineVisible = false;
+                    int? dashStyle = null;
+                    double? lineWeight = null;
+                    int? lineColor = null;
+                    int? beginArrowheadStyle = null;
+                    int? endArrowheadStyle = null;
+                    try { lineVisible = (int)line.Visible != 0; } catch (COMException) { }
+                    try { dashStyle = ReadNullableInteger((int)line.DashStyle); } catch (COMException) { }
+                    try { lineWeight = ReadNullableFloat(line.Weight); } catch (COMException) { }
+                    try
+                    {
+                        color = line.ForeColor;
+                        lineColor = ReadNullableInteger(color.RGB);
+                    }
+                    catch (COMException) { }
+                    try { beginArrowheadStyle = ReadNullableInteger((int)line.BeginArrowheadStyle); }
+                    catch (COMException) { }
+                    try { endArrowheadStyle = ReadNullableInteger((int)line.EndArrowheadStyle); }
+                    catch (COMException) { }
                     var sectionIndex = ReadSectionIndex(anchor);
                     var section = FindSection(sections, sectionIndex);
                     var anchorLeft = SafeInformationPoints(anchor, Word.WdInformation.wdHorizontalPositionRelativeToPage);
@@ -889,12 +907,12 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                         ResolvePageTop(shape.Top, relativeVertical, anchorTop, section),
                         relativeHorizontal,
                         relativeVertical,
-                        (int)line.Visible != 0,
-                        ReadNullableInteger((int)line.DashStyle),
-                        ReadNullableFloat(line.Weight),
-                        ReadNullableInteger(color.RGB),
-                        ReadNullableInteger((int)line.BeginArrowheadStyle),
-                        ReadNullableInteger((int)line.EndArrowheadStyle)));
+                        lineVisible,
+                        dashStyle,
+                        lineWeight,
+                        lineColor,
+                        beginArrowheadStyle,
+                        endArrowheadStyle));
                 }
                 catch (COMException)
                 {

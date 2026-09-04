@@ -132,6 +132,65 @@ public sealed class LocalDocumentScannerTests
     }
 
     [Fact]
+    public void Spelling_scan_keeps_document_ignore_after_content_fingerprint_changes()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), "ChuanHoaTestDict_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            var manager = new ChuanHoa.Client.Core.Lexicon.PersonalDictionaryManager(tempDir);
+            const string dictionaryScope = "word-session:0001";
+            Assert.True(manager.IgnoreWordForDocument(dictionaryScope, "nhậnn").Succeeded);
+            var paragraph = new LocalParagraphSnapshot(1, "Văn bản đã sửa vẫn có nhậnn.",
+                "wdMainTextStory", 1, 0, "Times New Roman");
+            var rules = new LocalRulePack("TEST", "1.0.0", Now.AddDays(-1), Now.AddDays(30), "1.0.0.0",
+                210, 297, 20, 25, 20, 25, 30, 35, 15, 20, "Times New Roman",
+                Array.Empty<TextCorrectionRule>(), Array.Empty<TelexRule>(), Array.Empty<char>(),
+                lexicon: new[] { "văn", "bản", "đã", "sửa", "vẫn", "có", "nhận" });
+            var snapshot = new LocalScanSnapshot("sha256:changed-content", 2,
+                new[] { ValidSection() }, new[] { paragraph }, Array.Empty<AnnotationProtectedSpan>(),
+                dictionaryScopeId: dictionaryScope);
+
+            var findings = new LocalDocumentScanner(manager).ScanSpelling(snapshot, rules).Findings;
+
+            Assert.DoesNotContain(findings, item => item.Anchor.ExpectedText == "nhậnn");
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact]
+    public void Spelling_scan_protects_every_token_in_a_personal_dictionary_phrase()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), "ChuanHoaTestDict_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            var manager = new ChuanHoa.Client.Core.Lexicon.PersonalDictionaryManager(tempDir);
+            Assert.True(manager.AddUserWord("cụm riêng nội bộ").Succeeded);
+            var paragraph = new LocalParagraphSnapshot(1, "Dùng cụm riêng nội bộ trong hồ sơ.",
+                "wdMainTextStory", 1, 0, "Times New Roman");
+            var rules = new LocalRulePack("TEST", "1.0.0", Now.AddDays(-1), Now.AddDays(30), "1.0.0.0",
+                210, 297, 20, 25, 20, 25, 30, 35, 15, 20, "Times New Roman",
+                new[] { new TextCorrectionRule("cụm riêng nội bộ", "cụm thay thế") },
+                Array.Empty<TelexRule>(), Array.Empty<char>(),
+                lexicon: new[] { "dùng", "trong", "hồ", "sơ" });
+
+            var findings = new LocalDocumentScanner(manager).ScanSpelling(
+                Snapshot(ValidSection(), paragraph), rules).Findings;
+
+            Assert.DoesNotContain(findings, item => item.RuleCode == "LOCAL-TYPO-DICT" ||
+                item.RuleCode == "LOCAL-TYPO-LEXICON");
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact]
     public void Format_scan_checks_component_body_code_number_and_place_date_locally()
     {
         var paragraphs = new[]
@@ -194,6 +253,25 @@ public sealed class LocalDocumentScannerTests
         var unknown = Assert.Single(result.Findings, item => item.RuleCode == "LOCAL-TYPO-LEXICON");
         Assert.Equal("nhậnn", unknown.Anchor.ExpectedText);
         Assert.Contains("“nhận”", unknown.Expected, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Spelling_phrase_matching_maps_nfc_result_back_to_decomposed_word_offsets()
+    {
+        const string text = "Đơn vị sa\u0301t nhập hồ sơ.";
+        var paragraph = new LocalParagraphSnapshot(1, text, "wdMainTextStory", 1, 0,
+            "Times New Roman");
+        var rules = new LocalRulePack("TEST", "1.0.0", Now.AddDays(-1), Now.AddDays(30), "1.0.0.0",
+            210, 297, 20, 25, 20, 25, 30, 35, 15, 20, "Times New Roman",
+            new[] { new TextCorrectionRule("sát nhập", "sáp nhập") },
+            Array.Empty<TelexRule>(), Array.Empty<char>());
+
+        var finding = Assert.Single(new LocalDocumentScanner()
+            .ScanSpelling(Snapshot(ValidSection(), paragraph), rules).Findings,
+            item => item.RuleCode == "LOCAL-TYPO-DICT");
+
+        Assert.Equal(text.IndexOf("sa\u0301t nhập", StringComparison.Ordinal), finding.Anchor.StartOffset);
+        Assert.Equal("sa\u0301t nhập", finding.Anchor.ExpectedText);
     }
 
     [Fact]

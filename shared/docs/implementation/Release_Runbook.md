@@ -35,6 +35,14 @@
 - Rule/config: đổi mapping về immutable compatible release trước đó.
 - Không sửa hoặc ghi đè stable artefact lịch sử.
 
+## Development Test EXE lifecycle
+
+- Mỗi `ProductVersion` chỉ được build một lần; muốn thay source phải tăng version.
+- Cài/upgrade bằng cách chạy EXE; bootstrapper bung allowlist vào `Staging-*`, kiểm tra rồi chuyển nguyên tử sang `Current`, giữ `Previous` để rollback.
+- Repair không hiện UI: chạy lại EXE với `/repair /quiet`; lặp lại đúng luồng staging/verification/activation.
+- Gỡ bản Development: chạy EXE với `/uninstall /quiet`; chỉ xóa registration, `Current`/`Previous`/`Staging-*`, trusted Development key và certificate thuộc installer. Từ điển cá nhân và tài liệu người dùng phải được giữ.
+- Các cờ này chỉ là quy trình Development; không thay thế MSI/Intune/ClickOnce production.
+
 ## Trạng thái hiện tại
 
-Build/load local không còn bị chặn bởi toolchain: Release artefact đã được ký bằng certificate development và smoke-test trên Word 16 x64. Release production vẫn bị chặn vì chưa có production code-signing certificate/CI signing identity, HTTPS deployment URL bất biến, KMS/HSM cho grant/FixPlan/rule, VM Word 2010/x86 và installer/update/uninstall evidence. Certificate development không được dùng để promote production.
+Build/load local không còn bị chặn bởi toolchain: bản Development 1.0.0.90 đã được ký bằng certificate development, kiểm tra payload, cài/repair/gỡ/cài lại và smoke-test trên Word 16 x64. Release production vẫn bị chặn vì chưa có production code-signing certificate/CI signing identity, HTTPS deployment URL bất biến, KMS/HSM cho grant/FixPlan/rule và VM Word 2010/x86. Certificate development tự ký không được dùng để promote production.

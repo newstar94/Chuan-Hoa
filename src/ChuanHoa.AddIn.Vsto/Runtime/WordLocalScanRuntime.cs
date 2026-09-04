@@ -98,7 +98,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     item.EndArrowheadStyle)).ToArray(), context == null ? source.RegimeCode : context.RegimeCode,
                 context == null ? source.DocumentTypeCode : context.DocumentTypeCode,
                 context == null ? source.RegimeWasSelectedManually : context.RegimeWasSelectedManually,
-                context == null ? source.DocumentTypeWasSelectedManually : context.DocumentTypeWasSelectedManually);
+                context == null ? source.DocumentTypeWasSelectedManually : context.DocumentTypeWasSelectedManually,
+                context == null ? source.DocumentFingerprint : context.DictionaryScopeId);
 
         internal static AnnotationDocumentSnapshot ToAnnotationSnapshot(WordDocumentSnapshot source) =>
             new AnnotationDocumentSnapshot(source.DocumentFingerprint, source.Revision,

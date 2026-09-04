@@ -92,6 +92,16 @@
         "btnChenQrCode"
       ],
       "productDecision": "QR is intentionally retired from the current product"
+    },
+    {
+      "changeId": "MERGE_TYPOGRAPHY_INTO_QUICK_SPELLING",
+      "commandId": "btnSuaTatCaChinhTa",
+      "mergedCapabilities": [
+        "RULE_BASED_SAFE_SPELLING_FIX",
+        "WHITESPACE_AND_PUNCTUATION_CLEANUP",
+        "STANDARD_BRACKET_AND_QUOTATION_MARKS"
+      ],
+      "separateRibbonButtons": false
     }
   ],
   "invariants": [
@@ -2064,8 +2074,8 @@
         "getEnabled": "GetEnabledAutoFixAll2026",
         "onAction": "OnSuaTatCaChinhTa"
       },
-      "screenTip": "Sửa nhanh toàn bộ lỗi chính tả an toàn",
-      "superTip": "Quét và áp dụng các phương án sửa chính tả rule-based có độ tin cậy cao.",
+      "screenTip": "Sửa nhanh chính tả và dọn lỗi gõ",
+      "superTip": "Sửa các lỗi chính tả rule-based có phương án an toàn; đồng thời dọn khoảng trắng, khoảng cách dấu câu và chuẩn hóa dấu ngoặc.",
       "staticItems": [],
       "order": 41,
       "commandContract": {
@@ -2073,7 +2083,7 @@
         "executionMode": "LOCAL_APPLY",
         "entitlement": "AUTOFIX",
         "riskTier": "CONFIRM",
-        "mutationScope": "SPELLING_FINDINGS_ONLY",
+        "mutationScope": "SPELLING_AND_TYPOGRAPHY_ALL_EDITABLE_STORIES",
         "preconditions": [
           "ACTIVE_DOCUMENT",
           "DOCUMENT_WRITABLE",

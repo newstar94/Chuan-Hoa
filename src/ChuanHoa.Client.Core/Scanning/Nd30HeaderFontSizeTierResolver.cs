@@ -26,25 +26,37 @@ namespace ChuanHoa.Client.Core.Scanning
         public static Nd30HeaderFontSizeTier Resolve(LocalScanSnapshot snapshot,
             IDictionary<int, string> roles)
         {
+            if (roles == null) throw new ArgumentNullException(nameof(roles));
+            return Resolve(snapshot, new Dictionary<int, string>(roles), int.MinValue, int.MaxValue);
+        }
+
+        public static Nd30HeaderFontSizeTier Resolve(LocalScanSnapshot snapshot,
+            IReadOnlyDictionary<int, string> roles, int startParagraphIndex, int endParagraphIndex)
+        {
             if (snapshot == null) throw new ArgumentNullException(nameof(snapshot));
             if (roles == null) throw new ArgumentNullException(nameof(roles));
 
-            var nationalTitle = FirstSize(snapshot, roles, "nationalTitle");
+            var nationalTitle = FirstSize(snapshot, roles, "nationalTitle",
+                startParagraphIndex, endParagraphIndex);
             if (Is(nationalTitle, 13d)) return Large;
             if (Is(nationalTitle, 12d)) return Small;
 
             var largeVotes = 0;
             var smallVotes = 0;
-            Vote(FirstSize(snapshot, roles, "nationalMotto"), ref smallVotes, ref largeVotes);
-            Vote(FirstSize(snapshot, roles, "placeAndIssuedDate"), ref smallVotes, ref largeVotes);
+            Vote(FirstSize(snapshot, roles, "nationalMotto", startParagraphIndex,
+                endParagraphIndex), ref smallVotes, ref largeVotes);
+            Vote(FirstSize(snapshot, roles, "placeAndIssuedDate", startParagraphIndex,
+                endParagraphIndex), ref smallVotes, ref largeVotes);
             return largeVotes > smallVotes ? Large : Small;
         }
 
-        private static double? FirstSize(LocalScanSnapshot snapshot, IDictionary<int, string> roles,
-            string role)
+        private static double? FirstSize(LocalScanSnapshot snapshot,
+            IReadOnlyDictionary<int, string> roles, string role, int startParagraphIndex,
+            int endParagraphIndex)
         {
             return snapshot.Paragraphs
-                .Where(paragraph => paragraph.FontSizePoints.HasValue &&
+                .Where(paragraph => paragraph.Index >= startParagraphIndex &&
+                    paragraph.Index <= endParagraphIndex && paragraph.FontSizePoints.HasValue &&
                     roles.TryGetValue(paragraph.Index, out var detectedRole) &&
                     string.Equals(detectedRole, role, StringComparison.Ordinal))
                 .OrderBy(paragraph => paragraph.Index)

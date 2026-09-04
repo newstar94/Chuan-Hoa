@@ -304,6 +304,30 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             finally { Release(selectedRange); }
         }
 
+        /// <summary>
+        /// Captures plain text from the current document selection or from the
+        /// document scope represented by a selected Modern Comment. No COM range is
+        /// retained after this method returns.
+        /// </summary>
+        public bool TryGetSelectedText(out string text)
+        {
+            text = string.Empty;
+            Word.Range? selectedRange = null;
+            try
+            {
+                selectedRange = ResolveSelectedCommentScopeOrDocumentRange();
+                if (selectedRange.StoryType == Word.WdStoryType.wdCommentsStory) return false;
+                text = NormalizeSelectedText(selectedRange.Text ?? string.Empty);
+                return text.Length > 0;
+            }
+            catch (COMException)
+            {
+                text = string.Empty;
+                return false;
+            }
+            finally { Release(selectedRange); }
+        }
+
         public bool TryFocusDocumentSelection()
         {
             return TryFocusDocumentSelection(false);
@@ -483,6 +507,13 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             if (leftStart == leftEnd) return rightStart <= leftStart && leftStart <= rightEnd;
             if (rightStart == rightEnd) return leftStart <= rightStart && rightStart <= leftEnd;
             return leftStart < rightEnd && rightStart < leftEnd;
+        }
+
+        private static string NormalizeSelectedText(string value)
+        {
+            return (value ?? string.Empty)
+                .Trim(' ', '\t', '\r', '\n', '\a')
+                .Normalize(NormalizationForm.FormC);
         }
 
         private void ClearRegisteredComments(string normalizedLane,

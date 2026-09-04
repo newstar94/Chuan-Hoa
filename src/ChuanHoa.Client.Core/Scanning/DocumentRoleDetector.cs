@@ -72,6 +72,30 @@ namespace ChuanHoa.Client.Core.Scanning
     }
 
     /// <summary>
+    /// A self-contained administrative document inside the main Word story. A Word
+    /// file can contain several such documents, so roles and type are scoped here.
+    /// </summary>
+    public sealed class LogicalDocumentBlock
+    {
+        internal LogicalDocumentBlock(int startParagraphIndex, int endParagraphIndex,
+            string documentTypeCode, IReadOnlyDictionary<int, string> roles)
+        {
+            StartParagraphIndex = startParagraphIndex;
+            EndParagraphIndex = endParagraphIndex;
+            DocumentTypeCode = documentTypeCode ?? LocalDocumentTypeCodes.Unknown;
+            Roles = roles ?? throw new ArgumentNullException(nameof(roles));
+        }
+
+        public int StartParagraphIndex { get; }
+        public int EndParagraphIndex { get; }
+        public string DocumentTypeCode { get; }
+        public IReadOnlyDictionary<int, string> Roles { get; }
+
+        public bool ContainsParagraph(int paragraphIndex) =>
+            paragraphIndex >= StartParagraphIndex && paragraphIndex <= EndParagraphIndex;
+    }
+
+    /// <summary>
     /// Resolves semantic roles before applying format rules. Document content is
     /// authoritative. A manual selection is retained only as an explicit fallback for
     /// unusual legacy documents whose type cannot be inferred from any textual signal.
@@ -99,14 +123,44 @@ namespace ChuanHoa.Client.Core.Scanning
         {
             if (snapshot == null) throw new ArgumentNullException(nameof(snapshot));
             var result = new Dictionary<int, string>();
-            var main = snapshot.Paragraphs
-                .Where(p => string.Equals(p.StoryType, "wdMainTextStory", StringComparison.Ordinal) &&
-                    !string.IsNullOrWhiteSpace(p.Text))
-                .OrderBy(p => p.Index)
-                .ToArray();
-            var documentType = ResolveDocumentType(snapshot, main);
+            foreach (var block in DetectBlocks(snapshot))
+                foreach (var role in block.Roles)
+                    result[role.Key] = role.Value;
+            return result;
+        }
+
+        public IReadOnlyList<LogicalDocumentBlock> DetectBlocks(LocalScanSnapshot snapshot)
+        {
+            if (snapshot == null) throw new ArgumentNullException(nameof(snapshot));
+            var main = MainParagraphs(snapshot);
+            if (main.Length == 0) return Array.Empty<LogicalDocumentBlock>();
+
+            var starts = FindBlockStarts(main);
+            var blocks = new List<LogicalDocumentBlock>(starts.Count);
+            for (var blockIndex = 0; blockIndex < starts.Count; blockIndex++)
+            {
+                var startPosition = starts[blockIndex];
+                var endPosition = blockIndex + 1 < starts.Count ? starts[blockIndex + 1] - 1 : main.Length - 1;
+                var paragraphs = main.Skip(startPosition).Take(endPosition - startPosition + 1).ToArray();
+                var documentType = ResolveDocumentTypeFromContent(paragraphs);
+                if (Eq(documentType, LocalDocumentTypeCodes.Unknown) && starts.Count == 1 &&
+                    snapshot.DocumentTypeWasSelectedManually &&
+                    !Eq(snapshot.DocumentTypeCode, LocalDocumentTypeCodes.Unknown))
+                    documentType = snapshot.DocumentTypeCode;
+                var roles = DetectBlock(paragraphs, documentType);
+                blocks.Add(new LogicalDocumentBlock(paragraphs[0].Index,
+                    paragraphs[paragraphs.Length - 1].Index, documentType, roles));
+            }
+            return blocks;
+        }
+
+        private static Dictionary<int, string> DetectBlock(LocalParagraphSnapshot[] main,
+            string documentType)
+        {
+            var result = new Dictionary<int, string>();
             var legalBasisWindowOpen = false;
             var legalBasisSequenceStarted = false;
+            var typeNameAssigned = false;
 
             for (var i = 0; i < main.Length; i++)
             {
@@ -114,6 +168,8 @@ namespace ChuanHoa.Client.Core.Scanning
                 if (!Eq(paragraph.Role, "Unknown") && !string.IsNullOrWhiteSpace(paragraph.Role))
                 {
                     result[paragraph.Index] = paragraph.Role;
+                    if (string.Equals(paragraph.Role, "typeName", StringComparison.Ordinal))
+                        typeNameAssigned = true;
                     UpdateLegalBasisWindow(paragraph, paragraph.Role, ref legalBasisWindowOpen,
                         ref legalBasisSequenceStarted);
                     continue;
@@ -137,9 +193,10 @@ namespace ChuanHoa.Client.Core.Scanning
                     // A Decision commonly repeats "QUYẾT ĐỊNH" as the operative
                     // formula immediately before Điều 1. Only the first occurrence is
                     // the document type whose following paragraph is the subject.
-                    assignedRole = result.Values.Any(role => role == "typeName")
+                    assignedRole = typeNameAssigned
                         ? "structuralTitle"
                         : "typeName";
+                    if (assignedRole == "typeName") typeNameAssigned = true;
                 }
                 else if (previousRole == "typeName" && text.Length < 300) assignedRole = "subject";
                 else if ((previousRole == "subject" || previousRole == "subjectContinuation") &&
@@ -164,6 +221,122 @@ namespace ChuanHoa.Client.Core.Scanning
             AssignAppendixRoles(main, result);
             AssignOrganRoles(main, result);
             return result;
+        }
+
+        private static LocalParagraphSnapshot[] MainParagraphs(LocalScanSnapshot snapshot) =>
+            snapshot.Paragraphs
+                .Where(p => string.Equals(p.StoryType, "wdMainTextStory", StringComparison.Ordinal) &&
+                    !string.IsNullOrWhiteSpace(p.Text))
+                .OrderBy(p => p.Index)
+                .ToArray();
+
+        private static List<int> FindBlockStarts(LocalParagraphSnapshot[] main)
+        {
+            var starts = new List<int> { 0 };
+            var currentStart = 0;
+            var currentHasDocumentIdentity = false;
+
+            for (var position = 0; position < main.Length; position++)
+            {
+                var text = Collapse(main[position].Text);
+                var isNationalOrPartyTitle = NationalTitle.IsMatch(text) ||
+                    Eq(text, "ĐẢNG CỘNG SẢN VIỆT NAM");
+
+                if (isNationalOrPartyTitle && currentHasDocumentIdentity &&
+                    HasHeaderClusterAhead(main, position))
+                {
+                    var candidate = BacktrackHeaderStart(main, position, currentStart);
+                    if (candidate > currentStart)
+                    {
+                        starts.Add(candidate);
+                        currentStart = candidate;
+                        currentHasDocumentIdentity = false;
+                    }
+                }
+
+                if (TypeName.IsMatch(text) || Rx(@"^(V/v|Về việc)\b", true).IsMatch(text))
+                {
+                    if (currentHasDocumentIdentity && TypeName.IsMatch(text))
+                    {
+                        var headerStart = FindHeaderClusterStartBefore(main, position, currentStart);
+                        if (headerStart > currentStart)
+                        {
+                            starts.Add(headerStart);
+                            currentStart = headerStart;
+                            currentHasDocumentIdentity = false;
+                        }
+                    }
+                    currentHasDocumentIdentity = true;
+                }
+            }
+
+            return starts.Distinct().OrderBy(value => value).ToList();
+        }
+
+        private static bool HasHeaderClusterAhead(LocalParagraphSnapshot[] main, int titlePosition)
+        {
+            var signals = 0;
+            var end = Math.Min(main.Length - 1, titlePosition + 12);
+            for (var position = titlePosition + 1; position <= end; position++)
+            {
+                var text = Collapse(main[position].Text);
+                if (Contains(text, "Độc lập") && Contains(text, "Hạnh phúc")) signals++;
+                else if (Rx(@"^Số\s*:?").IsMatch(text)) signals++;
+                else if (IsPlaceDate(text)) signals++;
+                else if (TypeName.IsMatch(text)) signals++;
+                else if (Rx(@"^(V/v|Về việc)\b", true).IsMatch(text)) signals++;
+                if (signals >= 2) return true;
+                if (IsStructuralBodyStart(text)) break;
+            }
+            return false;
+        }
+
+        private static int BacktrackHeaderStart(LocalParagraphSnapshot[] main, int titlePosition,
+            int currentStart)
+        {
+            var start = titlePosition;
+            var titlePage = main[titlePosition].PageNumber;
+            for (var position = titlePosition - 1;
+                position >= currentStart && titlePosition - position <= 3;
+                position--)
+            {
+                var paragraph = main[position];
+                var text = Collapse(paragraph.Text);
+                if (titlePage > 0 && paragraph.PageNumber > 0 && paragraph.PageNumber != titlePage) break;
+                if (main[position + 1].Index - paragraph.Index > 2) break;
+                if (!IsLikelyOrganHeading(text)) break;
+                start = position;
+            }
+            return start;
+        }
+
+        private static int FindHeaderClusterStartBefore(LocalParagraphSnapshot[] main, int typePosition,
+            int currentStart)
+        {
+            var earliestSignal = -1;
+            var signalCount = 0;
+            for (var position = typePosition - 1;
+                position > currentStart && typePosition - position <= 12;
+                position--)
+            {
+                var text = Collapse(main[position].Text);
+                if (NationalTitle.IsMatch(text) ||
+                    (Contains(text, "Độc lập") && Contains(text, "Hạnh phúc")) ||
+                    Rx(@"^Số\s*:?").IsMatch(text) || IsPlaceDate(text))
+                {
+                    earliestSignal = position;
+                    signalCount++;
+                }
+            }
+            if (signalCount < 2 || earliestSignal < 0) return currentStart;
+            return BacktrackHeaderStart(main, earliestSignal, currentStart);
+        }
+
+        private static bool IsLikelyOrganHeading(string text)
+        {
+            if (text.Length < 4 || text.Length > 220 || !IsMostlyUppercase(text)) return false;
+            if (SignerAuthority.IsMatch(text) || TypeName.IsMatch(text) || IsStructuralBodyStart(text)) return false;
+            return !Eq(text, "QUỐC HỘI");
         }
 
         private static void AssignAppendixRoles(IReadOnlyList<LocalParagraphSnapshot> main,
@@ -208,11 +381,7 @@ namespace ChuanHoa.Client.Core.Scanning
         public string ResolveDocumentType(LocalScanSnapshot snapshot)
         {
             if (snapshot == null) throw new ArgumentNullException(nameof(snapshot));
-            var main = snapshot.Paragraphs
-                .Where(p => string.Equals(p.StoryType, "wdMainTextStory", StringComparison.Ordinal) &&
-                    !string.IsNullOrWhiteSpace(p.Text))
-                .OrderBy(p => p.Index)
-                .ToArray();
+            var main = MainParagraphs(snapshot);
             return ResolveDocumentType(snapshot, main);
         }
 

@@ -8,7 +8,7 @@
 | 2019 | NOT_RUN | NOT_RUN | Legacy compatibility | Chưa có VM |
 | LTSC 2021 | NOT_RUN | NOT_RUN | Product support | Chưa có VM |
 | LTSC 2024 | NOT_RUN | NOT_RUN | Product support | Chưa có VM |
-| Microsoft 365 | NOT_RUN | PASS_LOCAL_SMOKE | Product support | Word 16.0.20326.20112 x64: Release build 0 warning/error; `COMAddIn.Connect=true`, `LoadBehavior=3`; đúng 1 tab/7 group; About hoạt động; chưa chạy mutation |
+| Microsoft 365 | NOT_RUN | PASS_LOCAL_DEVELOPMENT | Product support | Word 16.0.20326 x64: bản Development 1.0.0.90 fresh install, `LoadBehavior=3`, `COMAddIn.Connect=true`; DOC/DOCX local scan, annotation, command chain, 1-Click, quick spelling và heavy snapshot 10/50/100 trang PASS. Visual tab/icon riêng của `.90` chưa chạy |
 
 Mỗi ô chỉ chuyển PASS sau fresh install, Word launch, Ribbon contract, smoke command, update và uninstall trên máy/VM thật. Mock Interop không thay thế evidence này.
 

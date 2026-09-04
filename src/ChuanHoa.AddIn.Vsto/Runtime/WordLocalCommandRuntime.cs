@@ -546,8 +546,23 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         public void OpenCustomDictionaryDialog()
         {
             var handle = NativeMethods.GetForegroundWindow();
+            string? selectedText = null;
+            var document = _documentProvider == null ? null : _documentProvider();
+            if (document != null)
+            {
+                try
+                {
+                    var annotations = new WordFindingAnnotationAdapter(_application, document);
+                    string captured;
+                    if (annotations.TryGetSelectedText(out captured)) selectedText = captured;
+                }
+                catch (COMException)
+                {
+                    // The dictionary remains usable without a document selection.
+                }
+            }
             CustomDictionaryDialog.Prompt(handle == IntPtr.Zero ? null : new WindowHandle(handle),
-                _documentFingerprintProvider == null ? null : _documentFingerprintProvider());
+                _documentFingerprintProvider == null ? null : _documentFingerprintProvider(), selectedText);
         }
 
         private sealed class WindowHandle : System.Windows.Forms.IWin32Window

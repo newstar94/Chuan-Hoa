@@ -94,8 +94,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             var formatFindings = context.LastFormatScan!.Findings;
             var spellingFindings = context.LastSpellingScan!.Findings;
             var backup = CreateBackup(document);
-            var roles = _roleDetector.Detect(local);
-            var headerFontTier = Nd30HeaderFontSizeTierResolver.Resolve(local, roles);
+            var blocks = _roleDetector.DetectBlocks(local);
+            var roles = MergeRoles(blocks);
             var previousScreenUpdating = _application.ScreenUpdating;
             var previousAlerts = _application.DisplayAlerts;
             var undoStarted = false;
@@ -135,6 +135,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 {
                     string role;
                     roles.TryGetValue(paragraph.Index, out role);
+                    var headerFontTier = ResolveHeaderTier(local, blocks, paragraph.Index);
                     if (ApplyParagraphFormat(document, paragraph, role ?? string.Empty, local, rules,
                             headerFontTier))
                         changedParagraphs++;
@@ -512,7 +513,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             // deterministic text insertion. Reuse the same guarded edit path as
             // 1-Click so the comment is removed only after "số" was actually added.
             if (string.Equals(finding.RuleCode, "ND30-PL1-M2-K6B-SO", StringComparison.Ordinal) ||
-                string.Equals(finding.RuleCode, "ND30-PL1-M2-K6A-PUNCT", StringComparison.Ordinal))
+                string.Equals(finding.RuleCode, "ND30-PL1-M2-K6A-PUNCT", StringComparison.Ordinal) ||
+                IsDeterministicComponentTextFinding(finding.RuleCode))
                 return ApplyDeterministicSpellingFixes(document, snapshot,
                     new[] { finding }, rules) > 0;
             if (!finding.Anchor.ParagraphIndex.HasValue) return false;
@@ -529,8 +531,10 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 return NormalizeRequiredLine(document, snapshot, paragraph, ratio, finding.RuleCode);
             }
 
-            var roles = new DocumentRoleDetector().Detect(snapshot);
-            var headerFontTier = Nd30HeaderFontSizeTierResolver.Resolve(snapshot, roles);
+            var detector = new DocumentRoleDetector();
+            var blocks = detector.DetectBlocks(snapshot);
+            var roles = MergeRoles(blocks);
+            var headerFontTier = ResolveHeaderTier(snapshot, blocks, paragraph.Index);
             string role;
             roles.TryGetValue(paragraph.Index, out role);
             return ApplyParagraphFormat(document, paragraph, role ?? string.Empty, snapshot, rules,
@@ -704,7 +708,9 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             // 1.0.0.43 could leave an OOXML line object that Word exposed through COM
             // but did not paint. Those owned shapes have the legacy CHUANHOA_* marker,
             // so migrate them once even when the geometry-only scanner calls them valid.
-            var roles = new DocumentRoleDetector().Detect(snapshot);
+            var detector = new DocumentRoleDetector();
+            var blocks = detector.DetectBlocks(snapshot);
+            var roles = MergeRoles(blocks);
             // 1-Click guarantees every required component line, even when an earlier
             // scan considered an existing Shape valid. Word can keep a line object in
             // OOXML/COM while failing to paint it after save or Modern Comments layout
@@ -712,14 +718,21 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             // 1-Click makes the operation self-healing without scanning at activation.
             if (IsParty(snapshot))
             {
-                AddRequiredRoleLine(work, snapshot, roles, "partyTitle", "HD05-M1-TITLE-LINE", false);
+                foreach (var block in blocks)
+                    AddRequiredRoleLines(work, snapshot, block, "partyTitle",
+                        "HD05-M1-TITLE-LINE", false);
             }
             else
             {
-                AddRequiredRoleLine(work, snapshot, roles, "organName", "ND30-PL1-M2-K2-ORG-LINE", false);
-                AddRequiredRoleLine(work, snapshot, roles, "nationalMotto", "ND30-PL1-M2-K1-TN-LINE", false);
-                AddRequiredRoleLine(work, snapshot, roles, "subject", "ND30-PL1-M2-K5A-SUBJ-LINE", true);
-                AddRequiredRoleLine(work, snapshot, roles, "subjectContinuation", "ND30-PL1-M2-K5A-SUBJ-LINE", true);
+                foreach (var block in blocks)
+                {
+                    AddRequiredRoleLines(work, snapshot, block, "organName",
+                        "ND30-PL1-M2-K2-ORG-LINE", false);
+                    AddRequiredRoleLines(work, snapshot, block, "nationalMotto",
+                        "ND30-PL1-M2-K1-TN-LINE", false);
+                    AddRequiredRoleLines(work, snapshot, block, "subject",
+                        "ND30-PL1-M2-K5A-SUBJ-LINE", true);
+                }
             }
             foreach (var line in snapshot.LineShapes.Where(item =>
                 item.Name.StartsWith("CHUANHOA_", StringComparison.Ordinal)))
@@ -753,27 +766,35 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             return count;
         }
 
-        private static void AddRequiredRoleLine(ICollection<Tuple<string, int>> work,
-            LocalScanSnapshot snapshot, IDictionary<int, string> roles, string role,
-            string ruleCode, bool useLast)
+        private static void AddRequiredRoleLines(ICollection<Tuple<string, int>> work,
+            LocalScanSnapshot snapshot, LogicalDocumentBlock block, string role,
+            string ruleCode, bool useLastSubjectParagraph)
         {
             var matches = snapshot.Paragraphs.Where(paragraph =>
                     string.Equals(paragraph.StoryType, "wdMainTextStory", StringComparison.Ordinal) &&
-                    roles.ContainsKey(paragraph.Index) &&
-                    string.Equals(roles[paragraph.Index], role, StringComparison.Ordinal))
+                    block.Roles.TryGetValue(paragraph.Index, out var detectedRole) &&
+                    string.Equals(detectedRole, role, StringComparison.Ordinal))
                 .OrderBy(paragraph => paragraph.Index)
                 .ToArray();
             if (matches.Length == 0) return;
-            var paragraph = useLast ? matches[matches.Length - 1] : matches[0];
-            // Subject and subjectContinuation share one required line. Prefer the last
-            // detected subject row and replace an earlier candidate for the same rule.
-            if (useLast)
+            foreach (var match in matches)
             {
-                var earlier = work.Where(item => item.Item1 == ruleCode).ToArray();
-                foreach (var item in earlier) work.Remove(item);
+                var paragraph = match;
+                if (useLastSubjectParagraph)
+                {
+                    while (block.Roles.TryGetValue(paragraph.Index + 1, out var nextRole) &&
+                        string.Equals(nextRole, "subjectContinuation", StringComparison.Ordinal))
+                    {
+                        var next = snapshot.Paragraphs.FirstOrDefault(item =>
+                            item.Index == paragraph.Index + 1 &&
+                            string.Equals(item.StoryType, paragraph.StoryType, StringComparison.Ordinal));
+                        if (next == null) break;
+                        paragraph = next;
+                    }
+                }
+                if (!work.Any(item => item.Item1 == ruleCode && item.Item2 == paragraph.Index))
+                    work.Add(Tuple.Create(ruleCode, paragraph.Index));
             }
-            if (!work.Any(item => item.Item1 == ruleCode && item.Item2 == paragraph.Index))
-                work.Add(Tuple.Create(ruleCode, paragraph.Index));
         }
 
         private static bool NormalizeRequiredLine(Word.Document document, LocalScanSnapshot snapshot,
@@ -785,6 +806,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             Word.Shape? shape = null;
             try
             {
+                RemoveTextualLineSubstitutes(document, snapshot, paragraph);
                 range = ResolveCurrentMainParagraphRange(document, paragraph);
                 var top = WordTextMeasurement.ReadLastTextLineTop(range)
                     .GetValueOrDefault(paragraph.PageTopPoints.GetValueOrDefault(-1d));
@@ -824,6 +846,73 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             finally { Release(shape); Release(currentFont); Release(lineAnchor); Release(range); }
         }
 
+        private static void RemoveTextualLineSubstitutes(Word.Document document,
+            LocalScanSnapshot snapshot, LocalParagraphSnapshot paragraph)
+        {
+            Word.Range? componentRange = null;
+            try
+            {
+                componentRange = ResolveCurrentMainParagraphRange(document, paragraph);
+                var current = componentRange.Text ?? string.Empty;
+                var cleaned = Regex.Replace(current,
+                    @"[\v\n][ \t]*[-_.\u2010\u2011\u2012\u2013\u2014\u2015](?:[ \t]*[-_.\u2010\u2011\u2012\u2013\u2014\u2015]){2,}[ \t]*(?=[\r\a]*$)",
+                    string.Empty, RegexOptions.CultureInvariant);
+                if (!string.Equals(current, cleaned, StringComparison.Ordinal))
+                    componentRange.Text = cleaned;
+            }
+            finally { Release(componentRange); }
+
+            foreach (var candidate in snapshot.Paragraphs.Where(item =>
+                item.Index > paragraph.Index && item.Index <= paragraph.Index + 2 &&
+                string.Equals(item.StoryType, paragraph.StoryType, StringComparison.Ordinal) &&
+                item.SectionIndex == paragraph.SectionIndex &&
+                SameTextContainer(item, paragraph) &&
+                IsTextualLineSeparator(item.Text)))
+            {
+                Word.Range? candidateRange = null;
+                try
+                {
+                    candidateRange = ResolveCurrentMainParagraphRange(document, candidate);
+                    var current = candidateRange.Text ?? string.Empty;
+                    var contentLength = current.TrimEnd('\r', '\a').Length;
+                    if (contentLength <= 0) continue;
+                    candidateRange.End = candidateRange.Start + contentLength;
+                    candidateRange.Text = string.Empty;
+                }
+                finally { Release(candidateRange); }
+            }
+        }
+
+        private static bool SameTextContainer(LocalParagraphSnapshot left,
+            LocalParagraphSnapshot right)
+        {
+            if (!left.IsInTable && !right.IsInTable) return true;
+            return left.IsInTable && right.IsInTable &&
+                left.TableIndex == right.TableIndex &&
+                left.RowIndex == right.RowIndex &&
+                left.CellIndex == right.CellIndex;
+        }
+
+        private static bool IsTextualLineSeparator(string text)
+        {
+            var value = (text ?? string.Empty).Trim(' ', '\t', '\r', '\n', '\v', '\a');
+            if (value.Length < 3 || value.Length > 120) return false;
+            var marks = 0;
+            foreach (var character in value)
+            {
+                if (character == ' ' || character == '\t') continue;
+                if (character == '-' || character == '_' || character == '.' ||
+                    character == '\u2010' || character == '\u2011' || character == '\u2012' ||
+                    character == '\u2013' || character == '\u2014' || character == '\u2015')
+                {
+                    marks++;
+                    continue;
+                }
+                return false;
+            }
+            return marks >= 3;
+        }
+
         private static bool TryNormalizeExistingComponentLine(Word.Document document,
             LocalScanSnapshot snapshot, LocalParagraphSnapshot paragraph, string ruleCode,
             float targetLeft, float targetTop, float targetWidth)
@@ -852,7 +941,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 }
                 return false;
             }
-            var ownedPrefix = OwnedLinePrefix(ruleCode);
+            var ownedName = OwnedLineName(ruleCode, paragraph.Index);
             var obsoleteNames = new HashSet<string>(matches.Skip(1).Select(line => line.Name),
                 StringComparer.Ordinal);
             for (var index = document.Shapes.Count; index >= 1; index--)
@@ -873,7 +962,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     }
                     catch (COMException) { }
                     if (obsoleteNames.Contains(name) ||
-                        (name.StartsWith(ownedPrefix, StringComparison.Ordinal) &&
+                        (string.Equals(name, ownedName, StringComparison.Ordinal) &&
                          !string.Equals(name, selected.Name, StringComparison.Ordinal)))
                     {
                         candidate.Delete();
@@ -960,7 +1049,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         private static void RemoveObsoleteComponentLines(Word.Document document, LocalScanSnapshot snapshot,
             LocalParagraphSnapshot paragraph, string ruleCode)
         {
-            var ownedPrefix = OwnedLinePrefix(ruleCode);
+            var ownedName = OwnedLineName(ruleCode, paragraph.Index);
             var associatedNames = new HashSet<string>(snapshot.LineShapes
                 .Where(line => IsAssociatedLine(line, paragraph))
                 .Select(line => line.Name), StringComparer.Ordinal);
@@ -972,8 +1061,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     candidate = document.Shapes[index];
                     if ((int)candidate.Type != 9) continue;
                     var name = candidate.Name ?? string.Empty;
-                    if (name.StartsWith(ownedPrefix, StringComparison.Ordinal) ||
-                        (name.StartsWith("CHUANHOA", StringComparison.Ordinal) && name.Contains("P" + paragraph.Index)) ||
+                    if (string.Equals(name, ownedName, StringComparison.Ordinal) ||
+                        IsOwnedLineForParagraph(name, paragraph.Index) ||
                         associatedNames.Contains(name))
                         candidate.Delete();
                 }
@@ -1218,8 +1307,46 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             var paragraphs = snapshot.Paragraphs.ToDictionary(item => item.Index);
             var edits = new List<SpellingEdit>();
             var lexicon = new VietnameseLexiconSpellChecker(rules.Lexicon);
+            var componentFindingCodes = new HashSet<string>(StringComparer.Ordinal)
+            {
+                "ND30-PL1-M2-K1-TN-SEP",
+                "ND30-PL1-M2-K3-PREFIX",
+                "ND30-PL1-M2-K3-SEP",
+                "ND30-PL1-M2-K3-ABBR",
+                "ND30-PL1-M2-K3-SPACE",
+                "ND30-PL1-M2-K3-CASE",
+                "ND30-PL1-M2-K3-PAD"
+            };
+
+            foreach (var group in findings.Where(item =>
+                    item.Anchor.ParagraphIndex.HasValue &&
+                    string.Equals(item.Anchor.StoryType, "wdMainTextStory", StringComparison.Ordinal) &&
+                    componentFindingCodes.Contains(item.RuleCode))
+                .GroupBy(item => item.Anchor.ParagraphIndex.GetValueOrDefault()))
+            {
+                LocalParagraphSnapshot paragraph;
+                if (!paragraphs.TryGetValue(group.Key, out paragraph)) continue;
+                var printable = (paragraph.Text ?? string.Empty).TrimEnd('\r', '\a');
+                string? replacement = null;
+                if (group.Any(item => item.RuleCode == "ND30-PL1-M2-K1-TN-SEP"))
+                {
+                    replacement = LocalAdministrativeTextNormalizer.NationalMotto;
+                }
+                else
+                {
+                    var abbreviation = ResolveExpectedTypeAbbreviation(snapshot,
+                        paragraph.Index, rules);
+                    replacement = LocalAdministrativeTextNormalizer.NormalizeCodeNumber(
+                        printable, IsParty(snapshot), abbreviation);
+                }
+                if (!string.Equals(printable, replacement, StringComparison.Ordinal))
+                    edits.Add(new SpellingEdit(paragraph.AbsoluteStart, printable.Length,
+                        replacement ?? printable, printable, 100));
+            }
+
             foreach (var finding in findings)
             {
+                if (componentFindingCodes.Contains(finding.RuleCode)) continue;
                 if (finding.Anchor.Kind != AnnotationAnchorKind.TextSpan ||
                     !finding.Anchor.ParagraphIndex.HasValue || !finding.Anchor.StartOffset.HasValue ||
                     !string.Equals(finding.Anchor.StoryType, "wdMainTextStory", StringComparison.Ordinal))
@@ -1264,6 +1391,39 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 finally { Release(range); }
             }
             return count;
+        }
+
+        private static string ResolveExpectedTypeAbbreviation(LocalScanSnapshot snapshot,
+            int paragraphIndex, LocalRulePack rules)
+        {
+            var block = new DocumentRoleDetector().DetectBlocks(snapshot)
+                .FirstOrDefault(item => item.ContainsParagraph(paragraphIndex));
+            if (block == null) return string.Empty;
+            var typeParagraph = snapshot.Paragraphs.FirstOrDefault(item =>
+                block.Roles.TryGetValue(item.Index, out var role) && role == "typeName");
+            if (typeParagraph == null) return string.Empty;
+            var typeName = Regex.Replace(typeParagraph.Text ?? string.Empty, @"\s+", " ")
+                .Trim().Trim('.', ':');
+            var entry = rules.DocumentTypeAbbreviations.FirstOrDefault(item =>
+                string.Equals(item.TypeName, typeName, StringComparison.OrdinalIgnoreCase));
+            return entry == null ? string.Empty : entry.Abbreviation;
+        }
+
+        private static bool IsDeterministicComponentTextFinding(string ruleCode)
+        {
+            switch (ruleCode)
+            {
+                case "ND30-PL1-M2-K1-TN-SEP":
+                case "ND30-PL1-M2-K3-PREFIX":
+                case "ND30-PL1-M2-K3-SEP":
+                case "ND30-PL1-M2-K3-ABBR":
+                case "ND30-PL1-M2-K3-SPACE":
+                case "ND30-PL1-M2-K3-CASE":
+                case "ND30-PL1-M2-K3-PAD":
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         private static Word.Range ResolveCurrentMainParagraphRange(
@@ -1594,6 +1754,15 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             return OwnedLinePrefix(ruleCode) + "P" + paragraphIndex.ToString(CultureInfo.InvariantCulture);
         }
 
+        private static bool IsOwnedLineForParagraph(string name, int paragraphIndex)
+        {
+            if (string.IsNullOrEmpty(name) ||
+                !name.StartsWith("CHUANHOA", StringComparison.Ordinal)) return false;
+            var marker = "P" + paragraphIndex.ToString(CultureInfo.InvariantCulture);
+            return name.EndsWith(marker, StringComparison.Ordinal) ||
+                name.IndexOf(marker + "_", StringComparison.Ordinal) >= 0;
+        }
+
         private static string OwnedLinePrefix(string ruleCode)
         {
             var component = ruleCode.IndexOf("ORG-LINE", StringComparison.Ordinal) >= 0 ? "ORG" :
@@ -1795,6 +1964,27 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 // The independently copied backup remains available even if Word cannot reopen the source.
                 if (!File.Exists(backupPath)) throw;
             }
+        }
+
+        private static Dictionary<int, string> MergeRoles(
+            IEnumerable<LogicalDocumentBlock> blocks)
+        {
+            var roles = new Dictionary<int, string>();
+            foreach (var block in blocks)
+                foreach (var role in block.Roles)
+                    roles[role.Key] = role.Value;
+            return roles;
+        }
+
+        private static Nd30HeaderFontSizeTier ResolveHeaderTier(LocalScanSnapshot snapshot,
+            IReadOnlyList<LogicalDocumentBlock> blocks, int paragraphIndex)
+        {
+            var block = blocks.FirstOrDefault(item => item.ContainsParagraph(paragraphIndex));
+            if (block != null)
+                return Nd30HeaderFontSizeTierResolver.Resolve(snapshot, block.Roles,
+                    block.StartParagraphIndex, block.EndParagraphIndex);
+            return Nd30HeaderFontSizeTierResolver.Resolve(snapshot,
+                new Dictionary<int, string>());
         }
 
         private static void Release(object? value)

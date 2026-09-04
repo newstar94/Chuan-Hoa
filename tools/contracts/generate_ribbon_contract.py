@@ -166,13 +166,16 @@ QUICK_SPELLING_CONTROL: dict[str, Any] = {
         "getEnabled": "GetEnabledAutoFixAll2026",
         "onAction": "OnSuaTatCaChinhTa",
     },
-    "screenTip": "Sửa nhanh toàn bộ lỗi chính tả an toàn",
-    "superTip": "Quét và áp dụng các phương án sửa chính tả rule-based có độ tin cậy cao.",
+    "screenTip": "Sửa nhanh chính tả và dọn lỗi gõ",
+    "superTip": (
+        "Sửa các lỗi chính tả rule-based có phương án an toàn; đồng thời dọn "
+        "khoảng trắng, khoảng cách dấu câu và chuẩn hóa dấu ngoặc."
+    ),
     "staticItems": [],
 }
 
 QUICK_SPELLING_META = meta(
-    "LOCAL_APPLY", "AUTOFIX", "CONFIRM", "SPELLING_FINDINGS_ONLY",
+    "LOCAL_APPLY", "AUTOFIX", "CONFIRM", "SPELLING_AND_TYPOGRAPHY_ALL_EDITABLE_STORIES",
     WRITABLE_DOCUMENT, "WORD_2010_OBJECT_MODEL", "ONE_CUSTOM_UNDO_RECORD", "NOT_APPLICABLE"
 )
 
@@ -336,6 +339,16 @@ def main() -> None:
                 "changeId": "REMOVE_QR_FEATURE",
                 "removedControlIds": sorted(REMOVED_QR_CONTROL_IDS),
                 "productDecision": "QR is intentionally retired from the current product",
+            },
+            {
+                "changeId": "MERGE_TYPOGRAPHY_INTO_QUICK_SPELLING",
+                "commandId": "btnSuaTatCaChinhTa",
+                "mergedCapabilities": [
+                    "RULE_BASED_SAFE_SPELLING_FIX",
+                    "WHITESPACE_AND_PUNCTUATION_CLEANUP",
+                    "STANDARD_BRACKET_AND_QUOTATION_MARKS",
+                ],
+                "separateRibbonButtons": False,
             },
         ],
         "invariants": [

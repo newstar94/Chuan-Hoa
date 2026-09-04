@@ -133,7 +133,8 @@ namespace ChuanHoa.Client.Core.Scanning
             IReadOnlyList<LocalParagraphSnapshot> paragraphs, IReadOnlyList<AnnotationProtectedSpan> protectedSpans,
             IReadOnlyList<LocalLineShapeSnapshot>? lineShapes = null, string regimeCode = "UNKNOWN",
             string documentTypeCode = LocalDocumentTypeCodes.Unknown,
-            bool regimeWasSelectedManually = false, bool documentTypeWasSelectedManually = false)
+            bool regimeWasSelectedManually = false, bool documentTypeWasSelectedManually = false,
+            string? dictionaryScopeId = null)
         {
             DocumentFingerprint = documentFingerprint; Revision = revision; Sections = sections;
             Paragraphs = paragraphs; ProtectedSpans = protectedSpans;
@@ -141,6 +142,9 @@ namespace ChuanHoa.Client.Core.Scanning
             DocumentTypeCode = documentTypeCode ?? LocalDocumentTypeCodes.Unknown;
             RegimeWasSelectedManually = regimeWasSelectedManually;
             DocumentTypeWasSelectedManually = documentTypeWasSelectedManually;
+            DictionaryScopeId = string.IsNullOrWhiteSpace(dictionaryScopeId)
+                ? documentFingerprint
+                : dictionaryScopeId!;
         }
         public string DocumentFingerprint { get; }
         public long Revision { get; }
@@ -152,6 +156,12 @@ namespace ChuanHoa.Client.Core.Scanning
         public string DocumentTypeCode { get; }
         public bool RegimeWasSelectedManually { get; }
         public bool DocumentTypeWasSelectedManually { get; }
+        /// <summary>
+        /// Stable key for session-only personal-dictionary ignores. Unlike the content
+        /// fingerprint, this value must not change after an ordinary document edit.
+        /// Non-Word callers default to the fingerprint for backward compatibility.
+        /// </summary>
+        public string DictionaryScopeId { get; }
     }
 
     public sealed class LocalScanResult

@@ -22,13 +22,38 @@ namespace ChuanHoa.OneClickSmoke
             {
                 if (args.Length > 0)
                 {
+                    if (string.Equals(args[0], "--multiple", StringComparison.OrdinalIgnoreCase))
+                    {
+                        RunMultipleEmbeddedDocuments(Path.Combine(directory, "multiple-documents.docx"));
+                        Console.WriteLine("ONE_CLICK_MULTIPLE_DOCUMENTS_PASS");
+                        return 0;
+                    }
+                    if (string.Equals(args[0], "--dashed-line", StringComparison.OrdinalIgnoreCase))
+                    {
+                        RunDashedMottoLineDetection(Path.Combine(directory, "dashed-motto-line.docx"));
+                        Console.WriteLine("ONE_CLICK_DASHED_MOTTO_LINE_PASS");
+                        return 0;
+                    }
+                    if (string.Equals(args[0], "--quick-spelling", StringComparison.OrdinalIgnoreCase))
+                    {
+                        RunQuickSpellingTypography(Path.Combine(directory, "quick-spelling.docx"),
+                            Word.WdSaveFormat.wdFormatXMLDocument);
+                        Console.WriteLine("QUICK_SPELLING_TYPOGRAPHY_PASS");
+                        return 0;
+                    }
                     RunExistingDocument(args[0], directory);
                     Console.WriteLine("ONE_CLICK_EXISTING_DOCUMENT_PASS");
                     return 0;
                 }
                 Run(Path.Combine(directory, "decision.docx"), Word.WdSaveFormat.wdFormatXMLDocument);
                 Run(Path.Combine(directory, "decision.doc"), Word.WdSaveFormat.wdFormatDocument97);
-                Console.WriteLine("ONE_CLICK_WORD_SMOKE_PASS DOC DOCX");
+                RunMultipleEmbeddedDocuments(Path.Combine(directory, "multiple-documents.docx"));
+                RunDashedMottoLineDetection(Path.Combine(directory, "dashed-motto-line.docx"));
+                RunQuickSpellingTypography(Path.Combine(directory, "quick-spelling.docx"),
+                    Word.WdSaveFormat.wdFormatXMLDocument);
+                RunQuickSpellingTypography(Path.Combine(directory, "quick-spelling.doc"),
+                    Word.WdSaveFormat.wdFormatDocument97);
+                Console.WriteLine("ONE_CLICK_WORD_SMOKE_PASS DOC DOCX MULTIPLE_DOCUMENTS DASHED_MOTTO_LINE QUICK_SPELLING_TYPOGRAPHY");
                 return 0;
             }
             catch (Exception exception)
@@ -40,6 +65,304 @@ namespace ChuanHoa.OneClickSmoke
             {
                 try { Directory.Delete(directory, true); } catch { }
             }
+        }
+
+        private static void RunQuickSpellingTypography(string path, Word.WdSaveFormat format)
+        {
+            Word.Application application = null;
+            Word.Document document = null;
+            try
+            {
+                application = new Word.Application { Visible = false, DisplayAlerts = Word.WdAlertLevel.wdAlertsNone };
+                document = application.Documents.Add();
+                document.Content.Text =
+                    "Văn bản  có khoảng trắng ,dấu câu;liền ( nội dung ) [ thử ] và \" trích dẫn \".\r";
+                document.Content.Font.Name = "Times New Roman";
+                document.Content.Font.Size = 13f;
+                object fileName = path;
+                object saveFormat = format;
+                document.SaveAs(ref fileName, ref saveFormat);
+
+                var context = new DocumentContext(document.GetHashCode())
+                {
+                    RegimeCode = "ND30",
+                    DocumentTypeCode = LocalDocumentTypeCodes.Unknown,
+                    RegimeWasSelectedManually = true,
+                    DocumentTypeWasSelectedManually = false
+                };
+                using (var access = new LocalAccessManager(
+                    typeof(LocalAccessManager).Assembly.GetName().Version.ToString()))
+                {
+                    var reader = new WordDocumentReadRuntime(application, access);
+                    reader.Prepare(context, DocumentAnalysisScope.Spelling, document, false);
+                    var runtime = new WordOneClickRuntime(application, access);
+                    var fixedCount = runtime.FixAllSpellingFindings(context, document);
+                    Assert(fixedCount > 0,
+                        "Quick spelling did not report its merged typography cleanup.");
+                }
+
+                var actual = document.Content.Text ?? string.Empty;
+                const string expected =
+                    "Văn bản có khoảng trắng, dấu câu; liền (nội dung) [thử] và “trích dẫn”.";
+                Assert(string.Equals(actual.TrimEnd('\r', '\a'), expected, StringComparison.Ordinal),
+                    "Quick spelling did not merge whitespace, punctuation and bracket/quotation cleanup. " +
+                    "Expected=" + expected + " Actual=" + actual.Replace("\r", "|"));
+            }
+            finally
+            {
+                if (document != null) { object save = Word.WdSaveOptions.wdDoNotSaveChanges; document.Close(ref save); }
+                if (application != null) { object save = Word.WdSaveOptions.wdDoNotSaveChanges; application.Quit(ref save); }
+                Release(document);
+                Release(application);
+            }
+        }
+
+        private static void RunDashedMottoLineDetection(string path)
+        {
+            Word.Application application = null;
+            Word.Document document = null;
+            Word.Paragraph mottoParagraph = null;
+            Word.Range mottoRange = null;
+            Word.Shape dashedLine = null;
+            string backupPath = null;
+            try
+            {
+                application = new Word.Application { Visible = false, DisplayAlerts = Word.WdAlertLevel.wdAlertsNone };
+                document = application.Documents.Add();
+                document.Content.Text =
+                    "CƠ QUAN BAN HÀNH\r" +
+                    "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\r" +
+                    "Độc lập - Tự do - Hạnh phúc\r" +
+                    "--------------\r" +
+                    "Số: 01/QĐ-CQ\r" +
+                    "Hà Nội, ngày 04 tháng 09 năm 2026\r" +
+                    "QUYẾT ĐỊNH\r" +
+                    "Về việc kiểm tra Line Shape\r" +
+                    "Căn cứ Luật Ban hành văn bản quy phạm pháp luật.\r" +
+                    "Điều 1. Tổ chức thực hiện.\r";
+                document.Content.Font.Name = "Times New Roman";
+                document.Content.Font.Size = 13f;
+                object fileName = path;
+                object format = Word.WdSaveFormat.wdFormatXMLDocument;
+                document.SaveAs(ref fileName, ref format);
+
+                var context = new DocumentContext(document.GetHashCode())
+                {
+                    RegimeCode = "ND30",
+                    DocumentTypeCode = LocalDocumentTypeCodes.Decision,
+                    RegimeWasSelectedManually = true,
+                    DocumentTypeWasSelectedManually = false
+                };
+                using (var access = new LocalAccessManager(
+                    typeof(LocalAccessManager).Assembly.GetName().Version.ToString()))
+                {
+                    var reader = new WordDocumentReadRuntime(application, access);
+                    reader.Prepare(context, DocumentAnalysisScope.Full, document, false);
+                    var motto = context.LastLocalSnapshot.Paragraphs.Single(item =>
+                        item.Text.IndexOf("Độc lập - Tự do - Hạnh phúc", StringComparison.Ordinal) >= 0);
+                    Assert(motto.PageLeftPoints.HasValue && motto.PageTopPoints.HasValue &&
+                           motto.TextWidthPoints.HasValue && motto.TextWidthPoints.Value > 0,
+                        "The smoke document did not expose rendered motto geometry.");
+
+                    mottoParagraph = document.Paragraphs[motto.Index];
+                    mottoRange = mottoParagraph.Range.Duplicate;
+                    var left = (float)motto.PageLeftPoints.Value;
+                    var top = (float)(motto.PageTopPoints.Value + 20d);
+                    var width = (float)motto.TextWidthPoints.Value;
+                    object anchor = mottoRange;
+                    dashedLine = document.Shapes.AddLine(left, top, left + width, top, ref anchor);
+                    dashedLine.Name = "SMOKE_DASHED_MOTTO_LINE";
+                    dashedLine.RelativeHorizontalPosition =
+                        Word.WdRelativeHorizontalPosition.wdRelativeHorizontalPositionPage;
+                    dashedLine.RelativeVerticalPosition =
+                        Word.WdRelativeVerticalPosition.wdRelativeVerticalPositionPage;
+                    dashedLine.Left = left;
+                    dashedLine.Top = top;
+                    dashedLine.Line.Visible = Office.MsoTriState.msoTrue;
+                    dashedLine.Line.DashStyle = Office.MsoLineDashStyle.msoLineDash;
+                    dashedLine.Line.BeginArrowheadStyle = Office.MsoArrowheadStyle.msoArrowheadNone;
+                    dashedLine.Line.EndArrowheadStyle = Office.MsoArrowheadStyle.msoArrowheadNone;
+                    document.Save();
+
+                    context.ClearReadAnalysis();
+                    reader.Prepare(context, DocumentAnalysisScope.Full, document, false);
+                    var captured = context.LastLocalSnapshot.LineShapes.Single(item =>
+                        string.Equals(item.Name, "SMOKE_DASHED_MOTTO_LINE", StringComparison.Ordinal));
+                    Assert(captured.DashStyle == (int)Office.MsoLineDashStyle.msoLineDash,
+                        "Word DashStyle was not preserved by the snapshot; actual=" +
+                        (captured.DashStyle.HasValue ? captured.DashStyle.Value.ToString() : "null") + ".");
+                    var dashedFinding = context.LastFormatScan.Findings.Single(item =>
+                        item.RuleCode == "ND30-PL1-M2-K1-TN-LINE");
+                    Assert(dashedFinding.CurrentIssue.IndexOf("không phải nét liền", StringComparison.Ordinal) >= 0 ||
+                           dashedFinding.CurrentIssue.IndexOf("chuỗi dấu gạch/chấm", StringComparison.Ordinal) >= 0,
+                        "The dashed motto separator was not reported as an invalid line style/substitute: " +
+                        dashedFinding.CurrentIssue);
+
+                    var runtime = new WordOneClickRuntime(application, access);
+                    var result = runtime.Execute(context, document);
+                    backupPath = result.BackupPath;
+                    context.ClearReadAnalysis();
+                    reader.Prepare(context, DocumentAnalysisScope.Full, document, false);
+                    Assert(!context.LastFormatScan.Findings.Any(item =>
+                            item.RuleCode == "ND30-PL1-M2-K1-TN-LINE"),
+                        "1-Click did not replace the dashed motto line with a valid solid Line Shape.");
+                    var postText = document.Content.Text ?? string.Empty;
+                    Assert(!postText.Contains("--------------"),
+                        "1-Click retained a textual dash run under the motto: " +
+                        postText.Replace("\r", "|").Replace("\a", "#"));
+                    var normalized = context.LastLocalSnapshot.LineShapes.Single(item =>
+                        item.Name.StartsWith("CHUANHOA2_MOTTO_", StringComparison.Ordinal));
+                    Assert(normalized.DashStyle == (int)Office.MsoLineDashStyle.msoLineSolid,
+                        "The normalized motto Line Shape is not solid.");
+                }
+            }
+            finally
+            {
+                if (!string.IsNullOrWhiteSpace(backupPath)) try { if (File.Exists(backupPath)) File.Delete(backupPath); } catch { }
+                Release(dashedLine);
+                Release(mottoRange);
+                Release(mottoParagraph);
+                if (document != null) { object save = Word.WdSaveOptions.wdDoNotSaveChanges; document.Close(ref save); }
+                if (application != null) { object save = Word.WdSaveOptions.wdDoNotSaveChanges; application.Quit(ref save); }
+                Release(document);
+                Release(application);
+            }
+        }
+
+        private static void RunMultipleEmbeddedDocuments(string path)
+        {
+            Word.Application application = null;
+            Word.Document document = null;
+            string firstBackup = null;
+            string secondBackup = null;
+            try
+            {
+                application = new Word.Application { Visible = false, DisplayAlerts = Word.WdAlertLevel.wdAlertsNone };
+                document = application.Documents.Add();
+                document.Content.Text =
+                    "ỦY BAN NHÂN DÂN HUYỆN MẪU\r" +
+                    "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\r" +
+                    "Độc Lập – Tự do – Hạnh phúc\r" +
+                    "Số: 01/QĐ-UBND\r" +
+                    "Huyện Mẫu, ngày 01 tháng 09 năm 2026\r" +
+                    "QUYẾT ĐỊNH\r" +
+                    "Về việc phê duyệt kế hoạch\r" +
+                    "Căn cứ Luật Đấu thầu số 22/2023/QH15;\r" +
+                    "Theo đề nghị của cơ quan chuyên môn.\r" +
+                    "Điều 1. Phê duyệt kế hoạch.\r" +
+                    "Nơi nhận:\r- Như trên;\r- Lưu: VT.\r\r" +
+                    "ỦY BAN NHÂN DÂN HUYỆN MẪU\r" +
+                    "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\r" +
+                    "Độc Lập – Tự do – Hạnh phúc\r" +
+                    "Số: 129/2026/QĐ-TTĐ.BMC\r" +
+                    "Huyện Mẫu, ngày 02 tháng 09 năm 2026\r" +
+                    "THÔNG BÁO\r" +
+                    "Về việc triển khai nhiệm vụ\r" +
+                    "Căn cứ Nghị định số 30/2020/NĐ-CP;\r" +
+                    "Theo đề nghị của cơ quan chuyên môn.\r" +
+                    "Nội dung thông báo.\r";
+                document.Content.Font.Name = "Times New Roman";
+                document.Content.Font.Size = 13f;
+                object fileName = path;
+                object format = Word.WdSaveFormat.wdFormatXMLDocument;
+                document.SaveAs(ref fileName, ref format);
+                document.Save();
+
+                var context = new DocumentContext(document.GetHashCode())
+                {
+                    RegimeCode = "ND30",
+                    DocumentTypeCode = LocalDocumentTypeCodes.Unknown,
+                    RegimeWasSelectedManually = true,
+                    DocumentTypeWasSelectedManually = false
+                };
+                using (var access = new LocalAccessManager(
+                    typeof(LocalAccessManager).Assembly.GetName().Version.ToString()))
+                {
+                    var reader = new WordDocumentReadRuntime(application, access);
+                    reader.PrepareForOneClick(context, document);
+                    var initialBlocks = new DocumentRoleDetector().DetectBlocks(context.LastLocalSnapshot);
+                    Assert(initialBlocks.Count == 2,
+                        "The Word snapshot was not separated into two logical documents.");
+                    Assert(initialBlocks[0].DocumentTypeCode == LocalDocumentTypeCodes.Decision &&
+                        initialBlocks[1].DocumentTypeCode == LocalDocumentTypeCodes.Notice,
+                        "Each logical Word document did not retain its own type.");
+                    Assert(context.LastFormatScan.Findings.Any(item =>
+                        item.RuleCode == "ND30-PL1-M2-K3-ABBR" &&
+                        item.Anchor.ParagraphIndex.HasValue &&
+                        initialBlocks[1].ContainsParagraph(item.Anchor.ParagraphIndex.Value)),
+                        "The second document's mismatched type abbreviation was not detected.");
+
+                    var runtime = new WordOneClickRuntime(application, access);
+                    var first = runtime.Execute(context, document);
+                    firstBackup = first.BackupPath;
+                    Console.WriteLine("MULTI_RESULT changed=" + first.ChangedParagraphs +
+                        " lines=" + first.InsertedLines + " spelling=" + first.CorrectedSpellingItems);
+                    reader.Prepare(context, DocumentAnalysisScope.Full, document, false);
+                    var postBlocks = new DocumentRoleDetector().DetectBlocks(context.LastLocalSnapshot);
+                    Assert(postBlocks.Count == 2,
+                        "1-Click lost a logical document boundary.");
+                    var secondCode = context.LastLocalSnapshot.Paragraphs.Single(item =>
+                        postBlocks[1].Roles.TryGetValue(item.Index, out var role) && role == "codeNumber");
+                    var actualSecondCode = secondCode.Text.TrimEnd('\r', '\a');
+                    Assert(actualSecondCode == "Số: 129/TB-TTĐ-BMC",
+                        "1-Click did not normalize the second document's number/type notation: " +
+                        actualSecondCode);
+                    Assert(context.LastLocalSnapshot.Paragraphs.Count(item =>
+                        postBlocks.Any(block => block.Roles.TryGetValue(item.Index, out var role) &&
+                            role == "nationalMotto") &&
+                        item.Text.TrimEnd('\r', '\a') == LocalAdministrativeTextNormalizer.NationalMotto) == 2,
+                        "1-Click did not normalize every embedded document motto.");
+                    var remainingCorrectable = context.LastFormatScan.Findings.Where(item =>
+                        item.RuleCode == "ND30-PL1-M2-K1-TN-SEP" ||
+                        item.RuleCode == "ND30-PL1-M2-K3-ABBR" ||
+                        item.RuleCode == "ND30-PL1-M2-K3-SEP" ||
+                        item.RuleCode == "ND30-PL1-M2-K1-TN-LINE")
+                        .Select(item => item.RuleCode + "@" +
+                            item.Anchor.ParagraphIndex.GetValueOrDefault().ToString())
+                        .ToArray();
+                    Assert(remainingCorrectable.Length == 0,
+                        "Correctable findings remained after multi-document 1-Click: " +
+                        string.Join(",", remainingCorrectable) + " | lines=" +
+                        string.Join(";", context.LastLocalSnapshot.LineShapes.Select(line =>
+                            line.Name + "@P" + line.AnchorParagraphIndex.GetValueOrDefault() +
+                            "/page" + line.AnchorPageNumber + "/left" +
+                            line.PageLeftPoints.GetValueOrDefault().ToString("0.0") +
+                            "/top" + line.PageTopPoints.GetValueOrDefault().ToString("0.0") +
+                            "/width" + line.WidthPoints.ToString("0.0"))));
+
+                    var ownedLinesAfterFirst = CountOwnedLines(document);
+                    reader.PrepareForOneClick(context, document);
+                    var second = runtime.Execute(context, document);
+                    secondBackup = second.BackupPath;
+                    Assert(CountOwnedLines(document) == ownedLinesAfterFirst,
+                        "A second 1-Click duplicated managed Line Shapes.");
+                }
+            }
+            finally
+            {
+                foreach (var backup in new[] { firstBackup, secondBackup })
+                    if (!string.IsNullOrWhiteSpace(backup)) try { if (File.Exists(backup)) File.Delete(backup); } catch { }
+                if (document != null) { object save = Word.WdSaveOptions.wdDoNotSaveChanges; document.Close(ref save); }
+                if (application != null) { object save = Word.WdSaveOptions.wdDoNotSaveChanges; application.Quit(ref save); }
+                Release(document);
+                Release(application);
+            }
+        }
+
+        private static int CountOwnedLines(Word.Document document)
+        {
+            var count = 0;
+            for (var index = 1; index <= document.Shapes.Count; index++)
+            {
+                Word.Shape shape = null;
+                try
+                {
+                    shape = document.Shapes[index];
+                    if ((shape.Name ?? string.Empty).StartsWith("CHUANHOA2_", StringComparison.Ordinal)) count++;
+                }
+                finally { Release(shape); }
+            }
+            return count;
         }
 
         private static void RunExistingDocument(string sourcePath, string directory)

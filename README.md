@@ -28,4 +28,4 @@ D:\Chuẩn Hóa
 
 ## Trạng thái hiện tại
 
-Nền VSTO, Ribbon 43 control, signed local rule/lease, scanner rule-based local, annotation comment/tô đỏ, snapshot `.doc`/`.docx` và các tiện ích Word local đã có code thực. Development Admin quản lý user thử, trial và bảng giá tại `http://127.0.0.1:5206/development/admin`. Phiên bản hiện tại không đóng gói engine/model AI. Các command chưa đạt golden/compatibility gate vẫn fail closed. Xem `shared/docs/implementation/Implementation_Status.md`; không suy diễn production readiness từ README.
+Nền VSTO, Ribbon 42 control, signed local rule/lease, scanner rule-based local, annotation comment/tô đỏ, snapshot `.doc`/`.docx` và các tiện ích Word local đã có code thực. `Sửa nhanh chính tả` đồng thời dọn khoảng trắng, khoảng cách dấu câu và chuẩn hóa dấu ngoặc; không còn nút Ribbon riêng cho hai thao tác này. Development Admin quản lý user thử, trial và bảng giá tại `http://127.0.0.1:5206/development/admin`. Phiên bản hiện tại không đóng gói engine/model AI. Các command chưa đạt golden/compatibility gate vẫn fail closed. Xem `shared/docs/implementation/Implementation_Status.md`; không suy diễn production readiness từ README.

@@ -127,6 +127,62 @@ public sealed class CanonicalRouteScannerTests
         Assert.Contains(findings, item => item.RuleCode == "ND30-PL1-M2-K1-TN-LINE");
     }
 
+    [Theory]
+    [InlineData(4)]
+    [InlineData(5)]
+    public void Motto_line_with_dashed_style_is_reported_as_invalid_style(int dashStyle)
+    {
+        var paragraph = P(1, "Độc lập - Tự do - Hạnh phúc", "nationalMotto", size: 13,
+            bold: true, alignment: 1, page: 1, left: 320, top: 80, width: 180);
+        var dashedLine = Line(1, paragraph, 320, 98, 180, dashStyle);
+        var snapshot = new LocalScanSnapshot("sha256:motto-line-dashed-" + dashStyle, 1,
+            new[] { ValidSection() }, new[] { paragraph }, Array.Empty<AnnotationProtectedSpan>(),
+            new[] { dashedLine }, "STATE_ND30");
+
+        var finding = Assert.Single(new LocalDocumentScanner().ScanFormat(snapshot, Rules()).Findings,
+            item => item.RuleCode == "ND30-PL1-M2-K1-TN-LINE");
+
+        Assert.Contains("không phải nét liền", finding.CurrentIssue, StringComparison.Ordinal);
+        Assert.Contains("Line Shape nét liền", finding.Expected, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Motto_line_with_unknown_dash_style_fails_closed()
+    {
+        var paragraph = P(1, "Độc lập - Tự do - Hạnh phúc", "nationalMotto", size: 13,
+            bold: true, alignment: 1, page: 1, left: 320, top: 80, width: 180);
+        var unknownStyleLine = new LocalLineShapeSnapshot(1, "Line unknown style", 9,
+            paragraph.StoryType, paragraph.SectionIndex, paragraph.AbsoluteStart, paragraph.Index,
+            paragraph.PageNumber, 320, 98, 180, 0, 320, 98, 1, 1, true, null, .75, 0, 1, 1);
+        var snapshot = new LocalScanSnapshot("sha256:motto-line-unknown-style", 1,
+            new[] { ValidSection() }, new[] { paragraph }, Array.Empty<AnnotationProtectedSpan>(),
+            new[] { unknownStyleLine }, "STATE_ND30");
+
+        var finding = Assert.Single(new LocalDocumentScanner().ScanFormat(snapshot, Rules()).Findings,
+            item => item.RuleCode == "ND30-PL1-M2-K1-TN-LINE");
+
+        Assert.Contains("không phải nét liền", finding.CurrentIssue, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Text_dashes_below_motto_do_not_replace_a_solid_line_shape()
+    {
+        var paragraph = P(1, "Độc lập - Tự do - Hạnh phúc", "nationalMotto", size: 13,
+            bold: true, alignment: 1, page: 1, left: 320, top: 80, width: 180);
+        var textDashes = P(2, "--------------", size: 13, alignment: 1, page: 1,
+            left: 320, top: 98, width: 180);
+        var validShape = Line(1, paragraph, 320, 98, 180);
+        var snapshot = new LocalScanSnapshot("sha256:motto-text-dashes", 1,
+            new[] { ValidSection() }, new[] { paragraph, textDashes },
+            Array.Empty<AnnotationProtectedSpan>(), new[] { validShape }, "STATE_ND30");
+
+        var finding = Assert.Single(new LocalDocumentScanner().ScanFormat(snapshot, Rules()).Findings,
+            item => item.RuleCode == "ND30-PL1-M2-K1-TN-LINE");
+
+        Assert.Contains("chuỗi dấu gạch/chấm", finding.CurrentIssue, StringComparison.Ordinal);
+        Assert.Contains("Line Shape nét liền", finding.Expected, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void Owned_line_for_paragraph_is_accepted_without_false_findings()
     {
@@ -735,6 +791,38 @@ public sealed class CanonicalRouteScannerTests
         Assert.DoesNotContain(findings, item => item.RuleCode == "ND30-PL1-M2-K6E-DOTSLASH");
     }
 
+    [Fact]
+    public void Scanner_checks_each_embedded_document_against_its_own_type_and_lines()
+    {
+        var paragraphs = new[]
+        {
+            P(1, "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM", size: 12, bold: true, alignment: 1, page: 1),
+            P(2, "Độc lập - Tự do - Hạnh phúc", size: 13, bold: true, alignment: 1, page: 1),
+            P(3, "Số: 01/QĐ-ABC", size: 13, alignment: 1, page: 1),
+            P(4, "QUYẾT ĐỊNH", size: 14, bold: true, alignment: 1, page: 1),
+            P(5, "Về việc phê duyệt", size: 14, bold: true, alignment: 1, page: 1),
+            P(10, "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM", size: 13, bold: true, alignment: 1, page: 2),
+            P(11, "Độc lập - Tự do - Hạnh phúc", size: 14, bold: true, alignment: 1, page: 2),
+            P(12, "Số: 02/QĐ-ABC", size: 13, alignment: 1, page: 2),
+            P(13, "THÔNG BÁO", size: 14, bold: true, alignment: 1, page: 2),
+            P(14, "Về việc triển khai", size: 14, bold: true, alignment: 1, page: 2)
+        };
+        var snapshot = new LocalScanSnapshot("sha256:two-scanner-blocks", 1,
+            new[] { ValidSection() }, paragraphs, Array.Empty<AnnotationProtectedSpan>());
+
+        var findings = new LocalDocumentScanner().ScanFormat(snapshot, Rules()).Findings;
+
+        Assert.Contains(findings, item => item.RuleCode == "ND30-PL1-M2-K3-ABBR" &&
+            item.Anchor.ParagraphIndex == 12 && item.Expected.Contains("TB", StringComparison.Ordinal));
+        Assert.DoesNotContain(findings, item => item.RuleCode == "ND30-PL1-M2-K3-ABBR" &&
+            item.Anchor.ParagraphIndex == 3);
+        Assert.Equal(2, findings.Count(item =>
+            item.RuleCode == "ND30-PL1-M2-K1-TN-LINE"));
+        Assert.DoesNotContain(findings, item => item.RuleCode == "ND30-PL1-MV-CT1" &&
+            (item.Anchor.ParagraphIndex == 1 || item.Anchor.ParagraphIndex == 2 ||
+             item.Anchor.ParagraphIndex == 10 || item.Anchor.ParagraphIndex == 11));
+    }
+
     private static LocalScanSnapshot BadFormatSnapshot()
     {
         var paragraphs = new List<LocalParagraphSnapshot>
@@ -832,7 +920,11 @@ public sealed class CanonicalRouteScannerTests
                 new CapitalizationRule("holiday", "Ngày Quốc khánh"),
                 new CapitalizationRule("lunarYear", "Giáp Thìn")
             },
-            documentTypeAbbreviations: new[] { new DocumentTypeAbbreviationRule("Quyết định", "QĐ") },
+            documentTypeAbbreviations: new[]
+            {
+                new DocumentTypeAbbreviationRule("Quyết định", "QĐ"),
+                new DocumentTypeAbbreviationRule("Thông báo", "TB")
+            },
             lexicon: lexicon);
     }
 }

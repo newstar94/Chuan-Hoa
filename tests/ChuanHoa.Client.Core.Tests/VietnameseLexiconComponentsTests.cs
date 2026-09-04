@@ -84,6 +84,19 @@ namespace ChuanHoa.Client.Core.Tests
         }
 
         [Fact]
+        public void Nfc_offset_map_returns_the_exact_decomposed_source_span()
+        {
+            const string source = "A Ho\u0300a bi\u0300nh Z";
+            var mapped = NormalizedTextOffsetMap.Create(source);
+            var normalizedStart = mapped.Normalized.IndexOf("Hòa bình", StringComparison.Ordinal);
+
+            var sourceSpan = mapped.MapSpan(normalizedStart, "Hòa bình".Length);
+
+            Assert.Equal(source.IndexOf("Ho\u0300a", StringComparison.Ordinal), sourceSpan.Item1);
+            Assert.Equal("Ho\u0300a bi\u0300nh", source.Substring(sourceSpan.Item1, sourceSpan.Item2));
+        }
+
+        [Fact]
         public void PersonalDictionaryManager_SupportsAddingAndDocumentIgnoring()
         {
             var tempDir = Path.Combine(Path.GetTempPath(), "ChuanHoaTestDict_" + Guid.NewGuid().ToString("N"));

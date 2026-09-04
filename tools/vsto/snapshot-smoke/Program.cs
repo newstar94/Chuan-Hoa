@@ -1,5 +1,6 @@
 #nullable disable
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -14,6 +15,11 @@ namespace ChuanHoa.SnapshotSmoke
         [STAThread]
         private static int Main(string[] args)
         {
+            if (args.Length == 1 && string.Equals(args[0], "--synthetic-heavy",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return RunSyntheticHeavyMatrix();
+            }
             if (args.Length == 0)
             {
                 Console.Error.WriteLine("SNAPSHOT_WORD_SMOKE_FAIL: At least one .doc or .docx path is required.");
@@ -51,6 +57,182 @@ namespace ChuanHoa.SnapshotSmoke
                 }
 
                 Release(application);
+            }
+        }
+
+        private static int RunSyntheticHeavyMatrix()
+        {
+            var directory = Path.Combine(Path.GetTempPath(),
+                "ChuanHoaHeavySnapshot-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(directory);
+            Word.Application application = null;
+            try
+            {
+                application = new Word.Application
+                {
+                    Visible = false,
+                    DisplayAlerts = Word.WdAlertLevel.wdAlertsNone
+                };
+                foreach (var targetPages in new[] { 10, 50, 100 })
+                    VerifySyntheticHeavyDocument(application, directory, targetPages);
+                Console.WriteLine("HEAVY_SNAPSHOT_WORD_SMOKE_PASS 10 50 100 PROGRESS CANCEL SECOND_SCAN SAVE_AS TABLES SHAPES SECTIONS");
+                return 0;
+            }
+            catch (Exception exception)
+            {
+                Console.Error.WriteLine("HEAVY_SNAPSHOT_WORD_SMOKE_FAIL: " + exception);
+                return 1;
+            }
+            finally
+            {
+                if (application != null)
+                    application.Quit(Word.WdSaveOptions.wdDoNotSaveChanges);
+                Release(application);
+                try { Directory.Delete(directory, true); } catch { }
+            }
+        }
+
+        private static void VerifySyntheticHeavyDocument(Word.Application application,
+            string directory, int targetPages)
+        {
+            Word.Document document = null;
+            try
+            {
+                document = application.Documents.Add();
+                BuildSyntheticPages(document, targetPages);
+                var path = Path.Combine(directory, "heavy-" + targetPages + ".docx");
+                object fileName = path;
+                object format = Word.WdSaveFormat.wdFormatXMLDocument;
+                document.SaveAs(ref fileName, ref format);
+                document.Activate();
+
+                var capability = new WordDocumentCapabilityProvider(application).Evaluate(document);
+                Assert(capability.CanReadDocument, "Synthetic document is not readable.");
+                var context = new DocumentContext(targetPages);
+                var builder = new WordDocumentSnapshotBuilder();
+                WordDocumentSnapshot first;
+                var watch = Stopwatch.StartNew();
+                using (var operation = new DocumentOperationSession(application,
+                    "Synthetic " + targetPages, DocumentOperationState.Capturing))
+                {
+                    first = builder.Build(document, context, capability, operation);
+                    Assert(operation.State == DocumentOperationState.Capturing,
+                        "Progress operation left the capture state unexpectedly.");
+                }
+                watch.Stop();
+                Assert(first.Revision == 1, "First heavy snapshot revision is invalid.");
+                Assert(first.Paragraphs.Count >= targetPages * 2,
+                    "Heavy snapshot lost paragraphs.");
+                Assert(first.Tables.Count >= Math.Max(1, targetPages / 10),
+                    "Heavy snapshot lost tables.");
+                Assert(first.LineShapes.Count >= Math.Max(1, targetPages / 10),
+                    "Heavy snapshot lost shapes.");
+                Assert(first.Sections.Count >= Math.Max(1, targetPages / 20),
+                    "Heavy snapshot lost sections.");
+
+                WordDocumentSnapshot second;
+                using (var operation = new DocumentOperationSession(application,
+                    "Synthetic second scan " + targetPages, DocumentOperationState.Capturing))
+                    second = builder.Build(document, context, capability, operation);
+                Assert(second.Revision == 2, "Second heavy snapshot did not complete.");
+                Assert(string.Equals(first.DocumentFingerprint, second.DocumentFingerprint,
+                    StringComparison.Ordinal), "Read-only second scan changed snapshot identity.");
+
+                var saveAsPath = Path.Combine(directory, "heavy-" + targetPages + "-save-as.docx");
+                object saveAsName = saveAsPath;
+                document.SaveAs(ref saveAsName, ref format);
+                using (var operation = new DocumentOperationSession(application,
+                    "Synthetic after Save As " + targetPages, DocumentOperationState.Capturing))
+                {
+                    var afterSaveAs = builder.Build(document, context,
+                        new WordDocumentCapabilityProvider(application).Evaluate(document), operation);
+                    Assert(afterSaveAs.Revision == 3, "Snapshot after Save As did not complete.");
+                }
+
+                var cancelled = false;
+                using (var operation = new DocumentOperationSession(application,
+                    "Synthetic cancellation " + targetPages, DocumentOperationState.Capturing))
+                {
+                    try
+                    {
+                        operation.RequestCancellation();
+                        builder.Build(document, context, capability, operation);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        cancelled = true;
+                    }
+                }
+                Assert(cancelled, "Pre-mutation cancellation was not honored.");
+                Assert(document.Saved, "Read/progress/cancellation changed the document.");
+                Console.WriteLine("HEAVY_SNAPSHOT_CASE_PASS pages=" + targetPages +
+                    " paragraphs=" + first.Paragraphs.Count +
+                    " tables=" + first.Tables.Count +
+                    " shapes=" + first.LineShapes.Count +
+                    " sections=" + first.Sections.Count +
+                    " first_ms=" + watch.ElapsedMilliseconds);
+            }
+            finally
+            {
+                if (document != null)
+                {
+                    object save = Word.WdSaveOptions.wdDoNotSaveChanges;
+                    document.Close(ref save);
+                }
+                Release(document);
+            }
+        }
+
+        private static void BuildSyntheticPages(Word.Document document, int targetPages)
+        {
+            for (var page = 1; page <= targetPages; page++)
+            {
+                Word.Range range = null;
+                try
+                {
+                    range = document.Range(document.Content.End - 1, document.Content.End - 1);
+                    range.InsertAfter("Trang kiểm thử " + page + "\r" +
+                        "Nội dung kiểm thử tài liệu lớn có bảng, hình và nhiều section.\r");
+                }
+                finally { Release(range); }
+
+                if (page == 1 || page % 10 == 0)
+                {
+                    Word.Range tableRange = null;
+                    Word.Table table = null;
+                    Word.Range anchor = null;
+                    Word.Shape shape = null;
+                    try
+                    {
+                        tableRange = document.Range(document.Content.End - 1, document.Content.End - 1);
+                        table = document.Tables.Add(tableRange, 2, 3);
+                        table.Cell(1, 1).Range.Text = "STT";
+                        table.Cell(1, 2).Range.Text = "Nội dung";
+                        table.Cell(1, 3).Range.Text = "Giá trị";
+                        anchor = document.Range(document.Content.End - 1, document.Content.End - 1);
+                        object anchorObject = anchor;
+                        shape = document.Shapes.AddLine(72f, 72f, 150f, 72f, ref anchorObject);
+                        shape.Name = "HEAVY_SMOKE_LINE_" + page;
+                    }
+                    finally
+                    {
+                        Release(shape);
+                        Release(anchor);
+                        Release(table);
+                        Release(tableRange);
+                    }
+                }
+
+                if (page >= targetPages) continue;
+                Word.Range breakRange = null;
+                try
+                {
+                    breakRange = document.Range(document.Content.End - 1, document.Content.End - 1);
+                    breakRange.InsertBreak(page % 20 == 0
+                        ? Word.WdBreakType.wdSectionBreakNextPage
+                        : Word.WdBreakType.wdPageBreak);
+                }
+                finally { Release(breakRange); }
             }
         }
 

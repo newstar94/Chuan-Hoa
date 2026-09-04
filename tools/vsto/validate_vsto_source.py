@@ -26,7 +26,11 @@ WORD_LOCAL_COMMAND_PATH = VSTO_ROOT / "Runtime" / "WordLocalCommandRuntime.cs"
 WORD_ONE_CLICK_PATH = VSTO_ROOT / "Runtime" / "WordOneClickRuntime.cs"
 WORD_APPENDIX_PAGINATION_PATH = VSTO_ROOT / "Runtime" / "WordAppendixPaginationNormalizer.cs"
 DOCUMENT_OPERATION_SESSION_PATH = VSTO_ROOT / "Runtime" / "DocumentOperationSession.cs"
+CUSTOM_DICTIONARY_DIALOG_PATH = VSTO_ROOT / "Runtime" / "CustomDictionaryDialog.cs"
+DOCUMENT_CONTEXT_PATH = VSTO_ROOT / "Runtime" / "DocumentContext.cs"
 RIBBON_RUNTIME_INTERFACE_PATH = VSTO_ROOT / "Ribbon" / "IChuanHoaRibbonRuntime.cs"
+LOCAL_SCAN_MODELS_PATH = ROOT / "src" / "ChuanHoa.Client.Core" / "Scanning" / "LocalScanModels.cs"
+CANONICAL_SCANNER_PATH = ROOT / "src" / "ChuanHoa.Client.Core" / "Scanning" / "CanonicalRuleScanner.cs"
 PERSONAL_DICTIONARY_ICON_16 = VSTO_ROOT / "Resources" / "Icons" / "personal-dictionary-16.png"
 PERSONAL_DICTIONARY_ICON_32 = VSTO_ROOT / "Resources" / "Icons" / "personal-dictionary-32.png"
 EVIDENCE_PATH = (
@@ -71,6 +75,10 @@ def validate() -> dict:
     word_one_click_source = WORD_ONE_CLICK_PATH.read_text(encoding="utf-8")
     word_appendix_pagination_source = WORD_APPENDIX_PAGINATION_PATH.read_text(encoding="utf-8")
     document_operation_source = DOCUMENT_OPERATION_SESSION_PATH.read_text(encoding="utf-8")
+    custom_dictionary_dialog_source = CUSTOM_DICTIONARY_DIALOG_PATH.read_text(encoding="utf-8")
+    document_context_source = DOCUMENT_CONTEXT_PATH.read_text(encoding="utf-8")
+    local_scan_models_source = LOCAL_SCAN_MODELS_PATH.read_text(encoding="utf-8")
+    canonical_scanner_source = CANONICAL_SCANNER_PATH.read_text(encoding="utf-8")
     for resource_contract in (
         '<EmbeddedResource Include="Ribbon\\ChuanHoaRibbon.xml">',
         "<LogicalName>ChuanHoa.AddIn.Vsto.Ribbon.ChuanHoaRibbon.xml</LogicalName>",
@@ -114,6 +122,34 @@ def validate() -> dict:
             raise RuntimeError(f"Ribbon icon is not embedded in the VSTO assembly: {icon_path.name}")
     if "object GetImage(string controlId);" not in ribbon_runtime_interface:
         raise RuntimeError("Ribbon runtime interface is missing the custom image contract.")
+    for dictionary_workflow_contract in (
+        "TryGetSelectedText(out captured)",
+        "AddUserWord(_selectedText)",
+        "IgnoreWordForDocument(",
+        "ClearAllDocumentIgnores()",
+    ):
+        if dictionary_workflow_contract not in (
+                word_local_command_source + custom_dictionary_dialog_source):
+            raise RuntimeError(
+                "Personal dictionary selected-text workflow is missing: "
+                + dictionary_workflow_contract
+            )
+    for stable_ignore_contract, source in (
+        ("public string DictionaryScopeId", document_context_source),
+        ("dictionaryScopeId", local_scan_models_source),
+        ("snapshot.DictionaryScopeId", canonical_scanner_source),
+        ("ClearDocumentIgnores(closingContext.DictionaryScopeId)",
+         RIBBON_RUNTIME_PATH.read_text(encoding="utf-8")),
+    ):
+        if stable_ignore_contract not in source:
+            raise RuntimeError(
+                "Document-scoped dictionary ignores must use a stable lifetime scope and be cleared on close: "
+                + stable_ignore_contract
+            )
+    if "FindPersonalDictionaryPhraseSpans" not in canonical_scanner_source:
+        raise RuntimeError(
+            "Personal dictionary phrase entries must protect every covered token from lexicon findings."
+        )
     all_vsto_source = "\n".join(
         path.read_text(encoding="utf-8")
         for path in sorted(VSTO_ROOT.rglob("*"))
@@ -133,6 +169,32 @@ def validate() -> dict:
         )
     if any(control["id"] == "btnChenQrCode" for control in contract["controls"]):
         raise RuntimeError("QR is retired and must not reappear in the Ribbon contract.")
+    quick_spelling = next(
+        control for control in contract["controls"] if control["id"] == "btnSuaTatCaChinhTa"
+    )
+    if quick_spelling["commandContract"].get("mutationScope") != \
+            "SPELLING_AND_TYPOGRAPHY_ALL_EDITABLE_STORIES":
+        raise RuntimeError(
+            "Quick spelling must declare spelling, whitespace, punctuation and bracket cleanup."
+        )
+    if any(
+        marker in control.get("label", "").casefold()
+        for control in contract["controls"]
+        for marker in ("dọn khoảng trắng", "dấu ngoặc chuẩn")
+    ):
+        raise RuntimeError(
+            "Whitespace/punctuation and standard brackets must not reappear as separate Ribbon controls."
+        )
+    for merged_typography_contract in (
+        "fixedCount += CleanTypographyAndQuotes(document);",
+        "VietnameseTypographyCleaner.CleanWhitespaceAndPunctuation(source)",
+        "VietnameseTypographyCleaner.NormalizeQuotationMarks(cleaned)",
+    ):
+        if merged_typography_contract not in word_one_click_source:
+            raise RuntimeError(
+                "Quick spelling is missing merged typography cleanup: "
+                + merged_typography_contract
+            )
 
     controls = []
     callback_names = set()
@@ -642,7 +704,8 @@ def validate() -> dict:
             )
         elif verified_artifacts:
             build_evidence_status = (
-                "Local development build evidence verified by artifact hashes; current Word visual/load smoke remains NOT_RUN."
+                "Local development build evidence verified by artifact hashes; COM load is recorded separately, "
+                "while current Word visual Ribbon/icon smoke remains NOT_RUN."
             )
         else:
             build_evidence_status = "Stored VSTO build artifacts are stale or unavailable."

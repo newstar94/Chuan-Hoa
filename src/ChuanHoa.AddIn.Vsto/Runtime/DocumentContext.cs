@@ -17,6 +17,14 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
         public long DocumentIdentity { get; }
 
+        /// <summary>
+        /// Stable for the lifetime of this open Word document. This deliberately does
+        /// not use the snapshot hash, because editing content must not discard words
+        /// the user chose to ignore for the current document session.
+        /// </summary>
+        public string DictionaryScopeId => "word-session:" +
+            DocumentIdentity.ToString("X16", System.Globalization.CultureInfo.InvariantCulture);
+
         public DateTimeOffset CreatedAtUtc { get; }
 
         public string RegimeCode { get; set; } = "ND30";
