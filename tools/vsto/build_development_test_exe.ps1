@@ -86,6 +86,23 @@ try {
             Copy-Item -LiteralPath $sourceCache -Destination (Join-Path $supportDirectory $cacheFile)
         }
     }
+
+    # Package AI VietnameseEngine and models into payload
+    $engineOutputDir = Join-Path $root 'tools\VietnameseEngine\bin\Release\net48'
+    if (!(Test-Path -LiteralPath (Join-Path $engineOutputDir 'VietnameseEngine.exe'))) {
+        & dotnet build (Join-Path $root 'tools\VietnameseEngine\VietnameseEngine.csproj') -c Release -f net48
+        if ($LASTEXITCODE -ne 0) {
+            throw "Failed to build VietnameseEngine for net48"
+        }
+    }
+    $payloadEngineDir = Join-Path $payloadDirectory 'Engine'
+    New-Item -ItemType Directory -Path $payloadEngineDir -Force | Out-Null
+    Copy-Item -Path (Join-Path $engineOutputDir '*') -Destination $payloadEngineDir -Recurse -Force
+    $modelDir = Join-Path $root 'artifacts\models'
+    if (Test-Path -LiteralPath $modelDir) {
+        Copy-Item -Path (Join-Path $modelDir '*') -Destination $payloadEngineDir -Force
+    }
+
     Set-Content -LiteralPath $versionFile -Value $ApplicationVersion -Encoding ASCII -NoNewline
     Compress-Archive -Path (Join-Path $payloadDirectory '*') -DestinationPath $payloadZip -CompressionLevel Optimal
 

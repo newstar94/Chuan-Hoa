@@ -866,6 +866,16 @@ namespace ChuanHoa.Client.Core.Scanning
                 var actual = paragraph.Text.Substring(occurrence.Item1, occurrence.Item2);
                 findings.Add(Span("LOCAL-TYPO-DICT", paragraph, occurrence.Item1, occurrence.Item2, "Cụm từ có thể sai chính tả.", "Nên dùng “" + ApplyCase(actual, correction.Replacement) + "”.", rules));
             }
+
+            foreach (var pair in ChuanHoa.Client.Core.Lexicon.VietnameseConfusionSets.AdministrativeConfusionPairs)
+            foreach (var occurrence in WholePhraseMatches(paragraph.Text, pair.Key))
+            {
+                if (OverlapsExistingTextFinding(findings, paragraph, occurrence.Item1, occurrence.Item2)) continue;
+                var actual = paragraph.Text.Substring(occurrence.Item1, occurrence.Item2);
+                findings.Add(Span("LOCAL-TYPO-DICT", paragraph, occurrence.Item1, occurrence.Item2,
+                    "Cụm từ “" + actual + "” có thể sai ngữ cảnh.",
+                    "Nên dùng “" + ApplyCase(actual, pair.Value) + "”.", rules));
+            }
         }
 
         private static void CheckLexicon(ICollection<AnnotationFinding> findings,

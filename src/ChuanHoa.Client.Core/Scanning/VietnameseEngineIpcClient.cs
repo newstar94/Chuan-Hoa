@@ -116,20 +116,54 @@ namespace ChuanHoa.Client.Core.Scanning
             _consecutiveFailures = 0;
         }
 
+        private string? ResolveEngineExecutablePath()
+        {
+            if (!string.IsNullOrEmpty(_engineExecutablePath) && File.Exists(_engineExecutablePath))
+                return _engineExecutablePath;
+
+            try
+            {
+                var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                if (!string.IsNullOrEmpty(baseDir))
+                {
+                    var p1 = Path.Combine(baseDir, "VietnameseEngine.exe");
+                    if (File.Exists(p1)) return p1;
+                    var p2 = Path.Combine(baseDir, "Engine", "VietnameseEngine.exe");
+                    if (File.Exists(p2)) return p2;
+                }
+            }
+            catch { }
+
+            try
+            {
+                var localApp = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                var pInstalledEngine = Path.Combine(localApp, "ChuanHoa", "DevelopmentInstaller", "Current", "Engine", "VietnameseEngine.exe");
+                if (File.Exists(pInstalledEngine)) return pInstalledEngine;
+
+                var pInstalledRoot = Path.Combine(localApp, "ChuanHoa", "DevelopmentInstaller", "Current", "VietnameseEngine.exe");
+                if (File.Exists(pInstalledRoot)) return pInstalledRoot;
+            }
+            catch { }
+
+            return null;
+        }
+
         private void EnsureProcessStarted()
         {
-            if (string.IsNullOrEmpty(_engineExecutablePath) || !File.Exists(_engineExecutablePath))
+            var exePath = ResolveEngineExecutablePath();
+            if (string.IsNullOrEmpty(exePath) || !File.Exists(exePath))
                 return;
 
             try
             {
-                var processName = Path.GetFileNameWithoutExtension(_engineExecutablePath);
+                var processName = Path.GetFileNameWithoutExtension(exePath);
                 var existing = Process.GetProcessesByName(processName);
                 if (existing.Length == 0)
                 {
                     var psi = new ProcessStartInfo
                     {
-                        FileName = _engineExecutablePath,
+                        FileName = exePath,
+                        WorkingDirectory = Path.GetDirectoryName(exePath) ?? string.Empty,
                         CreateNoWindow = true,
                         UseShellExecute = false,
                         WindowStyle = ProcessWindowStyle.Hidden

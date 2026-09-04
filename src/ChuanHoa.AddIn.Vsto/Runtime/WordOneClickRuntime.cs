@@ -1106,9 +1106,19 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 case "LOCAL-TYPO-DICT":
                     var correction = rules.Corrections.FirstOrDefault(item =>
                         string.Equals(item.Wrong, expectedText, StringComparison.OrdinalIgnoreCase));
-                    return correction == null ? null : new SpellingEdit(start,
-                        length, ApplyCase(expectedText, correction.Replacement),
-                        expectedText, 30);
+                    if (correction != null)
+                    {
+                        return new SpellingEdit(start,
+                            length, ApplyCase(expectedText, correction.Replacement),
+                            expectedText, 30);
+                    }
+                    if (ChuanHoa.Client.Core.Lexicon.VietnameseConfusionSets.AdministrativeConfusionPairs.TryGetValue(expectedText, out var adminRep))
+                    {
+                        return new SpellingEdit(start,
+                            length, ApplyCase(expectedText, adminRep),
+                            expectedText, 30);
+                    }
+                    return null;
                 case "LOCAL-TYPO-LEXICON":
                     var suggestion = lexicon.FindDeterministicCorrection(expectedText);
                     return suggestion == null ? null : new SpellingEdit(start,
@@ -1212,6 +1222,11 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 var corr = rules.Corrections.FirstOrDefault(item =>
                     string.Equals(item.Wrong, expectedText, StringComparison.OrdinalIgnoreCase));
                 if (corr != null) return ApplyCase(expectedText, corr.Replacement);
+            }
+
+            if (ChuanHoa.Client.Core.Lexicon.VietnameseConfusionSets.AdministrativeConfusionPairs.TryGetValue(expectedText, out var adminRep2))
+            {
+                return ApplyCase(expectedText, adminRep2);
             }
 
             return null;
