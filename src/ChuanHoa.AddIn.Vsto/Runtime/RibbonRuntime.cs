@@ -118,7 +118,6 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 { "btnCanDinhO", () => RunLocalCommand("Căn đỉnh ô", () => _localCommandRuntime.AlignCurrentCells(false)) },
                 { "btnCanGiuaO", () => RunLocalCommand("Căn giữa ô", () => _localCommandRuntime.AlignCurrentCells(true)) },
                 { "btnXoaKyTuThuaBangExcel", () => RunLocalCommand("Xóa ký tự thừa", _localCommandRuntime.CleanExcelTableCharacters) },
-                { "btnChenQrCode", InsertQrCode },
                 { "btnKieuOaUy", () => RunLocalCommand("Kiểu oà, uý", () => _localCommandRuntime.NormalizeTonePlacement(VietnameseTonePlacementStyle.MainVowel)) },
                 { "btnKieuOaUy2", () => RunLocalCommand("Kiểu òa, úy", () => _localCommandRuntime.NormalizeTonePlacement(VietnameseTonePlacementStyle.FirstVowel)) },
                 { "btnDoiDauThapPhan", () => RunLocalCommand("Dấu phẩy thập phân", _localCommandRuntime.ConvertDecimalSeparators) },
@@ -127,12 +126,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 { "btnGuiPhanHoi", OpenFeedback },
                 { "btnGioiThieu", ShowAbout }
             };
-            _viewProperties = new Dictionary<string, string>(StringComparer.Ordinal)
-            {
-                { "chkRanhGioiVanBan", "ShowTextBoundaries" },
-                { "chkDauGoc", "ShowCropMarks" },
-                { "chkKyHieuSoanThao", "ShowAll" }
-            };
+            _viewProperties = new Dictionary<string, string>(StringComparer.Ordinal);
         }
 
         public void AttachRibbon(Office.IRibbonUI ribbonUi)

@@ -224,9 +224,13 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                             int.TryParse(values[4], NumberStyles.Integer, CultureInfo.InvariantCulture, out storedStart) &&
                             int.TryParse(values[5], NumberStyles.Integer, CultureInfo.InvariantCulture, out storedEnd))
                         {
-                            matchesSelection = storedStory == (int)selectedRange.StoryType &&
+                            var touches = storedStory == (int)selectedRange.StoryType &&
                                 NumericRangesTouch(storedStart, storedEnd, selectedRange.Start, selectedRange.End);
-                            candidateLength = Math.Max(0, storedEnd - storedStart);
+                            var isAdjacent = !touches && storedStory == (int)selectedRange.StoryType &&
+                                selectedRange.Start == selectedRange.End &&
+                                (selectedRange.Start >= storedStart - 2 && selectedRange.Start <= storedEnd + 2);
+                            matchesSelection = touches || isAdjacent;
+                            candidateLength = Math.Max(0, storedEnd - storedStart) + (isAdjacent ? 500 : 0);
                         }
                         else if (_document.Bookmarks.Exists(values[0]))
                         {
@@ -399,6 +403,23 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         private Word.Range ResolveSelectedCommentScopeOrDocumentRange()
         {
             var selected = _application.Selection.Range.Duplicate;
+            try
+            {
+                if (selected.Comments.Count > 0)
+                {
+                    Word.Comment? comment = null;
+                    try
+                    {
+                        comment = selected.Comments[1];
+                        var scope = comment.Scope.Duplicate;
+                        Release(selected);
+                        return scope;
+                    }
+                    finally { Release(comment); }
+                }
+            }
+            catch (COMException) { }
+
             if (selected.StoryType != Word.WdStoryType.wdCommentsStory) return selected;
             for (var commentIndex = 1; commentIndex <= _document.Comments.Count; commentIndex++)
             {

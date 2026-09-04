@@ -69,9 +69,13 @@ def update_xml(tree: ET.ElementTree, contract: dict) -> None:
         for parent in root.iter()
         for child in parent
     }
+    expected_group_ids = {group["id"] for group in contract["groups"]}
     for control_id, element in list(elements_by_id.items()):
         local_name = element.tag.rsplit("}", 1)[-1]
         if local_name in {"button", "menu", "dropDown", "checkBox"} and control_id not in expected_ids:
+            parent_by_child[element].remove(element)
+            del elements_by_id[control_id]
+        elif local_name == "group" and control_id not in expected_group_ids:
             parent_by_child[element].remove(element)
             del elements_by_id[control_id]
 

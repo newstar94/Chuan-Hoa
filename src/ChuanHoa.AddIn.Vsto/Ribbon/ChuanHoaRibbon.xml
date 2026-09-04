@@ -59,7 +59,6 @@
             <button id="btnCanGiuaO" label="Căn giữa ô            " size="normal" imageMso="TableCellAlignMiddleCenter" screentip="Căn giữa ô" supertip="Căn chữ ở giữa ô cho bảng hiện tại" getEnabled="GetEnabledHasDocument" onAction="OnCanGiuaO" />
             <button id="btnXoaKyTuThuaBangExcel" label="Xóa ký tự thừa (Excel)" size="normal" imageMso="CellsDelete" screentip="Xóa ký tự thừa (Excel)" supertip="Xóa ký tự thừa khi dán bảng từ Excel" getEnabled="GetEnabledHasDocument" onAction="OnXoaKyTuThuaBangExcel" />
           </box>
-          <button id="btnChenQrCode" label="Chèn mã QR" size="large" imageMso="ViewFocusModeView" screentip="Chèn mã QR" supertip="Chèn mã QR vào văn bản" getEnabled="GetEnabledHasDocument" onAction="OnChenQrCode" />
         </group>
         <group id="grpChinhTaSo" label="Chính tả và số">
           <menu id="mnuBoDau" label="Đặt dấu thanh" size="large" imageMso="SyntexEsign" screentip="Đặt dấu thanh" supertip="Đồng nhất cách đặt dấu theo kiểu oà, uý hoặc òa, úy; không thay đổi quy tắc i/y." getEnabled="GetEnabledHasDocument">
@@ -68,13 +67,6 @@
           </menu>
           <button id="btnDoiDauThapPhan" label="Dấu phẩy thập phân" size="large" imageMso="CommaStyle" screentip="Dấu phẩy thập phân" supertip="Chuyển kiểu viết số về chuẩn Việt Nam 1,234,567.89 → 1.234.567,89" getEnabled="GetEnabledHasDocument" onAction="OnDoiDauThapPhan" />
           <button id="btnTuDienCaNhan" label="Từ điển cá nhân" size="large" imageMso="SpellingOptions" screentip="Quản lý từ điển cá nhân" supertip="Xem, thêm, xóa các từ riêng, từ viết tắt đặc thù cơ quan hoặc các từ chuyên ngành để bộ kiểm tra chính tả tự động bỏ qua không báo lỗi." getEnabled="GetEnabledHasDocument" onAction="OnTuDienCaNhan" />
-        </group>
-        <group id="grpHienThi" label="Hiển thị">
-          <box id="boxHienThi" boxStyle="vertical">
-            <checkBox id="chkRanhGioiVanBan" label="Ẩn/hiện ranh giới văn bản" screentip="Ẩn/hiện ranh giới văn bản" supertip="Đồng bộ với &quot;Show text boundaries&quot; trong File → Options → Advanced → Show document content" getEnabled="GetEnabledHienThi" getPressed="GetPressedRanhGioiVanBan" onAction="OnRanhGioiVanBan" />
-            <checkBox id="chkDauGoc" label="Ẩn/hiện dấu góc" screentip="Ẩn/hiện dấu góc" supertip="Đồng bộ với &quot;Show crop marks&quot; trong File → Options → Advanced → Show document content" getEnabled="GetEnabledHienThi" getPressed="GetPressedDauGoc" onAction="OnDauGoc" />
-            <checkBox id="chkKyHieuSoanThao" label="Ẩn/hiện ký hiệu soạn thảo" screentip="Ẩn/hiện ký hiệu soạn thảo" supertip="Đồng bộ với &quot;Show all formatting marks&quot; trong File → Options → Display" getEnabled="GetEnabledHienThi" getPressed="GetPressedKyHieuSoanThao" onAction="OnKyHieuSoanThao" />
-          </box>
         </group>
         <group id="grpAbout" label="About">
           <menu id="mnuThongTinTienIch" label="Thông tin tiện ích" size="large" imageMso="Info" screentip="Thông tin tiện ích" supertip="Gửi phản hồi hoặc xem thông tin sản phẩm, phiên bản, tác giả">
