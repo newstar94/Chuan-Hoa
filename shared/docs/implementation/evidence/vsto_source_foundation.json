@@ -49,7 +49,7 @@
     "wordFindingAnnotationAdapterSha256": "E4505D978A8B6882DA950DA03A1E83D716E3163E08D971EA3A3D9415C55E8580",
     "wordSnapshotBuilderSha256": "9E2D1006D8B7B21C155978197EB1B630CD018C3B7DE6ADD4BAE7F368C7637F60"
   },
-  "buildGate": "PASS_LOCAL_DEVELOPMENT",
+  "buildGate": "NOT_RUN",
   "loadGate": "NOT_RUN",
-  "buildEvidenceStatus": "Local development build evidence verified by artifact hashes; COM load is recorded separately, while current Word visual Ribbon/icon smoke remains NOT_RUN."
+  "buildEvidenceStatus": "Stored VSTO build artifacts are stale or unavailable."
 }
