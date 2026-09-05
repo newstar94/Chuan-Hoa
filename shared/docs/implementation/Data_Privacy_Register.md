@@ -14,3 +14,5 @@
 | Support request | Customer Portal | Hỗ trợ | Support Service | Theo support policy | Không tự đính kèm tài liệu |
 
 Luồng sản phẩm hiện hành không có cloud snapshot/compliance worker. Mọi endpoint mới có khả năng nhận text hoặc file Word phải qua privacy review và ADR mới; không được suy ra quyền upload từ endpoint identity/lease/rule/admin.
+
+`python tools/validation/validate_document_privacy.py --self-test` là regression gate bắt buộc cho VSTO: network API chỉ được tồn tại trong allowlist đã review; endpoint, request field hoặc telemetry sink mới đều fail closed. Gate hiện tại xác nhận bootstrap Development chỉ gửi `deviceThumbprint` và `clientReleaseId`; đây là source gate, không thay thế production traffic observability hoặc pentest.

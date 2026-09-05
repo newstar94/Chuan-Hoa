@@ -55,16 +55,17 @@
 
 - Trạng thái: ACCEPTED_TECHNICAL.
 - Quyết định: project production mới ở `src/ChuanHoa.AddIn.Vsto` dùng đúng một Ribbon 39 control, không task pane và không giữ `Word.Document` tĩnh.
-- Command chưa port hoặc chưa vượt exit gate bị disabled và không có handler mô phỏng. About, ba tùy chọn hiển thị, hai lane scan và các tiện ích Word local đã có handler thật; không còn nút `Đọc dữ liệu`, mỗi command tự chuẩn bị đúng lane cần dùng. Mỗi mutation local yêu cầu signed `DOCUMENT_TOOLS` và preflight. Chỉ `Chuẩn hóa toàn bộ` cùng hai lệnh đổi cách đặt dấu tạo recovery copy; thao tác cục bộ dùng Word Undo và không clone/save cưỡng bức.
+- Command chưa port hoặc chưa vượt exit gate bị disabled và không có handler mô phỏng. Target hiện hành có hai lane scan cùng các tiện ích Word local; nhóm Hiển thị đã retired. Không còn nút `Đọc dữ liệu`, mỗi command tự chuẩn bị đúng lane cần dùng sau khi người dùng bấm. Mỗi mutation local yêu cầu signed feature lease/rule pack và preflight. Chỉ `Chuẩn hóa toàn bộ` cùng hai lệnh đổi cách đặt dấu tạo recovery copy; thao tác cục bộ dùng Word Undo và không clone/save cưỡng bức.
 - AutoFix dùng callback riêng `OnAutoFixAll2026`; không còn nối nhầm vào định dạng trang giấy.
-- Evidence: `VSTO-SOURCE-001` PASS; `VSTO-BUILD-001` PASS_LOCAL_DEVELOPMENT; `VSTO-WORD16-X64-001` PASS_LOCAL_SMOKE. Production signing, Word 2010/x86, Word COM safety adapter và command parity vẫn chưa đạt.
+- Evidence hiện hành: `VSTO-SOURCE-001` PASS; `.110` đạt 39-control, startup thụ động, DOC/DOCX/Document1, command parity, rollback smoke và visual người dùng trên Word 16 x64. Outer/owned PE dùng Authenticode digest validation + signer pin; VSTO manifest dùng chữ ký XML và dependency digest. Tamper-negative 7/7 PASS trên bản sao Temp. Production signing/timestamp và Word 2010/x86 vẫn chưa đạt.
 
-## ADR-010 — Bỏ Save-as-DOCX, xử lý trực tiếp DOC và DOCX
+## ADR-010 — Bỏ Save-as-DOCX, xử lý DOC/DOCX và tài liệu mới chưa lưu
 
-- Trạng thái: ACCEPTED_PRODUCT ngày 2026-09-01.
+- Trạng thái: ACCEPTED_PRODUCT, cập nhật theo yêu cầu ngày 2026-09-04.
 - Quyết định: loại bỏ `btnLuuDocx`, entitlement `SAVE_DOCX` và callback tương ứng khỏi target VSTO; giữ nguyên VBA extracted và `ribbon_actual.json` làm provenance.
 - Định dạng xử lý được phép là tài liệu đã lưu `.doc` với Word binary format, hoặc `.docx` với Word Open XML transitional/strict format. So khớp không phân biệt hoa thường nhưng phải khớp cả extension và `Document.SaveFormat`.
-- Không tự chuyển `.doc` sang `.docx`, không thay đổi định dạng lưu hiện tại. `.docm`, template, RTF, tài liệu chưa lưu hoặc extension/SaveFormat không khớp đều fail closed.
+- Tài liệu mới chưa lưu (`Document1`) vẫn dùng được toàn bộ chức năng, không bị ép Save As. Lệnh cục bộ sửa trực tiếp trong bộ nhớ Word; riêng 1-Click tạo recovery clone `.docx` trong `%TEMP%` nhưng giữ tài liệu gốc ở trạng thái chưa có path.
+- Không tự chuyển `.doc` sang `.docx`, không thay đổi định dạng lưu hiện tại. `.docm`, template, RTF hoặc extension/SaveFormat đã lưu không khớp đều fail closed.
 - Compatibility Mode không phải blocker. Mọi mutation vẫn phải vượt authorization, backup, fingerprint, Undo/rollback và exit gate hiện hữu.
 
 ## ADR-011 — Bỏ i/y, giữ hai lệnh đồng nhất vị trí dấu thanh
@@ -83,13 +84,13 @@
 
 ## ADR-013 — Comment có neo chính xác và tô chữ đỏ có sở hữu
 
-- Trạng thái: ACCEPTED_PRODUCT ngày 2026-09-01.
-- Quyết định: mỗi finding cục bộ phải có neo machine-readable gồm story, paragraph, offset, length và exact expected text. Comment ghi mã quy tắc, mức độ, hiện trạng, yêu cầu đúng và căn cứ; chữ trong phạm vi sai được tô đỏ.
+- Trạng thái: ACCEPTED_PRODUCT, cập nhật theo yêu cầu ngày 2026-09-03.
+- Quyết định: mỗi finding cục bộ phải có neo machine-readable gồm story, paragraph, offset, length và exact expected text. Phần comment nhìn thấy chỉ có hai dòng `Hiện tại:` và `Yêu cầu đúng:`; dòng yêu cầu phải nêu cách định dạng/sửa cụ thể để người dùng có thể làm theo. Không hiển thị mã quy tắc, severity, nguồn hay căn cứ trong thân comment.
 - Lỗi paragraph-level mới tô cả paragraph. Lỗi section/page setup hoặc toàn tài liệu chỉ neo comment an toàn, không tô nội dung giả định.
 - Client phải so khớp document fingerprint, revision và exact expected text; không fallback tìm occurrence khác. Neo mơ hồ, stale, protected hoặc không hỗ trợ trả `ANCHOR_UNRESOLVED` và không annotation.
-- Comment dùng marker theo lane/finding; red marker có bookmark và document-variable state để khôi phục màu gốc. Clear chỉ xóa marker của lane do add-in sở hữu; không xóa comment/màu của người dùng hoặc lane khác.
-- Scan vẫn read-only đối với nội dung/format nghiệp vụ; annotation là presentation mutation riêng theo yêu cầu người dùng. `btnKiemTra` chỉ được mở sau khi backend findings, entitlement, rollback và real-Word test đạt exit gate.
-- Evidence: `ANNOTATION-PLANNER-001` PASS_UNIT; `ANNOTATION-VSTO-ADAPTER-001` PASS_WORD16_X64_LOCAL_SMOKE cho apply/rerun/clear và bảo toàn comment/màu người dùng. Injected-failure rollback, golden DOC/DOCX và end-to-end scan còn NOT_RUN.
+- Ownership theo lane/finding nằm ngoài phần comment nhìn thấy bằng bookmark + document variable có chữ ký; red marker lưu màu gốc để khôi phục. Clear chỉ xóa marker của lane do add-in sở hữu; không xóa comment/màu của người dùng hoặc lane khác.
+- Scan local vẫn read-only đối với nội dung/format nghiệp vụ; annotation là presentation mutation riêng sau thao tác người dùng. Hai lệnh kiểm tra chỉ mở khi signed local lease/rule pack hợp lệ và Word capability đạt.
+- Evidence: `ANNOTATION-PLANNER-001`, `COMMENT-PRESENTATION-001` và `ANNOTATION-INJECTED-ROLLBACK-001` PASS; DOC/DOCX apply/rerun/clear/stress/selected-fix trên Word 16 x64 PASS. Click trực tiếp trong Modern Comments và Word 2010/x86 còn mở.
 
 ## ADR-014 — Development tách biệt Release
 
@@ -112,3 +113,10 @@
 - Quyết định: QR không còn thuộc sản phẩm hiện tại. Loại `btnChenQrCode`, callback, dialog, renderer, QRCoder, test thao tác QR và binary QR khỏi installer.
 - Theo quyết định sản phẩm ngày 2026-09-05, nhóm Hiển thị và ba checkbox bị loại; target Ribbon có 34 button, 3 menu, 2 dropdown, không checkbox và 39 control tương tác.
 - VBA extracted, `ribbon_actual.json` và migration ledger được giữ làm provenance, không được dùng để tự sinh lại QR vào target.
+
+## ADR-016 — Rule-based ở giai đoạn hiện tại, AI là nâng cấp mới
+
+- Trạng thái: ACCEPTED_PRODUCT ngày 2026-09-04.
+- Quyết định: runtime, source, test và installer hiện hành không chứa AI engine, ONNX runtime, model, IPC/training pipeline hoặc fallback AI. Chính tả và thể thức dùng deterministic rule/lexicon cùng signed rule pack local.
+- Nếu triển khai AI sau này phải là phase/ADR mới với threat model, privacy, model supply-chain, benchmark, false-positive corpus và cơ chế bật/tắt có chữ ký riêng; không được đưa lại code/model bằng thay đổi ngầm.
+- Evidence: `RULE-ONLY-PRODUCT-001`, installer payload deny-list và `validate_rule_only_product.py` PASS.

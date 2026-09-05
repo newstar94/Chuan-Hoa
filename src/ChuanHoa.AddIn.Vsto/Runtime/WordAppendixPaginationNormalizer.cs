@@ -14,7 +14,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
     /// </summary>
     internal static class WordAppendixPaginationNormalizer
     {
-        public static int Normalize(Word.Document document, IDictionary<int, string> roles)
+        public static int Normalize(Word.Document document, IReadOnlyDictionary<int, string> roles)
         {
             if (document == null) throw new ArgumentNullException(nameof(document));
             if (roles == null || roles.Count == 0) return 0;

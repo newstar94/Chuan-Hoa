@@ -32,5 +32,9 @@
 | DEC-028 | BLOCKED_DECISION | Signed updater riêng cho máy cá nhân | Chưa duyệt; không thuộc MVP mặc định | Product/Security | Zero-click consumer update |
 | DEC-029 | BLOCKED_DECISION | Client authenticity boundary | Chưa chọn WDAC/managed endpoint, attestation/helper hoặc accepted consumer limitation | Security/Product | Claim chống client clone/re-sign |
 | DEC-030 | BLOCKED_DECISION | Danh sách khách hàng cần on-prem engine | Chưa có | Sales/Product | Deployment topology |
+| DEC-031 | LOCKED | Tài liệu chưa lưu | `Document1` dùng được toàn bộ chức năng, không ép Save As; 1-Click chỉ tạo recovery clone ở Temp | Product | Capability/backup |
+| DEC-032 | LOCKED | Nội dung comment | Chỉ hai dòng `Hiện tại` và `Yêu cầu đúng`; yêu cầu nêu cách sửa cụ thể; metadata ownership nằm ngoài thân comment | Product | Annotation UX |
+| DEC-033 | LOCKED | AI giai đoạn hiện tại | Rule/lexicon local; loại hoàn toàn AI/ONNX/model/IPC/training khỏi source/runtime/test/installer; AI cần phase/ADR mới | Product/Security | Runtime, privacy, packaging |
+| DEC-034 | LOCKED | Thành phần Ribbon retired | Không Save-as-DOCX, `Đọc dữ liệu`, i/y, QR hoặc nhóm Hiển thị; giữ hai lệnh đặt dấu | Product | Ribbon contract |
 
 Không mục BLOCKED_DECISION nào được thay bằng giá trị giả trong production config, test evidence hoặc tài liệu marketing.

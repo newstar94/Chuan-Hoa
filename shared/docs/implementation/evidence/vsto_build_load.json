@@ -1,85 +1,99 @@
 {
   "testId": "VSTO-BUILD-LOAD-001",
-  "status": "PASS_LOCAL_DEVELOPMENT_INSTALL_LIFECYCLE_COM_LOAD_VISUAL_PENDING",
-  "verifiedAt": "2026-09-05",
+  "status": "PASS_LOCAL_DEVELOPMENT_INSTALL_COM_LOAD_110_VISUAL_AND_TAMPER_REJECTION",
+  "verifiedAtUtc": "2026-09-05T16:25:56.0378090Z",
+  "sourceRevision": {
+    "branch": "main",
+    "headCommit": "73f9d96f8eb04035b08a6cbf831a4576c6ed84e1",
+    "workingTree": "DIRTY_PRESERVED"
+  },
   "environment": {
-    "visualStudioBuildTools": "17.14.37614.0",
     "targetFramework": "net48",
     "minimumOfficeVersionDeclared": "14.0",
-    "wordVersion": "16.0.20326",
+    "wordVersion": "16.0.20326.20132",
     "wordPlatform": "x64"
   },
   "build": {
     "configuration": "Development",
-    "version": "1.0.0.94",
-    "assemblyVersion": "1.0.0.94",
-    "fileVersion": "1.0.0.94",
-    "productVersion": "1.0.0.94",
+    "version": "1.0.0.110",
+    "assemblyVersion": "1.0.0.110",
+    "fileVersion": "1.0.0.110",
+    "productVersion": "1.0.0.110",
     "warnings": 0,
     "errors": 0,
     "artifacts": [
       {
         "path": "src/ChuanHoa.AddIn.Vsto/bin/Development/ChuanHoa.AddIn.Vsto.dll",
-        "length": 305664,
-        "sha256": "D489FB23943BF235BFEF27411BCADD68D15D4E882FCA6CA924F91CEAC2FD9230"
+        "length": 341288,
+        "sha256": "58DF84D43780F0D7AB97152E8B90DF94A617A3BD79F9A1C9A3FD22CA57AF6D76"
       },
       {
         "path": "src/ChuanHoa.AddIn.Vsto/bin/Development/ChuanHoa.AddIn.Vsto.dll.manifest",
-        "length": 15590,
-        "sha256": "3A2F203DCAF525CC02D455A5D9298D0C6AAACABCEF9B8821136B50BE56A063F9"
+        "length": 15598,
+        "sha256": "18183163CAD254A51FE795A39E153D8D1B8A3E2E033E70E9CC97EC6DBC8C9907"
       },
       {
         "path": "src/ChuanHoa.AddIn.Vsto/bin/Development/ChuanHoa.AddIn.Vsto.vsto",
-        "length": 7741,
-        "sha256": "1284F5B2B04A1AC092BB3015BBC1FD789CF90FFFFD350250B3276D3B44A38975"
+        "length": 7747,
+        "sha256": "C42482F30EF7B7A3F3F6F99350AC3A809BA75B8879104D651DCEF78BA5980B18"
       }
     ],
     "manifestSigning": "LOCAL_SELF_SIGNED_DEVELOPMENT_CERTIFICATE",
-    "privateKey": "CURRENT_USER_NON_EXPORTABLE",
     "productionSigningSatisfied": false
   },
   "developmentInstaller": {
-    "version": "1.0.0.94",
-    "path": "artifacts/installers/development/ChuanHoa_Development_Test_Setup_1.0.0.94.exe",
-    "sizeBytes": 263976,
-    "sha256": "299B543F542D8CFC25222A2A9C4C47ADFF37FC627FEF3B654FB071276356E98D",
-    "signatureStatus": "SignedDevelopmentCertificateChainNotProductionTrusted",
-    "signer": "CN=Chuan Hoa Local Development",
+    "version": "1.0.0.110",
+    "path": "artifacts/installers/development/ChuanHoa_Development_Test_Setup_1.0.0.110.exe",
+    "sizeBytes": 337704,
+    "sha256": "10A002F23BA5FA40143B48593810E712F6966ECF99F96447DF142AF3D9717520",
+    "signatureStatus": "ValidDevelopmentCertificateNotProductionTrust",
+    "signerThumbprint": "D91C8C668DBC96656AEF4FCE3B467F90D8214D1C",
+    "signerSha256": "E42AB29FAF8CBFE7F2FD8B323694AAF0096D594736317E6652C2EB2E2B6465EB",
+    "trustedPublicKeySha256": "5930DFB431B265147529C32B45754D7BD2B1C553BB42740A7CFCC53E24844C9F",
     "payloadFiles": 8,
     "forbiddenAiOnnxQrHits": 0,
-    "installSmokeExecuted": true,
-    "installedCurrentVersion": "1.0.0.94",
-    "loadBehavior": 3,
-    "vstoAutomaticUpdateEnabled": false,
-    "productionReady": false,
-    "repairSmokeExecuted": true,
-    "uninstallSmokeExecuted": false,
-    "freshReinstallSmokeExecuted": false,
+    "upgradeFromVersion": "1.0.0.107",
+    "installExitCode": 0,
+    "repairSmokeExecutedOnThisArtifact": true,
+    "uninstallReinstallExecutedOnThisArtifact": true,
+    "rollbackFaultPointsExecutedOnThisArtifact": true,
+    "rollbackFaultPointsPassed": 6,
     "personalDictionaryPreserved": true,
-    "verificationRebuildPreservedInstalledRegistration": true
+    "installedCurrentVersion": "1.0.0.110",
+    "loadBehavior": 3,
+    "tamperRejection": "PASS_7_OF_7_ON_TEMP_COPY",
+    "processTimeoutRegression": "PASS_CERTUTIL_AND_ACCESS_SMOKE_CAPTURED_ASYNC",
+    "productionReady": false
   },
   "wordSmoke": {
     "comAddInConnected": true,
-    "wordVersion": "16.0.20326",
-    "docAndDocxOneClick": "PASS",
+    "wordVersion": "16.0.20326.20132",
+    "passiveStartup": "PASS_CONNECTED_IDLE_NO_CACHE_NO_BACKUP_NO_BACKGROUND_SAVE_PRINT",
     "savedAndUnsavedRibbonControls": "PASS_ALL_39_CONTROLS",
-    "unsavedScanLocalCommandAndOneClick": "PASS_NO_SAVE_AS_TEMP_RECOVERY_COPY",
-    "docAndDocxQuickSpellingTypography": "PASS",
-    "multipleLogicalDocuments": "PASS",
-    "dashedMottoLineDetectionAndRepair": "PASS",
-    "docAndDocxLocalScanRerun": "PASS",
-    "docAndDocxLocalCommandChain": "PASS",
-    "annotationRerun": "PASS",
-    "heavySnapshot10_50_100Pages": "PASS_PROGRESS_CANCEL_SECOND_SCAN_SAVE_AS_TABLES_SHAPES_SECTIONS",
-    "personalDictionaryDialogContractDpi100To200": "PASS",
-    "singleCustomRibbonTabVisible": null,
-    "personalDictionaryIconVisible": null,
-    "visualInspectionPerformed": false
+    "annotationRerun": "PASS_ON_INSTALLED_1.0.0.110",
+    "annotationInjectedFailureRollback": "PASS_ON_INSTALLED_1.0.0.110",
+    "selectedFindingFix": "PASS_ON_INSTALLED_1.0.0.110",
+    "docAndDocxLocalCommands": "PASS_ON_INSTALLED_1.0.0.110",
+    "docAndDocxRepeatedScan": "PASS_ON_INSTALLED_1.0.0.110",
+    "docAndDocxOneClick": "PASS_ON_INSTALLED_1.0.0.110",
+    "unsavedDocumentOneClick": "PASS_ON_INSTALLED_1.0.0.110",
+    "multipleDocumentsOneClick": "PASS_ON_INSTALLED_1.0.0.110",
+    "dashedMottoLineOneClick": "PASS_ON_INSTALLED_1.0.0.110",
+    "quickSpellingTypography": "PASS_ON_INSTALLED_1.0.0.110",
+    "singleCustomRibbonTabVisible": true,
+    "personalDictionaryIconVisible": true,
+    "ribbonGroupsVisible": 6,
+    "saveAsDocxControlVisible": false,
+    "documentMutationExecuted": false,
+    "ribbonXmlSha256": "211FD5C95404780E5434EF7742FBF1533CF8983A4CBCD00F5657806BFBB18FF4",
+    "idleCursorBehaviorNormal": true,
+    "visualInspectionPerformed": true,
+    "visualConfirmation": "PASS_USER_CONFIRMED_2026-09-05_ON_INSTALLED_1.0.0.110",
+    "visualAutomationAttempt": "NOT_RUN_NATIVE_COMPUTER_USE_PIPE_UNAVAILABLE_OS_ERROR_2"
   },
   "limitations": [
-    "This is local development signing, not production Authenticode/KMS signing.",
     "Word 2010 and x86 compatibility lanes have not been executed.",
-    "Direct visual confirmation of the Ribbon and personal dictionary icon remains pending.",
-    "Production identity, payment, key rotation, and signed grant/rule issuance remain open."
+    "The Development certificate and installer are not production signing evidence.",
+    "Owned inner PE Authenticode, signed-manifest validation, tamper rejection and Apps and Features registration pass in Development; the self-signed certificate has no trusted timestamp and is not production trust."
   ]
 }

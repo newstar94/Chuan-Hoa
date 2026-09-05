@@ -22,7 +22,19 @@ public sealed class DevelopmentArtifactIssuer
     public const string RulePackKind = "rulePack";
     private const string SignedArtifactSchema = "chuanhoa.signed-artifact.v1";
     private const string LeaseSchema = "chuanhoa.offline-lease.v1";
-    private const string RulePackSchema = "chuanhoa.local-rule-pack.v1";
+    private const string RulePackSchema = "chuanhoa.local-rule-pack.v2";
+    private const string AcademicTypographyProfileCode = "AcademicTypography";
+    private const int AcademicTypographyDetectorPolicyVersion = 1;
+    private static readonly string[] AcademicTypographyRuleCodes =
+    {
+        "LATEX-SEC-STYLE",
+        "LATEX-SEC-CONTINUITY",
+        "LATEX-PAGINATION-KEEP",
+        "LATEX-PAGINATION-WIDOW",
+        "LATEX-TABLE-BOOKTABS",
+        "LATEX-CAPTION-POS",
+        "LATEX-MATH-SYNTAX"
+    };
     private readonly IWebHostEnvironment _environment;
     private readonly IConfiguration _configuration;
     private readonly TimeProvider _timeProvider;
@@ -48,6 +60,8 @@ public sealed class DevelopmentArtifactIssuer
         {
             throw new ArgumentException("Device thumbprint and client release id are required.", nameof(request));
         }
+        if (!Version.TryParse(request.ClientReleaseId, out _))
+            throw new ArgumentException("Client release id must be a numeric version.", nameof(request));
 
         var now = _timeProvider.GetUtcNow();
         var leaseExpires = now.AddDays(7);
@@ -83,10 +97,11 @@ public sealed class DevelopmentArtifactIssuer
     {
         var corrections = LoadCorrections();
         var lexicon = LoadLexicon();
+        var advisoryProfile = BuildAcademicTypographyAdvisoryProfile();
         return new XElement("rulePack",
             new XAttribute("schema", RulePackSchema),
             new XAttribute("packId", "LOCAL-DEVELOPMENT-ND30-V2"),
-            new XAttribute("version", "1.1.0"),
+            new XAttribute("version", "2.0.0"),
             new XAttribute("notBeforeUtc", now.AddMinutes(-1).ToString("O", CultureInfo.InvariantCulture)),
             new XAttribute("expiresAtUtc", expires.ToString("O", CultureInfo.InvariantCulture)),
             new XAttribute("minimumClientReleaseId", clientReleaseId),
@@ -123,7 +138,76 @@ public sealed class DevelopmentArtifactIssuer
                     new XAttribute("category", item.Category), new XAttribute("expected", item.Expected)))),
             new XElement("documentTypeAbbreviations",
                 DocumentTypeEntries().Select(item => new XElement("entry",
-                    new XAttribute("typeName", item.TypeName), new XAttribute("abbreviation", item.Abbreviation)))));
+                    new XAttribute("typeName", item.TypeName), new XAttribute("abbreviation", item.Abbreviation)))),
+            new XElement("advisoryProfiles", advisoryProfile));
+    }
+
+    private XElement BuildAcademicTypographyAdvisoryProfile()
+    {
+        var section = _configuration.GetSection("ChuanHoa:AcademicTypographyAdvisory");
+        var enabled = section.GetValue<bool>("Enabled");
+        var detectorPolicyVersion = section.GetValue<int?>("DetectorPolicyVersion") ??
+            AcademicTypographyDetectorPolicyVersion;
+        var headingConfidence = BoundedConfigurationDouble(
+            section, "HeadingConfidenceMinimum", .90d, 0d, 1d);
+        var bodyConfidence = BoundedConfigurationDouble(
+            section, "BodyConfidenceMinimum", .95d, 0d, 1d);
+        var captionMaxBlankParagraphs = BoundedConfigurationInteger(
+            section, "CaptionMaxBlankParagraphs", 1, 0, 2);
+        var mathMinimumSignalCount = BoundedConfigurationInteger(
+            section, "MathMinimumSignalCount", 1, 1, 10);
+
+        if (detectorPolicyVersion != AcademicTypographyDetectorPolicyVersion)
+            throw new InvalidOperationException("Development AcademicTypography detector policy version is unsupported.");
+
+        return new XElement("profile",
+            new XAttribute("code", AcademicTypographyProfileCode),
+            new XAttribute("enabled", enabled.ToString().ToLowerInvariant()),
+            new XAttribute("detectorPolicyVersion", detectorPolicyVersion.ToString(CultureInfo.InvariantCulture)),
+            new XElement("enabledRules", AcademicTypographyRuleCodes.Select(code =>
+                new XElement("rule", new XAttribute("code", code)))),
+            new XElement("autoFixRules",
+                new XElement("rule", new XAttribute("code", "LATEX-PAGINATION-KEEP")),
+                new XElement("rule", new XAttribute("code", "LATEX-PAGINATION-WIDOW"))),
+            new XElement("thresholds",
+                new XAttribute("headingConfidenceMinimum", headingConfidence.ToString("R", CultureInfo.InvariantCulture)),
+                new XAttribute("bodyConfidenceMinimum", bodyConfidence.ToString("R", CultureInfo.InvariantCulture)),
+                new XAttribute("captionMaxBlankParagraphs", captionMaxBlankParagraphs.ToString(CultureInfo.InvariantCulture)),
+                new XAttribute("mathMinimumSignalCount", mathMinimumSignalCount.ToString(CultureInfo.InvariantCulture))));
+    }
+
+    private static double BoundedConfigurationDouble(
+        IConfiguration section,
+        string name,
+        double fallback,
+        double minimum,
+        double maximum)
+    {
+        var raw = section[name];
+        double value;
+        if (string.IsNullOrWhiteSpace(raw)) value = fallback;
+        else if (!double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out value))
+            throw new InvalidOperationException("Development AcademicTypography setting is invalid: " + name + ".");
+        if (double.IsNaN(value) || double.IsInfinity(value) || value < minimum || value > maximum)
+            throw new InvalidOperationException("Development AcademicTypography setting is out of range: " + name + ".");
+        return value;
+    }
+
+    private static int BoundedConfigurationInteger(
+        IConfiguration section,
+        string name,
+        int fallback,
+        int minimum,
+        int maximum)
+    {
+        var raw = section[name];
+        int value;
+        if (string.IsNullOrWhiteSpace(raw)) value = fallback;
+        else if (!int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out value))
+            throw new InvalidOperationException("Development AcademicTypography setting is invalid: " + name + ".");
+        if (value < minimum || value > maximum)
+            throw new InvalidOperationException("Development AcademicTypography setting is out of range: " + name + ".");
+        return value;
     }
 
     private static IEnumerable<(string Category, string Expected)> CapitalizationEntries()

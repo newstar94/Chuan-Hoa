@@ -1,0 +1,69 @@
+{
+  "schema": "chuanhoa.validation-evidence.v1",
+  "status": "PASS",
+  "timestampUtc": "2026-09-05T13:29:09.3588907Z",
+  "sourceRevision": {
+    "branch": "main",
+    "headCommit": "73f9d96f8eb04035b08a6cbf831a4576c6ed84e1",
+    "worktree": "DIRTY_PRESERVED"
+  },
+  "productVersion": "1.0.0.101",
+  "environment": {
+    "os": "Windows 11",
+    "configuration": "Release",
+    "targetFrameworks": ["net10.0", "netstandard2.0", "net48"]
+  },
+  "commands": [
+    {"command": "dotnet test ChuanHoa.slnx -c Release --no-build --nologo", "exitCode": 0, "discovered": 403, "passed": 403, "failed": 0, "skipped": 0, "status": "PASS"},
+    {"command": "validate_solution_projects.py; validate_rule_only_product.py; validate_development_packaging.py; validate_vsto_source.py", "exitCode": 0, "status": "PASS"},
+    {"command": "validate_vsto_source.py against isolated fake scanner code present only in SelectedFixChangesText", "exitCode": 1, "expectedFailure": "ND30-VALIDATOR-FAKE missing from one-click handling policy", "status": "PASS_NEGATIVE_GATE"},
+    {"command": "audit_development_installer.ps1 (1.0.0.101, pinned public key and signing certificate)", "exitCode": 0, "status": "PASS_DEVELOPMENT"}
+  ],
+  "cleanCopyVerification": {
+    "status": "PASS",
+    "source": "CURRENT_1.0.0.101_WORKTREE_WITHOUT_GIT_TOOLS_ARTIFACTS_BIN_OBJ_CACHE_OR_SECRETS",
+    "restoreExitCode": 0,
+    "buildExitCode": 0,
+    "buildWarnings": 0,
+    "buildErrors": 0,
+    "testsDiscovered": 403,
+    "testsPassed": 403,
+    "testsFailed": 0,
+    "testsSkipped": 0,
+    "validators": ["SOLUTION_PROJECTS", "RULE_ONLY_PRODUCT", "DEVELOPMENT_PACKAGING", "VSTO-SOURCE-001"],
+    "vstoDevelopmentBuild": "PASS",
+    "installedRegistrationUnchanged": true
+  },
+  "testAssemblies": {
+    "ChuanHoa.Client.Core.Tests": 350,
+    "ChuanHoa.Contracts.Tests": 4,
+    "ChuanHoa.Domain.Tests": 14,
+    "ChuanHoa.Rules.Tests": 10,
+    "ChuanHoa.Application.Tests": 6,
+    "ChuanHoa.Api.Tests": 19
+  },
+  "contracts": {
+    "localRulePackSchema": "chuanhoa.local-rule-pack.v2",
+    "snapshotSchemaVersion": 3,
+    "academicTypographyDefault": "DISABLED",
+    "academicTypographyDetectorPolicyVersion": 1,
+    "canonicalLatexRuleCount": 7,
+    "latexSeverity": "Suggestion",
+    "latexAutoFixAllowlist": ["LATEX-PAGINATION-KEEP", "LATEX-PAGINATION-WIDOW"],
+    "ribbonInteractiveControls": 39,
+    "ribbonCallbacks": 51,
+    "scannerFindingCodesAcknowledgedByOneClick": 92,
+    "negativePolicyGate": "PASS_REJECTED_UNIMPLEMENTED_CODE",
+    "startupRuntimeInitialization": "USER_ACTION_ONLY",
+    "selectedFindingFix": "CACHED_FINDING_NO_RESCAN",
+    "vstoBuildGate": "PASS_LOCAL_DEVELOPMENT",
+    "vstoLoadGate": "PASS_WORD16_X64_COM",
+    "vstoVisualGate": "PASS_WORD16_X64_VISUAL_USER_CONFIRMED"
+  },
+  "sourceHashes": {
+    "ribbonXmlSha256": "211FD5C95404780E5434EF7742FBF1533CF8983A4CBCD00F5657806BFBB18FF4",
+    "generatedCallbacksSha256": "7F49CB35C9D9CE293165A41A828401C9F8045505F36FDCA8B4903004EAA63EA0",
+    "vstoProjectSha256": "80646C150AE966665FFFFACBCF3EF2189DF223A17418A07476EED80D7F628D64",
+    "wordSnapshotBuilderSha256": "F77E47755B1A8D7CE0AE60B70A2F591DC80FE7C4391EE353D87B61008ED5AFD3"
+  }
+}

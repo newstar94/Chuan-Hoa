@@ -30,8 +30,17 @@ namespace ChuanHoa.Client.Core.Scanning
             CancellationToken cancellationToken = default(CancellationToken))
         {
             Validate(snapshot, rules);
-            var findings = _canonical.ScanFormat(snapshot, rules, cancellationToken);
-            return Result("format", snapshot, rules, findings);
+            var outcome = _canonical.ScanFormatDetailed(snapshot, rules, cancellationToken);
+            var headings = outcome.AcademicTypography.Headings;
+            return new LocalScanResult(Guid.NewGuid().ToString("D"), "format", rules.PackId,
+                snapshot.DocumentFingerprint, snapshot.Revision, outcome.Findings, rules.Version,
+                rules.AcademicTypography.DetectorPolicyVersion,
+                outcome.AcademicTypography.NotEvaluatedRuleCodes,
+                rules.AcademicTypography.Enabled,
+                headings.Count,
+                headings.Count(h => h.Level == 1),
+                headings.Count(h => h.Level == 2),
+                headings.Count(h => h.Level == 3));
         }
 
         public LocalScanResult ScanSpelling(LocalScanSnapshot snapshot, LocalRulePack rules,
@@ -39,7 +48,7 @@ namespace ChuanHoa.Client.Core.Scanning
         {
             Validate(snapshot, rules);
             return Result("spelling", snapshot, rules,
-                _canonical.ScanSpelling(snapshot, rules, cancellationToken));
+                _canonical.ScanSpelling(snapshot, rules, cancellationToken), 0);
         }
 
         private static IEnumerable<LocalParagraphSnapshot> Scannable(LocalScanSnapshot snapshot) =>
@@ -53,9 +62,9 @@ namespace ChuanHoa.Client.Core.Scanning
         }
 
         private static LocalScanResult Result(string lane, LocalScanSnapshot snapshot, LocalRulePack rules,
-            IReadOnlyList<AnnotationFinding> findings) =>
+            IReadOnlyList<AnnotationFinding> findings, int detectorPolicyVersion) =>
             new LocalScanResult(Guid.NewGuid().ToString("D"), lane, rules.PackId, snapshot.DocumentFingerprint,
-                snapshot.Revision, findings);
+                snapshot.Revision, findings, rules.Version, detectorPolicyVersion);
 
         private static void AddRegexFindings(ICollection<AnnotationFinding> findings, LocalParagraphSnapshot paragraph,
             Regex regex, string code, string issue, string expected, string packId, string? replacement)

@@ -155,7 +155,10 @@ try {
             'outbox insert commits with a successful transaction'
         )
     }
-    $evidence | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $evidencePath -Encoding utf8NoBOM
+    [System.IO.File]::WriteAllText(
+        $evidencePath,
+        (($evidence | ConvertTo-Json -Depth 6) + [Environment]::NewLine),
+        [System.Text.UTF8Encoding]::new($false))
     Write-Output ($evidence | ConvertTo-Json -Depth 6)
 }
 finally {

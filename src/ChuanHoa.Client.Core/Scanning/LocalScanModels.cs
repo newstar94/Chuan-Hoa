@@ -1,9 +1,38 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using ChuanHoa.Client.Core.Annotations;
 
 namespace ChuanHoa.Client.Core.Scanning
 {
+    public enum LocalSnapshotValueState
+    {
+        Unknown = 0,
+        None = 1,
+        Present = 2
+    }
+
+    public sealed class LocalBorderSnapshot
+    {
+        public LocalBorderSnapshot(LocalSnapshotValueState state, int? lineStyle = null,
+            double? weightPoints = null)
+        {
+            State = state;
+            LineStyle = lineStyle;
+            WeightPoints = weightPoints;
+        }
+
+        public LocalSnapshotValueState State { get; }
+        public int? LineStyle { get; }
+        public double? WeightPoints { get; }
+
+        public static LocalBorderSnapshot Unknown { get; } =
+            new LocalBorderSnapshot(LocalSnapshotValueState.Unknown);
+
+        public static LocalBorderSnapshot None { get; } =
+            new LocalBorderSnapshot(LocalSnapshotValueState.None);
+    }
+
     public sealed class LocalSectionSnapshot
     {
         public LocalSectionSnapshot(int index, double pageWidthPoints, double pageHeightPoints, double topMarginPoints,
@@ -41,7 +70,11 @@ namespace ChuanHoa.Client.Core.Scanning
             bool hasBottomBorder = false, double? lineSpacingPoints = null, int? lineSpacingRule = null,
             int? outlineLevel = null, int pageNumber = 0, double? pageLeftPoints = null,
             double? pageTopPoints = null, double? textWidthPoints = null,
-            bool? keepWithNext = null, bool? widowControl = null, string? styleName = null)
+            bool? keepWithNext = null, bool? widowControl = null, string? styleName = null,
+            int? absoluteEnd = null, int? builtInStyleId = null,
+            bool? hasField = null, bool? hasMathObject = null, bool? hasHyperlink = null,
+            bool? hasContentControl = null, string? captionKind = null,
+            int tableNestingDepth = 0)
         {
             Index = index; Text = text ?? string.Empty; StoryType = storyType ?? string.Empty;
             SectionIndex = sectionIndex; AbsoluteStart = absoluteStart; FontName = fontName;
@@ -54,6 +87,11 @@ namespace ChuanHoa.Client.Core.Scanning
             LineSpacingRule = lineSpacingRule; OutlineLevel = outlineLevel; PageNumber = pageNumber;
             PageLeftPoints = pageLeftPoints; PageTopPoints = pageTopPoints; TextWidthPoints = textWidthPoints;
             KeepWithNext = keepWithNext; WidowControl = widowControl; StyleName = styleName;
+            AbsoluteEnd = absoluteEnd ?? (absoluteStart + (text ?? string.Empty).Length);
+            BuiltInStyleId = builtInStyleId; HasField = hasField;
+            HasMathObject = hasMathObject; HasHyperlink = hasHyperlink;
+            HasContentControl = hasContentControl; CaptionKind = captionKind ?? string.Empty;
+            TableNestingDepth = Math.Max(0, tableNestingDepth);
         }
         public int Index { get; }
         public string Text { get; }
@@ -86,6 +124,14 @@ namespace ChuanHoa.Client.Core.Scanning
         public bool? KeepWithNext { get; }
         public bool? WidowControl { get; }
         public string? StyleName { get; }
+        public int AbsoluteEnd { get; }
+        public int? BuiltInStyleId { get; }
+        public bool? HasField { get; }
+        public bool? HasMathObject { get; }
+        public bool? HasHyperlink { get; }
+        public bool? HasContentControl { get; }
+        public string CaptionKind { get; }
+        public int TableNestingDepth { get; }
     }
 
     public sealed class LocalLineShapeSnapshot
@@ -144,7 +190,15 @@ namespace ChuanHoa.Client.Core.Scanning
             bool hasVerticalBorders = false,
             bool hasHeaderSeparatorBorder = true,
             int? associatedCaptionParagraphIndex = null,
-            bool isCaptionAbove = true)
+            bool isCaptionAbove = true,
+            string storyType = "wdMainTextStory", int sectionIndex = 1,
+            int absoluteStart = 0, int absoluteEnd = 0, int nestingDepth = 0,
+            LocalBorderSnapshot? topBorder = null, LocalBorderSnapshot? bottomBorder = null,
+            LocalBorderSnapshot? leftBorder = null, LocalBorderSnapshot? rightBorder = null,
+            LocalBorderSnapshot? insideHorizontalBorder = null,
+            LocalBorderSnapshot? insideVerticalBorder = null,
+            LocalBorderSnapshot? headerSeparatorBorder = null,
+            bool? hasMergedCellsState = null)
         {
             Index = index;
             RowCount = rowCount;
@@ -156,6 +210,27 @@ namespace ChuanHoa.Client.Core.Scanning
             HasHeaderSeparatorBorder = hasHeaderSeparatorBorder;
             AssociatedCaptionParagraphIndex = associatedCaptionParagraphIndex;
             IsCaptionAbove = isCaptionAbove;
+            StoryType = storyType ?? string.Empty;
+            SectionIndex = sectionIndex;
+            AbsoluteStart = absoluteStart;
+            AbsoluteEnd = Math.Max(absoluteStart, absoluteEnd);
+            NestingDepth = Math.Max(0, nestingDepth);
+            TopBorder = topBorder ?? LocalBorderSnapshot.Unknown;
+            BottomBorder = bottomBorder ?? LocalBorderSnapshot.Unknown;
+            LeftBorder = leftBorder ?? (hasVerticalBorders
+                ? new LocalBorderSnapshot(LocalSnapshotValueState.Present)
+                : LocalBorderSnapshot.None);
+            RightBorder = rightBorder ?? (hasVerticalBorders
+                ? new LocalBorderSnapshot(LocalSnapshotValueState.Present)
+                : LocalBorderSnapshot.None);
+            InsideHorizontalBorder = insideHorizontalBorder ?? LocalBorderSnapshot.Unknown;
+            InsideVerticalBorder = insideVerticalBorder ?? (hasVerticalBorders
+                ? new LocalBorderSnapshot(LocalSnapshotValueState.Present)
+                : LocalBorderSnapshot.None);
+            HeaderSeparatorBorder = headerSeparatorBorder ?? (hasHeaderSeparatorBorder
+                ? new LocalBorderSnapshot(LocalSnapshotValueState.Present)
+                : LocalBorderSnapshot.None);
+            HasMergedCellsState = hasMergedCellsState ?? hasMergedCells;
         }
 
         public int Index { get; }
@@ -168,6 +243,47 @@ namespace ChuanHoa.Client.Core.Scanning
         public bool HasHeaderSeparatorBorder { get; }
         public int? AssociatedCaptionParagraphIndex { get; }
         public bool IsCaptionAbove { get; }
+        public string StoryType { get; }
+        public int SectionIndex { get; }
+        public int AbsoluteStart { get; }
+        public int AbsoluteEnd { get; }
+        public int NestingDepth { get; }
+        public LocalBorderSnapshot TopBorder { get; }
+        public LocalBorderSnapshot BottomBorder { get; }
+        public LocalBorderSnapshot LeftBorder { get; }
+        public LocalBorderSnapshot RightBorder { get; }
+        public LocalBorderSnapshot InsideHorizontalBorder { get; }
+        public LocalBorderSnapshot InsideVerticalBorder { get; }
+        public LocalBorderSnapshot HeaderSeparatorBorder { get; }
+        public bool? HasMergedCellsState { get; }
+    }
+
+    public sealed class LocalGraphicObjectSnapshot
+    {
+        public LocalGraphicObjectSnapshot(int index, string objectKind, bool isInline,
+            string storyType, int sectionIndex, int absoluteStart, int absoluteEnd,
+            int? anchorParagraphIndex = null, bool isProtected = false)
+        {
+            Index = index;
+            ObjectKind = objectKind ?? string.Empty;
+            IsInline = isInline;
+            StoryType = storyType ?? string.Empty;
+            SectionIndex = sectionIndex;
+            AbsoluteStart = absoluteStart;
+            AbsoluteEnd = Math.Max(absoluteStart, absoluteEnd);
+            AnchorParagraphIndex = anchorParagraphIndex;
+            IsProtected = isProtected;
+        }
+
+        public int Index { get; }
+        public string ObjectKind { get; }
+        public bool IsInline { get; }
+        public string StoryType { get; }
+        public int SectionIndex { get; }
+        public int AbsoluteStart { get; }
+        public int AbsoluteEnd { get; }
+        public int? AnchorParagraphIndex { get; }
+        public bool IsProtected { get; }
     }
 
     public sealed class LocalScanSnapshot
@@ -178,7 +294,9 @@ namespace ChuanHoa.Client.Core.Scanning
             string documentTypeCode = LocalDocumentTypeCodes.Unknown,
             bool regimeWasSelectedManually = false, bool documentTypeWasSelectedManually = false,
             string? dictionaryScopeId = null,
-            IReadOnlyList<LocalTableSnapshot>? tables = null)
+            IReadOnlyList<LocalTableSnapshot>? tables = null,
+            IReadOnlyList<LocalGraphicObjectSnapshot>? graphicObjects = null,
+            int schemaVersion = 3)
         {
             DocumentFingerprint = documentFingerprint; Revision = revision; Sections = sections;
             Paragraphs = paragraphs; ProtectedSpans = protectedSpans;
@@ -190,6 +308,8 @@ namespace ChuanHoa.Client.Core.Scanning
                 ? documentFingerprint
                 : dictionaryScopeId!;
             Tables = tables ?? Array.Empty<LocalTableSnapshot>();
+            GraphicObjects = graphicObjects ?? Array.Empty<LocalGraphicObjectSnapshot>();
+            SchemaVersion = schemaVersion;
         }
         public string DocumentFingerprint { get; }
         public long Revision { get; }
@@ -208,15 +328,39 @@ namespace ChuanHoa.Client.Core.Scanning
         /// </summary>
         public string DictionaryScopeId { get; }
         public IReadOnlyList<LocalTableSnapshot> Tables { get; }
+        public IReadOnlyList<LocalGraphicObjectSnapshot> GraphicObjects { get; }
+        public int SchemaVersion { get; }
+
+        public bool IntersectsProtectedSpan(LocalParagraphSnapshot paragraph)
+        {
+            if (paragraph == null) throw new ArgumentNullException(nameof(paragraph));
+            return ProtectedSpans.Any(span =>
+                string.Equals(span.StoryType, paragraph.StoryType, StringComparison.Ordinal) &&
+                span.Start < paragraph.AbsoluteEnd &&
+                span.Start + span.Length > paragraph.AbsoluteStart);
+        }
     }
 
     public sealed class LocalScanResult
     {
         public LocalScanResult(string scanId, string lane, string rulePackId, string documentFingerprint, long revision,
-            IReadOnlyList<AnnotationFinding> findings)
+            IReadOnlyList<AnnotationFinding> findings, string rulePackVersion = "",
+            int detectorPolicyVersion = 0,
+            IReadOnlyList<string>? notEvaluatedRuleCodes = null,
+            bool academicTypographyEnabled = false,
+            int academicHeadingCount = 0, int headingLevel1Count = 0,
+            int headingLevel2Count = 0, int headingLevel3Count = 0)
         {
             ScanId = scanId; Lane = lane; RulePackId = rulePackId; DocumentFingerprint = documentFingerprint;
             Revision = revision; Findings = findings;
+            RulePackVersion = rulePackVersion ?? string.Empty;
+            DetectorPolicyVersion = detectorPolicyVersion;
+            NotEvaluatedRuleCodes = notEvaluatedRuleCodes ?? Array.Empty<string>();
+            AcademicTypographyEnabled = academicTypographyEnabled;
+            AcademicHeadingCount = Math.Max(0, academicHeadingCount);
+            HeadingLevel1Count = Math.Max(0, headingLevel1Count);
+            HeadingLevel2Count = Math.Max(0, headingLevel2Count);
+            HeadingLevel3Count = Math.Max(0, headingLevel3Count);
         }
         public string ScanId { get; }
         public string Lane { get; }
@@ -224,5 +368,13 @@ namespace ChuanHoa.Client.Core.Scanning
         public string DocumentFingerprint { get; }
         public long Revision { get; }
         public IReadOnlyList<AnnotationFinding> Findings { get; }
+        public string RulePackVersion { get; }
+        public int DetectorPolicyVersion { get; }
+        public IReadOnlyList<string> NotEvaluatedRuleCodes { get; }
+        public bool AcademicTypographyEnabled { get; }
+        public int AcademicHeadingCount { get; }
+        public int HeadingLevel1Count { get; }
+        public int HeadingLevel2Count { get; }
+        public int HeadingLevel3Count { get; }
     }
 }

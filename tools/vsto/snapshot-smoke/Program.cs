@@ -41,6 +41,7 @@ namespace ChuanHoa.SnapshotSmoke
                 }
 
                 VerifyUnsavedDocumentIsSupported(application);
+                VerifyFingerprintTracksRawWordState(application);
                 Console.WriteLine("SNAPSHOT_WORD_SMOKE_PASS");
                 return 0;
             }
@@ -262,7 +263,7 @@ namespace ChuanHoa.SnapshotSmoke
                     DocumentTypeCode = "1"
                 };
                 var snapshot = new WordDocumentSnapshotBuilder().Build(document, context, capability);
-                Assert(snapshot.SchemaVersion == 2, "Unexpected snapshot schema.");
+                Assert(snapshot.SchemaVersion == 3, "Unexpected snapshot schema.");
                 Assert(snapshot.DocumentFingerprint.StartsWith("sha256:", StringComparison.Ordinal),
                     "Snapshot fingerprint is missing.");
                 Assert(snapshot.Revision == 1, "First snapshot revision must be one.");
@@ -339,6 +340,85 @@ namespace ChuanHoa.SnapshotSmoke
 
                 Release(document);
             }
+        }
+
+        private static void VerifyFingerprintTracksRawWordState(Word.Application application)
+        {
+            Word.Document document = null;
+            Word.Paragraph paragraph = null;
+            Word.Range paragraphRange = null;
+            Word.Table table = null;
+            Word.Border border = null;
+            Word.Range anchor = null;
+            Word.Shape shape = null;
+            try
+            {
+                document = application.Documents.Add();
+                document.Content.Text = "1. TỔNG QUAN\rDữ liệu kiểm tra fingerprint.\r";
+                table = document.Tables.Add(document.Range(document.Content.End - 1,
+                    document.Content.End - 1), 2, 2);
+                table.Cell(1, 1).Range.Text = "A";
+                table.Cell(1, 2).Range.Text = "B";
+                document.Activate();
+
+                paragraph = document.Paragraphs[1];
+                paragraphRange = paragraph.Range.Duplicate;
+                paragraphRange.set_Style(Word.WdBuiltinStyle.wdStyleNormal);
+                paragraphRange.ParagraphFormat.KeepWithNext = 0;
+                paragraphRange.ParagraphFormat.WidowControl = 0;
+                border = table.Borders[Word.WdBorderType.wdBorderVertical];
+                border.LineStyle = Word.WdLineStyle.wdLineStyleNone;
+
+                var capability = new WordDocumentCapabilityProvider(application).Evaluate(document);
+                var context = new DocumentContext(document.GetHashCode());
+                var builder = new WordDocumentSnapshotBuilder();
+                var baseline = builder.Build(document, context, capability);
+
+                paragraphRange.ParagraphFormat.KeepWithNext = -1;
+                var keep = builder.Build(document, context, capability);
+                AssertDifferent(baseline, keep, "KeepWithNext");
+
+                paragraphRange.ParagraphFormat.WidowControl = -1;
+                var widow = builder.Build(document, context, capability);
+                AssertDifferent(keep, widow, "WidowControl");
+
+                paragraphRange.set_Style(Word.WdBuiltinStyle.wdStyleHeading1);
+                var style = builder.Build(document, context, capability);
+                AssertDifferent(widow, style, "built-in Style identity");
+
+                border.LineStyle = Word.WdLineStyle.wdLineStyleSingle;
+                var bordered = builder.Build(document, context, capability);
+                AssertDifferent(style, bordered, "table border state");
+
+                anchor = document.Paragraphs[2].Range.Duplicate;
+                object anchorObject = anchor;
+                shape = document.Shapes.AddLine(72f, 100f, 144f, 100f, ref anchorObject);
+                var withObject = builder.Build(document, context, capability);
+                AssertDifferent(bordered, withObject, "graphic object state");
+            }
+            finally
+            {
+                Release(shape);
+                Release(anchor);
+                Release(border);
+                Release(table);
+                Release(paragraphRange);
+                Release(paragraph);
+                if (document != null)
+                {
+                    object save = Word.WdSaveOptions.wdDoNotSaveChanges;
+                    document.Close(ref save);
+                }
+                Release(document);
+            }
+        }
+
+        private static void AssertDifferent(WordDocumentSnapshot before,
+            WordDocumentSnapshot after, string changedState)
+        {
+            Assert(!string.Equals(before.DocumentFingerprint, after.DocumentFingerprint,
+                StringComparison.Ordinal),
+                "Snapshot fingerprint ignored changed " + changedState + ".");
         }
 
         private static string ComputeFileSha256(string path)

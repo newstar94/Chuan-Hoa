@@ -26,21 +26,31 @@ public sealed class CanonicalRouteScannerTests
     {
         var scanner = new LocalDocumentScanner();
         var rules = Rules();
-        var findings = scanner.ScanFormat(BadFormatSnapshot(), rules).Findings
-            .Concat(scanner.ScanFormat(LayoutOnlySnapshot(), rules).Findings)
-            .Concat(scanner.ScanSpelling(BadSpellingSnapshot(), rules).Findings)
-            .Concat(scanner.ScanSpelling(
+        var scans = new[]
+        {
+            scanner.ScanFormat(BadFormatSnapshot(), rules),
+            scanner.ScanFormat(LayoutOnlySnapshot(), rules),
+            scanner.ScanSpelling(BadSpellingSnapshot(), rules),
+            scanner.ScanSpelling(
                 new LocalScanSnapshot("sha256:bad-lexicon", 1, new[] { ValidSection() },
                     new[] { P(1, "từ nhậnn", font: "Times New Roman", size: 13) },
                     Array.Empty<AnnotationProtectedSpan>()),
-                Rules(new[] { "từ", "nhận" })).Findings)
-            .ToArray();
+                Rules(new[] { "từ", "nhận" }))
+        };
+        var findings = scans.SelectMany(scan => scan.Findings).ToArray();
 
         var missing = CanonicalRuleScanner.RegisteredRuleCodes
             .Where(code => findings.All(item => item.RuleCode != code))
             .ToArray();
 
         Assert.True(missing.Length == 0, "Routes not exercised: " + string.Join(", ", missing));
+        var duplicateIds = scans.SelectMany(scan => scan.Findings
+                .GroupBy(item => item.FindingId, StringComparer.Ordinal)
+                .Where(group => group.Count() > 1)
+                .Select(group => scan.ScanId + ":" + group.Key))
+            .ToArray();
+        Assert.True(duplicateIds.Length == 0,
+            "Scanner emitted ambiguous duplicate finding ids: " + string.Join(", ", duplicateIds));
         Assert.All(findings, finding =>
         {
             Assert.False(string.IsNullOrWhiteSpace(finding.FindingId));
@@ -197,6 +207,39 @@ public sealed class CanonicalRouteScannerTests
         var findings = new LocalDocumentScanner().ScanFormat(snapshot, Rules()).Findings;
 
         Assert.DoesNotContain(findings, item => item.RuleCode == "ND30-PL1-M2-K1-TN-LINE");
+    }
+
+    [Fact]
+    public void Current_owned_line_with_wrong_geometry_is_still_reported()
+    {
+        var paragraph = P(1, "Độc lập - Tự do - Hạnh phúc", "nationalMotto", size: 13,
+            bold: true, alignment: 1, page: 1, left: 320, top: 80, width: 180);
+        var shiftedLine = new LocalLineShapeSnapshot(1, "CHUANHOA2_MOTTO_P1", 9,
+            paragraph.StoryType, paragraph.SectionIndex, paragraph.AbsoluteStart, paragraph.Index,
+            paragraph.PageNumber, 100, 150, 90, 0, 100, 150, 1, 1, true, 1, .75, 0, 1, 1);
+        var snapshot = new LocalScanSnapshot("sha256:motto-line-owned-shifted", 1,
+            new[] { ValidSection() }, new[] { paragraph }, Array.Empty<AnnotationProtectedSpan>(),
+            new[] { shiftedLine }, "STATE_ND30");
+
+        var finding = Assert.Single(new LocalDocumentScanner().ScanFormat(snapshot, Rules()).Findings,
+            item => item.RuleCode == "ND30-PL1-M2-K1-TN-LINE");
+
+        Assert.Contains("Đã có Line Shape", finding.CurrentIssue, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("CHUANHOA2_ORG_P4", true, false)]
+    [InlineData("CHUANHOA_ORG_P4", false, true)]
+    [InlineData("CHUANHOA2_USER_P4", false, false)]
+    [InlineData("CHUANHOA_USER_P4", false, false)]
+    [InlineData("CH_L_ORG_P4", false, false)]
+    [InlineData("Line 4", false, false)]
+    public void Line_shape_ownership_requires_an_exact_released_prefix(
+        string name, bool current, bool legacy)
+    {
+        Assert.Equal(current, LineShapeOwnership.IsCurrentOwned(name));
+        Assert.Equal(legacy, LineShapeOwnership.IsLegacyOwned(name));
+        Assert.Equal(current || legacy, LineShapeOwnership.IsOwnedForParagraph(name, 4));
     }
 
     [Fact]
@@ -742,6 +785,30 @@ public sealed class CanonicalRouteScannerTests
         Assert.Equal("legalBasis", roles[3]);
         Assert.Equal("legalBasis", roles[4]);
         Assert.False(roles.ContainsKey(5));
+    }
+
+    [Fact]
+    public void Article_indent_uses_millimeters_converted_to_points()
+    {
+        const double pointsPerMillimeter = 72d / 25.4d;
+        var valid = P(1, "Điều 1. Phạm vi điều chỉnh", bold: null,
+            indent: 10d * pointsPerMillimeter);
+        var invalid = P(1, "Điều 1. Phạm vi điều chỉnh", bold: null, indent: 10d);
+        var scanner = new LocalDocumentScanner();
+
+        var validFindings = scanner.ScanFormat(new LocalScanSnapshot(
+            "sha256:article-indent-valid", 1, new[] { ValidSection() },
+            new[] { valid }, Array.Empty<AnnotationProtectedSpan>()), Rules()).Findings;
+        var invalidFindings = scanner.ScanFormat(new LocalScanSnapshot(
+            "sha256:article-indent-invalid", 1, new[] { ValidSection() },
+            new[] { invalid }, Array.Empty<AnnotationProtectedSpan>()), Rules()).Findings;
+
+        Assert.DoesNotContain(validFindings, item =>
+            item.RuleCode == "ND30-PL1-M2-K6D-ARTICLE" &&
+            item.CurrentIssue.Contains("thụt đầu dòng sai", StringComparison.Ordinal));
+        Assert.Contains(invalidFindings, item =>
+            item.RuleCode == "ND30-PL1-M2-K6D-ARTICLE" &&
+            item.CurrentIssue.Contains("thụt đầu dòng sai", StringComparison.Ordinal));
     }
 
     [Fact]

@@ -530,6 +530,7 @@ namespace ChuanHoa.OneClickSmoke
                 insertion.InsertAfter("QUYẾT ĐỊNH\rVề việc phê duyệt báo cáo kinh tế - kỹ thuật\r" +
                     "Căn cứ Nghị định 214/2025/NĐ-CP ngày 05 tháng 3 năm 2025 của Chính phủ;\r" +
                     "Căn cứ hồ sơ và đề nghị của cơ quan chuyên môn.\r" +
+                    "Điều 1. Nội dung điều này không được in đậm toàn bộ.\r" +
                     "2. NỘI DUNG THẨM ĐỊNH\r" +
                     "b) Ý kiến thẩm định về cơ sở pháp lý:\r" +
                     "Căn cứ các tài liệu được cung cấp, kết quả thẩm định được tổng hợp tại Bảng số 01.\r" +
@@ -677,6 +678,14 @@ namespace ChuanHoa.OneClickSmoke
                     Assert(selectedFormatFix.Resolved &&
                         document.Content.Text.Contains("Nghị định số 214/2025/NĐ-CP"),
                         "Sửa lỗi đang chọn removed the missing-so comment without inserting 'số'.");
+                    var repairedCitationText = "Nghị định số 214/2025/NĐ-CP";
+                    var repairedCitationStart = document.Content.Text.IndexOf(
+                        repairedCitationText, StringComparison.Ordinal);
+                    var repairedCitationRange = document.Range(repairedCitationStart,
+                        repairedCitationStart + repairedCitationText.Length);
+                    Assert((int)repairedCitationRange.Font.Color != AnnotationOwnershipPolicy.WordRedColor,
+                        "Sửa lỗi đang chọn left add-in red formatting after a longer replacement.");
+                    Release(repairedCitationRange);
                     var sourceSaveInvalidations = 0;
                     Word.ApplicationEvents4_DocumentBeforeSaveEventHandler beforeSave =
                         delegate(Word.Document savingDocument, ref bool saveAsUi, ref bool cancel)
@@ -740,6 +749,20 @@ namespace ChuanHoa.OneClickSmoke
                 var subject = FindParagraph(document, "Về việc phê duyệt");
                 Assert(subject.Range.Bold != 0, "Decision subject was not bold after 1-Click.");
                 Release(subject);
+                var article = FindParagraph(document, "Điều 1.");
+                var articleText = article.Range.Text.TrimEnd('\r', '\a');
+                var articleMarkerLength = articleText.IndexOf('.') + 1;
+                var articleMarker = document.Range(article.Range.Start,
+                    article.Range.Start + articleMarkerLength);
+                var articleContent = document.Range(article.Range.Start + articleMarkerLength,
+                    article.Range.Start + articleText.Length);
+                Assert(articleMarker.Font.Bold != 0 && articleContent.Font.Bold == 0,
+                    "1-Click bolded the whole Điều paragraph instead of only its marker.");
+                Assert(Math.Abs(article.Range.ParagraphFormat.FirstLineIndent - 10f * 72f / 25.4f) < .6f,
+                    "1-Click did not apply the ND30 10 mm article indent.");
+                Release(articleContent);
+                Release(articleMarker);
+                Release(article);
                 emphasized = document.Range(normalized.IndexOf("cần giữ in đậm", StringComparison.Ordinal),
                     normalized.IndexOf("cần giữ in đậm", StringComparison.Ordinal) + "cần giữ in đậm".Length);
                 Assert(emphasized.Font.Bold != 0, "Intentional inline bold formatting was removed from body text.");
@@ -837,20 +860,20 @@ namespace ChuanHoa.OneClickSmoke
                     "Dash-list retained a stale right indent.");
                 tabStops = format.TabStops;
                 var expectedPosition = 15f * pointsPerMillimeter;
-                var stalePosition = 80f * pointsPerMillimeter;
+                var customPosition = 80f * pointsPerMillimeter;
                 var foundExpected = false;
-                var foundStale = false;
+                var foundCustom = false;
                 for (var index = 1; index <= tabStops.Count; index++)
                 {
                     Release(tabStop);
                     tabStop = tabStops[index];
                     if (Math.Abs(tabStop.Position - expectedPosition) < .5f) foundExpected = true;
-                    if (Math.Abs(tabStop.Position - stalePosition) < .5f) foundStale = true;
+                    if (Math.Abs(tabStop.Position - customPosition) < .5f) foundCustom = true;
                 }
                 Assert(foundExpected,
                     "Dash-list tab stop is not aligned with continuation text.");
-                Assert(!foundStale,
-                    "Dash-list retained the stale 80 mm custom tab stop.");
+                Assert(foundCustom,
+                    "Dash-list removed the user's pre-existing 80 mm custom tab stop.");
             }
             finally
             {

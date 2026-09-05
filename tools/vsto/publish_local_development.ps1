@@ -6,10 +6,9 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
-if ([string]::IsNullOrWhiteSpace($ApplicationVersion)) {
-    [xml]$versionProps = Get-Content -LiteralPath (Join-Path $root 'Directory.Build.props')
-    $ApplicationVersion = [string]$versionProps.Project.PropertyGroup.ProductVersion
-}
+. (Join-Path $PSScriptRoot 'BuildContract.ps1')
+$ApplicationVersion = Resolve-ChuanHoaApplicationVersion `
+    -RepositoryRoot $root -RequestedVersion $ApplicationVersion
 $project = Join-Path $root 'src\ChuanHoa.AddIn.Vsto\ChuanHoa.AddIn.Vsto.csproj'
 $publishDirectory = Join-Path $root 'artifacts\vsto-dev-publish-local'
 $publishAlias = 'D:\ChuanHoaPublishLocal'
@@ -28,24 +27,20 @@ else {
     New-Item -ItemType Junction -Path $publishAlias -Target $publishDirectory | Out-Null
 }
 
-$certificate = Get-ChildItem Cert:\CurrentUser\My |
-    Where-Object Subject -eq 'CN=Chuan Hoa Local Development' |
-    Sort-Object NotAfter -Descending |
-    Select-Object -First 1
-if ($null -eq $certificate) {
-    throw 'Local development signing certificate was not found.'
+$signingCertificatePin = $env:CHUANHOA_DEVELOPMENT_SIGNING_CERT_SHA256
+if ([string]::IsNullOrWhiteSpace($signingCertificatePin)) {
+    throw 'Set CHUANHOA_DEVELOPMENT_SIGNING_CERT_SHA256 to the approved Development certificate SHA-256 pin.'
 }
+$certificate = Get-ChuanHoaSigningCertificate -ExpectedSha256 $signingCertificatePin
 
-$msbuild = 'C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\MSBuild.exe'
-if (!(Test-Path -LiteralPath $msbuild)) {
-    throw 'Visual Studio Build Tools 2022 MSBuild was not found.'
-}
+$msbuild = Get-ChuanHoaMsBuild
 
 $buildArguments = @(
     $project,
     '/p:Configuration=Release',
     '/p:SignManifests=true',
     "/p:ManifestCertificateThumbprint=$($certificate.Thumbprint)",
+    "/p:TrustedSigningCertificateSha256=$signingCertificatePin",
     "/p:PublishDir=$publishAlias\",
     '/p:PublishUrl=file:///D:/ChuanHoaPublishLocal/',
     '/p:InstallUrl=file:///D:/ChuanHoaPublishLocal/',
@@ -61,17 +56,6 @@ $buildArguments = @(
     '/v:minimal'
 )
 
-foreach ($generatedNuGetFile in @(
-    'obj\project.assets.json',
-    'obj\ChuanHoa.AddIn.Vsto.csproj.nuget.dgspec.json',
-    'obj\ChuanHoa.AddIn.Vsto.csproj.nuget.g.props',
-    'obj\ChuanHoa.AddIn.Vsto.csproj.nuget.g.targets'
-)) {
-    $generatedNuGetPath = Join-Path (Split-Path -Parent $project) $generatedNuGetFile
-    if (Test-Path -LiteralPath $generatedNuGetPath) {
-        Remove-Item -LiteralPath $generatedNuGetPath -Force
-    }
-}
 & $msbuild $project /t:Restore /p:RestoreForce=true /p:Configuration=Development /p:Platform=AnyCPU /m /nologo /v:minimal
 if ($LASTEXITCODE -ne 0) {
     throw "VSTO Development restore failed with exit code $LASTEXITCODE."
@@ -82,9 +66,21 @@ if ($LASTEXITCODE -ne 0) {
     throw "VSTO rebuild failed with exit code $LASTEXITCODE."
 }
 
-& $msbuild @buildArguments /t:Publish
+$ownedRuntimePeFiles = @(
+    (Join-Path $root 'src\ChuanHoa.AddIn.Vsto\bin\Release\ChuanHoa.AddIn.Vsto.dll'),
+    (Join-Path $root 'src\ChuanHoa.AddIn.Vsto\bin\Release\ChuanHoa.Client.Core.dll'),
+    (Join-Path $root 'src\ChuanHoa.Client.Core\bin\Release\netstandard2.0\ChuanHoa.Client.Core.dll')
+)
+$ownedRuntimeSignatures = @(
+    foreach ($path in $ownedRuntimePeFiles) {
+        Invoke-ChuanHoaAuthenticodeSign -Path $path -Certificate $certificate `
+            -ExpectedCertificateSha256 $signingCertificatePin
+    }
+)
+
+& $msbuild @buildArguments /t:PublishOnly /p:BuildProjectReferences=false
 if ($LASTEXITCODE -ne 0) {
-    throw "VSTO Publish failed with exit code $LASTEXITCODE."
+    throw "VSTO Publish-only failed with exit code $LASTEXITCODE."
 }
 
 $setupPath = Join-Path $publishDirectory 'setup.exe'
@@ -102,6 +98,16 @@ $loadedAssembly = [System.Reflection.Assembly]::LoadFile($publishedAssembly.Full
 if (@($loadedAssembly.GetManifestResourceNames()) -notcontains 'ChuanHoa.AddIn.Vsto.Ribbon.ChuanHoaRibbon.xml') {
     throw 'Published VSTO assembly is missing the embedded Ribbon XML resource.'
 }
+Assert-ChuanHoaManagedAssemblyVersion -Path $publishedAssembly.FullName -ExpectedVersion $ApplicationVersion
+Assert-ChuanHoaManifestVersion -Path $manifestPath `
+    -IdentityName 'ChuanHoa.AddIn.Vsto.vsto' -ExpectedVersion $ApplicationVersion
+$applicationManifest = Get-ChildItem -LiteralPath $publishDirectory -Recurse -File `
+    -Filter 'ChuanHoa.AddIn.Vsto.dll.manifest' | Select-Object -First 1
+if ($null -eq $applicationManifest) {
+    throw 'Publish completed without the VSTO application manifest.'
+}
+Assert-ChuanHoaManifestVersion -Path $applicationManifest.FullName `
+    -IdentityName 'ChuanHoa.AddIn.Vsto.dll' -ExpectedVersion $ApplicationVersion
 
 [pscustomobject]@{
     Version = $ApplicationVersion
@@ -109,6 +115,8 @@ if (@($loadedAssembly.GetManifestResourceNames()) -notcontains 'ChuanHoa.AddIn.V
     SetupSha256 = (Get-FileHash -LiteralPath $setupPath -Algorithm SHA256).Hash
     ManifestPath = $manifestPath
     ManifestSha256 = (Get-FileHash -LiteralPath $manifestPath -Algorithm SHA256).Hash
-    SigningCertificate = $certificate.Subject
+    SigningCertificateThumbprint = $certificate.Thumbprint
+    SigningCertificateSha256 = Get-ChuanHoaCertificateSha256 -Certificate $certificate
+    InnerPeSignatures = $ownedRuntimeSignatures
     ProductionReady = $false
 }

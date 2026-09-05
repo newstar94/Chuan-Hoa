@@ -3,6 +3,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Windows.Forms;
+using ChuanHoa.AddIn.Vsto.Runtime;
 using Office = Microsoft.Office.Core;
 
 namespace ChuanHoa.AddIn.Vsto.Ribbon
@@ -11,18 +13,31 @@ namespace ChuanHoa.AddIn.Vsto.Ribbon
     public sealed partial class ChuanHoaRibbon : Office.IRibbonExtensibility
     {
         private const string ResourceName = "ChuanHoa.AddIn.Vsto.Ribbon.ChuanHoaRibbon.xml";
+        private readonly DeferredRibbonRuntime _deferredRuntime;
         private IChuanHoaRibbonRuntime? _runtime;
+        private Func<IChuanHoaRibbonRuntime>? _runtimeFactory;
         private Office.IRibbonUI? _ribbonUi;
 
         public ChuanHoaRibbon()
         {
+            _deferredRuntime = new DeferredRibbonRuntime(this);
         }
 
-        internal event EventHandler? RibbonLoaded;
+        private IChuanHoaRibbonRuntime Runtime => _runtime ?? _deferredRuntime;
 
-        private IChuanHoaRibbonRuntime Runtime => _runtime ?? UnavailableRibbonRuntime.Instance;
+        internal void ConfigureRuntimeFactory(Func<IChuanHoaRibbonRuntime> runtimeFactory)
+        {
+            if (runtimeFactory == null) throw new ArgumentNullException("runtimeFactory");
+            if (_runtimeFactory != null) throw new InvalidOperationException("Ribbon runtime factory is already configured.");
+            _runtimeFactory = runtimeFactory;
+        }
 
         internal void AttachRuntime(IChuanHoaRibbonRuntime runtime)
+        {
+            AttachRuntime(runtime, true);
+        }
+
+        private void AttachRuntime(IChuanHoaRibbonRuntime runtime, bool invalidateRibbon)
         {
             _runtime = runtime ?? throw new ArgumentNullException("runtime");
             if (_ribbonUi != null)
@@ -37,6 +52,7 @@ namespace ChuanHoa.AddIn.Vsto.Ribbon
                     return;
                 }
 
+                if (!invalidateRibbon) return;
                 try
                 {
                     _ribbonUi.Invalidate();
@@ -54,6 +70,23 @@ namespace ChuanHoa.AddIn.Vsto.Ribbon
         internal void DetachRuntime()
         {
             _runtime = null;
+            _runtimeFactory = null;
+            _deferredRuntime.Dispose();
+        }
+
+        private IChuanHoaRibbonRuntime GetOrCreateRuntimeForUserAction()
+        {
+            if (_runtime != null) return _runtime;
+            var factory = _runtimeFactory;
+            if (factory == null)
+                throw new InvalidOperationException("Add-in chưa sẵn sàng nhận lệnh.");
+
+            var runtime = factory();
+            // This path runs inside an explicit onAction callback. Do not invalidate
+            // Office while that callback is still on the stack; command completion
+            // will invalidate the affected controls when needed.
+            AttachRuntime(runtime, false);
+            return runtime;
         }
 
         private void CompleteRibbonLoad(Office.IRibbonUI ribbonUi)
@@ -68,17 +101,6 @@ namespace ChuanHoa.AddIn.Vsto.Ribbon
                 Trace.TraceError("ChuanHoa RibbonOnLoad runtime callback failed: {0}", exception);
             }
 
-            try
-            {
-                RibbonLoaded?.Invoke(this, EventArgs.Empty);
-            }
-            catch (Exception exception)
-            {
-                // Office treats an exception escaping RibbonOnLoad as a CustomUI
-                // load failure. Keep the static tab available even if a lifecycle
-                // subscriber fails.
-                Trace.TraceError("ChuanHoa RibbonOnLoad handshake failed: {0}", exception);
-            }
         }
 
         public string GetCustomUI(string ribbonId)
@@ -109,34 +131,68 @@ namespace ChuanHoa.AddIn.Vsto.Ribbon
             return control.Id;
         }
 
-        private sealed class UnavailableRibbonRuntime : IChuanHoaRibbonRuntime
+        private sealed class DeferredRibbonRuntime : IChuanHoaRibbonRuntime, IDisposable
         {
-            internal static readonly UnavailableRibbonRuntime Instance = new UnavailableRibbonRuntime();
+            private readonly ChuanHoaRibbon _owner;
+            private readonly RibbonImageProvider _imageProvider = new RibbonImageProvider();
+            private bool _disposed;
 
-            private UnavailableRibbonRuntime()
+            internal DeferredRibbonRuntime(ChuanHoaRibbon owner)
             {
+                _owner = owner;
             }
 
             public void AttachRibbon(Office.IRibbonUI ribbonUi)
             {
             }
 
-            public bool IsEnabled(string controlId) => false;
+            public bool IsEnabled(string controlId) => !_disposed;
 
             public int GetSelectedItemIndex(string controlId) => 0;
 
             public void SelectDropDownItem(string controlId, string selectedId, int selectedIndex)
             {
+                Invoke(runtime => runtime.SelectDropDownItem(controlId, selectedId, selectedIndex));
             }
 
-            public int GetItemCount(string controlId) => 0;
+            public int GetItemCount(string controlId) =>
+                string.Equals(controlId, "ddLoaiVanBan", StringComparison.Ordinal)
+                    ? RibbonRuntime.DocumentTypeItemCount
+                    : 0;
 
-            public string GetItemLabel(string controlId, int index) => string.Empty;
+            public string GetItemLabel(string controlId, int index) =>
+                string.Equals(controlId, "ddLoaiVanBan", StringComparison.Ordinal)
+                    ? RibbonRuntime.GetDocumentTypeItemLabel(index)
+                    : string.Empty;
 
-            public object GetImage(string controlId) => null!;
+            public object GetImage(string controlId) => _imageProvider.GetImage(controlId);
 
             public void ExecuteButton(string controlId)
             {
+                Invoke(runtime => runtime.ExecuteButton(controlId));
+            }
+
+            private void Invoke(Action<IChuanHoaRibbonRuntime> action)
+            {
+                if (_disposed) return;
+                try
+                {
+                    action(_owner.GetOrCreateRuntimeForUserAction());
+                }
+                catch (Exception exception)
+                {
+                    Trace.TraceError("ChuanHoa could not initialize its command runtime: {0}", exception);
+                    MessageBox.Show(
+                        "Không thể khởi tạo chức năng Chuẩn hóa.\n\n" + exception.Message,
+                        "Chuẩn hóa", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+
+            public void Dispose()
+            {
+                if (_disposed) return;
+                _imageProvider.Dispose();
+                _disposed = true;
             }
         }
     }

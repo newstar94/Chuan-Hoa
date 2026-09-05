@@ -25,12 +25,20 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         private readonly Word.Application _application;
         private readonly Word.Document _document;
         private readonly bool _supportsCustomUndoRecord;
+        private readonly Action<string, int>? _faultInjectionCheckpoint;
 
         public WordFindingAnnotationAdapter(Word.Application application, Word.Document document)
+            : this(application, document, null)
+        {
+        }
+
+        internal WordFindingAnnotationAdapter(Word.Application application, Word.Document document,
+            Action<string, int>? faultInjectionCheckpoint)
         {
             _application = application ?? throw new ArgumentNullException(nameof(application));
             _document = document ?? throw new ArgumentNullException(nameof(document));
             _supportsCustomUndoRecord = ReadWordMajorVersion(application) >= 15;
+            _faultInjectionCheckpoint = faultInjectionCheckpoint;
         }
 
         public void Apply(AnnotationPlan plan, DocumentOperationSession? operation = null)
@@ -48,6 +56,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             }
 
             ValidateRanges(plan);
+            var previousPlan = CaptureExistingPlan(plan.Lane);
             var undoStarted = false;
             try
             {
@@ -59,12 +68,14 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
                 operation?.Checkpoint();
                 ClearLane(plan.Lane, operation);
+                _faultInjectionCheckpoint?.Invoke("after-clear", -1);
                 for (var index = 0; index < plan.VisualRanges.Count; index++)
                 {
                     if (index == 0 || index % 25 == 0)
                         operation?.ReportProgress(index,
                             plan.VisualRanges.Count + plan.Comments.Count, "tô đỏ");
                     ApplyRedMarker(plan, plan.VisualRanges[index], index);
+                    _faultInjectionCheckpoint?.Invoke("after-visual", index);
                 }
                 for (var index = 0; index < plan.Comments.Count; index++)
                 {
@@ -72,21 +83,42 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                         operation?.ReportProgress(plan.VisualRanges.Count + index,
                             plan.VisualRanges.Count + plan.Comments.Count, "thêm comment");
                     AddComment(plan, plan.Comments[index], index);
+                    _faultInjectionCheckpoint?.Invoke("after-comment", index);
                 }
+                _faultInjectionCheckpoint?.Invoke("before-commit", -1);
                 operation?.Checkpoint();
             }
-            catch
+            catch (Exception applyException)
             {
+                Exception? undoFailure = null;
                 if (undoStarted)
                 {
-                    _application.UndoRecord.EndCustomRecord();
-                    undoStarted = false;
-                    object count = 1;
-                    _document.Undo(ref count);
+                    try
+                    {
+                        _application.UndoRecord.EndCustomRecord();
+                        undoStarted = false;
+                        object count = 1;
+                        _document.Undo(ref count);
+                    }
+                    catch (Exception exception) when (exception is COMException ||
+                        exception is InvalidOperationException)
+                    {
+                        undoStarted = false;
+                        undoFailure = exception;
+                    }
                 }
-                else
+                try
                 {
-                    ClearLane(plan.Lane);
+                    RestorePreviousPlan(plan.Lane, previousPlan);
+                }
+                catch (Exception restoreException)
+                {
+                    var failures = undoFailure == null
+                        ? new[] { applyException, restoreException }
+                        : new[] { applyException, undoFailure, restoreException };
+                    throw new AggregateException(
+                        "Annotation apply failed and the previous annotation state could not be restored.",
+                        failures);
                 }
                 throw;
             }
@@ -97,6 +129,121 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     _application.UndoRecord.EndCustomRecord();
                 }
             }
+        }
+
+        private AnnotationPlan CaptureExistingPlan(string lane)
+        {
+            var normalizedLane = AnnotationOwnershipPolicy.NormalizeLane(lane);
+            var comments = new List<AnnotationCommentInstruction>();
+            var visuals = new List<AnnotationVisualInstruction>();
+            var visualPrefix = VariablePrefix + normalizedLane + "_";
+            var commentPrefix = CommentVariablePrefix + normalizedLane + "_";
+            var variableCount = _document.Variables.Count;
+            for (var variableIndex = 1; variableIndex <= variableCount; variableIndex++)
+            {
+                Word.Variable? variable = null;
+                Word.Bookmark? bookmark = null;
+                Word.Range? range = null;
+                try
+                {
+                    variable = _document.Variables[variableIndex];
+                    var name = variable.Name ?? string.Empty;
+                    if (!name.StartsWith(visualPrefix, StringComparison.Ordinal) &&
+                        !name.StartsWith(commentPrefix, StringComparison.Ordinal))
+                        continue;
+                    var values = (variable.Value ?? string.Empty).Split(';');
+                    if (values.Length == 0 || string.IsNullOrWhiteSpace(values[0]) ||
+                        !_document.Bookmarks.Exists(values[0]))
+                        continue;
+                    bookmark = _document.Bookmarks[values[0]];
+                    range = bookmark.Range.Duplicate;
+                    var storyType = range.StoryType.ToString();
+                    var sectionIndex = Math.Max(1,
+                        range.get_Information(Word.WdInformation.wdActiveEndSectionNumber));
+                    var start = range.Start;
+                    var length = Math.Max(0, range.End - range.Start);
+                    if (name.StartsWith(visualPrefix, StringComparison.Ordinal))
+                    {
+                        if (length > 0)
+                            visuals.Add(new AnnotationVisualInstruction(
+                                values.Length >= 3 ? DecodeFindingId(values[2]) : string.Empty,
+                                storyType, sectionIndex, start, length));
+                        continue;
+                    }
+                    if (values.Length < 3) continue;
+                    var findingId = DecodeFindingId(values[2]);
+                    string commentText;
+                    if (string.IsNullOrWhiteSpace(findingId) ||
+                        !TryReadRegisteredComment(range, values[1], out commentText))
+                        continue;
+                    comments.Add(new AnnotationCommentInstruction(
+                        findingId,
+                        storyType,
+                        sectionIndex,
+                        start,
+                        length,
+                        "[CHUẨN HÓA:" + normalizedLane.ToUpperInvariant() + ":" + findingId + "]",
+                        commentText));
+                }
+                finally
+                {
+                    Release(range);
+                    Release(bookmark);
+                    Release(variable);
+                }
+            }
+            return new AnnotationPlan(
+                normalizedLane,
+                "rollback-" + Guid.NewGuid().ToString("N"),
+                comments,
+                visuals,
+                new List<UnresolvedAnnotation>());
+        }
+
+        private bool TryReadRegisteredComment(Word.Range bookmarkRange, string signature,
+            out string text)
+        {
+            text = string.Empty;
+            var commentCount = _document.Comments.Count;
+            for (var commentIndex = 1; commentIndex <= commentCount; commentIndex++)
+            {
+                Word.Comment? comment = null;
+                Word.Range? scope = null;
+                Word.Range? body = null;
+                try
+                {
+                    comment = _document.Comments[commentIndex];
+                    scope = comment.Scope;
+                    if (scope.StoryType != bookmarkRange.StoryType ||
+                        scope.Start != bookmarkRange.Start || scope.End != bookmarkRange.End ||
+                        !string.Equals(comment.Author, "Chuẩn hóa", StringComparison.Ordinal) ||
+                        !string.Equals(comment.Initial, "CH", StringComparison.Ordinal))
+                        continue;
+                    body = comment.Range;
+                    var candidate = body.Text ?? string.Empty;
+                    if (!string.Equals(CommentSignature(candidate), signature,
+                            StringComparison.Ordinal))
+                        continue;
+                    text = candidate;
+                    return true;
+                }
+                finally
+                {
+                    Release(body);
+                    Release(scope);
+                    Release(comment);
+                }
+            }
+            return false;
+        }
+
+        private void RestorePreviousPlan(string lane, AnnotationPlan previousPlan)
+        {
+            var recoveryAdapter = new WordFindingAnnotationAdapter(
+                _application, _document, null);
+            recoveryAdapter.ClearLane(lane);
+            if (previousPlan.Comments.Count != 0 || previousPlan.VisualRanges.Count != 0)
+                recoveryAdapter.Apply(previousPlan);
         }
 
         public void ClearLane(string lane, DocumentOperationSession? operation = null)
@@ -382,7 +529,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             finally { Release(start); }
         }
 
-        public void ClearOwnedAnnotationsAt(string lane, string storyType, int start, int end)
+        public void ClearOwnedAnnotation(string lane, string findingId, string storyType,
+            int start, int end)
         {
             var normalizedLane = AnnotationOwnershipPolicy.NormalizeLane(lane);
             var expectedStory = ParseStoryType(storyType);
@@ -397,7 +545,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     variable = _document.Variables[variableIndex];
                     if (!variable.Name.StartsWith(commentPrefix, StringComparison.Ordinal)) continue;
                     var values = (variable.Value ?? string.Empty).Split(';');
-                    if (values.Length < 2) continue;
+                    if (values.Length < 3 || !string.Equals(DecodeFindingId(values[2]), findingId,
+                            StringComparison.Ordinal)) continue;
                     int storedStory;
                     int storedStart;
                     int storedEnd;
@@ -436,10 +585,14 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     if (!variable.Name.StartsWith(visualPrefix, StringComparison.Ordinal)) continue;
                     var values = (variable.Value ?? string.Empty).Split(';');
                     if (values.Length == 0 || !_document.Bookmarks.Exists(values[0])) continue;
+                    var hasFindingId = values.Length >= 3 &&
+                        !string.IsNullOrWhiteSpace(DecodeFindingId(values[2]));
+                    if (hasFindingId && !string.Equals(DecodeFindingId(values[2]), findingId,
+                            StringComparison.Ordinal)) continue;
                     bookmark = _document.Bookmarks[values[0]];
                     scope = bookmark.Range.Duplicate;
-                    if (scope.StoryType != expectedStory ||
-                        !NumericRangesTouch(scope.Start, scope.End, start, end)) continue;
+                    if (!hasFindingId && (scope.StoryType != expectedStory ||
+                        !NumericRangesTouch(scope.Start, scope.End, start, end))) continue;
                     RestoreVisualMarker(variable.Value ?? string.Empty);
                     variable.Delete();
                 }
@@ -663,7 +816,11 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
                 _document.Bookmarks.Add(bookmarkName, range.Value);
                 var variableName = VariablePrefix + AnnotationOwnershipPolicy.NormalizeLane(plan.Lane) + "_" + index.ToString("D4", CultureInfo.InvariantCulture);
-                _document.Variables.Add(variableName, bookmarkName + ";" + state);
+                _document.Variables.Add(variableName, bookmarkName + ";" + state + ";" +
+                    Convert.ToBase64String(Encoding.UTF8.GetBytes(instruction.FindingId)) + ";" +
+                    ((int)range.Value.StoryType).ToString(CultureInfo.InvariantCulture) + ";" +
+                    range.Value.Start.ToString(CultureInfo.InvariantCulture) + ";" +
+                    range.Value.End.ToString(CultureInfo.InvariantCulture));
                 WriteFontColor(range.Value, AddInRed);
             }
         }
@@ -727,12 +884,12 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
         private void RestoreVisualMarker(string serialized)
         {
-            var separator = serialized.IndexOf(';');
-            if (separator <= 0)
+            var values = serialized.Split(';');
+            if (values.Length < 2 || string.IsNullOrWhiteSpace(values[0]))
             {
                 return;
             }
-            var bookmarkName = serialized.Substring(0, separator);
+            var bookmarkName = values[0];
             if (!_document.Bookmarks.Exists(bookmarkName))
             {
                 return;
@@ -744,10 +901,35 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             {
                 bookmark = _document.Bookmarks[bookmarkName];
                 bookmarkRange = bookmark.Range.Duplicate;
-                var state = serialized.Substring(separator + 1);
+                var state = values[1];
+                var originalExtent = 0;
+                var trailingOriginalColor = (int)Word.WdColor.wdColorAutomatic;
                 foreach (var encodedSegment in state.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
                 {
                     RestoreColorSegment(bookmarkRange, encodedSegment);
+                    int offset;
+                    int length;
+                    int originalColor;
+                    if (TryParseColorSegment(encodedSegment, out offset, out length, out originalColor) &&
+                        offset + length >= originalExtent)
+                    {
+                        originalExtent = offset + length;
+                        trailingOriginalColor = originalColor;
+                    }
+                }
+                var currentLength = bookmarkRange.End - bookmarkRange.Start;
+                if (currentLength > originalExtent)
+                {
+                    if (trailingOriginalColor == MixedFormatting)
+                        trailingOriginalColor = (int)Word.WdColor.wdColorAutomatic;
+                    Word.Range? expandedTail = null;
+                    try
+                    {
+                        expandedTail = bookmarkRange.Duplicate;
+                        expandedTail.SetRange(bookmarkRange.Start + originalExtent, bookmarkRange.End);
+                        RestoreOwnedRedRuns(expandedTail, trailingOriginalColor);
+                    }
+                    finally { Release(expandedTail); }
                 }
                 bookmark.Delete();
             }
@@ -760,18 +942,16 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
         private static void RestoreColorSegment(Word.Range bookmarkRange, string encoded)
         {
-            var values = encoded.Split(':');
             int offset;
             int length;
             int originalColor;
-            if (values.Length != 3 ||
-                !int.TryParse(values[0], NumberStyles.None, CultureInfo.InvariantCulture, out offset) ||
-                !int.TryParse(values[1], NumberStyles.None, CultureInfo.InvariantCulture, out length) ||
-                !int.TryParse(values[2], NumberStyles.Integer, CultureInfo.InvariantCulture, out originalColor) ||
-                offset < 0 || length <= 0 || offset + length > bookmarkRange.End - bookmarkRange.Start)
+            if (!TryParseColorSegment(encoded, out offset, out length, out originalColor))
             {
                 return;
             }
+            var availableLength = bookmarkRange.End - bookmarkRange.Start - offset;
+            if (availableLength <= 0) return;
+            length = Math.Min(length, availableLength);
 
             Word.Range? segment = null;
             try
@@ -799,6 +979,20 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             {
                 Release(segment);
             }
+        }
+
+        private static bool TryParseColorSegment(string encoded, out int offset, out int length,
+            out int originalColor)
+        {
+            offset = 0;
+            length = 0;
+            originalColor = (int)Word.WdColor.wdColorAutomatic;
+            var values = (encoded ?? string.Empty).Split(':');
+            return values.Length == 3 &&
+                int.TryParse(values[0], NumberStyles.None, CultureInfo.InvariantCulture, out offset) &&
+                int.TryParse(values[1], NumberStyles.None, CultureInfo.InvariantCulture, out length) &&
+                int.TryParse(values[2], NumberStyles.Integer, CultureInfo.InvariantCulture, out originalColor) &&
+                offset >= 0 && length > 0;
         }
 
         private static void CaptureColorRuns(

@@ -8,7 +8,7 @@
 | 2019 | NOT_RUN | NOT_RUN | Legacy compatibility | Chưa có VM |
 | LTSC 2021 | NOT_RUN | NOT_RUN | Product support | Chưa có VM |
 | LTSC 2024 | NOT_RUN | NOT_RUN | Product support | Chưa có VM |
-| Microsoft 365 | NOT_RUN | PASS_LOCAL_DEVELOPMENT | Product support | Word 16.0.20326 x64: bản Development 1.0.0.91 fresh install, `LoadBehavior=3`, `COMAddIn.Connect=true`; DOC/DOCX local scan, annotation, command chain, 1-Click, quick spelling và heavy snapshot 10/50/100 trang PASS. `Rebuild` giữ registration cài đặt. Visual tab/icon riêng của `.91` chưa chạy |
+| Microsoft 365 | NOT_RUN | PASS_LOCAL_DEVELOPMENT_RUNTIME_1.0.0.107; PASS_VISUAL_RIBBON_HASH_BASELINE | Product support | Word 16.0.20326.20132 x64: bản cài `.107`, `LoadBehavior=3`; passive startup không đổi cache/backup và không background save/print; 39 control saved/unsaved PASS. Outer + 3/3 owned inner PE signatures, Apps & Features, cached uninstall, repair/uninstall/reinstall và rollback 6/6 PASS trên `.107`. DOC/DOCX, `Document1`, annotation/selected-fix, 1-Click, heavy snapshot và benchmark đã PASS trên cùng runtime/Ribbon source trước đó; người dùng xác nhận visual tab/icon/idle với cùng Ribbon XML hash. |
 
 Mỗi ô chỉ chuyển PASS sau fresh install, Word launch, Ribbon contract, smoke command, update và uninstall trên máy/VM thật. Mock Interop không thay thế evidence này.
 

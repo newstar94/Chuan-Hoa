@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "testId": "PRODUCT-DECISION-CONSISTENCY-001",
+  "status": "PASS",
+  "verifiedOn": "2026-09-05",
+  "productVersion": "1.0.0.110",
+  "ribbonCounts": {
+    "tabs": 1,
+    "groups": 6,
+    "buttons": 34,
+    "menus": 3,
+    "dropDowns": 2,
+    "checkBoxes": 0,
+    "interactiveControls": 39
+  },
+  "requiredLockedDecisions": [
+    "DEC-031",
+    "DEC-032",
+    "DEC-033",
+    "DEC-034"
+  ],
+  "negativeSelfTests": {
+    "retired_ribbon_control": true,
+    "unsaved_capability_drift": true,
+    "comment_metadata_leak": true,
+    "decision_unlock": true
+  },
+  "hashes": {
+    "ribbonContractSha256": "431C61CF9502CF94D0C96BE39EAF6E6FDE6CD2AFE4F0AEA2B767789221D4C19C",
+    "ribbonXmlSha256": "211FD5C95404780E5434EF7742FBF1533CF8983A4CBCD00F5657806BFBB18FF4",
+    "decisionRegisterSha256": "30373E08E28CCE0668A3634AA80C92F2885D441D09B26D42AB0C0962FA28C984",
+    "architectureDecisionsSha256": "83C46A276887957F05A84BECE62E844045478715AB4CBC8D01E5B2CA195065B7"
+  },
+  "failures": []
+}

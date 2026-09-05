@@ -1,0 +1,76 @@
+{
+  "schema": "chuanhoa.installer-evidence.v1",
+  "status": "PASS_DEVELOPMENT_INSTALL_CURRENT_LIFECYCLE_NOT_PRODUCTION_READY",
+  "timestampUtc": "2026-09-05T14:06:22.2291279Z",
+  "commit": "73f9d96f8eb04035b08a6cbf831a4576c6ed84e1",
+  "workingTree": "DIRTY_PRESERVED",
+  "productVersion": "1.0.0.101",
+  "artifact": {
+    "path": "artifacts/installers/development/ChuanHoa_Development_Test_Setup_1.0.0.101.exe",
+    "sizeBytes": 319272,
+    "sha256": "A351A2764760444DFDBD17DBC5831C4588673670690343C507D82D4B0623D460",
+    "authenticodeStatus": "Valid",
+    "signerThumbprint": "D91C8C668DBC96656AEF4FCE3B467F90D8214D1C",
+    "signerCertificateSha256": "E42AB29FAF8CBFE7F2FD8B323694AAF0096D594736317E6652C2EB2E2B6465EB",
+    "trustedPublicKeySha256": "5930DFB431B265147529C32B45754D7BD2B1C553BB42740A7CFCC53E24844C9F"
+  },
+  "immutablePreviousArtifacts": [
+    {"version": "1.0.0.94", "sizeBytes": 263976, "sha256": "299B543F542D8CFC25222A2A9C4C47ADFF37FC627FEF3B654FB071276356E98D", "knownIssue": "BOOTSTRAPPER_ALLOWLIST_MISSING_VSTO_UTILITIES"},
+    {"version": "1.0.0.95", "sizeBytes": 317224, "sha256": "0A4D94650179DE16E708A3237FC0AA9B20173F3C10E42DBD4273C7C04291C541"},
+    {"version": "1.0.0.96", "sizeBytes": 312616, "sha256": "E63233005EFDA559EA00326EBC37E174AD933FE590CF04A1F118DFE70750099D"},
+    {"version": "1.0.0.97", "sizeBytes": 314152, "sha256": "FCAEB75A529CB6653F4478E50B3A238EA35C4745DEDB197074A1B7B13F4A1486"},
+    {"version": "1.0.0.100", "sizeBytes": 319272, "sha256": "F13C0FB612E3D45927E0624101FC56C53A10D65DB9FA30260AD318FE08DA7ADC"}
+  ],
+  "audit": {
+    "command": "audit_development_installer.ps1",
+    "exitCode": 0,
+    "payloadFiles": 8,
+    "forbiddenAiOnnxQrHits": 0,
+    "innerPeAuthenticode": "NotSigned",
+    "status": "PASS_DEVELOPMENT"
+  },
+  "currentArtifactLifecycle": {
+    "upgradeFromVersion": "1.0.0.100",
+    "installExitCode": 0,
+    "installedVersion": "1.0.0.101",
+    "assemblyVersion": "1.0.0.101",
+    "fileVersion": "1.0.0.101",
+    "productFileVersion": "1.0.0.101",
+    "loadBehavior": 3,
+    "accessSmoke": "PASS_LOCAL-DEVELOPMENT-ND30-V2_LEXICON_6710",
+    "comAddInConnected": true,
+    "repairWhileWordOpen": {
+      "exitCode": 2,
+      "installStateUnchanged": true,
+      "status": "PASS_FAIL_CLOSED"
+    },
+    "repair": "PASS",
+    "silentUninstallReinstall": "PASS",
+    "rollbackFaultPoints": {
+      "status": "PASS",
+      "passed": 6,
+      "total": 6,
+      "managedStateRestored": true,
+      "personalDictionaryPreserved": true
+    }
+  },
+  "bootstrapperHistoricalLifecycle": {
+    "verifiedVersion": "1.0.0.97",
+    "freshInstall": "PASS",
+    "repair": "PASS",
+    "silentUninstallReinstall": "PASS",
+    "rollbackFaultPointsPassed": 6,
+    "rollbackFaultPointsTotal": 6,
+    "personalDictionaryPreserved": true,
+    "offlineComAddInConnected": true,
+    "silentCertificateLifecycle": "PASS_NO_ROOT_CERTIFICATE_STORE_WINDOW"
+  },
+  "developmentGaps": [
+    "INNER_PE_AUTHENTICODE_NOT_VALID",
+    "NO_APPS_FEATURES_REGISTRATION_OR_CACHED_UNINSTALL",
+    "SELF_SIGNED_DEVELOPMENT_CERTIFICATE_NOT_PRODUCTION_TRUST",
+    "NO_PRODUCTION_TIMESTAMP_OR_KMS_HSM",
+    "WORD_2010_X86_NOT_RUN"
+  ],
+  "productionReady": false
+}

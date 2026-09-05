@@ -105,9 +105,10 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
         public string SetCharacterSpacing(float delta, bool reset)
         {
+            Word.Selection? currentSelection = null;
             try
             {
-                var currentSelection = _application.Selection;
+                currentSelection = _application.Selection;
                 if (currentSelection == null || currentSelection.Start == currentSelection.End)
                     throw new InvalidOperationException("Hãy chọn phần chữ cần co hoặc giãn.");
             }
@@ -115,18 +116,31 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             {
                 throw new InvalidOperationException("Hãy mở tài liệu và chọn phần chữ cần co hoặc giãn.", exception);
             }
+            finally { Release(currentSelection); }
 
             return Execute(reset ? "Đưa giãn chữ về bình thường" : delta < 0 ? "Co chữ" : "Giãn chữ", (_, __) =>
             {
-                var selection = _application.Selection;
-                var range = selection.Range.Duplicate;
+                Word.Selection? selection = null;
+                Word.Range? selectedRange = null;
+                Word.Range? range = null;
+                Word.Font? font = null;
                 try
                 {
-                    var current = range.Font.Spacing;
+                    selection = _application.Selection;
+                    selectedRange = selection.Range;
+                    range = selectedRange.Duplicate;
+                    font = range.Font;
+                    var current = font.Spacing;
                     if (current > 999998f) current = 0f;
-                    range.Font.Spacing = reset ? 0f : Math.Max(-5f, Math.Min(20f, current + delta));
+                    font.Spacing = reset ? 0f : Math.Max(-5f, Math.Min(20f, current + delta));
                 }
-                finally { Release(range); }
+                finally
+                {
+                    Release(font);
+                    Release(range);
+                    Release(selectedRange);
+                    Release(selection);
+                }
             });
         }
 
@@ -891,8 +905,12 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     style.ParagraphFormat.KeepWithNext = definition.KeepWithNext ? -1 : 0;
                     style.ParagraphFormat.KeepTogether = definition.KeepTogether ? -1 : 0;
                     style.ParagraphFormat.OutlineLevel = definition.OutlineLevel;
-                    style.ParagraphFormat.TabStops.ClearAll();
-                    if (definition.RightTab > 0f)
+                    // Existing custom tab stops can be intentional (forms, signature
+                    // layouts and legacy DOC templates). Add only the canonical TOC
+                    // right tab when it is missing; never clear the user's collection.
+                    if (definition.RightTab > 0f &&
+                        !HasEquivalentTabStop(style.ParagraphFormat.TabStops,
+                            definition.RightTab, Word.WdTabAlignment.wdAlignTabRight))
                         style.ParagraphFormat.TabStops.Add(definition.RightTab,
                             Word.WdTabAlignment.wdAlignTabRight, Word.WdTabLeader.wdTabLeaderDots);
                 }
@@ -922,6 +940,25 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 }
             }
             finally { Release(tableGrid); }
+        }
+
+        private static bool HasEquivalentTabStop(Word.TabStops tabStops, float position,
+            Word.WdTabAlignment alignment)
+        {
+            var count = tabStops.Count;
+            for (var index = 1; index <= count; index++)
+            {
+                Word.TabStop? existing = null;
+                try
+                {
+                    existing = tabStops[index];
+                    if (Math.Abs(existing.Position - position) <= .5f &&
+                        existing.Alignment == alignment) return true;
+                }
+                catch (COMException) { }
+                finally { Release(existing); }
+            }
+            return false;
         }
 
         private sealed class LegacyRun
@@ -1040,55 +1077,64 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             Action<Word.Document, LocalRulePack> operation,
             bool createBackup = false)
         {
-            var document = _documentProvider == null ? _application.ActiveDocument : _documentProvider();
-            if (document == null)
-                throw new InvalidOperationException("Hãy mở một tài liệu Word trước khi sử dụng Chuẩn hóa.");
-            var capability = _capabilityProvider.Evaluate(document);
-            if (!capability.CanReadDocument) throw new InvalidOperationException(capability.Reason);
-            if (capability.IsReadOnly || capability.IsProtected || capability.TrackChangesEnabled)
-                throw new InvalidOperationException("Tài liệu phải cho phép chỉnh sửa, không bảo vệ và tắt Track Changes.");
-            var rules = _accessManager.GetRulePack(LocalAccessManager.DocumentToolsFeature);
-            var backup = createBackup ? CreateBackup(document) : string.Empty;
-            var previousScreenUpdating = _application.ScreenUpdating;
-            var undoStarted = false;
+            var ownsDocument = _documentProvider == null;
+            Word.Document? document = null;
             try
             {
-                _application.ScreenUpdating = false;
-                if (WordMajorVersion() >= 15)
-                {
-                    _application.UndoRecord.StartCustomRecord("Chuẩn hóa: " + title);
-                    undoStarted = true;
-                }
-                operation(document, rules);
-                return backup;
-            }
-            catch (Exception exception)
-            {
-                if (undoStarted)
-                {
-                    try { _application.UndoRecord.EndCustomRecord(); }
-                    catch (COMException) { }
-                    undoStarted = false;
-                }
+                document = ownsDocument ? _application.ActiveDocument : _documentProvider!();
+                if (document == null)
+                    throw new InvalidOperationException("Hãy mở một tài liệu Word trước khi sử dụng Chuẩn hóa.");
+                var capability = _capabilityProvider.Evaluate(document);
+                if (!capability.CanReadDocument) throw new InvalidOperationException(capability.Reason);
+                if (capability.IsReadOnly || capability.IsProtected || capability.TrackChangesEnabled)
+                    throw new InvalidOperationException("Tài liệu phải cho phép chỉnh sửa, không bảo vệ và tắt Track Changes.");
+                var rules = _accessManager.GetRulePack(LocalAccessManager.DocumentToolsFeature);
+                var backup = createBackup ? CreateBackup(document) : string.Empty;
+                var previousScreenUpdating = _application.ScreenUpdating;
+                var undoStarted = false;
                 try
                 {
-                    object times = 1;
-                    document.Undo(ref times);
+                    _application.ScreenUpdating = false;
+                    if (WordMajorVersion() >= 15)
+                    {
+                        _application.UndoRecord.StartCustomRecord("Chuẩn hóa: " + title);
+                        undoStarted = true;
+                    }
+                    operation(document, rules);
+                    return backup;
                 }
-                catch { /* Word may have nothing left to undo. */ }
-                var recoveryMessage = string.IsNullOrWhiteSpace(backup)
-                    ? string.Empty
-                    : "\nBản sao khôi phục: " + backup;
-                throw new InvalidOperationException(exception.Message + recoveryMessage, exception);
+                catch (Exception exception)
+                {
+                    if (undoStarted)
+                    {
+                        try { _application.UndoRecord.EndCustomRecord(); }
+                        catch (COMException) { }
+                        undoStarted = false;
+                    }
+                    try
+                    {
+                        object times = 1;
+                        document.Undo(ref times);
+                    }
+                    catch { /* Word may have nothing left to undo. */ }
+                    var recoveryMessage = string.IsNullOrWhiteSpace(backup)
+                        ? string.Empty
+                        : "\nBản sao khôi phục: " + backup;
+                    throw new InvalidOperationException(exception.Message + recoveryMessage, exception);
+                }
+                finally
+                {
+                    if (undoStarted)
+                    {
+                        try { _application.UndoRecord.EndCustomRecord(); }
+                        catch (COMException) { }
+                    }
+                    _application.ScreenUpdating = previousScreenUpdating;
+                }
             }
             finally
             {
-                if (undoStarted)
-                {
-                    try { _application.UndoRecord.EndCustomRecord(); }
-                    catch (COMException) { }
-                }
-                _application.ScreenUpdating = previousScreenUpdating;
+                if (ownsDocument) Release(document);
             }
         }
 

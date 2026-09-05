@@ -6,21 +6,17 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
-if ([string]::IsNullOrWhiteSpace($ApplicationVersion)) {
-    [xml]$versionProps = Get-Content -LiteralPath (Join-Path $root 'Directory.Build.props')
-    $ApplicationVersion = [string]$versionProps.Project.PropertyGroup.ProductVersion
-}
+. (Join-Path $PSScriptRoot 'BuildContract.ps1')
+$ApplicationVersion = Resolve-ChuanHoaApplicationVersion `
+    -RepositoryRoot $root -RequestedVersion $ApplicationVersion
 $project = Join-Path $root 'src\ChuanHoa.AddIn.Vsto\ChuanHoa.AddIn.Vsto.csproj'
 $publishRoot = Join-Path $root 'artifacts\vsto-development-test'
 $publishDirectory = Join-Path $publishRoot $ApplicationVersion
 $publishAlias = 'D:\ChuanHoaDevelopmentTestPublish'
-$msbuild = 'C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\MSBuild.exe'
+$msbuild = Get-ChuanHoaMsBuild
 
 if (Get-Process WINWORD -ErrorAction SilentlyContinue) {
     throw 'Close Microsoft Word completely before building the Development test installer.'
-}
-if (!(Test-Path -LiteralPath $msbuild)) {
-    throw 'Visual Studio Build Tools 2022 MSBuild was not found.'
 }
 if (Test-Path -LiteralPath $publishDirectory) {
     throw "The output directory already exists. Use a newer version: $publishDirectory"
@@ -43,13 +39,11 @@ if (Test-Path -LiteralPath $publishAlias) {
 }
 New-Item -ItemType Junction -Path $publishAlias -Target $publishDirectory | Out-Null
 
-$certificate = Get-ChildItem Cert:\CurrentUser\My |
-    Where-Object Subject -eq 'CN=Chuan Hoa Local Development' |
-    Sort-Object NotAfter -Descending |
-    Select-Object -First 1
-if ($null -eq $certificate) {
-    throw 'The local Development signing certificate was not found.'
+$signingCertificatePin = $env:CHUANHOA_DEVELOPMENT_SIGNING_CERT_SHA256
+if ([string]::IsNullOrWhiteSpace($signingCertificatePin)) {
+    throw 'Set CHUANHOA_DEVELOPMENT_SIGNING_CERT_SHA256 to the approved Development certificate SHA-256 pin.'
 }
+$certificate = Get-ChuanHoaSigningCertificate -ExpectedSha256 $signingCertificatePin
 
 $buildArguments = @(
     $project,
@@ -57,6 +51,7 @@ $buildArguments = @(
     '/p:Platform=AnyCPU',
     '/p:SignManifests=true',
     "/p:ManifestCertificateThumbprint=$($certificate.Thumbprint)",
+    "/p:TrustedSigningCertificateSha256=$signingCertificatePin",
     "/p:PublishDir=$publishAlias\",
     "/p:PublishUrl=$publishAlias\",
     '/p:Install=true',
@@ -68,22 +63,9 @@ $buildArguments = @(
     '/v:minimal'
 )
 
-# A clean checkout has no VSTO project.assets.json because the SDK solution does
-# not include this legacy Office project. Restore it explicitly before build.
-# Remove NuGet's generated dependency snapshot first. When the final
-# PackageReference is removed, NuGet reports "Nothing to do" and otherwise
-# leaves the old dependency in the VSTO deployment manifest.
-foreach ($generatedNuGetFile in @(
-    'obj\project.assets.json',
-    'obj\ChuanHoa.AddIn.Vsto.csproj.nuget.dgspec.json',
-    'obj\ChuanHoa.AddIn.Vsto.csproj.nuget.g.props',
-    'obj\ChuanHoa.AddIn.Vsto.csproj.nuget.g.targets'
-)) {
-    $generatedNuGetPath = Join-Path (Split-Path -Parent $project) $generatedNuGetFile
-    if (Test-Path -LiteralPath $generatedNuGetPath) {
-        Remove-Item -LiteralPath $generatedNuGetPath -Force
-    }
-}
+# BuildSharedClientAssemblies restores and builds Client.Core through MSBuild's
+# dependency graph. The VSTO project restore itself is still explicit so the
+# publish starts from clean inputs without deleting generated files by hand.
 & $msbuild $project /t:Restore /p:RestoreForce=true /p:Configuration=Development /p:Platform=AnyCPU /m /nologo /v:minimal
 if ($LASTEXITCODE -ne 0) {
     throw "VSTO Development restore failed with exit code $LASTEXITCODE."
@@ -96,9 +78,23 @@ if ($LASTEXITCODE -ne 0) {
     throw "VSTO Development rebuild failed with exit code $LASTEXITCODE."
 }
 
-& $msbuild @buildArguments /t:Publish
+# Sign owned PE files before Publish so the VSTO application manifest hashes
+# the final signed bytes. The manifest is then signed by the Office build target.
+$ownedRuntimePeFiles = @(
+    (Join-Path $root 'src\ChuanHoa.AddIn.Vsto\bin\Development\ChuanHoa.AddIn.Vsto.dll'),
+    (Join-Path $root 'src\ChuanHoa.AddIn.Vsto\bin\Development\ChuanHoa.Client.Core.dll'),
+    (Join-Path $root 'src\ChuanHoa.Client.Core\bin\Development\netstandard2.0\ChuanHoa.Client.Core.dll')
+)
+$ownedRuntimeSignatures = @(
+    foreach ($path in $ownedRuntimePeFiles) {
+        Invoke-ChuanHoaAuthenticodeSign -Path $path -Certificate $certificate `
+            -ExpectedCertificateSha256 $signingCertificatePin
+    }
+)
+
+& $msbuild @buildArguments /t:PublishOnly /p:BuildProjectReferences=false
 if ($LASTEXITCODE -ne 0) {
-    throw "VSTO Development publish failed with exit code $LASTEXITCODE."
+    throw "VSTO Development publish-only failed with exit code $LASTEXITCODE."
 }
 
 $setupPath = Join-Path $publishDirectory 'setup.exe'
@@ -117,6 +113,16 @@ $embeddedResources = @($loadedAssembly.GetManifestResourceNames())
 if ($embeddedResources -notcontains 'ChuanHoa.AddIn.Vsto.Ribbon.ChuanHoaRibbon.xml') {
     throw 'Published VSTO assembly is missing the embedded Ribbon XML resource.'
 }
+Assert-ChuanHoaManagedAssemblyVersion -Path $publishedAssembly.FullName -ExpectedVersion $ApplicationVersion
+Assert-ChuanHoaManifestVersion -Path $manifestPath `
+    -IdentityName 'ChuanHoa.AddIn.Vsto.vsto' -ExpectedVersion $ApplicationVersion
+$applicationManifest = Get-ChildItem -LiteralPath $publishDirectory -Recurse -File `
+    -Filter 'ChuanHoa.AddIn.Vsto.dll.manifest' | Select-Object -First 1
+if ($null -eq $applicationManifest) {
+    throw 'Publish completed without the VSTO application manifest.'
+}
+Assert-ChuanHoaManifestVersion -Path $applicationManifest.FullName `
+    -IdentityName 'ChuanHoa.AddIn.Vsto.dll' -ExpectedVersion $ApplicationVersion
 Export-Certificate -Cert $certificate -FilePath $certificatePath -Force | Out-Null
 
 [pscustomobject]@{
@@ -127,6 +133,8 @@ Export-Certificate -Cert $certificate -FilePath $certificatePath -Force | Out-Nu
     ManifestPath = $manifestPath
     ManifestSha256 = (Get-FileHash -LiteralPath $manifestPath -Algorithm SHA256).Hash
     CertificatePath = $certificatePath
-    SigningCertificate = $certificate.Subject
+    SigningCertificateThumbprint = $certificate.Thumbprint
+    SigningCertificateSha256 = Get-ChuanHoaCertificateSha256 -Certificate $certificate
+    InnerPeSignatures = $ownedRuntimeSignatures
     ProductionReady = $false
 }

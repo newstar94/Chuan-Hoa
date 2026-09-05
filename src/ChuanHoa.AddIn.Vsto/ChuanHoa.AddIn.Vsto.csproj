@@ -21,15 +21,12 @@
     <UpdateMode>Foreground</UpdateMode>
     <UpdateInterval>0</UpdateInterval>
     <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <ApplicationVersion Condition="'$(ApplicationVersion)' == ''">$(ProductVersion)</ApplicationVersion>
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <BootstrapperEnabled>true</BootstrapperEnabled>
     <BootstrapperComponentsLocation>HomeSite</BootstrapperComponentsLocation>
     <ResolveComReferenceSilent>true</ResolveComReferenceSilent>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
-    <ClientCoreProject>$(MSBuildProjectDirectory)\..\ChuanHoa.Client.Core\ChuanHoa.Client.Core.csproj</ClientCoreProject>
-    <ClientCoreOutput>$(MSBuildProjectDirectory)\..\ChuanHoa.Client.Core\bin\$(Configuration)\netstandard2.0\ChuanHoa.Client.Core.dll</ClientCoreOutput>
-    <ClientCoreDotNetExe Condition="Exists('$(MSBuildProjectDirectory)\..\..\.tools\dotnet\dotnet.exe')">$(MSBuildProjectDirectory)\..\..\.tools\dotnet\dotnet.exe</ClientCoreDotNetExe>
-    <ClientCoreDotNetExe Condition="'$(ClientCoreDotNetExe)' == ''">dotnet</ClientCoreDotNetExe>
     <VSTO_TrustAssembliesLocation>true</VSTO_TrustAssembliesLocation>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
@@ -106,10 +103,11 @@
     <Reference Include="Microsoft.VisualStudio.Tools.Applications.Runtime">
       <Private>false</Private>
     </Reference>
-    <Reference Include="ChuanHoa.Client.Core">
-      <HintPath>$(ClientCoreOutput)</HintPath>
+    <ProjectReference Include="..\ChuanHoa.Client.Core\ChuanHoa.Client.Core.csproj">
+      <Name>ChuanHoa.Client.Core</Name>
+      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
       <Private>true</Private>
-    </Reference>
+    </ProjectReference>
   </ItemGroup>
 
   <ItemGroup>
@@ -132,6 +130,7 @@
     <Compile Include="Runtime\DocumentContextStore.cs" />
     <Compile Include="Runtime\DocumentOperationSession.cs" />
     <Compile Include="Runtime\LocalAccessManager.cs" />
+    <Compile Include="Runtime\StartupIntegrityGuard.cs" />
     <Compile Include="Runtime\WordDocumentCapabilityProvider.cs" />
     <Compile Include="Runtime\WordDocumentReadRuntime.cs" />
     <Compile Include="Runtime\WordDocumentSnapshotBuilder.cs" />
@@ -163,15 +162,14 @@
 
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 
-  <Target Name="BuildSharedClientAssemblies" BeforeTargets="ResolveAssemblyReferences">
-    <Exec Command="&quot;$(ClientCoreDotNetExe)&quot; build &quot;$(ClientCoreProject)&quot; --configuration $(Configuration) --no-restore --nologo" />
-  </Target>
-
   <Target Name="GenerateProductVersionAssemblyInfo" BeforeTargets="CoreCompile">
     <ItemGroup>
       <_ProductVersionAssemblyInfo Include="[assembly: System.Reflection.AssemblyVersionAttribute(&quot;$(ProductVersion)&quot;)]" />
       <_ProductVersionAssemblyInfo Include="[assembly: System.Reflection.AssemblyFileVersionAttribute(&quot;$(ProductVersion)&quot;)]" />
       <_ProductVersionAssemblyInfo Include="[assembly: System.Reflection.AssemblyInformationalVersionAttribute(&quot;$(ProductVersion)&quot;)]" />
+      <_ProductVersionAssemblyInfo Include="[assembly: System.Reflection.AssemblyMetadataAttribute(&quot;ChuanHoa.SigningCertificateSha256&quot;, &quot;$(TrustedSigningCertificateSha256)&quot;)]" />
+      <_ProductVersionAssemblyInfo Include="[assembly: System.Runtime.CompilerServices.InternalsVisibleToAttribute(&quot;ChuanHoa.AnnotationSmoke&quot;)]" />
+      <_ProductVersionAssemblyInfo Include="[assembly: System.Runtime.CompilerServices.InternalsVisibleToAttribute(&quot;ChuanHoa.LocalScanSmoke&quot;)]" />
       <Compile Include="$(IntermediateOutputPath)ChuanHoa.ProductVersion.g.cs" />
     </ItemGroup>
     <WriteLinesToFile
@@ -179,6 +177,20 @@
       Lines="@(_ProductVersionAssemblyInfo)"
       Overwrite="true"
       Encoding="UTF-8" />
+  </Target>
+
+  <Target Name="ValidateUnifiedVersionContract" BeforeTargets="PrepareForBuild">
+    <Error Condition="'$(ProductVersion)' == ''"
+           Text="ProductVersion must be defined by Directory.Build.props." />
+    <Error Condition="'$(Version)' != '$(ProductVersion)' or
+                      '$(AssemblyVersion)' != '$(ProductVersion)' or
+                      '$(FileVersion)' != '$(ProductVersion)' or
+                      '$(InformationalVersion)' != '$(ProductVersion)'"
+           Text="Version, AssemblyVersion, FileVersion and InformationalVersion must all equal ProductVersion." />
+    <Error Condition="'$(ApplicationVersion)' != '$(ProductVersion)'"
+           Text="ApplicationVersion cannot differ from ProductVersion. Directory.Build.props is the only release-version source." />
+    <Error Condition="'$(Configuration)' == 'Development' and !$([System.Text.RegularExpressions.Regex]::IsMatch('$(TrustedSigningCertificateSha256)', '^[0-9A-Fa-f]{64}$'))"
+           Text="Development VSTO builds require a 64-character TrustedSigningCertificateSha256 startup pin." />
   </Target>
 
   <Import Project="$(VSToolsPath)\OfficeTools\Microsoft.VisualStudio.Tools.Office.targets"

@@ -41,15 +41,22 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
     {
         private readonly Word.Application _application;
         private readonly WordDocumentCapabilityProvider _capabilityProvider;
-        private readonly WordDocumentSnapshotBuilder _snapshotBuilder = new WordDocumentSnapshotBuilder();
+        private readonly WordDocumentSnapshotBuilder _snapshotBuilder;
         private readonly LocalAccessManager _accessManager;
         private readonly LocalDocumentScanner _scanner = new LocalDocumentScanner();
 
         public WordDocumentReadRuntime(Word.Application application, LocalAccessManager accessManager)
+            : this(application, accessManager, new WordDocumentSnapshotBuilder())
+        {
+        }
+
+        internal WordDocumentReadRuntime(Word.Application application, LocalAccessManager accessManager,
+            WordDocumentSnapshotBuilder snapshotBuilder)
         {
             _application = application ?? throw new ArgumentNullException(nameof(application));
             _capabilityProvider = new WordDocumentCapabilityProvider(application);
             _accessManager = accessManager ?? throw new ArgumentNullException(nameof(accessManager));
+            _snapshotBuilder = snapshotBuilder ?? throw new ArgumentNullException(nameof(snapshotBuilder));
         }
 
         public WordDocumentReadResult Read(DocumentContext context, Word.Document? activeDocument = null)
@@ -88,7 +95,10 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     requireFormat,
                     requireSpelling,
                     formatRules?.PackId,
-                    spellingRules?.PackId))
+                    formatRules?.Version,
+                    formatRules?.AcademicTypography.DetectorPolicyVersion ?? 0,
+                    spellingRules?.PackId,
+                    spellingRules?.Version))
                 return true;
 
             var snapshot = _snapshotBuilder.Build(document, context, capability, operation);

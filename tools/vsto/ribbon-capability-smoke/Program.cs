@@ -75,7 +75,6 @@ namespace ChuanHoa.RibbonCapabilitySmoke
                 contexts = new DocumentContextStore();
                 runtime = new RibbonRuntime(application, contexts,
                     new WordMutationRuntime(application));
-                runtime.OnDocumentWindowActivated(document);
                 foreach (var controlId in ControlIds)
                     if (!runtime.IsEnabled(controlId))
                         throw new InvalidOperationException(

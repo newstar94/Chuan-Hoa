@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "dependencies": {
+    "net10.0": {
+      "Microsoft.AspNetCore.OpenApi": {
+        "type": "Direct",
+        "requested": "[10.0.11, )",
+        "resolved": "10.0.11",
+        "contentHash": "R/1EATnPLU+gRfB6lwVkMcymmyAY5ppBBdRN/5lhNEiT3xP1sWccuSFkU/f1lQvN/WgRq5Vn8AhCdE3fqgsL/w==",
+        "dependencies": {
+          "Microsoft.OpenApi": "[2.7.5, 3.0.0)"
+        }
+      },
+      "Microsoft.OpenApi": {
+        "type": "Transitive",
+        "resolved": "2.7.5",
+        "contentHash": "0FA67RSnRM4tcBKqiqVu/HPdZ9+QOKbmeRjxRUGTCjPU4C0bmUhd97Dso7Yild5P7nOV6GxJ2xrK0Kv/O9xp0w=="
+      },
+      "Npgsql": {
+        "type": "Transitive",
+        "resolved": "10.0.0",
+        "contentHash": "xZAYhPOU2rUIFpV48xsqhCx9vXs6Y+0jX2LCoSEfDFYMw9jtAOUk3iQsCnDLrFIv9NT3JGMihn7nnuZsPKqJmA=="
+      },
+      "chuanhoa.application": {
+        "type": "Project",
+        "dependencies": {
+          "ChuanHoa.Contracts": "[1.0.0.101, )",
+          "ChuanHoa.Domain": "[1.0.0.101, )"
+        }
+      },
+      "chuanhoa.contracts": {
+        "type": "Project"
+      },
+      "chuanhoa.domain": {
+        "type": "Project",
+        "dependencies": {
+          "ChuanHoa.Contracts": "[1.0.0.101, )"
+        }
+      },
+      "chuanhoa.infrastructure": {
+        "type": "Project",
+        "dependencies": {
+          "ChuanHoa.Application": "[1.0.0.101, )",
+          "ChuanHoa.Contracts": "[1.0.0.101, )",
+          "ChuanHoa.Domain": "[1.0.0.101, )",
+          "Npgsql": "[10.0.0, )"
+        }
+      }
+    }
+  }
+}

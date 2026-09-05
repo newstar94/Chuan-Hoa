@@ -11,6 +11,19 @@ using ChuanHoa.Client.Core.Rules;
 
 namespace ChuanHoa.Client.Core.Scanning
 {
+    public sealed class CanonicalFormatScanOutcome
+    {
+        public CanonicalFormatScanOutcome(IReadOnlyList<AnnotationFinding> findings,
+            AcademicTypographyScanOutcome academicTypography)
+        {
+            Findings = findings ?? Array.Empty<AnnotationFinding>();
+            AcademicTypography = academicTypography ?? throw new ArgumentNullException(nameof(academicTypography));
+        }
+
+        public IReadOnlyList<AnnotationFinding> Findings { get; }
+        public AcademicTypographyScanOutcome AcademicTypography { get; }
+    }
+
     public sealed class CanonicalRuleScanner
     {
         private const double PointsPerMillimeter = 72d / 25.4d;
@@ -52,12 +65,7 @@ namespace ChuanHoa.Client.Core.Scanning
             "ND30-PL2-M3-K1E", "ND30-PL2-M4-K1A", "ND30-PL2-M4-K1B", "ND30-PL2-M5-K5", "ND30-PL2-M5-K7", "ND30-PL2-M5-K8A"
         };
 
-        public static readonly IReadOnlyList<string> LatexRuleCodes = new[]
-        {
-            "LATEX-SEC-STYLE", "LATEX-SEC-CONTINUITY", "LATEX-PAGINATION-KEEP",
-            "LATEX-PAGINATION-WIDOW", "LATEX-TABLE-BOOKTABS", "LATEX-CAPTION-POS",
-            "LATEX-MATH-SYNTAX"
-        };
+        public static readonly IReadOnlyList<string> LatexRuleCodes = AcademicTypographyRuleCodes.All;
 
         public static readonly IReadOnlyList<string> AllRegisteredRuleCodes =
             RegisteredRuleCodes.Concat(LatexRuleCodes).ToArray();
@@ -72,6 +80,12 @@ namespace ChuanHoa.Client.Core.Scanning
         }
 
         public IReadOnlyList<AnnotationFinding> ScanFormat(LocalScanSnapshot snapshot, LocalRulePack rules,
+            CancellationToken cancellationToken = default(CancellationToken))
+        {
+            return ScanFormatDetailed(snapshot, rules, cancellationToken).Findings;
+        }
+
+        public CanonicalFormatScanOutcome ScanFormatDetailed(LocalScanSnapshot snapshot, LocalRulePack rules,
             CancellationToken cancellationToken = default(CancellationToken))
         {
             var findings = new List<AnnotationFinding>();
@@ -97,8 +111,10 @@ namespace ChuanHoa.Client.Core.Scanning
             CheckAppendices(findings, snapshot, rules, roles);
             CheckFontSizeConsistency(findings, snapshot, rules, roles);
             cancellationToken.ThrowIfCancellationRequested();
-            findings.AddRange(_latexScanner.Scan(snapshot, rules, cancellationToken));
-            return findings;
+            var analysis = DerivedAnalysisContext.Create(snapshot, blocks, roles, new HeadingDetector());
+            var academic = _latexScanner.ScanDetailed(snapshot, rules, analysis, cancellationToken);
+            findings.AddRange(academic.Findings);
+            return new CanonicalFormatScanOutcome(findings, academic);
         }
 
         public IReadOnlyList<AnnotationFinding> ScanSpelling(LocalScanSnapshot snapshot, LocalRulePack rules,
@@ -412,12 +428,7 @@ namespace ChuanHoa.Client.Core.Scanning
 
         private static bool IsOwnedLineForParagraph(string? name, int paragraphIndex)
         {
-            if (name == null || name.Length == 0) return false;
-            var marker = "P" + paragraphIndex.ToString(CultureInfo.InvariantCulture);
-            return (name.StartsWith("CHUANHOA2_", StringComparison.Ordinal) ||
-                    name.StartsWith("CHUANHOA_", StringComparison.Ordinal) ||
-                    name.StartsWith("CH_L_", StringComparison.Ordinal)) &&
-                   (name.EndsWith(marker, StringComparison.Ordinal) || name.IndexOf(marker + "_", StringComparison.Ordinal) >= 0);
+            return LineShapeOwnership.IsOwnedForParagraph(name, paragraphIndex);
         }
 
         private static bool HasRequiredLineStyle(LocalLineShapeSnapshot line)
@@ -521,8 +532,6 @@ namespace ChuanHoa.Client.Core.Scanning
 
         private static bool IsBelow(LocalLineShapeSnapshot line, LocalParagraphSnapshot paragraph)
         {
-            if (IsOwnedLineForParagraph(line.Name, paragraph.Index))
-                return true;
             if (line.AnchorParagraphIndex.HasValue &&
                 line.AnchorParagraphIndex.Value > paragraph.Index &&
                 line.AnchorParagraphIndex.Value <= paragraph.Index + 2 &&
@@ -567,8 +576,6 @@ namespace ChuanHoa.Client.Core.Scanning
         private static bool HasExpectedWidthAndCenter(LocalLineShapeSnapshot line, LocalParagraphSnapshot paragraph,
             double minimumWidthRatio, double maximumWidthRatio)
         {
-            if (IsOwnedLineForParagraph(line.Name, paragraph.Index))
-                return true;
             if (paragraph.TextWidthPoints.HasValue && paragraph.TextWidthPoints.Value > 0)
             {
                 var lineLength = LineLength(line);
@@ -725,7 +732,9 @@ namespace ChuanHoa.Client.Core.Scanning
                             rules));
                     }
                     if (party && !Rx(@"^\s*[-–—]\s*").IsMatch(paragraph.Text))
-                        findings.Add(Paragraph("ND30-PL1-M2-K6A-STYLE", paragraph, "Căn cứ của văn bản Đảng thiếu gạch ngang đầu dòng.", "Thêm một dấu gạch ngang trước mỗi căn cứ.", rules));
+                        findings.Add(ParagraphQualified("ND30-PL1-M2-K6A-STYLE", paragraph,
+                            "dash", "Căn cứ của văn bản Đảng thiếu gạch ngang đầu dòng.",
+                            "Thêm một dấu gạch ngang trước mỗi căn cứ.", rules));
                 }
             }
             var scan = mainParagraphs;
@@ -774,7 +783,9 @@ namespace ChuanHoa.Client.Core.Scanning
                 int.TryParse(item.Match.Groups["number"].Value, out number);
                 var problems = new List<string>();
                 if (previousArticle.HasValue && number != previousArticle.Value + 1) problems.Add("số điều không liên tục");
-                if (item.Paragraph.FirstLineIndentPoints.HasValue && !Between(item.Paragraph.FirstLineIndentPoints.Value, 10, 12.7)) problems.Add("thụt đầu dòng sai");
+                if (item.Paragraph.FirstLineIndentPoints.HasValue &&
+                    !Between(item.Paragraph.FirstLineIndentPoints.Value, 10, 12.7))
+                    problems.Add("thụt đầu dòng sai");
                 if (item.Paragraph.Bold.HasValue && !item.Paragraph.Bold.Value) problems.Add("chưa in đậm");
                 if (problems.Count > 0)
                     findings.Add(Paragraph("ND30-PL1-M2-K6D-ARTICLE", item.Paragraph, "Điều " + number + " sai thể thức: " + string.Join(", ", problems) + ".", "Sửa số thứ tự, thụt dòng và kiểu chữ của điều.", rules));
@@ -835,7 +846,9 @@ namespace ChuanHoa.Client.Core.Scanning
                 if (paragraph.Text.IndexOf(':') < 0)
                     findings.Add(Paragraph("ND30-PL1-M2-K9A-COLON", paragraph, "Thiếu dấu hai chấm sau Kính gửi.", "Viết Kính gửi: ...", rules));
                 if (role == "recipientSalutation" && !WithRole(snapshot, roles, "recipientSalutationList").Any())
-                    findings.Add(Paragraph("ND30-PL1-M2-K9A-LAYOUT", paragraph, "Kính gửi tách dòng nhưng không có danh sách bên dưới.", "Một nơi thì viết cùng dòng; nhiều nơi thì xuống dòng có gạch đầu dòng.", rules));
+                    findings.Add(ParagraphQualified("ND30-PL1-M2-K9A-LAYOUT", paragraph,
+                        "structure", "Kính gửi tách dòng nhưng không có danh sách bên dưới.",
+                        "Một nơi thì viết cùng dòng; nhiều nơi thì xuống dòng có gạch đầu dòng.", rules));
                 if (role == "recipientSalutationInline" && !paragraph.Text.Trim().EndsWith(".", StringComparison.Ordinal))
                     findings.Add(Paragraph("ND30-PL1-M2-K9A-INLINE-END", paragraph, "Kính gửi viết cùng dòng chưa kết thúc bằng dấu chấm.", "Thêm dấu chấm cuối dòng.", rules));
             }
@@ -852,9 +865,12 @@ namespace ChuanHoa.Client.Core.Scanning
                 CheckStyle(findings, "ND30-PL1-M2-K9B-LABEL", paragraph, rules, party ? 14 : 12, party ? 14 : 12,
                     !party, !party, 0, "Nơi nhận");
                 if (party && (!paragraph.Underline.HasValue || paragraph.Underline.Value == 0))
-                    findings.Add(Paragraph("ND30-PL1-M2-K9B-LABEL", paragraph, "Nơi nhận của văn bản Đảng chưa gạch chân.", "Gạch chân cụm từ Nơi nhận.", rules));
+                    findings.Add(ParagraphQualified("ND30-PL1-M2-K9B-LABEL", paragraph,
+                        "underline", "Nơi nhận của văn bản Đảng chưa gạch chân.",
+                        "Gạch chân cụm từ Nơi nhận.", rules));
                 if (!Rx(@"^\s*Nơi\s+nhận\s*:", true).IsMatch(paragraph.Text))
-                    findings.Add(Paragraph("ND30-PL1-M2-K9B-LABEL", paragraph, "Nơi nhận thiếu dấu hai chấm.", "Viết Nơi nhận:", rules));
+                    findings.Add(ParagraphQualified("ND30-PL1-M2-K9B-LABEL", paragraph,
+                        "colon", "Nơi nhận thiếu dấu hai chấm.", "Viết Nơi nhận:", rules));
             }
             var recipientItems = WithRole(snapshot, roles, "recipientList").OrderBy(p => p.Index).ToArray();
             for (var i = 0; i < recipientItems.Length; i++)
@@ -863,7 +879,10 @@ namespace ChuanHoa.Client.Core.Scanning
                     party ? 12 : 11, false, false, 0, "Danh sách Nơi nhận");
                 var text = recipientItems[i].Text.Trim();
                 if (!text.StartsWith("-", StringComparison.Ordinal) || (i < recipientItems.Length - 1 && !text.EndsWith(";", StringComparison.Ordinal)))
-                    findings.Add(Paragraph("ND30-PL1-M2-K9B-LIST", recipientItems[i], "Danh sách Nơi nhận sai gạch đầu dòng hoặc dấu câu.", "Mỗi dòng bắt đầu bằng gạch ngang và các dòng trước kết thúc bằng chấm phẩy.", rules));
+                    findings.Add(ParagraphQualified("ND30-PL1-M2-K9B-LIST",
+                        recipientItems[i], "punctuation",
+                        "Danh sách Nơi nhận sai gạch đầu dòng hoặc dấu câu.",
+                        "Mỗi dòng bắt đầu bằng gạch ngang và các dòng trước kết thúc bằng chấm phẩy.", rules));
             }
             if (recipientItems.Length > 0 && !Rx(@"^\s*-\s*Lưu\s*:\s*[^;,.]+[.;]?\s*$", true).IsMatch(recipientItems[recipientItems.Length - 1].Text))
                 findings.Add(Paragraph("ND30-PL1-M2-K9B-LUU", recipientItems[recipientItems.Length - 1], "Dòng Lưu chưa đúng cấu trúc.", "Dòng cuối có dạng - Lưu: VT, ...", rules));
@@ -884,6 +903,7 @@ namespace ChuanHoa.Client.Core.Scanning
                         findings.Add(Paragraph("ND30-PL1-M3-K1A-NUM", label, "Phụ lục chưa có số thứ tự.",
                             "Dùng số Ả Rập (Phụ lục 1, 2, 3...) hoặc số La Mã (Phụ lục I, II, III...).", rules));
             }
+            var pageNumberSections = new HashSet<int>();
             foreach (var label in labels)
             {
                 CheckStyle(findings, "ND30-PL1-M3-K1B", label, rules, 14, 14, true, false, 1, "Nhãn phụ lục");
@@ -898,7 +918,8 @@ namespace ChuanHoa.Client.Core.Scanning
                 {
                     CheckStyle(findings, "ND30-PL1-M3-K1B", title, rules, 13, 14, true, false, 1, "Tên phụ lục");
                     if (!IsUppercaseText(title.Text))
-                        findings.Add(Paragraph("ND30-PL1-M3-K1B", title, "Tên phụ lục chưa viết hoa.",
+                        findings.Add(ParagraphQualified("ND30-PL1-M3-K1B", title,
+                            "uppercase", "Tên phụ lục chưa viết hoa.",
                             "Viết hoa toàn bộ tên Phụ lục, cỡ chữ 13–14, in đậm và căn giữa.", rules));
                 }
                 var reference = WithRole(snapshot, roles, "appendixReference")
@@ -923,7 +944,8 @@ namespace ChuanHoa.Client.Core.Scanning
                     CheckStyle(findings, "ND30-PL1-M3-K1C", digitalInfo, rules, 10, 10, false, false, 2,
                         "Thông tin ký số của Phụ lục điện tử");
                 var section = snapshot.Sections.FirstOrDefault(s => s.Index == label.SectionIndex);
-                if (section != null && !section.RestartPageNumbering)
+                if (section != null && !section.RestartPageNumbering &&
+                    pageNumberSections.Add(section.Index))
                     findings.Add(Section("ND30-PL1-M3-K1D", section.Index,
                         "Phụ lục chưa đánh số trang riêng.",
                         "Tạo section riêng và đánh số trang lại từ đầu cho từng Phụ lục.", rules));
@@ -948,7 +970,9 @@ namespace ChuanHoa.Client.Core.Scanning
                 var size = paragraph.FontSizePoints.GetValueOrDefault();
                 if (min > 0 && (size < min - .1 || size > max + .1))
                 {
-                    findings.Add(Paragraph("ND30-PL1-MV-CT1", paragraph, "Cỡ chữ không nhất quán với vai trò được nhận diện.", "Dùng cỡ chữ theo thành phần thể thức.", rules));
+                    findings.Add(ParagraphQualified("ND30-PL1-MV-CT1", paragraph,
+                        "role", "Cỡ chữ không nhất quán với vai trò được nhận diện.",
+                        "Dùng cỡ chữ theo thành phần thể thức.", rules));
                 }
             }
         }
@@ -1386,6 +1410,13 @@ namespace ChuanHoa.Client.Core.Scanning
         private static AnnotationFinding Paragraph(string code, LocalParagraphSnapshot paragraph, string issue, string expected,
             LocalRulePack rules, string severity = "Warning") =>
             new AnnotationFinding(code + "-P" + paragraph.Index, code, severity, issue, expected, CitationText(rules),
+                Anchor(AnnotationAnchorKind.Paragraph, paragraph, null, null, string.Empty));
+
+        private static AnnotationFinding ParagraphQualified(string code,
+            LocalParagraphSnapshot paragraph, string qualifier, string issue, string expected,
+            LocalRulePack rules, string severity = "Warning") =>
+            new AnnotationFinding(code + "-P" + paragraph.Index + "-Q" + qualifier,
+                code, severity, issue, expected, CitationText(rules),
                 Anchor(AnnotationAnchorKind.Paragraph, paragraph, null, null, string.Empty));
 
         private static AnnotationFinding Span(string code, LocalParagraphSnapshot paragraph, int offset, int length,

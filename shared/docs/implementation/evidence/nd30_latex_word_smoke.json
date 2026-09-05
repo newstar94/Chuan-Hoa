@@ -1,0 +1,44 @@
+{
+  "schema": "chuanhoa.word-smoke-evidence.v1",
+  "status": "PASS_WORD16_X64_CURRENT_CORE_WITH_COMPATIBILITY_GAPS",
+  "timestampUtc": "2026-09-05T14:10:00Z",
+  "commit": "73f9d96f8eb04035b08a6cbf831a4576c6ed84e1",
+  "workingTree": "DIRTY_PRESERVED",
+  "productVersion": "1.0.0.101",
+  "environment": {
+    "wordVersion": "16.0.20326.20132",
+    "bitness": "x64",
+    "word2010x86": "NOT_RUN_BLOCKED_ENVIRONMENT"
+  },
+  "current101Lanes": [
+    {"id": "PASSIVE-STARTUP-NO-DOCUMENT-READ", "status": "PASS", "exitCode": 0, "connect": true, "idleCpuDeltaMs5s": 437.5, "cacheChanges": 0, "newBackups": 0, "backgroundSaving": 0, "backgroundPrinting": 0},
+    {"id": "VISIBLE-PASSIVE-LAUNCH-NO-RIBBON-ACTION", "status": "PASS", "wordProcessId": 27084, "observationSeconds": 5, "cpuDeltaMs": 46.88, "responding": true, "cacheUnchanged": true, "backupsUnchanged": true},
+    {"id": "RIBBON-SAVED-UNSAVED", "status": "PASS", "exitCode": 0, "controls": 39},
+    {"id": "ANNOTATION-RERUN-12000", "status": "PASS", "exitCode": 0},
+    {"id": "ANNOTATION-INJECTED-ROLLBACK-001", "status": "PASS", "exitCode": 0},
+    {"id": "SELECTED-FIX-CACHED-FINDING-NO-RESCAN", "status": "PASS", "exitCode": 0},
+    {"id": "ONE-CLICK-DOC-DOCX-UNSAVED-MULTI-DASHED-LINE-QUICK-SPELLING", "status": "PASS", "exitCode": 0},
+    {"id": "LOCAL-SCAN-DOC-DOCX-RERUN", "status": "PASS", "exitCode": 0},
+    {"id": "SNAPSHOT-THREE-SOURCE-FIXTURES", "status": "PASS", "exitCode": 0, "sourceHashesUnchanged": true},
+    {"id": "ACADEMIC-TYPOGRAPHY-SIGNED-OFF", "status": "PASS", "exitCode": 0},
+    {"id": "ACADEMIC-TYPOGRAPHY-SIGNED-ON", "status": "NOT_RUN_SIGNED_PROFILE_DISABLED", "observedProbeExitCode": 1, "reason": "The currently installed signed rule pack explicitly disables AcademicTypography; enabling it requires a separately signed rule-pack fixture."},
+    {"id": "SNAPSHOT-10-50-100-PAGES", "status": "PASS", "exitCode": 0, "firstScanMs": {"10": 1663, "50": 5297, "100": 10794}, "progress": true, "cancellationBeforeMutation": true, "secondScan": true, "saveAs": true},
+    {"id": "WORD-PERFORMANCE-001", "status": "PASS", "exitCode": 0, "warmupRounds": 1, "measuredRounds": 10, "medianMs": 5181.0, "p95Ms": 5637, "workingSetFirst": 373600256, "workingSetLast": 382787584, "privateBytesFirst": 261500928, "privateBytesLast": 261304320, "handlesFirst": 1882, "handlesLast": 1798, "gdiFirst": 169, "gdiLast": 169, "userFirst": 160, "userLast": 155, "wordExited": true},
+    {"id": "INSTALLER-LIFECYCLE-101", "status": "PASS", "repairExitCode": 0, "uninstallExitCode": 0, "reinstallExitCode": 0, "rollbackFaultPointsPassed": 6, "rollbackFaultPointsTotal": 6, "personalDictionaryPreserved": true},
+    {"id": "INSTALLED-COM-LOAD-DOCUMENT1", "status": "PASS", "exitCode": 0, "connect": true},
+    {"id": "VISUAL-RIBBON-CURSOR-AND-ICON-1.0.0.101", "status": "PASS_USER_CONFIRMED", "singleCustomRibbonTabVisible": true, "personalDictionaryIconVisible": true, "idleCursorBehaviorNormal": true}
+  ],
+  "historical97LanesNotRerunOn101": [
+    {"id": "ACADEMIC-TYPOGRAPHY-SIGNED-OFF-ON", "status": "PASS_1.0.0.97"}
+  ],
+  "sourceDocuments": [
+    {"name": "Nghị định 30.doc", "sizeBytes": 530432, "sha256": "0C875C3C69D081892A41E5B3C1A5B731A1728AF141AAADFB013978C2EF67B793"},
+    {"name": "Phụ lục Nghị định 30.doc", "sizeBytes": 1625088, "sha256": "DCA5247B53E65492F67061C52CEF3135104E44A267143568DD2F8FF5348ADB00"},
+    {"name": "Hướng dẫn 05.docx", "sizeBytes": 122999, "sha256": "DFD22896C32C8F2EC273176F3E92F9ED724019103011EF646C779DBB572BB3C2"}
+  ],
+  "privacy": {
+    "documentUpload": false,
+    "processing": "LOCAL",
+    "sourceDocumentsModified": false
+  }
+}

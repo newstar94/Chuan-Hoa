@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 2,
+  "testId": "DOTNET-SUPPLY-CHAIN-001",
+  "status": "PASS",
+  "verifiedOn": "2026-09-05",
+  "lockedMode": "CI=true",
+  "managedCiWorkflow": ".github/workflows/source-quality.yml",
+  "managedCiConfigured": true,
+  "packageProjects": 9,
+  "lockFiles": [
+    {
+      "project": "src/ChuanHoa.Api/ChuanHoa.Api.csproj",
+      "lockFile": "src/ChuanHoa.Api/packages.lock.json",
+      "sha256": "D746814835432137E5AFDFBBC15C4218A367BA76AC2F0456A35A0B8946570A5C"
+    },
+    {
+      "project": "src/ChuanHoa.Infrastructure/ChuanHoa.Infrastructure.csproj",
+      "lockFile": "src/ChuanHoa.Infrastructure/packages.lock.json",
+      "sha256": "D56D7A21C3D58B4F244F1A582CCBA7DC292ACF8312F7B2A7AD1B03D4573AC8D9"
+    },
+    {
+      "project": "tests/ChuanHoa.Api.Tests/ChuanHoa.Api.Tests.csproj",
+      "lockFile": "tests/ChuanHoa.Api.Tests/packages.lock.json",
+      "sha256": "D0016082F4612EAB1486051726ED65C2F76500D222F190260780BD0D5F311D99"
+    },
+    {
+      "project": "tests/ChuanHoa.Application.Tests/ChuanHoa.Application.Tests.csproj",
+      "lockFile": "tests/ChuanHoa.Application.Tests/packages.lock.json",
+      "sha256": "F95F6CBFB3904A7DE661B4FE4EBE6C787FB63E42962E1E3D5B8BAEDEDCE312C8"
+    },
+    {
+      "project": "tests/ChuanHoa.Client.Core.Tests/ChuanHoa.Client.Core.Tests.csproj",
+      "lockFile": "tests/ChuanHoa.Client.Core.Tests/packages.lock.json",
+      "sha256": "83382C841C854E30E292114C33255AAF5AB92048F3D30C3F1E41FC162189E979"
+    },
+    {
+      "project": "tests/ChuanHoa.Contracts.Tests/ChuanHoa.Contracts.Tests.csproj",
+      "lockFile": "tests/ChuanHoa.Contracts.Tests/packages.lock.json",
+      "sha256": "71625702B95DA2D1650C48879E922D37B4AFE886A0C37909B364A853DD8DC73C"
+    },
+    {
+      "project": "tests/ChuanHoa.Domain.Tests/ChuanHoa.Domain.Tests.csproj",
+      "lockFile": "tests/ChuanHoa.Domain.Tests/packages.lock.json",
+      "sha256": "010B33F7E6F7E44E1F7DB8B3168B5308EF58A8F598B9BD37EC3B33BD0B44BAEC"
+    },
+    {
+      "project": "tests/ChuanHoa.Infrastructure.IntegrationTests/ChuanHoa.Infrastructure.IntegrationTests.csproj",
+      "lockFile": "tests/ChuanHoa.Infrastructure.IntegrationTests/packages.lock.json",
+      "sha256": "3FD498B0E5DA54895F2DAC95E1754E896D2380A13CFE85AC5B34147C51EC278D"
+    },
+    {
+      "project": "tests/ChuanHoa.Rules.Tests/ChuanHoa.Rules.Tests.csproj",
+      "lockFile": "tests/ChuanHoa.Rules.Tests/packages.lock.json",
+      "sha256": "5866A8E587569B5BA9E57B1CD7A873E16ED87A8238A3204E1069565EEB019FA5"
+    }
+  ],
+  "sbom": {
+    "format": "CycloneDX",
+    "specVersion": "1.6",
+    "componentCount": 22,
+    "lockFileCount": 14,
+    "sha256": "E43D31D559D282DA813AE42D65E23EB4F29DECB2BCBBDF958F7B0F5AEC581BC5",
+    "deterministic": true
+  },
+  "limitations": [
+    "This gate covers NuGet dependency locking and a verifiable CycloneDX SBOM.",
+    "VSTO framework/Office references are not NuGet packages and are documented as external prerequisites.",
+    "The repository configures a managed CI workflow, but a local run cannot prove a remote GitHub Actions execution or branch-protection policy.",
+    "Production signing, key separation and provider-side secret revocation remain separate release gates."
+  ],
+  "failures": []
+}

@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-09-05",
+  "headCommit": "73f9d96f8eb04035b08a6cbf831a4576c6ed84e1",
+  "workingTree": "dirty-preserved",
+  "productVersion": "1.0.0.100",
+  "contracts": {
+    "startupCreatesRuntime": false,
+    "startupSubscribesDocumentEvents": false,
+    "passiveRibbonCallbacksReadWord": false,
+    "licenseRefreshTimerIsPermanent": false,
+    "selectedFindingFixBuildsSnapshot": false,
+    "selectedFindingFixRunsDetector": false,
+    "selectedFindingFixRunsScanner": false,
+    "selectedFindingFixClearsExactFindingId": true,
+    "oneClickRepairsDeterministicFindings": true,
+    "reportOnlyFindingsRetainAnnotation": true
+  },
+  "verification": {
+    "vstoSource": "PASS",
+    "developmentPackaging": "PASS",
+    "solutionTests": {
+      "status": "PASS",
+      "passed": 403,
+      "failed": 0,
+      "projects": {
+        "ChuanHoa.Client.Core.Tests": 350,
+        "ChuanHoa.Contracts.Tests": 4,
+        "ChuanHoa.Domain.Tests": 14,
+        "ChuanHoa.Rules.Tests": 10,
+        "ChuanHoa.Application.Tests": 6,
+        "ChuanHoa.Api.Tests": 19
+      }
+    },
+    "vstoReleaseCompile": "PASS",
+    "oneClickSmokeCompile": "PASS",
+    "wordRuntimeSmoke": "NOT_RUN_WORD_OPEN"
+  },
+  "installer": {
+    "status": "PASS_DEVELOPMENT_NOT_INSTALLED",
+    "path": "artifacts/installers/development/ChuanHoa_Development_Test_Setup_1.0.0.100.exe",
+    "sizeBytes": 319272,
+    "sha256": "F13C0FB612E3D45927E0624101FC56C53A10D65DB9FA30260AD318FE08DA7ADC",
+    "signatureStatus": "Valid",
+    "payloadFiles": 8,
+    "forbiddenHits": 0,
+    "productionReady": false
+  }
+}

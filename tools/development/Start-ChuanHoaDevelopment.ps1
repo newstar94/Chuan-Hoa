@@ -1,6 +1,7 @@
 param(
     [switch]$LaunchWord,
-    [switch]$LaunchAdmin
+    [switch]$LaunchAdmin,
+    [switch]$ApiOnly
 )
 
 $ErrorActionPreference = 'Stop'
@@ -20,10 +21,13 @@ $cacheDirectory = Join-Path ([Environment]::GetFolderPath('LocalApplicationData'
 $apiUrl = 'http://127.0.0.1:5206'
 $keyId = 'CHUANHOA-LOCAL-DEVELOPMENT-1'
 $developmentAlias = 'D:\ChuanHoaDevelopment'
-$msbuild = 'C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\MSBuild.exe'
+. (Join-Path $projectRoot 'tools\vsto\BuildContract.ps1')
+$msbuild = Get-ChuanHoaMsBuild
 
 if (!(Test-Path -LiteralPath $dotnet)) { throw 'Local .NET SDK was not found.' }
-if (!(Test-Path -LiteralPath $msbuild)) { throw 'Visual Studio Build Tools/VSTO was not found.' }
+if ($ApiOnly -and $LaunchWord) {
+    throw 'ApiOnly cannot be combined with LaunchWord.'
+}
 if ($LaunchWord -and (Get-Process WINWORD -ErrorAction SilentlyContinue)) {
     throw 'Close Microsoft Word completely, then run this script again.'
 }
@@ -89,18 +93,22 @@ $trustedXml = [System.Xml.Linq.XElement]::new('trustedDevelopmentKey',
 & $dotnet build $apiProject --configuration Release --nologo
 if ($LASTEXITCODE -ne 0) { throw 'The Development API build failed.' }
 
-$certificate = Get-ChildItem Cert:\CurrentUser\My |
-    Where-Object Subject -eq 'CN=Chuan Hoa Local Development' |
-    Sort-Object NotAfter -Descending |
-    Select-Object -First 1
-if ($null -eq $certificate) { throw 'The Chuan Hoa Local Development certificate was not found.' }
+if (!$ApiOnly) {
+    $certificate = Get-ChildItem Cert:\CurrentUser\My |
+        Where-Object Subject -eq 'CN=Chuan Hoa Local Development' |
+        Sort-Object NotAfter -Descending |
+        Select-Object -First 1
+    if ($null -eq $certificate) { throw 'The Chuan Hoa Local Development certificate was not found.' }
+    $certificateSha256 = Get-ChuanHoaCertificateSha256 -Certificate $certificate
 
-& $msbuild $vstoProject /t:Restore /p:Configuration=Development /p:Platform=AnyCPU /m /nologo /v:minimal
-if ($LASTEXITCODE -ne 0) { throw 'The Development VSTO restore failed.' }
+    & $msbuild $vstoProject /t:Restore /p:Configuration=Development /p:Platform=AnyCPU /m /nologo /v:minimal
+    if ($LASTEXITCODE -ne 0) { throw 'The Development VSTO restore failed.' }
 
-& $msbuild $vstoProject /t:Build /p:Configuration=Development /p:Platform=AnyCPU `
-    /p:SignManifests=true /p:ManifestCertificateThumbprint=$($certificate.Thumbprint) /m /nologo /v:minimal
-if ($LASTEXITCODE -ne 0) { throw 'The Development VSTO build failed.' }
+    & $msbuild $vstoProject /t:Build /p:Configuration=Development /p:Platform=AnyCPU `
+        /p:SignManifests=true /p:ManifestCertificateThumbprint=$($certificate.Thumbprint) `
+        /p:TrustedSigningCertificateSha256=$certificateSha256 /m /nologo /v:minimal
+    if ($LASTEXITCODE -ne 0) { throw 'The Development VSTO build failed.' }
+}
 
 $apiReady = $false
 
@@ -141,6 +149,29 @@ if (!$apiReady) {
     }
 }
 if (!$apiReady) { throw "The Development API did not start. See $apiStderr" }
+
+if ($ApiOnly) {
+    $smokeProject = Join-Path $projectRoot 'tools\vsto\development-access-smoke\ChuanHoa.DevelopmentAccessSmoke.csproj'
+    & $msbuild $smokeProject /t:Build /p:Configuration=Development /m /nologo /v:minimal
+    if ($LASTEXITCODE -ne 0) { throw 'The Development license smoke-test build failed.' }
+    $smokeExe = Join-Path $projectRoot 'tools\vsto\development-access-smoke\bin\Development\ChuanHoa.DevelopmentAccessSmoke.exe'
+    & $smokeExe
+    if ($LASTEXITCODE -ne 0) { throw 'The Development API, lease, and rule pack failed the end-to-end smoke test.' }
+
+    [pscustomobject]@{
+        Mode = 'DevelopmentApiOnly'
+        Api = $apiUrl
+        OfflineLeaseDays = 7
+        TrustedKey = $trustedKeyPath
+        Admin = "$apiUrl/development/admin"
+        AdminLaunched = [bool]$LaunchAdmin
+        ProductionReady = $false
+    }
+    if ($LaunchAdmin) {
+        Start-Process "$apiUrl/development/admin"
+    }
+    return
+}
 
 # Clear any Word resiliency/disabled items and corrupt VSTO solution metadata
 foreach ($ver in @('14.0', '15.0', '16.0')) {

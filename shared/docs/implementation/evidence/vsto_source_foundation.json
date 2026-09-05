@@ -10,6 +10,9 @@
     "checkBoxes": 0,
     "interactiveControls": 39
   },
+  "scannerFindingCodes": 92,
+  "latexFindingCodes": 7,
+  "oneClickPolicyFindingCodes": 92,
   "callbackMethods": 51,
   "invariants": {
     "exactlyOneRibbonTab": true,
@@ -17,8 +20,8 @@
     "noPersistentTaskPane": true,
     "noStaticWordDocument": true,
     "noFinalReleaseComObject": true,
-    "deferredRibbonRuntimeInitialization": true,
-    "startupWaitsForRibbonOnLoad": true,
+    "runtimeInitializationRequiresUserAction": true,
+    "startupSchedulesNoDeferredWork": true,
     "noSynchronousLicenseRefreshOnCommand": true,
     "commandScopedMinimumAnalysis": true,
     "noManualReadDataPrerequisite": true,
@@ -30,6 +33,12 @@
     "verificationBuildDoesNotRewriteInstalledManifest": true,
     "characterCondenseSuccessIsSilent": true,
     "selectedFindingFixSuccessIsSilent": true,
+    "selectedFindingFixDoesNotRescan": true,
+    "selectedFindingFixStartsMutating": true,
+    "selectedFindingFixClearsExactAnnotation": true,
+    "allScannerRuleCodesAcknowledgedByOneClick": true,
+    "oneClickPolicyRejectsUnimplementedFindingCodes": true,
+    "deterministicFormatFindingsAreAutoFixed": true,
     "modernCommentsStableCapabilityBaseline": true,
     "oneClickModernCommentsFocusFallback": true,
     "perDocumentContextStore": true,
@@ -41,15 +50,16 @@
     "findingAnnotationCommandFailClosed": true
   },
   "hashes": {
-    "ribbonXmlSha256": "52DAE1400663BB50C73DBC5E971CA2407298FC38F6E1BACA9BC46AE1F2D83104",
+    "ribbonXmlSha256": "211FD5C95404780E5434EF7742FBF1533CF8983A4CBCD00F5657806BFBB18FF4",
     "generatedCallbacksSha256": "7F49CB35C9D9CE293165A41A828401C9F8045505F36FDCA8B4903004EAA63EA0",
-    "projectSha256": "1394811043011571FE41D01E92128F4280932A607AE2A84BF91EBF95CBF40C83",
+    "projectSha256": "C198D95F912A53D81BF10F381E3488CACE85F3A5871ED13266DFCAA0080C44A1",
     "wordAdapterSha256": "8546553DBB0F85C6FCBAD46D41D4B797B4D4AAC4475D06B993D5F98F62748F03",
     "wordMutationRuntimeSha256": "45DAF1EFE5D6E047C3BF09D14F76B00B61118AA605E8EF0BFF96AA36DBCB99B5",
-    "wordFindingAnnotationAdapterSha256": "E4505D978A8B6882DA950DA03A1E83D716E3163E08D971EA3A3D9415C55E8580",
-    "wordSnapshotBuilderSha256": "8AF655DBF1D983A6DCC4F8711CDA2B382BFD62553FB548D537334ACCAC8F8FE5"
+    "wordFindingAnnotationAdapterSha256": "1D432F2ECB02C476F24234C2AA8923840E42FD207B85B97A455CAEEDB14E6238",
+    "wordSnapshotBuilderSha256": "F77E47755B1A8D7CE0AE60B70A2F591DC80FE7C4391EE353D87B61008ED5AFD3"
   },
-  "buildGate": "NOT_RUN",
-  "loadGate": "NOT_RUN",
-  "buildEvidenceStatus": "Stored VSTO build artifacts are stale or unavailable."
+  "buildGate": "PASS_LOCAL_DEVELOPMENT",
+  "loadGate": "PASS_WORD16_X64_COM",
+  "visualGate": "PASS_WORD16_X64_VISUAL",
+  "buildEvidenceStatus": "Local development build and COM load evidence verified; Word 16 x64 visual smoke is bound to the current Ribbon hash. Production signing and the Word 2010/x86 compatibility lanes remain open."
 }

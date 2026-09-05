@@ -31,25 +31,32 @@ Script dùng alias ASCII `D:\ChuanHoaPublishLocal` trỏ vào thư mục artefac
 ## EXE thử nghiệm một file
 
 ```powershell
-& 'D:\Chuẩn Hóa\tools\vsto\build_development_test_exe.ps1'
+& 'D:\Chuẩn Hóa\tools\vsto\build_development_test_exe.ps1' `
+  -TrustedPublicKeyPath '<duong-dan-trusted-key.xml>' `
+  -TrustedPublicKeySha256 '<sha256-khoa-cong-khai>' `
+  -SigningCertificateSha256 '<sha256-certificate>'
 ```
 
-Version lấy từ `Directory.Build.props`. Script luôn rebuild source, publish VSTO, audit allowlist và tạo `artifacts\installers\development\ChuanHoa_Development_Test_Setup_<version>.exe`. Không build lại cùng một version; hãy tăng `ProductVersion` khi source thay đổi.
+Version lấy duy nhất từ `Directory.Build.props`. Ba input pin là bắt buộc; script từ chối khóa chứa private material, certificate sai SHA-256 hoặc version tách rời. Script luôn rebuild source, publish VSTO và tạo `artifacts\installers\development\ChuanHoa_Development_Test_Setup_<version>.exe`. Không build lại cùng một version đã phát hành; hãy tăng `ProductVersion` khi source thay đổi.
 
 ```powershell
+# Lấy đúng bộ cài của ProductVersion hiện hành
+$version = ([xml](Get-Content -LiteralPath '.\Directory.Build.props')).Project.PropertyGroup.ProductVersion
+$installer = ".\artifacts\installers\development\ChuanHoa_Development_Test_Setup_$version.exe"
+
 # Cài hoặc nâng cấp không hiện hộp thoại
-& '.\ChuanHoa_Development_Test_Setup_1.0.0.91.exe' /quiet
+& $installer /quiet
 
 # Repair
-& '.\ChuanHoa_Development_Test_Setup_1.0.0.91.exe' /repair /quiet
+& $installer /repair /quiet
 
 # Gỡ bản Development; giữ từ điển cá nhân và tài liệu
-& '.\ChuanHoa_Development_Test_Setup_1.0.0.91.exe' /uninstall /quiet
+& $installer /uninstall /quiet
 ```
 
 ## Giới hạn evidence
 
 - Build Publish hiện đã đạt 0 warning/0 error và có `setup.exe`, top-level `.vsto`, version directory cùng các dependency `.deploy`.
-- Upgrade, repair, uninstall và fresh reinstall của EXE Development 1.0.0.91 đã PASS; VSTO `Rebuild` sau cài không làm mất registration. Đây không phải silent enterprise install.
+- EXE Development 1.0.0.107 đã build, ký outer EXE và 3/3 owned inner PE, audit payload 8 file, cài và Word 16 x64 runtime smoke thành công. Apps & Features, signed versioned cache, repair/uninstall/reinstall và rollback 6/6 fault point đã PASS trên chính `.107`; từ điển cá nhân, trusted key và cache ký được giữ/khôi phục đúng. Không dùng lại `.94`: đó là artifact lịch sử có lỗi allowlist Utilities DLL như hộp thoại “Payload không đúng allowlist”; lỗi đã được sửa từ `.95`. `/quiet` dùng `certutil.exe` hidden để không hiện hộp thoại Root Certificate Store. Đây không phải silent enterprise install và certificate Development không có timestamp production.
 - Word 2010 và Office x86 chưa có VM evidence.
 - Production vẫn cần certificate tin cậy có timestamp, HTTPS immutable version directory và CI signing identity.

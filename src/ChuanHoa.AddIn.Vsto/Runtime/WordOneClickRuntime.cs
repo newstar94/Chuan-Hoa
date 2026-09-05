@@ -65,7 +65,6 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         private readonly Word.Application _application;
         private readonly WordDocumentCapabilityProvider _capabilityProvider;
         private readonly LocalAccessManager _accessManager;
-        private readonly DocumentRoleDetector _roleDetector = new DocumentRoleDetector();
 
         public WordOneClickRuntime(Word.Application application, LocalAccessManager accessManager)
         {
@@ -94,8 +93,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             var formatFindings = context.LastFormatScan!.Findings;
             var spellingFindings = context.LastSpellingScan!.Findings;
             var backup = CreateBackup(document);
-            var blocks = _roleDetector.DetectBlocks(local);
-            var roles = MergeRoles(blocks);
+            var blocks = context.LastLogicalBlocks;
+            var roles = context.LastRolesByParagraphIndex;
             var previousScreenUpdating = _application.ScreenUpdating;
             var previousAlerts = _application.DisplayAlerts;
             var undoStarted = false;
@@ -126,8 +125,12 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 // paragraph index, so replacements that change character counts cannot
                 // shift formatting onto another paragraph.
                 correctedSpellingItems = ApplyDeterministicSpellingFixes(document, local,
-                    formatFindings.Concat(spellingFindings).ToArray(), rules);
+                    formatFindings.Concat(spellingFindings).ToArray(), rules, blocks);
                 correctedSpellingItems += CollapseMultipleSpaces(document);
+                changedParagraphs += ApplyDeterministicParagraphFindingFixes(
+                    document, local, formatFindings, roles);
+                changedParagraphs += ApplyExplicitFormatFindingFixes(document, local,
+                    formatFindings, rules, blocks, roles);
                 normalizedSections = NormalizeSections(document, local, rules);
                 NormalizeHeaderLayoutTables(document, local, roles);
                 foreach (var paragraph in local.Paragraphs.Where(p =>
@@ -141,7 +144,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                         changedParagraphs++;
                 }
 
-                insertedLines = InsertMissingRequiredLines(document, local, formatFindings);
+                insertedLines = InsertMissingRequiredLines(document, local, formatFindings,
+                    blocks, roles);
                 EnsurePageNumbers(document, local, rules);
                 normalizedTables = NormalizeTables(document, local, roles);
                 WordAppendixPaginationNormalizer.Normalize(document, roles);
@@ -153,10 +157,11 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     undoStarted = false;
                 }
 
-                // Never rebuild or rescan after the mutation. The next explicit command
-                // prepares a fresh, command-scoped analysis when it needs one.
                 context.ClearReadAnalysis();
-                var remaining = formatFindings.Concat(spellingFindings).ToArray();
+                var readRuntime = new WordDocumentReadRuntime(_application, _accessManager);
+                readRuntime.Prepare(context, DocumentAnalysisScope.Full, document, false, operation);
+                var remaining = context.LastFormatScan!.Findings
+                    .Concat(context.LastSpellingScan!.Findings).ToArray();
                 return new OneClickResult(backup, changedParagraphs, insertedLines,
                     normalizedSections, normalizedTables, correctedSpellingItems, remaining);
             }
@@ -277,8 +282,10 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 }
 
                 var applied = string.Equals(lane, "spelling", StringComparison.OrdinalIgnoreCase)
-                    ? ApplyDeterministicSpellingFixes(document, local, new[] { finding }, rules) > 0
-                    : ApplySelectedFormatFix(document, local, finding, rules);
+                    ? ApplyDeterministicSpellingFixes(document, local, new[] { finding }, rules,
+                        context.LastLogicalBlocks) > 0
+                    : ApplySelectedFormatFix(document, local, finding, rules,
+                        context.LastLogicalBlocks, context.LastRolesByParagraphIndex);
 
                 if (!applied && string.Equals(lane, "spelling", StringComparison.OrdinalIgnoreCase))
                 {
@@ -303,19 +310,28 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     finally { Release(directRange); }
                 }
 
-                if (!applied)
-                    throw new InvalidOperationException(
-                        "Lỗi đang chọn cần người dùng quyết định hoặc chưa có phương án tự sửa an toàn. " +
-                        "Comment được giữ nguyên.");
-
                 if (undoStarted)
                 {
                     _application.UndoRecord.EndCustomRecord();
                     undoStarted = false;
                 }
 
-                annotations.ClearOwnedAnnotationsAt(lane, selectedStory, selectedStart, selectedEnd);
-                UpdateContextAfterSingleFix(context, lane, findingId);
+                if (!applied)
+                {
+                    // A report-only finding is not an exceptional failure and must not
+                    // call Document.Undo: doing so could undo the user's preceding edit.
+                    // Keep its annotation and cached finding exactly as they are.
+                    return new SelectedFindingFixResult(string.Empty, lane, findingId, false);
+                }
+
+                // ApplySelectedFormatFix and the spelling edit path both verify their
+                // targeted Word mutation before returning true. Remove only the owned
+                // annotation at that coordinate. A selected repair must never perform
+                // a hidden whole-document snapshot or scan.
+                annotations.ClearOwnedAnnotation(lane, findingId, selectedStory,
+                    selectedStart, selectedEnd);
+                UpdateContextAfterTargetedFix(context, lane, findingId,
+                    preserveSnapshot: !SelectedFixChangesText(lane, finding));
                 return new SelectedFindingFixResult(string.Empty, lane, findingId, true);
             }
             catch (Exception exception)
@@ -379,7 +395,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 var fixedCount = 0;
                 if (findings.Count > 0)
                 {
-                    fixedCount += ApplyDeterministicSpellingFixes(document, local, findings, rules);
+                    fixedCount += ApplyDeterministicSpellingFixes(document, local, findings, rules,
+                        context.LastLogicalBlocks);
                 }
 
                 fixedCount += CleanTypographyAndQuotes(document);
@@ -507,16 +524,75 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         }
 
         private static bool ApplySelectedFormatFix(Word.Document document, LocalScanSnapshot snapshot,
-            AnnotationFinding finding, LocalRulePack rules)
+            AnnotationFinding finding, LocalRulePack rules,
+            IReadOnlyList<LogicalDocumentBlock> blocks,
+            IReadOnlyDictionary<int, string> roles)
         {
+            if (IsExplicitReportOnlyFinding(finding)) return false;
+            if (!finding.Anchor.ParagraphIndex.HasValue &&
+                finding.Anchor.SectionIndex.HasValue)
+            {
+                var sectionIndex = finding.Anchor.SectionIndex.Value;
+                if (sectionIndex < 1 || sectionIndex > document.Sections.Count) return false;
+                Word.Section? section = null;
+                try
+                {
+                    section = document.Sections[sectionIndex];
+                    if (finding.RuleCode == "ND30-PL1-M1-K1" ||
+                        finding.RuleCode == "ND30-PL1-M1-K3")
+                    {
+                        NormalizeSection(section, IsParty(snapshot), rules);
+                        return true;
+                    }
+                    if (finding.RuleCode == "ND30-PL1-M1-K7")
+                    {
+                        EnsurePageNumber(document, section, IsParty(snapshot), rules);
+                        return ContainsPageField(section);
+                    }
+                }
+                finally { Release(section); }
+                return false;
+            }
             // This is classified as a format finding, but its safe correction is a
             // deterministic text insertion. Reuse the same guarded edit path as
             // 1-Click so the comment is removed only after "số" was actually added.
-            if (string.Equals(finding.RuleCode, "ND30-PL1-M2-K6B-SO", StringComparison.Ordinal) ||
-                string.Equals(finding.RuleCode, "ND30-PL1-M2-K6A-PUNCT", StringComparison.Ordinal) ||
+            if (finding.Anchor.Kind == AnnotationAnchorKind.TextSpan ||
                 IsDeterministicComponentTextFinding(finding.RuleCode))
-                return ApplyDeterministicSpellingFixes(document, snapshot,
-                    new[] { finding }, rules) > 0;
+            {
+                var textApplied = ApplyDeterministicSpellingFixes(document, snapshot,
+                    new[] { finding }, rules, blocks) > 0;
+                if (textApplied) return true;
+            }
+            if (finding.RuleCode.StartsWith("LATEX-", StringComparison.Ordinal))
+            {
+                if (!rules.AcademicTypography.IsAutoFixEnabled(finding.RuleCode) ||
+                    !finding.Anchor.ParagraphIndex.HasValue) return false;
+                var advisoryParagraph = snapshot.Paragraphs.FirstOrDefault(item =>
+                    item.Index == finding.Anchor.ParagraphIndex.Value);
+                if (advisoryParagraph == null || snapshot.IntersectsProtectedSpan(advisoryParagraph) ||
+                    advisoryParagraph.IsInTable ||
+                    !string.Equals(advisoryParagraph.StoryType, "wdMainTextStory", StringComparison.Ordinal))
+                    return false;
+                Word.Range? advisoryRange = null;
+                try
+                {
+                    advisoryRange = ResolveCurrentMainParagraphRange(document, advisoryParagraph);
+                    if (string.Equals(finding.RuleCode, AcademicTypographyRuleCodes.PaginationKeep,
+                        StringComparison.Ordinal))
+                    {
+                        advisoryRange.ParagraphFormat.KeepWithNext = -1;
+                        return advisoryRange.ParagraphFormat.KeepWithNext != 0;
+                    }
+                    if (string.Equals(finding.RuleCode, AcademicTypographyRuleCodes.PaginationWidow,
+                        StringComparison.Ordinal))
+                    {
+                        advisoryRange.ParagraphFormat.WidowControl = -1;
+                        return advisoryRange.ParagraphFormat.WidowControl != 0;
+                    }
+                    return false;
+                }
+                finally { Release(advisoryRange); }
+            }
             if (!finding.Anchor.ParagraphIndex.HasValue) return false;
             var paragraph = snapshot.Paragraphs.FirstOrDefault(item =>
                 item.Index == finding.Anchor.ParagraphIndex.Value);
@@ -531,14 +607,374 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 return NormalizeRequiredLine(document, snapshot, paragraph, ratio, finding.RuleCode);
             }
 
-            var detector = new DocumentRoleDetector();
-            var blocks = detector.DetectBlocks(snapshot);
-            var roles = MergeRoles(blocks);
+            if (ApplyDeterministicParagraphFindingFixes(document, snapshot,
+                    new[] { finding }, roles) > 0)
+                return true;
+
             var headerFontTier = ResolveHeaderTier(snapshot, blocks, paragraph.Index);
             string role;
             roles.TryGetValue(paragraph.Index, out role);
+            string explicitRole;
+            if (TryResolveExplicitFindingRole(finding.RuleCode, role, out explicitRole))
+                role = explicitRole;
             return ApplyParagraphFormat(document, paragraph, role ?? string.Empty, snapshot, rules,
                 headerFontTier);
+        }
+
+        private static int ApplyExplicitFormatFindingFixes(
+            Word.Document document,
+            LocalScanSnapshot snapshot,
+            IReadOnlyList<AnnotationFinding> findings,
+            LocalRulePack rules,
+            IReadOnlyList<LogicalDocumentBlock> blocks,
+            IReadOnlyDictionary<int, string> roles)
+        {
+            var paragraphs = snapshot.Paragraphs.ToDictionary(item => item.Index);
+            var handled = new HashSet<int>();
+            var changed = 0;
+            foreach (var finding in findings)
+            {
+                if (!finding.Anchor.ParagraphIndex.HasValue || IsExplicitReportOnlyFinding(finding))
+                    continue;
+                var paragraphIndex = finding.Anchor.ParagraphIndex.Value;
+                LocalParagraphSnapshot paragraph;
+                string detectedRole;
+                roles.TryGetValue(paragraphIndex, out detectedRole);
+                string role;
+                if (!TryResolveExplicitFindingRole(finding.RuleCode, detectedRole, out role) ||
+                    !handled.Add(paragraphIndex) ||
+                    !paragraphs.TryGetValue(paragraphIndex, out paragraph) ||
+                    snapshot.IntersectsProtectedSpan(paragraph))
+                    continue;
+                var headerFontTier = ResolveHeaderTier(snapshot, blocks, paragraphIndex);
+                if (ApplyParagraphFormat(document, paragraph, role, snapshot, rules, headerFontTier))
+                    changed++;
+            }
+            return changed;
+        }
+
+        private static bool TryResolveExplicitFindingRole(string ruleCode, string? detectedRole,
+            out string role)
+        {
+            switch (ruleCode)
+            {
+                case "ND30-PL1-M2-K1-QH": role = "nationalTitle"; return true;
+                case "ND30-PL1-M2-K1-TN": role = "nationalMotto"; return true;
+                case "ND30-PL1-M2-K2-ORG": role = "organName"; return true;
+                case "ND30-PL1-M2-K2-SUP": role = "superiorOrganName"; return true;
+                case "ND30-PL1-M2-K4-STYLE": role = "placeAndIssuedDate"; return true;
+                case "ND30-PL1-M2-K5A-SUBJ": role = "subject"; return true;
+                case "ND30-PL1-M2-K5A-TYPE": role = "typeName"; return true;
+                case "ND30-PL1-M2-K5B-STYLE": role = "officialLetterSubject"; return true;
+                case "ND30-PL1-M2-K6A-STYLE": role = "legalBasis"; return true;
+                case "ND30-PL1-M2-K7D-STYLE": role = "signerAuthority"; return true;
+                case "ND30-PL1-M1-K4-FONT":
+                case "ND30-PL1-M1-K4-COLOR":
+                case "ND30-PL1-M2-K6E-ALIGN":
+                case "ND30-PL1-M2-K6E-INDENT":
+                case "ND30-PL1-M2-K6E-LINESPACING":
+                case "ND30-PL1-M2-K6E-SPACEAFTER":
+                    role = string.Empty; return true;
+                case "ND30-PL1-M2-K6D-POINT":
+                    role = string.Empty; return true;
+                case "ND30-PL1-M3-K1B":
+                    role = detectedRole == "appendixTitle" ? "appendixTitle" : "appendixLabel";
+                    return true;
+                case "ND30-PL1-M3-K1C":
+                    if (detectedRole == "appendixReference" ||
+                        detectedRole == "appendixDigitalSignatureInfo")
+                    {
+                        role = detectedRole!;
+                        return true;
+                    }
+                    break;
+                case "ND30-PL1-MV-CT1":
+                    role = detectedRole ?? string.Empty; return true;
+                case "ND30-PL1-M2-K9A-LAYOUT":
+                case "ND30-PL1-M2-K9B-LABEL":
+                case "ND30-PL1-M2-K9B-LIST":
+                    if (!string.IsNullOrWhiteSpace(detectedRole))
+                    {
+                        role = detectedRole!;
+                        return true;
+                    }
+                    break;
+            }
+            role = string.Empty;
+            return false;
+        }
+
+        private static bool IsExplicitReportOnlyFinding(AnnotationFinding finding)
+        {
+            switch (finding.RuleCode)
+            {
+                case "ND30-PL1-M2-K6B-CITE":
+                case "ND30-PL1-M2-K6D-ALPHABET":
+                case "ND30-PL1-M2-K6D-TITLE":
+                case "ND30-PL1-M3-K1A-REF":
+                case "ND30-PL1-M3-K1D":
+                    return true;
+                case "ND30-PL1-M2-K9A-LAYOUT":
+                    return finding.CurrentIssue.IndexOf("tách dòng nhưng không có danh sách",
+                        StringComparison.OrdinalIgnoreCase) >= 0;
+                case "ND30-PL1-M2-K6D-ARTICLE":
+                    return finding.CurrentIssue.IndexOf("số điều không liên tục",
+                        StringComparison.OrdinalIgnoreCase) >= 0;
+                case "ND30-PL1-M3-K1C":
+                    return finding.CurrentIssue.IndexOf("thiếu dòng",
+                        StringComparison.OrdinalIgnoreCase) >= 0;
+                default:
+                    return false;
+            }
+        }
+
+        private static int ApplyDeterministicParagraphFindingFixes(
+            Word.Document document,
+            LocalScanSnapshot snapshot,
+            IReadOnlyList<AnnotationFinding> findings,
+            IReadOnlyDictionary<int, string> roles)
+        {
+            var paragraphs = snapshot.Paragraphs.ToDictionary(item => item.Index);
+            var handled = new HashSet<string>(StringComparer.Ordinal);
+            var changed = 0;
+            foreach (var finding in findings)
+            {
+                if (!finding.Anchor.ParagraphIndex.HasValue) continue;
+                var paragraphIndex = finding.Anchor.ParagraphIndex.Value;
+                var key = finding.RuleCode + "\u001f" + paragraphIndex.ToString(CultureInfo.InvariantCulture);
+                if (!handled.Add(key)) continue;
+                LocalParagraphSnapshot paragraph;
+                if (!paragraphs.TryGetValue(paragraphIndex, out paragraph) ||
+                    paragraph.IsInTable || snapshot.IntersectsProtectedSpan(paragraph) ||
+                    !string.Equals(paragraph.StoryType, "wdMainTextStory", StringComparison.Ordinal))
+                    continue;
+
+                Word.Range? range = null;
+                try
+                {
+                    range = ResolveCurrentMainParagraphRange(document, paragraph);
+                    switch (finding.RuleCode)
+                    {
+                        case "ND30-PL1-M2-K1-C":
+                            if (Math.Abs(range.ParagraphFormat.SpaceBefore) > .1f)
+                            {
+                                range.ParagraphFormat.SpaceBefore = 0f;
+                                changed++;
+                            }
+                            break;
+                        case "ND30-PL1-M2-K5B-SPACE":
+                            if (TryReplaceParagraphText(range,
+                                    NormalizeOfficialLetterSubject(ReadPrintableText(range), IsParty(snapshot))))
+                                changed++;
+                            break;
+                        case "ND30-PL1-M2-K6A-STYLE":
+                            if (IsParty(snapshot) && finding.CurrentIssue.IndexOf("thiếu gạch ngang",
+                                    StringComparison.OrdinalIgnoreCase) >= 0)
+                            {
+                                var legalBasis = ReadPrintableText(range).TrimStart();
+                                if (!Regex.IsMatch(legalBasis, @"^[-–—]\s*"))
+                                {
+                                    if (TryReplaceParagraphText(range, "- " + legalBasis)) changed++;
+                                }
+                            }
+                            break;
+                        case "ND30-PL1-M2-K6D-ARTICLE":
+                            if (ApplyLegalArticleFormat(range)) changed++;
+                            break;
+                        case "ND30-PL1-M2-K6D-CLAUSE":
+                            if (range.Font.Italic != 0)
+                            {
+                                range.Font.Italic = 0;
+                                changed++;
+                            }
+                            break;
+                        case "ND30-PL1-M2-K9A-COLON":
+                            var salutation = ReadPrintableText(range);
+                            var normalizedSalutation = Regex.Replace(salutation,
+                                @"^(\s*Kính\s+(?:gửi|trình))\s*:?[ \t]*",
+                                "$1: ", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant,
+                                TimeSpan.FromMilliseconds(200));
+                            if (TryReplaceParagraphText(range, normalizedSalutation)) changed++;
+                            break;
+                        case "ND30-PL1-M2-K9A-INLINE-END":
+                            if (TryReplaceParagraphText(range,
+                                    EnsureEndingPunctuation(ReadPrintableText(range), "."))) changed++;
+                            break;
+                        case "ND30-PL1-M2-K9A-PUNCT":
+                            var salutationItems = roles.Where(item => item.Value == "recipientSalutationList")
+                                .Select(item => item.Key).OrderBy(item => item).ToArray();
+                            var salutationEnd = salutationItems.Length > 0 &&
+                                salutationItems[salutationItems.Length - 1] == paragraphIndex ? "." : ";";
+                            if (TryReplaceParagraphText(range,
+                                    NormalizeDashListItem(ReadPrintableText(range), salutationEnd))) changed++;
+                            break;
+                        case "ND30-PL1-M2-K9B-LABEL":
+                            if (finding.CurrentIssue.IndexOf("thiếu dấu hai chấm",
+                                    StringComparison.OrdinalIgnoreCase) >= 0)
+                            {
+                                var label = ReadPrintableText(range).TrimEnd();
+                                if (TryReplaceParagraphText(range, label.TrimEnd(':') + ":")) changed++;
+                            }
+                            break;
+                        case "ND30-PL1-M2-K9B-LIST":
+                            var recipientItems = roles.Where(item => item.Value == "recipientList")
+                                .Select(item => item.Key).OrderBy(item => item).ToArray();
+                            var recipientEnd = recipientItems.Length > 0 &&
+                                recipientItems[recipientItems.Length - 1] == paragraphIndex ? "." : ";";
+                            if (TryReplaceParagraphText(range,
+                                NormalizeDashListItem(ReadPrintableText(range), recipientEnd))) changed++;
+                            break;
+                        case "ND30-PL1-M2-K9B-LUU":
+                            var storageLine = NormalizeStorageLine(ReadPrintableText(range));
+                            if (storageLine != null && TryReplaceParagraphText(range, storageLine)) changed++;
+                            break;
+                        case "ND30-PL1-M3-K1A-NUM":
+                            var appendixLabels = roles.Where(item => item.Value == "appendixLabel")
+                                .Select(item => item.Key).OrderBy(item => item).ToArray();
+                            var appendixOrdinal = Array.IndexOf(appendixLabels, paragraphIndex) + 1;
+                            var numberedLabel = NormalizeAppendixLabelNumber(
+                                ReadPrintableText(range), appendixOrdinal);
+                            if (numberedLabel != null &&
+                                TryReplaceParagraphText(range, numberedLabel)) changed++;
+                            break;
+                        case "ND30-PL1-M3-K1B":
+                            if (finding.CurrentIssue.IndexOf("chưa viết hoa",
+                                    StringComparison.OrdinalIgnoreCase) >= 0)
+                            {
+                                var appendixTitle = ReadPrintableText(range);
+                                if (TryReplaceParagraphText(range, appendixTitle.ToUpper(
+                                        CultureInfo.GetCultureInfo("vi-VN")))) changed++;
+                            }
+                            break;
+                    }
+                }
+                catch (COMException)
+                {
+                }
+                finally { Release(range); }
+            }
+            return changed;
+        }
+
+        private static bool ApplyLegalArticleFormat(Word.Range paragraphRange)
+        {
+            var text = ReadPrintableText(paragraphRange);
+            var marker = Regex.Match(text, @"^\s*Điều\s+\d+\s*\.?",
+                RegexOptions.IgnoreCase | RegexOptions.CultureInvariant,
+                TimeSpan.FromMilliseconds(200));
+            if (!marker.Success) return false;
+
+            Word.Range? printable = null;
+            Word.Range? markerRange = null;
+            Word.Range? contentRange = null;
+            try
+            {
+                paragraphRange.ParagraphFormat.LeftIndent = 0f;
+                paragraphRange.ParagraphFormat.FirstLineIndent = 10f * PointsPerMillimeter;
+
+                printable = paragraphRange.Duplicate;
+                printable.End = printable.Start + text.Length;
+                printable.Font.Italic = 0;
+                printable.Font.Bold = 0;
+
+                markerRange = paragraphRange.Duplicate;
+                markerRange.End = markerRange.Start + marker.Length;
+                markerRange.Font.Bold = -1;
+
+                if (marker.Length < text.Length)
+                {
+                    contentRange = paragraphRange.Duplicate;
+                    contentRange.Start += marker.Length;
+                    contentRange.End = paragraphRange.Start + text.Length;
+                    contentRange.Font.Bold = 0;
+                }
+
+                return markerRange.Font.Bold != 0 &&
+                    (contentRange == null || contentRange.Font.Bold == 0);
+            }
+            finally
+            {
+                Release(contentRange);
+                Release(markerRange);
+                Release(printable);
+            }
+        }
+
+        private static string? NormalizeStorageLine(string value)
+        {
+            var match = Regex.Match(value ?? string.Empty,
+                @"^\s*[-–—]?\s*Lưu\s*:?\s*(?<content>.+?)\s*$",
+                RegexOptions.IgnoreCase | RegexOptions.CultureInvariant,
+                TimeSpan.FromMilliseconds(200));
+            if (!match.Success) return null;
+            var content = match.Groups["content"].Value.Trim();
+            return content.Length == 0 ? null : "- Lưu: " + content;
+        }
+
+        private static string? NormalizeAppendixLabelNumber(string value, int ordinal)
+        {
+            if (ordinal <= 0) return null;
+            var match = Regex.Match(value ?? string.Empty,
+                @"^\s*Phụ\s+lục(?:\s+[A-Za-zĐđ])?\s*$",
+                RegexOptions.IgnoreCase | RegexOptions.CultureInvariant,
+                TimeSpan.FromMilliseconds(200));
+            return match.Success
+                ? "Phụ lục " + ordinal.ToString(CultureInfo.InvariantCulture)
+                : null;
+        }
+
+        private static string NormalizeOfficialLetterSubject(string value, bool party)
+        {
+            var text = Regex.Replace(value ?? string.Empty, @"[ \t]+", " ").Trim();
+            if (party)
+            {
+                text = Regex.Replace(text, @"^(?:V/v|về\s+việc)\s*", string.Empty,
+                    RegexOptions.IgnoreCase | RegexOptions.CultureInvariant,
+                    TimeSpan.FromMilliseconds(200));
+                return "về việc " + text;
+            }
+            var match = Regex.Match(text, @"^(?:V/v|Về\s+việc)\s*",
+                RegexOptions.IgnoreCase | RegexOptions.CultureInvariant,
+                TimeSpan.FromMilliseconds(200));
+            return match.Success ? "V/v " + text.Substring(match.Length).TrimStart() : "V/v " + text;
+        }
+
+        private static string NormalizeDashListItem(string value, string ending)
+        {
+            var text = Regex.Replace(value ?? string.Empty, @"^\s*[-–—]?\s*", string.Empty,
+                RegexOptions.CultureInvariant, TimeSpan.FromMilliseconds(200)).Trim();
+            text = text.TrimEnd('.', ';', ',', ':', ' ');
+            return "- " + text + ending;
+        }
+
+        private static string EnsureEndingPunctuation(string value, string ending)
+        {
+            var text = (value ?? string.Empty).TrimEnd();
+            return text.TrimEnd('.', ';', ',', ':', '!', '?', ' ') + ending;
+        }
+
+        private static string ReadPrintableText(Word.Range paragraphRange)
+        {
+            var value = paragraphRange.Text ?? string.Empty;
+            return value.TrimEnd('\r', '\a');
+        }
+
+        private static bool TryReplaceParagraphText(Word.Range paragraphRange, string replacement)
+        {
+            Word.Range? textRange = null;
+            try
+            {
+                textRange = paragraphRange.Duplicate;
+                var existing = ReadPrintableText(textRange);
+                if (string.Equals(existing, replacement, StringComparison.Ordinal)) return false;
+                var start = textRange.Start;
+                textRange.End = textRange.Start + existing.Length;
+                textRange.Text = replacement;
+                paragraphRange.SetRange(start, checked(start + replacement.Length));
+                return string.Equals(paragraphRange.Text ?? string.Empty, replacement,
+                    StringComparison.Ordinal);
+            }
+            finally { Release(textRange); }
         }
 
         private static int NormalizeSections(Word.Document document, LocalScanSnapshot snapshot, LocalRulePack rules)
@@ -549,16 +985,21 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             {
                 try
                 {
-                    section.PageSetup.PaperSize = Word.WdPaperSize.wdPaperA4;
-                    section.PageSetup.TopMargin = (float)((party ? 20d : rules.TopMinMm) * PointsPerMillimeter);
-                    section.PageSetup.BottomMargin = (float)((party ? 20d : rules.BottomMinMm) * PointsPerMillimeter);
-                    section.PageSetup.LeftMargin = (float)((party ? 30d : rules.LeftMinMm) * PointsPerMillimeter);
-                    section.PageSetup.RightMargin = (float)((party ? 15d : rules.RightMinMm) * PointsPerMillimeter);
+                    NormalizeSection(section, party, rules);
                     count++;
                 }
                 finally { Release(section); }
             }
             return count;
+        }
+
+        private static void NormalizeSection(Word.Section section, bool party, LocalRulePack rules)
+        {
+            section.PageSetup.PaperSize = Word.WdPaperSize.wdPaperA4;
+            section.PageSetup.TopMargin = (float)((party ? 20d : rules.TopMinMm) * PointsPerMillimeter);
+            section.PageSetup.BottomMargin = (float)((party ? 20d : rules.BottomMinMm) * PointsPerMillimeter);
+            section.PageSetup.LeftMargin = (float)((party ? 30d : rules.LeftMinMm) * PointsPerMillimeter);
+            section.PageSetup.RightMargin = (float)((party ? 15d : rules.RightMinMm) * PointsPerMillimeter);
         }
 
         private static bool ApplyParagraphFormat(Word.Document document, LocalParagraphSnapshot paragraph,
@@ -631,17 +1072,16 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             {
                 format = range.ParagraphFormat;
                 format.RightIndent = 0f;
-                tabStops = format.TabStops;
-                tabStops.ClearAll();
-
                 if (ParagraphIndentPolicy.IsDashListParagraph(text))
                 {
+                    tabStops = format.TabStops;
                     var textPosition = (float)(ParagraphIndentPolicy.ListTextMillimeters * PointsPerMillimeter);
                     var markerPosition = (float)(ParagraphIndentPolicy.ListMarkerMillimeters * PointsPerMillimeter);
                     format.LeftIndent = textPosition;
                     format.FirstLineIndent = markerPosition - textPosition;
-                    tabStop = tabStops.Add(textPosition, Word.WdTabAlignment.wdAlignTabLeft,
-                        Word.WdTabLeader.wdTabLeaderSpaces);
+                    if (!HasEquivalentTabStop(tabStops, textPosition))
+                        tabStop = tabStops.Add(textPosition, Word.WdTabAlignment.wdAlignTabLeft,
+                            Word.WdTabLeader.wdTabLeaderSpaces);
                     return;
                 }
 
@@ -654,6 +1094,24 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 Release(tabStops);
                 Release(format);
             }
+        }
+
+        private static bool HasEquivalentTabStop(Word.TabStops tabStops, float position)
+        {
+            var count = tabStops.Count;
+            for (var index = 1; index <= count; index++)
+            {
+                Word.TabStop? existing = null;
+                try
+                {
+                    existing = tabStops[index];
+                    if (Math.Abs(existing.Position - position) <= .5f &&
+                        existing.Alignment == Word.WdTabAlignment.wdAlignTabLeft) return true;
+                }
+                catch (COMException) { }
+                finally { Release(existing); }
+            }
+            return false;
         }
 
         private static ParagraphStyle? StyleFor(string role, bool party, LocalParagraphSnapshot paragraph,
@@ -697,7 +1155,9 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         }
 
         private static int InsertMissingRequiredLines(Word.Document document, LocalScanSnapshot snapshot,
-            IReadOnlyList<AnnotationFinding> findings)
+            IReadOnlyList<AnnotationFinding> findings,
+            IReadOnlyList<LogicalDocumentBlock> blocks,
+            IReadOnlyDictionary<int, string> roles)
         {
             var count = 0;
             var work = findings.Where(f => f.RuleCode.EndsWith("-LINE", StringComparison.Ordinal) &&
@@ -708,34 +1168,11 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             // 1.0.0.43 could leave an OOXML line object that Word exposed through COM
             // but did not paint. Those owned shapes have the legacy CHUANHOA_* marker,
             // so migrate them once even when the geometry-only scanner calls them valid.
-            var detector = new DocumentRoleDetector();
-            var blocks = detector.DetectBlocks(snapshot);
-            var roles = MergeRoles(blocks);
-            // 1-Click guarantees every required component line, even when an earlier
-            // scan considered an existing Shape valid. Word can keep a line object in
-            // OOXML/COM while failing to paint it after save or Modern Comments layout
-            // reconciliation. Re-normalizing the canonical components on every explicit
-            // 1-Click makes the operation self-healing without scanning at activation.
-            if (IsParty(snapshot))
-            {
-                foreach (var block in blocks)
-                    AddRequiredRoleLines(work, snapshot, block, "partyTitle",
-                        "HD05-M1-TITLE-LINE", false);
-            }
-            else
-            {
-                foreach (var block in blocks)
-                {
-                    AddRequiredRoleLines(work, snapshot, block, "organName",
-                        "ND30-PL1-M2-K2-ORG-LINE", false);
-                    AddRequiredRoleLines(work, snapshot, block, "nationalMotto",
-                        "ND30-PL1-M2-K1-TN-LINE", false);
-                    AddRequiredRoleLines(work, snapshot, block, "subject",
-                        "ND30-PL1-M2-K5A-SUBJ-LINE", true);
-                }
-            }
+            // A valid user-created line is left untouched. Missing/invalid lines are
+            // already represented by findings. Only lines explicitly owned by an older
+            // Chuẩn hóa build are added here for a one-time migration.
             foreach (var line in snapshot.LineShapes.Where(item =>
-                item.Name.StartsWith("CHUANHOA_", StringComparison.Ordinal)))
+                LineShapeOwnership.IsLegacyOwned(item.Name)))
             {
                 var componentRole = line.Name.StartsWith("CHUANHOA_ORG_", StringComparison.Ordinal) ? "organName" :
                     line.Name.StartsWith("CHUANHOA_SUBJ_", StringComparison.Ordinal) ? "subject" :
@@ -925,25 +1362,33 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 .ToArray();
             if (matches.Length == 0) return false;
 
-            var selected = matches[0];
-            if (selected.Name.StartsWith("CHUANHOA", StringComparison.Ordinal))
-            {
-                for (var index = document.Shapes.Count; index >= 1; index--)
-                {
-                    Word.Shape? legacy = null;
-                    try
-                    {
-                        legacy = document.Shapes[index];
-                        if (string.Equals(legacy.Name, selected.Name, StringComparison.Ordinal)) legacy.Delete();
-                    }
-                    catch (COMException) { }
-                    finally { Release(legacy); }
-                }
-                return false;
-            }
             var ownedName = OwnedLineName(ruleCode, paragraph.Index);
-            var obsoleteNames = new HashSet<string>(matches.Skip(1).Select(line => line.Name),
-                StringComparer.Ordinal);
+            var selected = matches.FirstOrDefault(line =>
+                string.Equals(line.Name, ownedName, StringComparison.Ordinal));
+            if (selected != null)
+            {
+                return NormalizeOwnedComponentLine(document, selected.Name, targetLeft, targetTop,
+                    targetWidth, ownedName, deleteDuplicateCurrentOwned: true);
+            }
+
+            // Legacy names are ours and may be replaced. Current CHUANHOA2_* names
+            // are never classified as legacy. User-created Shape objects are neither
+            // selected, mutated, renamed nor deleted by this path.
+            var legacy = matches.FirstOrDefault(line =>
+                LineShapeOwnership.IsLegacyOwned(line.Name) &&
+                LineShapeOwnership.IsOwnedForParagraph(line.Name, paragraph.Index));
+            if (legacy != null)
+            {
+                DeleteOwnedShapeByName(document, legacy.Name);
+            }
+            return false;
+        }
+
+        private static bool NormalizeOwnedComponentLine(Word.Document document, string selectedName,
+            float targetLeft, float targetTop, float targetWidth, string ownedName,
+            bool deleteDuplicateCurrentOwned)
+        {
+            var normalized = false;
             for (var index = document.Shapes.Count; index >= 1; index--)
             {
                 Word.Shape? candidate = null;
@@ -952,23 +1397,13 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     candidate = document.Shapes[index];
                     if ((int)candidate.Type != 9) continue;
                     var name = candidate.Name ?? string.Empty;
-                    try
+                    if (!string.Equals(name, selectedName, StringComparison.Ordinal))
                     {
-                        if (candidate.Anchor.get_Information(Word.WdInformation.wdWithInTable))
-                        {
+                        if (deleteDuplicateCurrentOwned &&
+                            string.Equals(name, ownedName, StringComparison.Ordinal) && normalized)
                             candidate.Delete();
-                            continue;
-                        }
-                    }
-                    catch (COMException) { }
-                    if (obsoleteNames.Contains(name) ||
-                        (string.Equals(name, ownedName, StringComparison.Ordinal) &&
-                         !string.Equals(name, selected.Name, StringComparison.Ordinal)))
-                    {
-                        candidate.Delete();
                         continue;
                     }
-                    if (!string.Equals(name, selected.Name, StringComparison.Ordinal)) continue;
 
                     candidate.RelativeHorizontalPosition =
                         Word.WdRelativeHorizontalPosition.wdRelativeHorizontalPositionPage;
@@ -978,17 +1413,33 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     candidate.Top = targetTop;
                     candidate.Width = targetWidth;
                     candidate.Height = 0f;
-                    candidate.Name = OwnedLineName(ruleCode, paragraph.Index);
+                    candidate.Name = ownedName;
                     NormalizeLineStyle(candidate);
                     candidate.LockAnchor = 0;
-                    return true;
+                    normalized = true;
                 }
                 catch (COMException)
                 {
                 }
                 finally { Release(candidate); }
             }
-            return false;
+            return normalized;
+        }
+
+        private static void DeleteOwnedShapeByName(Word.Document document, string name)
+        {
+            if (!LineShapeOwnership.IsOwned(name)) return;
+            for (var index = document.Shapes.Count; index >= 1; index--)
+            {
+                Word.Shape? candidate = null;
+                try
+                {
+                    candidate = document.Shapes[index];
+                    if (string.Equals(candidate.Name, name, StringComparison.Ordinal)) candidate.Delete();
+                }
+                catch (COMException) { }
+                finally { Release(candidate); }
+            }
         }
 
         private static Word.Range ResolveNonTableLineAnchor(Word.Document document, Word.Range source)
@@ -1050,9 +1501,6 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             LocalParagraphSnapshot paragraph, string ruleCode)
         {
             var ownedName = OwnedLineName(ruleCode, paragraph.Index);
-            var associatedNames = new HashSet<string>(snapshot.LineShapes
-                .Where(line => IsAssociatedLine(line, paragraph))
-                .Select(line => line.Name), StringComparer.Ordinal);
             for (var index = document.Shapes.Count; index >= 1; index--)
             {
                 Word.Shape? candidate = null;
@@ -1062,8 +1510,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     if ((int)candidate.Type != 9) continue;
                     var name = candidate.Name ?? string.Empty;
                     if (string.Equals(name, ownedName, StringComparison.Ordinal) ||
-                        IsOwnedLineForParagraph(name, paragraph.Index) ||
-                        associatedNames.Contains(name))
+                        LineShapeOwnership.IsOwnedForParagraph(name, paragraph.Index))
                         candidate.Delete();
                 }
                 catch (COMException)
@@ -1103,34 +1550,46 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
         private static void EnsurePageNumbers(Word.Document document, LocalScanSnapshot snapshot, LocalRulePack rules)
         {
+            var party = IsParty(snapshot);
             foreach (Word.Section section in document.Sections)
             {
-                Word.HeaderFooter? header = null;
-                Word.Range? range = null;
-                Word.Field? field = null;
                 try
                 {
-                    section.PageSetup.DifferentFirstPageHeaderFooter = -1;
-                    RemoveFirstPageNumber(section);
-                    if (!IsParty(snapshot)) RemoveFooterPageNumbers(section);
-                    if (ContainsPageField(section)) continue;
-                    header = section.Headers[Word.WdHeaderFooterIndex.wdHeaderFooterPrimary];
-                    if (!header.Exists) header.Exists = true;
-                    range = header.Range.Duplicate;
-                    range.Collapse(Word.WdCollapseDirection.wdCollapseStart);
-                    range.ParagraphFormat.Alignment = Word.WdParagraphAlignment.wdAlignParagraphCenter;
-                    field = document.Fields.Add(range, Word.WdFieldType.wdFieldPage, PreserveFormatting: true);
-                    field.Result.Font.Name = rules.BodyFontName;
-                    field.Result.Font.Size = 14f;
-                    field.Result.Font.Bold = 0;
-                    field.Result.Font.Italic = 0;
+                    EnsurePageNumber(document, section, party, rules);
                 }
-                finally { Release(field); Release(range); Release(header); Release(section); }
+                finally { Release(section); }
             }
         }
 
+        private static void EnsurePageNumber(Word.Document document, Word.Section section,
+            bool party, LocalRulePack rules)
+        {
+            Word.HeaderFooter? header = null;
+            Word.Range? range = null;
+            Word.Field? field = null;
+            try
+            {
+                section.PageSetup.DifferentFirstPageHeaderFooter = -1;
+                RemoveFirstPageNumber(section);
+                if (!party) RemoveFooterPageNumbers(section);
+                if (ContainsPageField(section)) return;
+                header = section.Headers[Word.WdHeaderFooterIndex.wdHeaderFooterPrimary];
+                if (!header.Exists) header.Exists = true;
+                range = header.Range.Duplicate;
+                range.Collapse(Word.WdCollapseDirection.wdCollapseStart);
+                range.ParagraphFormat.Alignment = Word.WdParagraphAlignment.wdAlignParagraphCenter;
+                field = document.Fields.Add(range, Word.WdFieldType.wdFieldPage,
+                    PreserveFormatting: true);
+                field.Result.Font.Name = rules.BodyFontName;
+                field.Result.Font.Size = 14f;
+                field.Result.Font.Bold = 0;
+                field.Result.Font.Italic = 0;
+            }
+            finally { Release(field); Release(range); Release(header); }
+        }
+
         private static int NormalizeTables(Word.Document document, LocalScanSnapshot snapshot,
-            IDictionary<int, string> roles)
+            IReadOnlyDictionary<int, string> roles)
         {
             var count = 0;
             foreach (Word.Table table in document.Tables)
@@ -1152,7 +1611,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         }
 
         private static void NormalizeHeaderLayoutTables(Word.Document document, LocalScanSnapshot snapshot,
-            IDictionary<int, string> roles)
+            IReadOnlyDictionary<int, string> roles)
         {
             var headerRoles = new HashSet<string>(StringComparer.Ordinal)
             {
@@ -1187,7 +1646,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         }
 
         private static bool IsHeaderLayoutTable(Word.Table table, LocalScanSnapshot snapshot,
-            IDictionary<int, string> roles, ISet<string> headerRoles)
+            IReadOnlyDictionary<int, string> roles, ISet<string> headerRoles)
         {
             Word.Range? range = null;
             try
@@ -1302,7 +1761,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         }
 
         private static int ApplyDeterministicSpellingFixes(Word.Document document, LocalScanSnapshot snapshot,
-            IReadOnlyList<AnnotationFinding> findings, LocalRulePack rules)
+            IReadOnlyList<AnnotationFinding> findings, LocalRulePack rules,
+            IReadOnlyList<LogicalDocumentBlock> blocks)
         {
             var paragraphs = snapshot.Paragraphs.ToDictionary(item => item.Index);
             var edits = new List<SpellingEdit>();
@@ -1335,7 +1795,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 else
                 {
                     var abbreviation = ResolveExpectedTypeAbbreviation(snapshot,
-                        paragraph.Index, rules);
+                        paragraph.Index, rules, blocks);
                     replacement = LocalAdministrativeTextNormalizer.NormalizeCodeNumber(
                         printable, IsParty(snapshot), abbreviation);
                 }
@@ -1394,10 +1854,10 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         }
 
         private static string ResolveExpectedTypeAbbreviation(LocalScanSnapshot snapshot,
-            int paragraphIndex, LocalRulePack rules)
+            int paragraphIndex, LocalRulePack rules,
+            IReadOnlyList<LogicalDocumentBlock> blocks)
         {
-            var block = new DocumentRoleDetector().DetectBlocks(snapshot)
-                .FirstOrDefault(item => item.ContainsParagraph(paragraphIndex));
+            var block = blocks.FirstOrDefault(item => item.ContainsParagraph(paragraphIndex));
             if (block == null) return string.Empty;
             var typeParagraph = snapshot.Paragraphs.FirstOrDefault(item =>
                 block.Roles.TryGetValue(item.Index, out var role) && role == "typeName");
@@ -1452,6 +1912,46 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             var length = finding.Anchor.Length.GetValueOrDefault();
             switch (finding.RuleCode)
             {
+                case "FORMAT-CODE-NUMBER-PAD":
+                case "ND30-PL1-M2-K3-PAD":
+                case "FORMAT-PLACE-DATE-PAD":
+                case "ND30-PL1-M2-K4-PAD":
+                    return expectedText.Length == 1 && char.IsDigit(expectedText[0])
+                        ? new SpellingEdit(start, length, "0" + expectedText, expectedText, 35)
+                        : null;
+                case "FORMAT-CODE-NOTATION-UPPERCASE":
+                case "SPELLING-ABBREVIATION-UPPERCASE":
+                case "ND30-PL1-M2-K3-CASE":
+                case "ND30-PL1-M2-K7B-AUTH":
+                case "ND30-PL2-M3-K1B":
+                    return new SpellingEdit(start, length,
+                        expectedText.ToUpper(CultureInfo.GetCultureInfo("vi-VN")), expectedText, 35);
+                case "FORMAT-PLACE-DATE-COMMA":
+                case "ND30-PL1-M2-K4-COMMA":
+                    return new SpellingEdit(start, length, expectedText + ",", expectedText, 35);
+                case "ND30-PL1-M2-K4-CASE":
+                case "ND30-PL2-M2-K1":
+                    return new SpellingEdit(start, length, ToVietnameseTitleCase(expectedText), expectedText, 30);
+                case "SPELLING-SENTENCE-CAPITALIZATION":
+                case "ND30-PL2-M1":
+                    return expectedText.Length == 0 ? null : new SpellingEdit(start, length,
+                        UppercaseFirst(expectedText), expectedText, 30);
+                case "ND30-PL2-M3-K1A":
+                case "ND30-PL2-M3-K1C":
+                case "ND30-PL2-M3-K1D":
+                case "ND30-PL2-M3-K1E":
+                case "ND30-PL2-M4-K1A":
+                case "ND30-PL2-M4-K1B":
+                case "ND30-PL2-M5-K5":
+                case "ND30-PL2-M5-K8A":
+                    var configuredCapitalization = ResolveTargetReplacement(finding, rules);
+                    return string.IsNullOrWhiteSpace(configuredCapitalization) ? null :
+                        new SpellingEdit(start, length, configuredCapitalization!, expectedText, 30);
+                case "ND30-PL2-M5-K7":
+                    var structuralReplacement = finding.Expected.IndexOf("Viết thường", StringComparison.OrdinalIgnoreCase) >= 0
+                        ? LowercaseFirst(expectedText)
+                        : UppercaseFirst(expectedText);
+                    return new SpellingEdit(start, length, structuralReplacement, expectedText, 30);
                 case "ND30-PL1-M2-K6A-PUNCT":
                     var requiredPunctuation = finding.Expected.IndexOf("chấm phẩy", StringComparison.OrdinalIgnoreCase) >= 0
                         ? ";"
@@ -1499,11 +1999,6 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                         return new SpellingEdit(start, length, ApplyCase(expectedText, rep), expectedText, 25);
                     }
                     break;
-                case "ND30-PL2-M1":
-                    if (expectedText.Length != 1 || !char.IsLower(expectedText[0])) return null;
-                    return new SpellingEdit(start, 1,
-                        char.ToUpper(expectedText[0], CultureInfo.GetCultureInfo("vi-VN")).ToString(),
-                        expectedText, 20);
                 case "ND30-PL1-M2-K6B-DATE":
                     return new SpellingEdit(start, 0, "ngày ", expectedText, 10);
                 case "ND30-PL1-M2-K6B-SO":
@@ -1515,9 +2010,9 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     var insertionOffset = citedType.Index + citedType.Length;
                     return new SpellingEdit(start + insertionOffset, 0, " số",
                         expectedText.Substring(insertionOffset), 15);
-                case "ND30-PL2-M5-K7":
+                case "ND30-PL1-M2-K6E-DOTSLASH":
                     return new SpellingEdit(start, length,
-                        expectedText.ToLower(CultureInfo.GetCultureInfo("vi-VN")), expectedText, 20);
+                        NormalizeFinalPunctuation(expectedText), expectedText, 20);
             }
 
             var target = ResolveTargetReplacement(finding, rules);
@@ -1660,40 +2155,96 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             return collapsed;
         }
 
-        private static void UpdateContextAfterSingleFix(DocumentContext context, string lane, string findingId)
+        private static bool SelectedFixChangesText(string lane, AnnotationFinding finding)
         {
+            if (string.Equals(lane, "spelling", StringComparison.OrdinalIgnoreCase)) return true;
+            var ruleCode = finding.RuleCode;
+            if (string.Equals(ruleCode, "ND30-PL1-M2-K6A-STYLE", StringComparison.Ordinal))
+                return finding.CurrentIssue.IndexOf("thiếu gạch ngang",
+                    StringComparison.OrdinalIgnoreCase) >= 0;
+            if (string.Equals(ruleCode, "ND30-PL1-M2-K9B-LABEL", StringComparison.Ordinal))
+                return finding.CurrentIssue.IndexOf("thiếu dấu hai chấm",
+                    StringComparison.OrdinalIgnoreCase) >= 0;
+            if (string.Equals(ruleCode, "ND30-PL1-M2-K9B-LIST", StringComparison.Ordinal))
+                return finding.CurrentIssue.IndexOf("sai gạch đầu dòng",
+                    StringComparison.OrdinalIgnoreCase) >= 0;
+            if (string.Equals(ruleCode, "ND30-PL1-M3-K1B", StringComparison.Ordinal))
+                return finding.CurrentIssue.IndexOf("chưa viết hoa",
+                    StringComparison.OrdinalIgnoreCase) >= 0;
+            return string.Equals(ruleCode, "ND30-PL1-M2-K6A-PUNCT", StringComparison.Ordinal) ||
+                string.Equals(ruleCode, "ND30-PL1-M2-K6B-SO", StringComparison.Ordinal) ||
+                string.Equals(ruleCode, "ND30-PL1-M2-K4-COMMA", StringComparison.Ordinal) ||
+                string.Equals(ruleCode, "ND30-PL1-M2-K4-CASE", StringComparison.Ordinal) ||
+                string.Equals(ruleCode, "ND30-PL1-M2-K4-PAD", StringComparison.Ordinal) ||
+                string.Equals(ruleCode, "ND30-PL1-M2-K5B-SPACE", StringComparison.Ordinal) ||
+                string.Equals(ruleCode, "ND30-PL1-M2-K6E-DOTSLASH", StringComparison.Ordinal) ||
+                string.Equals(ruleCode, "ND30-PL1-M2-K7B-AUTH", StringComparison.Ordinal) ||
+                string.Equals(ruleCode, "ND30-PL1-M2-K9A-COLON", StringComparison.Ordinal) ||
+                string.Equals(ruleCode, "ND30-PL1-M2-K9A-INLINE-END", StringComparison.Ordinal) ||
+                string.Equals(ruleCode, "ND30-PL1-M2-K9A-PUNCT", StringComparison.Ordinal) ||
+                string.Equals(ruleCode, "ND30-PL1-M2-K9B-LUU", StringComparison.Ordinal) ||
+                string.Equals(ruleCode, "ND30-PL1-M3-K1A-NUM", StringComparison.Ordinal) ||
+                IsDeterministicComponentTextFinding(ruleCode);
+        }
+
+        private static void UpdateContextAfterTargetedFix(DocumentContext context, string lane,
+            string findingId, bool preserveSnapshot)
+        {
+            if (!preserveSnapshot)
+            {
+                // Text replacement can shift every downstream absolute coordinate.
+                // Discard that positional snapshot instead of silently reusing it.
+                context.ClearReadAnalysis();
+                return;
+            }
+
             try
             {
-                if (context.LastSnapshot != null && context.LastLocalSnapshot != null)
+                if (context.LastSnapshot == null || context.LastLocalSnapshot == null)
                 {
-                    if (string.Equals(lane, "spelling", StringComparison.OrdinalIgnoreCase) && context.LastSpellingScan != null)
-                    {
-                        var scan = context.LastSpellingScan;
-                        var remaining = scan.Findings
-                            .Where(f => !string.Equals(f.FindingId, findingId, StringComparison.Ordinal)).ToArray();
-                        context.SetAnalysis(context.LastSnapshot, context.LastLocalSnapshot, context.LastFormatScan,
-                            new LocalScanResult(scan.ScanId, scan.Lane, scan.RulePackId, scan.DocumentFingerprint, scan.Revision, remaining),
-                            false);
-                        return;
-                    }
-                    else if (string.Equals(lane, "format", StringComparison.OrdinalIgnoreCase) && context.LastFormatScan != null)
-                    {
-                        var scan = context.LastFormatScan;
-                        var remaining = scan.Findings
-                            .Where(f => !string.Equals(f.FindingId, findingId, StringComparison.Ordinal)).ToArray();
-                        context.SetAnalysis(context.LastSnapshot, context.LastLocalSnapshot,
-                            new LocalScanResult(scan.ScanId, scan.Lane, scan.RulePackId, scan.DocumentFingerprint, scan.Revision, remaining),
-                            context.LastSpellingScan, false);
-                        return;
-                    }
+                    context.ClearReadAnalysis();
+                    return;
                 }
 
-                context.ClearReadAnalysis();
+                var format = context.LastFormatScan;
+                var spelling = context.LastSpellingScan;
+                if (string.Equals(lane, "format", StringComparison.OrdinalIgnoreCase) && format != null)
+                    format = CopyWithoutFinding(format, findingId);
+                else if (string.Equals(lane, "spelling", StringComparison.OrdinalIgnoreCase) && spelling != null)
+                    spelling = CopyWithoutFinding(spelling, findingId);
+                else
+                {
+                    context.ClearReadAnalysis();
+                    return;
+                }
+
+                context.SetAnalysis(context.LastSnapshot, context.LastLocalSnapshot,
+                    format, spelling, false);
             }
             catch
             {
                 context.ClearReadAnalysis();
             }
+        }
+
+        private static LocalScanResult CopyWithoutFinding(LocalScanResult source, string findingId)
+        {
+            return new LocalScanResult(
+                source.ScanId,
+                source.Lane,
+                source.RulePackId,
+                source.DocumentFingerprint,
+                source.Revision,
+                source.Findings.Where(item =>
+                    !string.Equals(item.FindingId, findingId, StringComparison.Ordinal)).ToArray(),
+                source.RulePackVersion,
+                source.DetectorPolicyVersion,
+                source.NotEvaluatedRuleCodes,
+                source.AcademicTypographyEnabled,
+                source.AcademicHeadingCount,
+                source.HeadingLevel1Count,
+                source.HeadingLevel2Count,
+                source.HeadingLevel3Count);
         }
 
         private static string ApplyCase(string source, string target)
@@ -1706,6 +2257,42 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             return target;
         }
 
+        private static string UppercaseFirst(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return value;
+            var vietnamese = CultureInfo.GetCultureInfo("vi-VN");
+            return char.ToUpper(value[0], vietnamese) + value.Substring(1);
+        }
+
+        private static string LowercaseFirst(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return value;
+            var vietnamese = CultureInfo.GetCultureInfo("vi-VN");
+            return char.ToLower(value[0], vietnamese) + value.Substring(1);
+        }
+
+        private static string ToVietnameseTitleCase(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return value;
+            return CultureInfo.GetCultureInfo("vi-VN").TextInfo.ToTitleCase(
+                value.ToLower(CultureInfo.GetCultureInfo("vi-VN")));
+        }
+
+        private static string NormalizeFinalPunctuation(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return ".";
+            var trimmed = value.TrimEnd();
+            if (trimmed.EndsWith("./.", StringComparison.Ordinal) ||
+                trimmed.EndsWith(". / .", StringComparison.Ordinal))
+            {
+                var marker = trimmed.EndsWith("./.", StringComparison.Ordinal) ? "./." : ". / .";
+                return trimmed.Substring(0, trimmed.Length - marker.Length) + ".";
+            }
+            if (";,:!?/".IndexOf(trimmed[trimmed.Length - 1]) >= 0)
+                return trimmed.Substring(0, trimmed.Length - 1) + ".";
+            return trimmed.EndsWith(".", StringComparison.Ordinal) ? trimmed : trimmed + ".";
+        }
+
         private static bool Intersects(SpellingEdit left, SpellingEdit right)
         {
             if (left.Length == 0 || right.Length == 0) return left.Start == right.Start;
@@ -1713,7 +2300,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         }
 
         private static bool ContainsRecognizedRole(Word.Table table, LocalScanSnapshot snapshot,
-            IDictionary<int, string> roles)
+            IReadOnlyDictionary<int, string> roles)
         {
             Word.Range? range = null;
             try
@@ -1756,11 +2343,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
         private static bool IsOwnedLineForParagraph(string name, int paragraphIndex)
         {
-            if (string.IsNullOrEmpty(name) ||
-                !name.StartsWith("CHUANHOA", StringComparison.Ordinal)) return false;
-            var marker = "P" + paragraphIndex.ToString(CultureInfo.InvariantCulture);
-            return name.EndsWith(marker, StringComparison.Ordinal) ||
-                name.IndexOf(marker + "_", StringComparison.Ordinal) >= 0;
+            return LineShapeOwnership.IsOwnedForParagraph(name, paragraphIndex);
         }
 
         private static string OwnedLinePrefix(string ruleCode)
@@ -1964,16 +2547,6 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 // The independently copied backup remains available even if Word cannot reopen the source.
                 if (!File.Exists(backupPath)) throw;
             }
-        }
-
-        private static Dictionary<int, string> MergeRoles(
-            IEnumerable<LogicalDocumentBlock> blocks)
-        {
-            var roles = new Dictionary<int, string>();
-            foreach (var block in blocks)
-                foreach (var role in block.Roles)
-                    roles[role.Key] = role.Value;
-            return roles;
         }
 
         private static Nd30HeaderFontSizeTier ResolveHeaderTier(LocalScanSnapshot snapshot,

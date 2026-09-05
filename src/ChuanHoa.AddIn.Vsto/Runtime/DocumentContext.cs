@@ -43,6 +43,12 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
         public LocalScanResult? LastSpellingScan { get; private set; }
 
+        public IReadOnlyList<LogicalDocumentBlock> LastLogicalBlocks { get; private set; } =
+            Array.Empty<LogicalDocumentBlock>();
+
+        public IReadOnlyDictionary<int, string> LastRolesByParagraphIndex { get; private set; } =
+            new Dictionary<int, string>();
+
         public DateTimeOffset? LastSnapshotAtUtc { get; private set; }
 
         public bool SnapshotCapturedFromSavedDocument { get; private set; }
@@ -75,6 +81,23 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             if (spellingScan != null && !ScanIdentityMatches(localSnapshot, spellingScan, "spelling"))
                 throw new InvalidOperationException("Kết quả kiểm tra chính tả không thuộc dữ liệu tài liệu hiện tại.");
 
+            IReadOnlyList<LogicalDocumentBlock> logicalBlocks;
+            IReadOnlyDictionary<int, string> roles;
+            if (ReferenceEquals(LastLocalSnapshot, localSnapshot))
+            {
+                logicalBlocks = LastLogicalBlocks;
+                roles = LastRolesByParagraphIndex;
+            }
+            else
+            {
+                logicalBlocks = new DocumentRoleDetector().DetectBlocks(localSnapshot);
+                var detectedRoles = new Dictionary<int, string>();
+                foreach (var block in logicalBlocks)
+                    foreach (var role in block.Roles)
+                        detectedRoles[role.Key] = role.Value;
+                roles = detectedRoles;
+            }
+
             // Commit the complete analysis atomically. Validation above must finish
             // before any property changes so a failed build cannot leave a reusable
             // but only partially populated cache behind.
@@ -82,6 +105,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             LastLocalSnapshot = localSnapshot;
             LastFormatScan = formatScan;
             LastSpellingScan = spellingScan;
+            LastLogicalBlocks = logicalBlocks;
+            LastRolesByParagraphIndex = roles;
             LastSnapshotAtUtc = DateTimeOffset.UtcNow;
             SnapshotCapturedFromSavedDocument = capturedFromSavedDocument;
         }
@@ -91,7 +116,10 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             bool requireFormat,
             bool requireSpelling,
             string? formatRulePackId,
-            string? spellingRulePackId)
+            string? formatRulePackVersion,
+            int formatDetectorPolicyVersion,
+            string? spellingRulePackId,
+            string? spellingRulePackVersion)
         {
             if (!documentIsSaved || !SnapshotCapturedFromSavedDocument ||
                 LastSnapshot == null || LastLocalSnapshot == null ||
@@ -99,11 +127,13 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 return false;
             if (requireFormat && (LastFormatScan == null ||
                 !ScanIdentityMatches(LastLocalSnapshot, LastFormatScan, "format") ||
-                !string.Equals(LastFormatScan.RulePackId, formatRulePackId, StringComparison.Ordinal)))
+                !PolicyIdentityMatches(LastFormatScan, formatRulePackId,
+                    formatRulePackVersion, formatDetectorPolicyVersion)))
                 return false;
             if (requireSpelling && (LastSpellingScan == null ||
                 !ScanIdentityMatches(LastLocalSnapshot, LastSpellingScan, "spelling") ||
-                !string.Equals(LastSpellingScan.RulePackId, spellingRulePackId, StringComparison.Ordinal)))
+                !PolicyIdentityMatches(LastSpellingScan, spellingRulePackId,
+                    spellingRulePackVersion, 0)))
                 return false;
             return true;
         }
@@ -114,6 +144,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             LastLocalSnapshot = null;
             LastFormatScan = null;
             LastSpellingScan = null;
+            LastLogicalBlocks = Array.Empty<LogicalDocumentBlock>();
+            LastRolesByParagraphIndex = new Dictionary<int, string>();
             LastSnapshotAtUtc = null;
             SnapshotCapturedFromSavedDocument = false;
         }
@@ -168,6 +200,17 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 string.Equals(scan.DocumentFingerprint, snapshot.DocumentFingerprint,
                     StringComparison.Ordinal) &&
                 scan.Revision == snapshot.Revision;
+        }
+
+        private static bool PolicyIdentityMatches(
+            LocalScanResult scan,
+            string? expectedRulePackId,
+            string? expectedRulePackVersion,
+            int expectedDetectorPolicyVersion)
+        {
+            return string.Equals(scan.RulePackId, expectedRulePackId, StringComparison.Ordinal) &&
+                string.Equals(scan.RulePackVersion, expectedRulePackVersion, StringComparison.Ordinal) &&
+                scan.DetectorPolicyVersion == expectedDetectorPolicyVersion;
         }
 
         public int GetSelection(string controlId)

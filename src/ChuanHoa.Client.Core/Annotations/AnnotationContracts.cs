@@ -3,6 +3,25 @@ using System.Collections.Generic;
 
 namespace ChuanHoa.Client.Core.Annotations
 {
+    public enum AnnotationSourceFamily
+    {
+        NotEvaluated = 0,
+        Unknown = 1,
+        Nd30 = 2,
+        Hd05 = 3,
+        LatexTypst = 4,
+        LocalLanguage = 5
+    }
+
+    public enum AnnotationSeverityLevel
+    {
+        NotEvaluated = 0,
+        Unknown = 1,
+        Suggestion = 2,
+        Warning = 3,
+        Error = 4
+    }
+
     public enum AnnotationAnchorKind
     {
         TextSpan,
@@ -36,23 +55,50 @@ namespace ChuanHoa.Client.Core.Annotations
             string expected,
             string citation,
             AnnotationAnchor anchor)
+            : this(
+                findingId,
+                ruleCode,
+                severity,
+                currentIssue,
+                expected,
+                citation,
+                anchor,
+                AnnotationSourceFamilyResolver.FromRuleCode(ruleCode))
+        {
+        }
+
+        public AnnotationFinding(
+            string findingId,
+            string ruleCode,
+            string severity,
+            string currentIssue,
+            string expected,
+            string citation,
+            AnnotationAnchor anchor,
+            AnnotationSourceFamily sourceFamily)
         {
             FindingId = Require(findingId, nameof(findingId));
             RuleCode = Require(ruleCode, nameof(ruleCode));
             Severity = Require(severity, nameof(severity));
+            SeverityLevel = AnnotationSeverityResolver.FromValue(severity);
             CurrentIssue = Require(currentIssue, nameof(currentIssue));
             Expected = expected ?? string.Empty;
             Citation = citation ?? string.Empty;
             Anchor = anchor ?? throw new ArgumentNullException(nameof(anchor));
+            SourceFamily = Enum.IsDefined(typeof(AnnotationSourceFamily), sourceFamily)
+                ? sourceFamily
+                : AnnotationSourceFamily.NotEvaluated;
         }
 
         public string FindingId { get; }
         public string RuleCode { get; }
         public string Severity { get; }
+        public AnnotationSeverityLevel SeverityLevel { get; }
         public string CurrentIssue { get; }
         public string Expected { get; }
         public string Citation { get; }
         public AnnotationAnchor Anchor { get; }
+        public AnnotationSourceFamily SourceFamily { get; }
 
         private static string Require(string value, string parameterName)
         {
@@ -201,13 +247,21 @@ namespace ChuanHoa.Client.Core.Annotations
     public sealed class AnnotationVisualInstruction
     {
         public AnnotationVisualInstruction(string storyType, int sectionIndex, int start, int length)
+            : this(string.Empty, storyType, sectionIndex, start, length)
         {
+        }
+
+        public AnnotationVisualInstruction(string findingId, string storyType, int sectionIndex,
+            int start, int length)
+        {
+            FindingId = findingId ?? string.Empty;
             StoryType = storyType;
             SectionIndex = sectionIndex;
             Start = start;
             Length = length;
         }
 
+        public string FindingId { get; }
         public string StoryType { get; }
         public int SectionIndex { get; }
         public int Start { get; }

@@ -34,6 +34,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
         public event EventHandler? CacheStateChanged;
 
+        public bool IsRefreshInProgress => Volatile.Read(ref _refreshInProgress) != 0;
+
         public LocalAccessManager(string clientReleaseId)
         {
             _clientReleaseId = clientReleaseId;

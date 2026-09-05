@@ -28,15 +28,57 @@
     <Reference Include="System.IO.Compression.FileSystem" />
     <Reference Include="System.Security" />
     <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
     <EmbeddedResource Include="$(PayloadZip)" LogicalName="ChuanHoa.DevelopmentInstaller.Payload.zip" />
     <EmbeddedResource Include="$(VersionFile)" LogicalName="ChuanHoa.DevelopmentInstaller.Version.txt" />
+    <EmbeddedResource Include="$(IntermediateOutputPath)ChuanHoa.DevelopmentInstaller.TrustedPublicKey.sha256"
+                      LogicalName="ChuanHoa.DevelopmentInstaller.TrustedPublicKey.sha256" />
+    <EmbeddedResource Include="$(IntermediateOutputPath)ChuanHoa.DevelopmentInstaller.SigningCertificate.sha256"
+                      LogicalName="ChuanHoa.DevelopmentInstaller.SigningCertificate.sha256" />
+    <EmbeddedResource Include="$(IntermediateOutputPath)ChuanHoa.DevelopmentInstaller.SigningRootCertificate.sha256"
+                      LogicalName="ChuanHoa.DevelopmentInstaller.SigningRootCertificate.sha256" />
   </ItemGroup>
   <Target Name="ValidateInstallerInputs" BeforeTargets="PrepareForBuild">
     <Error Condition="'$(PayloadZip)' == '' or !Exists('$(PayloadZip)')" Text="PayloadZip is required." />
     <Error Condition="'$(VersionFile)' == '' or !Exists('$(VersionFile)')" Text="VersionFile is required." />
+    <Error Condition="!$([System.Text.RegularExpressions.Regex]::IsMatch('$(TrustedPublicKeySha256)', '^[0-9A-Fa-f]{64}$'))"
+           Text="TrustedPublicKeySha256 must be an explicit 64-character SHA-256 pin." />
+    <Error Condition="!$([System.Text.RegularExpressions.Regex]::IsMatch('$(SigningCertificateSha256)', '^[0-9A-Fa-f]{64}$'))"
+           Text="SigningCertificateSha256 must be an explicit 64-character SHA-256 pin." />
+    <Error Condition="!$([System.Text.RegularExpressions.Regex]::IsMatch('$(SigningRootCertificateSha256)', '^[0-9A-Fa-f]{64}$'))"
+           Text="SigningRootCertificateSha256 must be an explicit 64-character SHA-256 pin." />
+    <WriteLinesToFile
+      File="$(IntermediateOutputPath)ChuanHoa.DevelopmentInstaller.TrustedPublicKey.sha256"
+      Lines="$(TrustedPublicKeySha256)"
+      Overwrite="true"
+      Encoding="ASCII" />
+    <WriteLinesToFile
+      File="$(IntermediateOutputPath)ChuanHoa.DevelopmentInstaller.SigningCertificate.sha256"
+      Lines="$(SigningCertificateSha256)"
+      Overwrite="true"
+      Encoding="ASCII" />
+    <WriteLinesToFile
+      File="$(IntermediateOutputPath)ChuanHoa.DevelopmentInstaller.SigningRootCertificate.sha256"
+      Lines="$(SigningRootCertificateSha256)"
+      Overwrite="true"
+      Encoding="ASCII" />
+  </Target>
+  <Target Name="GenerateProductVersionAssemblyInfo" BeforeTargets="CoreCompile">
+    <ItemGroup>
+      <_ProductVersionAssemblyInfo Include="[assembly: System.Reflection.AssemblyVersionAttribute(&quot;$(ProductVersion)&quot;)]" />
+      <_ProductVersionAssemblyInfo Include="[assembly: System.Reflection.AssemblyFileVersionAttribute(&quot;$(ProductVersion)&quot;)]" />
+      <_ProductVersionAssemblyInfo Include="[assembly: System.Reflection.AssemblyInformationalVersionAttribute(&quot;$(ProductVersion)&quot;)]" />
+      <Compile Include="$(IntermediateOutputPath)ChuanHoa.ProductVersion.g.cs" />
+    </ItemGroup>
+    <WriteLinesToFile
+      File="$(IntermediateOutputPath)ChuanHoa.ProductVersion.g.cs"
+      Lines="@(_ProductVersionAssemblyInfo)"
+      Overwrite="true"
+      Encoding="UTF-8" />
   </Target>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -24,5 +24,26 @@
     </Reference>
   </ItemGroup>
   <ItemGroup><Compile Include="Program.cs" /></ItemGroup>
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyVersionAttribute">
+      <_Parameter1>$(AssemblyVersion)</_Parameter1>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyFileVersionAttribute">
+      <_Parameter1>$(FileVersion)</_Parameter1>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyInformationalVersionAttribute">
+      <_Parameter1>$(InformationalVersion)</_Parameter1>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyProductAttribute">
+      <_Parameter1>Chuẩn hóa Development Access Smoke</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+  <Target Name="GenerateChuanHoaVersionAttributes" BeforeTargets="CoreCompile">
+    <WriteCodeFragment Language="C#"
+                       OutputFile="$(IntermediateOutputPath)ChuanHoa.Version.g.cs"
+                       AssemblyAttributes="@(AssemblyAttribute)">
+      <Output TaskParameter="OutputFile" ItemName="Compile" />
+    </WriteCodeFragment>
+  </Target>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

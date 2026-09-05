@@ -13,43 +13,24 @@ namespace ChuanHoa.AddIn.Vsto
         private WordMutationRuntime? _wordMutationRuntime;
         private RibbonRuntime? _ribbonRuntime;
         private ChuanHoaRibbon? _ribbon;
-        private System.Windows.Forms.Timer? _runtimeStartupTimer;
-        private bool _startupCompleted;
-        private bool _ribbonLoaded;
         private bool _applicationEventsSubscribed;
-        private bool _shutdownStarted;
-        private int _runtimeInitializationAttempts;
 
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
         {
-            try
-            {
-                SubscribeApplicationEvents();
-            }
-            catch (Exception exception)
-            {
-                TraceLifecycleFailure("Startup event subscription", exception);
-            }
-
-            // Word does not guarantee whether VSTO Startup or Ribbon discovery
-            // happens first. Startup must therefore remain failure-contained and
-            // must never construct services, read ActiveDocument, or invalidate
-            // CustomUI. The runtime is scheduled only after RibbonOnLoad has
-            // returned control to Office's message loop.
-            _startupCompleted = true;
-            TryScheduleRuntimeInitialization(250);
+            StartupIntegrityGuard.VerifyOrThrow();
+            // Startup is deliberately inert. Do not even subscribe to document
+            // lifecycle events until the first explicit Ribbon action creates the
+            // runtime. Opening Word or opening/activating a document must not cause
+            // this add-in to inspect Word state, refresh a lease, start a timer or
+            // invalidate CustomUI.
         }
 
         private void ThisAddIn_Shutdown(object sender, System.EventArgs e)
         {
-            _shutdownStarted = true;
-            StopRuntimeStartupTimer();
-
             if (_applicationEventsSubscribed)
             {
                 try
                 {
-                    Application.WindowActivate -= OnWindowActivate;
                     Application.DocumentBeforeClose -= OnDocumentBeforeClose;
                     Application.DocumentBeforeSave -= OnDocumentBeforeSave;
                 }
@@ -81,7 +62,6 @@ namespace ChuanHoa.AddIn.Vsto
 
             if (_ribbon != null)
             {
-                _ribbon.RibbonLoaded -= OnRibbonLoaded;
                 _ribbon.DetachRuntime();
             }
 
@@ -90,6 +70,7 @@ namespace ChuanHoa.AddIn.Vsto
 
         protected override Office.IRibbonExtensibility CreateRibbonExtensibilityObject()
         {
+            StartupIntegrityGuard.VerifyOrThrow();
             // Office requests IRibbonExtensibility before the VSTO Startup event on
             // some Word launches. Keep this path limited to constructing the Ribbon
             // adapter: touching Word COM, the local access cache, timers, or scanners
@@ -97,11 +78,7 @@ namespace ChuanHoa.AddIn.Vsto
             if (_ribbon == null)
             {
                 _ribbon = new ChuanHoaRibbon();
-                _ribbon.RibbonLoaded += OnRibbonLoaded;
-                if (_ribbonRuntime != null)
-                {
-                    _ribbon.AttachRuntime(_ribbonRuntime);
-                }
+                _ribbon.ConfigureRuntimeFactory(EnsureRuntime);
             }
 
             return _ribbon;
@@ -122,10 +99,19 @@ namespace ChuanHoa.AddIn.Vsto
                 _documentContexts = documentContexts;
                 _wordMutationRuntime = wordMutationRuntime;
                 _ribbonRuntime = ribbonRuntime;
+                SubscribeApplicationEvents();
                 return ribbonRuntime;
             }
             catch
             {
+                if (_ribbonRuntime != null)
+                {
+                    try { _ribbonRuntime.Dispose(); }
+                    catch (Exception exception) { TraceLifecycleFailure("Runtime initialization rollback", exception); }
+                }
+                _ribbonRuntime = null;
+                _wordMutationRuntime = null;
+                _documentContexts = null;
                 documentContexts.Dispose();
                 throw;
             }
@@ -135,136 +121,14 @@ namespace ChuanHoa.AddIn.Vsto
         {
             if (_applicationEventsSubscribed) return;
 
-            Application.WindowActivate += OnWindowActivate;
             Application.DocumentBeforeClose += OnDocumentBeforeClose;
             Application.DocumentBeforeSave += OnDocumentBeforeSave;
             _applicationEventsSubscribed = true;
         }
 
-        private void OnRibbonLoaded(object? sender, EventArgs eventArgs)
-        {
-            try
-            {
-                _ribbonLoaded = true;
-                TryScheduleRuntimeInitialization(250);
-            }
-            catch (Exception exception)
-            {
-                TraceLifecycleFailure("Ribbon load handshake", exception);
-            }
-        }
-
-        private void TryScheduleRuntimeInitialization(int intervalMilliseconds)
-        {
-            if (_shutdownStarted || !_startupCompleted || !_ribbonLoaded ||
-                _ribbonRuntime != null || _runtimeStartupTimer != null)
-            {
-                return;
-            }
-
-            try
-            {
-                var timer = new System.Windows.Forms.Timer
-                {
-                    Interval = Math.Max(1, intervalMilliseconds)
-                };
-                timer.Tick += OnRuntimeStartupTimerTick;
-                _runtimeStartupTimer = timer;
-                timer.Start();
-            }
-            catch (Exception exception)
-            {
-                StopRuntimeStartupTimer();
-                TraceLifecycleFailure("Deferred runtime scheduling", exception);
-            }
-        }
-
-        private void OnRuntimeStartupTimerTick(object? sender, EventArgs eventArgs)
-        {
-            StopRuntimeStartupTimer();
-            if (_shutdownStarted || _ribbonRuntime != null) return;
-
-            _runtimeInitializationAttempts++;
-            try
-            {
-                var runtime = EnsureRuntime();
-                _ribbon?.AttachRuntime(runtime);
-                CaptureActiveDocumentMetadata(runtime);
-            }
-            catch (Exception exception)
-            {
-                TraceLifecycleFailure("Deferred runtime initialization", exception);
-
-                // A document/template may still be opening, especially through
-                // Word Home/Recent or OneDrive. Keep the static tab visible and
-                // retry later without reading document content.
-                if (_runtimeInitializationAttempts < 3)
-                {
-                    TryScheduleRuntimeInitialization(1500);
-                }
-            }
-        }
-
-        private void CaptureActiveDocumentMetadata(RibbonRuntime runtime)
-        {
-            try
-            {
-                var activeDocument = Application.ActiveDocument;
-                if (activeDocument != null)
-                {
-                    runtime.OnDocumentWindowActivated(activeDocument);
-                }
-            }
-            catch (Exception exception)
-            {
-                // This is metadata-only capability capture. Full content reads and
-                // scans remain command-scoped. A transient COM rejection must not
-                // remove the Ribbon or fail the add-in startup.
-                TraceLifecycleFailure("Initial document metadata", exception);
-            }
-        }
-
-        private void StopRuntimeStartupTimer()
-        {
-            var timer = _runtimeStartupTimer;
-            _runtimeStartupTimer = null;
-            if (timer == null) return;
-
-            try
-            {
-                timer.Stop();
-                timer.Tick -= OnRuntimeStartupTimerTick;
-                timer.Dispose();
-            }
-            catch (Exception exception)
-            {
-                TraceLifecycleFailure("Deferred runtime timer cleanup", exception);
-            }
-        }
-
         private static void TraceLifecycleFailure(string stage, Exception exception)
         {
             Trace.TraceError("ChuanHoa VSTO lifecycle failure at {0}: {1}", stage, exception);
-        }
-
-        private void OnWindowActivate(Word.Document document, Word.Window window)
-        {
-            try
-            {
-                var runtime = _ribbonRuntime;
-                if (runtime != null)
-                {
-                    runtime.OnDocumentWindowActivated(document);
-                }
-                else
-                {
-                    TryScheduleRuntimeInitialization(250);
-                }
-            }
-            catch (Exception exception)
-            {
-                TraceLifecycleFailure("WindowActivate", exception);
-            }
         }
 
         private void OnDocumentBeforeClose(Word.Document document, ref bool cancel)

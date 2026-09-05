@@ -93,8 +93,9 @@ namespace ChuanHoa.AnnotationSmoke
 
                 Assert(document.Variables.Count == 0, "Owned annotation variables were not cleaned.");
 
+                RunInjectedFailureRollback(application);
                 RunRerunStress(application);
-                Console.WriteLine("ANNOTATION_WORD_SMOKE_PASS");
+                Console.WriteLine("ANNOTATION_WORD_SMOKE_PASS INJECTED_FAILURE_ROLLBACK");
                 return 0;
             }
             catch (Exception exception)
@@ -228,6 +229,85 @@ namespace ChuanHoa.AnnotationSmoke
                     stressDocument.Close(ref save);
                 }
                 Release(stressDocument);
+            }
+        }
+
+        private static void RunInjectedFailureRollback(Word.Application application)
+        {
+            Word.Document rollbackDocument = null;
+            Word.Range userRange = null;
+            Word.Range findingRange = null;
+            Word.Comment userComment = null;
+            try
+            {
+                rollbackDocument = application.Documents.Add();
+                rollbackDocument.Content.Text = "Người dùng sai định dạng\r";
+                userRange = rollbackDocument.Range(0, 10);
+                userRange.Font.Color = Word.WdColor.wdColorGreen;
+                userComment = rollbackDocument.Comments.Add(userRange, "Comment cần được bảo toàn");
+                findingRange = rollbackDocument.Range(11, 14);
+
+                var plan = CreatePlan();
+                var stableAdapter = new WordFindingAnnotationAdapter(application, rollbackDocument);
+                stableAdapter.Apply(plan);
+                Assert(rollbackDocument.Comments.Count == 2,
+                    "Injected rollback setup did not create the stable annotation state.");
+                Assert(rollbackDocument.Variables.Count == 2,
+                    "Injected rollback setup did not register both owned annotation records.");
+
+                var injected = false;
+                var failingAdapter = new WordFindingAnnotationAdapter(
+                    application,
+                    rollbackDocument,
+                    (stage, index) =>
+                    {
+                        if (stage == "after-visual" && index == 0)
+                        {
+                            injected = true;
+                            throw new InvalidOperationException("ANNOTATION_FAULT_INJECTION");
+                        }
+                    });
+                try
+                {
+                    failingAdapter.Apply(plan);
+                    throw new InvalidOperationException("The injected annotation failure did not fire.");
+                }
+                catch (InvalidOperationException exception)
+                {
+                    Assert(injected && exception.Message == "ANNOTATION_FAULT_INJECTION",
+                        "The annotation failure was not the expected injected fault.");
+                }
+
+                Assert(rollbackDocument.Comments.Count == 2,
+                    "Rollback did not restore the previous add-in comment and user comment.");
+                Assert(rollbackDocument.Comments[1].Range.Text == "Comment cần được bảo toàn",
+                    "Rollback changed the user's comment.");
+                Assert((int)userRange.Font.Color == (int)Word.WdColor.wdColorGreen,
+                    "Rollback changed the user's font colour.");
+                Assert((int)findingRange.Font.Color == AnnotationOwnershipPolicy.WordRedColor,
+                    "Rollback did not restore the previous owned red marker.");
+                Assert(rollbackDocument.Variables.Count == 2,
+                    "Rollback left a partial or missing annotation registry.");
+                findingRange.Select();
+                string selectedLane;
+                string selectedFindingId;
+                Assert(stableAdapter.TryGetSelectedFinding(out selectedLane, out selectedFindingId),
+                    "Rollback did not restore the selected-finding identity.");
+                Assert(selectedLane == "format" && selectedFindingId == "finding-01",
+                    "Rollback restored the wrong finding identity.");
+                Console.WriteLine("ANNOTATION_INJECTED_FAILURE_ROLLBACK_PASS");
+            }
+            finally
+            {
+                Release(userComment);
+                Release(findingRange);
+                Release(userRange);
+                if (rollbackDocument != null)
+                {
+                    object save = Word.WdSaveOptions.wdDoNotSaveChanges;
+                    rollbackDocument.Close(ref save);
+                }
+                Release(rollbackDocument);
             }
         }
 

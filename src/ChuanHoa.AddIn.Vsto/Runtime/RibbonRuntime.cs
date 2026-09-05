@@ -7,6 +7,7 @@ using System.Threading;
 using System.Windows.Forms;
 using System.Deployment.Application;
 using ChuanHoa.AddIn.Vsto.Ribbon;
+using ChuanHoa.Client.Core.Annotations;
 using ChuanHoa.Client.Core.Scanning;
 using ChuanHoa.Client.Core.Text;
 using ChuanHoa.Client.Core.Lexicon;
@@ -51,7 +52,6 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         private readonly Word.Application _application;
         private readonly DocumentContextStore _contextStore;
         private readonly WordMutationRuntime _wordMutationRuntime;
-        private readonly WordDocumentCapabilityProvider _capabilityProvider;
         private readonly WordDocumentReadRuntime _documentReadRuntime;
         private readonly LocalAccessManager _localAccessManager;
         private readonly WordLocalScanRuntime _localScanRuntime;
@@ -62,9 +62,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         private readonly System.Windows.Forms.Timer _accessRefreshTimer;
         private Office.IRibbonUI? _ribbonUi;
         private Word.Document? _lastActivatedDocument;
-        private Word.Document? _ribbonCapabilityDocument;
-        private WordDocumentCapability? _ribbonCapability;
-        private long _ribbonCapabilityTimestamp;
+        private DocumentContext? _lastUserContext;
         private int _accessRefreshCompleted;
         private int _documentOperationInProgress;
         private DocumentOperationSession? _currentDocumentOperation;
@@ -78,7 +76,6 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             _application = application ?? throw new ArgumentNullException("application");
             _contextStore = contextStore ?? throw new ArgumentNullException("contextStore");
             _wordMutationRuntime = wordMutationRuntime ?? throw new ArgumentNullException("wordMutationRuntime");
-            _capabilityProvider = new WordDocumentCapabilityProvider(_application);
             var assemblyVersion = typeof(RibbonRuntime).Assembly.GetName().Version;
             _localAccessManager = new LocalAccessManager(assemblyVersion == null ? "1.0.0.0" : assemblyVersion.ToString());
             _documentReadRuntime = new WordDocumentReadRuntime(_application, _localAccessManager);
@@ -90,8 +87,6 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             PersonalDictionaryManager.Instance.Changed += OnPersonalDictionaryChanged;
             _accessRefreshTimer = new System.Windows.Forms.Timer { Interval = 500 };
             _accessRefreshTimer.Tick += OnAccessRefreshTimerTick;
-            _accessRefreshTimer.Start();
-            _localAccessManager.WarmUp();
             _buttonCommands = new Dictionary<string, Action>(StringComparer.Ordinal)
             {
                 { "btnAutoFixAll2026", RunOneClick },
@@ -140,78 +135,42 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         public bool IsEnabled(string controlId)
         {
             ThrowIfDisposed();
-            if (string.Equals(controlId, "btnGioiThieu", StringComparison.Ordinal) ||
-                string.Equals(controlId, "btnKiemTraPhienBanMoi", StringComparison.Ordinal) ||
-                string.Equals(controlId, "btnGuiPhanHoi", StringComparison.Ordinal) ||
-                string.Equals(controlId, "btnTuDienCaNhan", StringComparison.Ordinal) ||
-                string.Equals(controlId, "mnuThongTinTienIch", StringComparison.Ordinal))
-            {
-                return true;
-            }
-
             if (Volatile.Read(ref _documentOperationInProgress) != 0)
             {
                 return false;
             }
-
-            var capability = EvaluateRibbonCapability();
-            var canBeginMutation = capability.CanReadDocument;
-
-            if (string.Equals(controlId, "btnKiemTra", StringComparison.Ordinal) ||
-                string.Equals(controlId, "btnKiemTraChinhTa", StringComparison.Ordinal) ||
+            // Office invokes getEnabled repeatedly while opening a document, moving
+            // focus and repainting the Ribbon. This callback must therefore be a pure
+            // in-memory lookup: it must not touch ActiveDocument, Selection, a lease
+            // file, the network or any Word document property. Each explicit command
+            // performs its own capability and license checks after the user clicks.
+            return _buttonCommands.ContainsKey(controlId) ||
                 string.Equals(controlId, "ddQuyDinh", StringComparison.Ordinal) ||
-                string.Equals(controlId, "ddLoaiVanBan", StringComparison.Ordinal))
-            {
-                if (!capability.CanReadDocument) return false;
-                if (string.Equals(controlId, "btnKiemTra", StringComparison.Ordinal))
-                    return _localAccessManager.HasCachedFeature(LocalAccessManager.FormatFeature);
-                if (string.Equals(controlId, "btnKiemTraChinhTa", StringComparison.Ordinal))
-                    return _localAccessManager.HasCachedFeature(LocalAccessManager.SpellingFeature);
-                return true;
-            }
-
-            if (string.Equals(controlId, "btnAutoFixAll2026", StringComparison.Ordinal) ||
-                string.Equals(controlId, "btnSuaTatCaChinhTa", StringComparison.Ordinal) ||
-                string.Equals(controlId, "btnSuaLoiDangChon", StringComparison.Ordinal))
-            {
-                return canBeginMutation && !capability.IsReadOnly && !capability.IsProtected &&
-                    !capability.TrackChangesEnabled &&
-                    _localAccessManager.HasCachedFeature(LocalAccessManager.AutoFixFeature);
-            }
-
-            if (string.Equals(controlId, "mnuBoDau", StringComparison.Ordinal) ||
-                string.Equals(controlId, "mnuDungBoStyle", StringComparison.Ordinal))
-            {
-                return canBeginMutation && !capability.IsReadOnly && !capability.IsProtected &&
-                    !capability.TrackChangesEnabled &&
-                    _localAccessManager.HasCachedFeature(LocalAccessManager.DocumentToolsFeature);
-            }
-
-            if (_buttonCommands.ContainsKey(controlId))
-            {
-                return canBeginMutation && !capability.IsReadOnly && !capability.IsProtected &&
-                    !capability.TrackChangesEnabled &&
-                    _localAccessManager.HasCachedFeature(LocalAccessManager.DocumentToolsFeature);
-            }
-
-            return false;
+                string.Equals(controlId, "ddLoaiVanBan", StringComparison.Ordinal) ||
+                string.Equals(controlId, "mnuBoDau", StringComparison.Ordinal) ||
+                string.Equals(controlId, "mnuDungBoStyle", StringComparison.Ordinal) ||
+                string.Equals(controlId, "mnuThongTinTienIch", StringComparison.Ordinal);
         }
 
         public int GetSelectedItemIndex(string controlId)
         {
             ThrowIfDisposed();
-            var context = TryGetActiveContext();
-            return context == null ? 0 : context.GetSelection(controlId);
+            // getSelectedItemIndex is also called by Office without a user action.
+            // Return only the last user-established selection; never resolve a Word
+            // document from this callback.
+            return _lastUserContext == null ? 0 : _lastUserContext.GetSelection(controlId);
         }
 
         public void SelectDropDownItem(string controlId, string selectedId, int selectedIndex)
         {
             ThrowIfDisposed();
-            var context = TryGetActiveContext();
+            var document = TryGetCurrentDocument();
+            var context = document == null ? null : _contextStore.GetOrCreate(document);
             if (context == null)
             {
                 return;
             }
+            _lastUserContext = context;
 
             context.SetSelection(controlId, selectedIndex);
             if (string.Equals(controlId, "ddQuyDinh", StringComparison.Ordinal))
@@ -238,21 +197,28 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         {
             ThrowIfDisposed();
             return string.Equals(controlId, "ddLoaiVanBan", StringComparison.Ordinal)
-                ? DocumentTypeCodes.Count
+                ? DocumentTypeItemCount
                 : 0;
         }
 
         public string GetItemLabel(string controlId, int index)
         {
             ThrowIfDisposed();
-            if (!string.Equals(controlId, "ddLoaiVanBan", StringComparison.Ordinal) ||
-                index < 0 ||
-                index >= DocumentTypeCodes.Count)
+            if (!string.Equals(controlId, "ddLoaiVanBan", StringComparison.Ordinal))
             {
                 return string.Empty;
             }
 
-            return LocalDocumentTypeCodes.GetDisplayName(DocumentTypeCodes[index]);
+            return GetDocumentTypeItemLabel(index);
+        }
+
+        internal static int DocumentTypeItemCount => DocumentTypeCodes.Count;
+
+        internal static string GetDocumentTypeItemLabel(int index)
+        {
+            return index < 0 || index >= DocumentTypeCodes.Count
+                ? string.Empty
+                : LocalDocumentTypeCodes.GetDisplayName(DocumentTypeCodes[index]);
         }
 
         public void ExecuteButton(string controlId)
@@ -266,6 +232,13 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             }
 
             command();
+            // GetRulePack starts a background refresh only when the signed local
+            // cache is unavailable. Poll the completion flag only for that bounded
+            // refresh; a permanently running UI timer would keep waking Word after
+            // the user has stopped interacting with the add-in.
+            if (_localAccessManager.IsRefreshInProgress ||
+                Volatile.Read(ref _accessRefreshCompleted) != 0)
+                _accessRefreshTimer.Start();
         }
 
         public object GetImage(string controlId)
@@ -293,16 +266,9 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             PersonalDictionaryManager.Instance.ClearDocumentIgnores(closingContext.DictionaryScopeId);
             _contextStore.Remove(document);
             if (IsSameComDocument(_lastActivatedDocument, document))
-            {
                 _lastActivatedDocument = null;
-            }
-            if (IsSameComDocument(_ribbonCapabilityDocument, document))
-            {
-                _ribbonCapabilityDocument = null;
-                _ribbonCapability = null;
-                _ribbonCapabilityTimestamp = 0;
-            }
-            InvalidateRibbonCapability();
+            if (ReferenceEquals(_lastUserContext, closingContext))
+                _lastUserContext = null;
             InvalidateAll();
         }
 
@@ -310,37 +276,6 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         {
             if (_disposed || document == null) return;
             _contextStore.GetOrCreate(document).ClearReadAnalysis();
-        }
-
-        public void OnDocumentWindowActivated(Word.Document document)
-        {
-            if (_disposed || document == null)
-            {
-                return;
-            }
-            // WindowActivate fires not only when another document becomes active but
-            // also whenever the user Alt-Tabs away from Word and comes back. Never read
-            // document content or build a snapshot here: that work runs on Word's UI
-            // thread and can freeze large documents without a user command.
-            // Word can raise WindowActivate before the user's first window reports
-            // visible, so always capture the first document. Once a user document is
-            // known, ignore a zero-window activation: that is the hidden recovery clone
-            // created by 1-Click, or a transient Modern Comments focus state.
-            if (_lastActivatedDocument != null)
-            {
-                try
-                {
-                    if (document.Windows.Count == 0) return;
-                }
-                catch (COMException)
-                {
-                    return;
-                }
-            }
-            _lastActivatedDocument = document;
-            _contextStore.GetOrCreate(document);
-            CaptureStableRibbonCapability(document);
-            InvalidateAll();
         }
 
         public void Dispose()
@@ -352,8 +287,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
             _ribbonUi = null;
             _lastActivatedDocument = null;
-            _ribbonCapabilityDocument = null;
-            _ribbonCapability = null;
+            _lastUserContext = null;
             _localAccessManager.CacheStateChanged -= OnCacheStateChanged;
             PersonalDictionaryManager.Instance.Changed -= OnPersonalDictionaryChanged;
             _imageProvider.Dispose();
@@ -381,10 +315,21 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
         private void OnAccessRefreshTimerTick(object? sender, EventArgs eventArgs)
         {
-            if (_disposed || Interlocked.Exchange(ref _accessRefreshCompleted, 0) == 0) return;
+            if (_disposed)
+            {
+                _accessRefreshTimer.Stop();
+                return;
+            }
+            if (Interlocked.Exchange(ref _accessRefreshCompleted, 0) == 0)
+            {
+                if (!_localAccessManager.IsRefreshInProgress)
+                    _accessRefreshTimer.Stop();
+                return;
+            }
             // The refreshed lease can unlock every DOCUMENT_TOOLS command, not only
             // the scanners and 1-Click. Refresh the complete Ribbon so newly ported
             // style, Unicode, font-size and tone commands do not remain grey.
+            _accessRefreshTimer.Stop();
             InvalidateAll();
         }
 
@@ -427,7 +372,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             // when Word rejects ActiveDocument and a transient close event has cleared
             // the activation pointer. DocumentBeforeClose clears both references for
             // the exact COM document, so a genuinely closed document is never reused.
-            var fallback = _lastActivatedDocument ?? _ribbonCapabilityDocument;
+            var fallback = _lastActivatedDocument;
             // Do not probe fallback.Windows.Count here. Modern Comments temporarily
             // reports zero windows while focus moves to the Ribbon, even though the
             // document remains open. DocumentBeforeClose is the authoritative event
@@ -457,80 +402,6 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 if (rightIdentity != IntPtr.Zero) Marshal.Release(rightIdentity);
                 if (leftIdentity != IntPtr.Zero) Marshal.Release(leftIdentity);
             }
-        }
-
-        private WordDocumentCapability EvaluateCurrentDocumentCapability()
-        {
-            var document = TryGetCurrentDocument();
-            return document == null ? _capabilityProvider.Evaluate() : _capabilityProvider.Evaluate(document);
-        }
-
-        private WordDocumentCapability EvaluateRibbonCapability()
-        {
-            var document = TryGetCurrentDocument();
-            var now = Stopwatch.GetTimestamp();
-            var maximumAge = Stopwatch.Frequency / 2;
-            var sameCachedDocument = document != null && _ribbonCapabilityDocument != null &&
-                IsSameComDocument(_ribbonCapabilityDocument, document);
-            if (_ribbonCapability != null &&
-                sameCachedDocument &&
-                now - _ribbonCapabilityTimestamp >= 0 &&
-                now - _ribbonCapabilityTimestamp <= maximumAge)
-            {
-                return _ribbonCapability;
-            }
-
-            var capability = document == null
-                ? _capabilityProvider.Evaluate()
-                : _capabilityProvider.Evaluate(document);
-            // Office calls getEnabled while focus is moving from a Modern Comment to
-            // the Ribbon. If a captured document rejects one transient property read,
-            // keep the last capability for that exact COM document. A temporary focus
-            // transition must not grey every control or overwrite a known READY state.
-            if (sameCachedDocument && _ribbonCapability != null &&
-                string.Equals(capability.ReasonCode,
-                    WordDocumentCapabilityProvider.TransientStateReasonCode,
-                    StringComparison.Ordinal))
-            {
-                return _ribbonCapability;
-            }
-            _ribbonCapabilityDocument = document;
-            _ribbonCapability = capability;
-            _ribbonCapabilityTimestamp = now;
-            UpdateCapabilityContext(capability);
-            return capability;
-        }
-
-        private void InvalidateRibbonCapability()
-        {
-            // Expire the value, but retain it as a same-document fallback for the
-            // brief COM rejection Word produces during Modern Comments focus changes.
-            // A different document can never reuse it because evaluation compares COM
-            // identity before taking the fallback.
-            _ribbonCapabilityTimestamp = 0;
-        }
-
-        private void CaptureStableRibbonCapability(Word.Document document)
-        {
-            // Prime the lightweight capability cache while Word owns normal document
-            // focus. A user can open the Chuẩn hóa tab only after selecting a Modern
-            // Comment; in that state Word may reject FullName/Path on the very first
-            // getEnabled callback. Without this stable baseline the transient result
-            // becomes the cache and the scan buttons stay grey after the selected fix.
-            // This reads only document metadata and never scans document content.
-            var capability = _capabilityProvider.Evaluate(document);
-            if (string.Equals(capability.ReasonCode,
-                    WordDocumentCapabilityProvider.TransientStateReasonCode,
-                    StringComparison.Ordinal))
-            {
-                InvalidateRibbonCapability();
-                return;
-            }
-
-            _ribbonCapabilityDocument = document;
-            _ribbonCapability = capability;
-            _ribbonCapabilityTimestamp = Stopwatch.GetTimestamp();
-            UpdateCapabilityContext(capability);
         }
 
         private void FocusDocumentForCommand(Word.Document document, bool collapseDocumentSelection = false,
@@ -675,16 +546,9 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 context = _contextStore.GetOrCreate(activeDocument);
                 _documentReadRuntime.PrepareForOneClick(context, activeDocument, _currentDocumentOperation);
                 var result = _oneClickRuntime.Execute(context, activeDocument, _currentDocumentOperation);
-                // Rebuild from the mutated document and re-apply only findings that are
-                // still present. This guarantees that a comment is never removed merely
-                // because 1-Click attempted a fix. It also proves deterministic edits,
-                // including the missing word "số", against the actual Word content.
-                _documentReadRuntime.Prepare(
-                    context,
-                    DocumentAnalysisScope.Full,
-                    activeDocument,
-                    false,
-                    _currentDocumentOperation);
+                // Execute has already captured and rescanned the mutated document.
+                // Reuse that exact post-fix evidence for annotation instead of doing a
+                // second full COM capture/scan on large or table-heavy documents.
                 var remainingFormat = _localScanRuntime.ScanAndAnnotate(context, false, activeDocument,
                     _currentDocumentOperation);
                 var remainingSpelling = _localScanRuntime.ScanAndAnnotate(context, true, activeDocument,
@@ -722,7 +586,6 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 _currentDocumentOperation?.Dispose();
                 _currentDocumentOperation = null;
                 Interlocked.Exchange(ref _documentOperationInProgress, 0);
-                InvalidateRibbonCapability();
                 InvalidateAll();
             }
         }
@@ -793,7 +656,6 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 _currentDocumentOperation?.Dispose();
                 _currentDocumentOperation = null;
                 Interlocked.Exchange(ref _documentOperationInProgress, 0);
-                InvalidateRibbonCapability();
                 InvalidateAll();
             }
         }
@@ -847,18 +709,16 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
             try
             {
+                // Every selection-dependent value and the matching finding were
+                // captured above from the user's explicit check. Starting this
+                // targeted command in Capturing state incorrectly tells Word that
+                // the add-in is reading the whole document, even though no snapshot
+                // or scanner is involved. Enter the mutation phase immediately.
                 _currentDocumentOperation = new DocumentOperationSession(
-                    _application, "Sửa lỗi đang chọn", DocumentOperationState.Capturing);
-                DocumentAnalysisScope scope;
-                if (string.Equals(selectedLane, "spelling", StringComparison.OrdinalIgnoreCase))
-                {
-                    scope = DocumentAnalysisScope.Spelling;
-                }
-                else if (string.Equals(selectedLane, "format", StringComparison.OrdinalIgnoreCase))
-                {
-                    scope = DocumentAnalysisScope.Format;
-                }
-                else
+                    _application, "Sửa lỗi đang chọn", DocumentOperationState.Mutating);
+                var supportedLane = string.Equals(selectedLane, "spelling", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(selectedLane, "format", StringComparison.OrdinalIgnoreCase);
+                if (!supportedLane)
                 {
                     throw new InvalidOperationException(
                         "Comment đang chọn không thuộc nhóm lỗi Chuẩn hóa hỗ trợ.");
@@ -868,13 +728,16 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 var scan = string.Equals(selectedLane, "spelling", StringComparison.OrdinalIgnoreCase)
                     ? context.LastSpellingScan
                     : context.LastFormatScan;
-                var hasFinding = context.LastLocalSnapshot != null && scan != null &&
-                    scan.Findings.Any(item => string.Equals(item.FindingId, selectedFindingId, StringComparison.Ordinal));
-                if (!hasFinding)
-                {
-                    _documentReadRuntime.Prepare(context, scope, document, true,
-                        _currentDocumentOperation);
-                }
+                // A selected repair is deliberately targeted. It must use the finding
+                // already produced by the user's explicit check and validate only the
+                // selected Word range. Never hide a whole-document capture/scan behind
+                // this button.
+                var selectedFinding = scan == null ? null : scan.Findings.FirstOrDefault(item =>
+                    string.Equals(item.FindingId, selectedFindingId, StringComparison.Ordinal));
+                if (context.LastLocalSnapshot == null || selectedFinding == null)
+                    throw new InvalidOperationException(
+                        "Kết quả kiểm tra của lỗi đang chọn không còn trong phiên hiện tại. " +
+                        "Hãy bấm Kiểm tra thể thức hoặc Kiểm tra chính tả rồi chọn lại lỗi.");
                 var result = _oneClickRuntime.ExecuteSelectedFinding(
                     context, selectedLane, selectedFindingId,
                     selectedStory, selectedStart, selectedEnd, document,
@@ -882,8 +745,9 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 if (!result.Resolved)
                 {
                     MessageBox.Show(
-                        "Đã áp dụng phương án sửa, nhưng lỗi vẫn còn theo lần kiểm tra lại. " +
-                        "Comment được giữ để bạn xem tiếp. Có thể hoàn tác bằng Ctrl+Z.",
+                        "Lỗi này cần người dùng quyết định hoặc bổ sung nội dung nên không thể tự sửa an toàn.\n\n" +
+                        "Yêu cầu đúng: " + selectedFinding.Expected + "\n\n" +
+                        "Comment và phần tô đỏ được giữ nguyên.",
                         "Chuẩn hóa", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
             }
@@ -903,7 +767,6 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 _currentDocumentOperation?.Dispose();
                 _currentDocumentOperation = null;
                 Interlocked.Exchange(ref _documentOperationInProgress, 0);
-                InvalidateRibbonCapability();
                 InvalidateAll();
             }
         }
@@ -944,13 +807,35 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 var result = _localScanRuntime.ScanAndAnnotate(context, spelling, document,
                     _currentDocumentOperation);
                 SynchronizeDocumentTypeSelection(context);
-                var latexFindings = result.Findings.Count(f => f.RuleCode.StartsWith("LATEX-", StringComparison.Ordinal));
-                var nd30Findings = result.Findings.Count - latexFindings;
+                var nd30Findings = result.Findings.Count(f =>
+                    f.SourceFamily == AnnotationSourceFamily.Nd30);
+                var hd05Findings = result.Findings.Count(f =>
+                    f.SourceFamily == AnnotationSourceFamily.Hd05);
+                var localFindings = result.Findings.Count(f =>
+                    f.SourceFamily == AnnotationSourceFamily.LocalLanguage);
+                var latexFindings = result.Findings.Count(f =>
+                    f.SourceFamily == AnnotationSourceFamily.LatexTypst);
+                var unknownFindings = result.Findings.Count(f =>
+                    f.SourceFamily == AnnotationSourceFamily.Unknown ||
+                    f.SourceFamily == AnnotationSourceFamily.NotEvaluated);
                 var details = spelling
                     ? "Phát hiện và đánh dấu: " + result.Findings.Count + " lỗi.\n"
                     : "Phát hiện và đánh dấu: " + result.Findings.Count + " điểm cần lưu ý:\n" +
-                      "  • Vi phạm thể thức bắt buộc (NĐ30/HD05): " + nd30Findings + " lỗi.\n" +
-                      "  • Khuyến nghị thẩm mỹ xuất bản (LaTeX/Typst): " + latexFindings + " góp ý.\n";
+                      "  • NĐ30: " + nd30Findings + ".\n" +
+                      "  • HD05: " + hd05Findings + ".\n" +
+                      "  • Quy tắc ngôn ngữ/local: " + localFindings + ".\n" +
+                      "  • Khuyến nghị LaTeX/Typst: " + latexFindings + ".\n" +
+                      (unknownFindings > 0 ? "  • Chưa phân loại/chưa đánh giá: " + unknownFindings + ".\n" : string.Empty) +
+                      "Heading học thuật nhận diện: " + result.AcademicHeadingCount +
+                      " (cấp 1: " + result.HeadingLevel1Count +
+                      ", cấp 2: " + result.HeadingLevel2Count +
+                      ", cấp 3: " + result.HeadingLevel3Count + ").\n" +
+                      (result.AcademicTypographyEnabled
+                          ? "AcademicTypography: bật theo gói quy tắc có chữ ký.\n"
+                          : "AcademicTypography: tắt theo gói quy tắc có chữ ký.\n") +
+                      (result.NotEvaluatedRuleCodes.Count > 0
+                          ? "Chưa thể đánh giá: " + string.Join(", ", result.NotEvaluatedRuleCodes) + ".\n"
+                          : string.Empty);
                 MessageBox.Show(
                     "Đã kiểm tra " + (spelling ? "chính tả" : "thể thức") + " hoàn toàn tại máy.\n" +
                     "Loại văn bản tự nhận diện: " + LocalDocumentTypeCodes.GetDisplayName(context.DocumentTypeCode) + ".\n" +
@@ -984,7 +869,6 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 _currentDocumentOperation?.Dispose();
                 _currentDocumentOperation = null;
                 Interlocked.Exchange(ref _documentOperationInProgress, 0);
-                InvalidateRibbonCapability();
                 InvalidateAll();
             }
         }
@@ -1042,7 +926,6 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 _currentDocumentOperation?.Dispose();
                 _currentDocumentOperation = null;
                 Interlocked.Exchange(ref _documentOperationInProgress, 0);
-                InvalidateRibbonCapability();
                 InvalidateAll();
             }
         }
@@ -1070,18 +953,6 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     cancellationEnabled: false);
                 return command(context);
             });
-        }
-
-        private void UpdateCapabilityContext(WordDocumentCapability capability)
-        {
-            var context = TryGetActiveContext();
-            if (context == null)
-            {
-                return;
-            }
-
-            context.LastCapabilityReasonCode = capability.ReasonCode;
-            context.LastCapabilityReason = capability.Reason;
         }
 
         private static void SynchronizeDocumentTypeSelection(DocumentContext context)

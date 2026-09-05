@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "dependencies": {
+    "net10.0": {
+      "Npgsql": {
+        "type": "Direct",
+        "requested": "[10.0.0, )",
+        "resolved": "10.0.0",
+        "contentHash": "xZAYhPOU2rUIFpV48xsqhCx9vXs6Y+0jX2LCoSEfDFYMw9jtAOUk3iQsCnDLrFIv9NT3JGMihn7nnuZsPKqJmA=="
+      },
+      "chuanhoa.application": {
+        "type": "Project",
+        "dependencies": {
+          "ChuanHoa.Contracts": "[1.0.0.101, )",
+          "ChuanHoa.Domain": "[1.0.0.101, )"
+        }
+      },
+      "chuanhoa.contracts": {
+        "type": "Project"
+      },
+      "chuanhoa.domain": {
+        "type": "Project",
+        "dependencies": {
+          "ChuanHoa.Contracts": "[1.0.0.101, )"
+        }
+      }
+    }
+  }
+}

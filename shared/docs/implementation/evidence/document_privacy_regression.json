@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "testId": "DOCUMENT-PRIVACY-REGRESSION-001",
+  "status": "PASS",
+  "verifiedOn": "2026-09-05",
+  "scope": "src/ChuanHoa.AddIn.Vsto source; no Word document was opened or uploaded",
+  "vstoSourceFilesReviewed": 26,
+  "networkSourceAllowlist": [
+    "Runtime/LocalAccessManager.cs"
+  ],
+  "allowedEndpoints": [
+    "/v1/development/bootstrap"
+  ],
+  "allowedRequestFields": [
+    "clientReleaseId",
+    "deviceThumbprint"
+  ],
+  "localAccessManagerSha256": "24FDED23E52E4D2EC26D1AEBE20F6D0B12AD75CE5B98EDD8B5D3BE3B3A51F593",
+  "negativeSelfTests": {
+    "network_outside_allowlist": true,
+    "document_payload_field": true,
+    "legacy_scan_endpoint": true,
+    "binary_upload_primitive": true
+  },
+  "assertions": [
+    "VSTO network APIs exist only in Runtime/LocalAccessManager.cs.",
+    "The Development bootstrap sends only deviceThumbprint and clientReleaseId.",
+    "VSTO does not reference the legacy document-scan endpoint or server projects.",
+    "The reviewed network seam contains no document text/path/name or upload primitive.",
+    "No remote telemetry SDK/sink is present in VSTO source."
+  ],
+  "limitations": [
+    "This is a source regression gate, not production network observability or a penetration test.",
+    "Any production identity, lease, rule or telemetry endpoint must update the explicit allowlist and receive privacy review."
+  ]
+}

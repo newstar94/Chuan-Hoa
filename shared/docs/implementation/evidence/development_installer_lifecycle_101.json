@@ -1,0 +1,49 @@
+{
+    "SchemaVersion":  1,
+    "Status":  "PASS_DEVELOPMENT_LIFECYCLE",
+    "CapturedAtUtc":  "2026-09-05T14:06:22.2291279Z",
+    "ProductVersion":  "1.0.0.101",
+    "InstallerPath":  "D:\\Chuẩn Hóa\\artifacts\\installers\\development\\ChuanHoa_Development_Test_Setup_1.0.0.101.exe",
+    "InstallerSizeBytes":  319272,
+    "InstallerSha256":  "A351A2764760444DFDBD17DBC5831C4588673670690343C507D82D4B0623D460",
+    "RepairExitCode":  0,
+    "RollbackFaultPoints":  [
+                                {
+                                    "FaultPoint":  "after-trusted-certificate",
+                                    "ExitCode":  10,
+                                    "StateRestored":  true
+                                },
+                                {
+                                    "FaultPoint":  "after-trusted-key",
+                                    "ExitCode":  10,
+                                    "StateRestored":  true
+                                },
+                                {
+                                    "FaultPoint":  "after-access-smoke",
+                                    "ExitCode":  10,
+                                    "StateRestored":  true
+                                },
+                                {
+                                    "FaultPoint":  "after-current-switch",
+                                    "ExitCode":  10,
+                                    "StateRestored":  true
+                                },
+                                {
+                                    "FaultPoint":  "after-registry",
+                                    "ExitCode":  10,
+                                    "StateRestored":  true
+                                },
+                                {
+                                    "FaultPoint":  "after-verification",
+                                    "ExitCode":  10,
+                                    "StateRestored":  true
+                                }
+                            ],
+    "UninstallExitCode":  0,
+    "ReinstallExitCode":  0,
+    "PersonalDictionaryPreserved":  true,
+    "InstalledVersion":  "1.0.0.101",
+    "LoadBehavior":  3,
+    "AccessSmokeExitCode":  0,
+    "AccessSmokeOutput":  "DEVELOPMENT_ACCESS_SMOKE_PASS LOCAL-DEVELOPMENT-ND30-V2 2.0.0 LEXICON=6710 CACHE_5000_MS=1 FAIL_CLOSED_MS=0"
+}

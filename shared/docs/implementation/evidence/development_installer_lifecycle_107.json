@@ -1,0 +1,52 @@
+{
+    "SchemaVersion":  2,
+    "Status":  "PASS_DEVELOPMENT_LIFECYCLE",
+    "CapturedAtUtc":  "2026-09-05T15:43:11.9340091Z",
+    "ProductVersion":  "1.0.0.107",
+    "InstallerPath":  "D:\\Chuẩn Hóa\\artifacts\\installers\\development\\ChuanHoa_Development_Test_Setup_1.0.0.107.exe",
+    "InstallerSizeBytes":  330536,
+    "InstallerSha256":  "84E375C3B396C0C623179ADD15CFBED7EC156A34A41D9C1C0CFFDE614E2E325B",
+    "RepairExitCode":  0,
+    "RollbackFaultPoints":  [
+                                {
+                                    "FaultPoint":  "after-trusted-certificate",
+                                    "ExitCode":  10,
+                                    "StateRestored":  true
+                                },
+                                {
+                                    "FaultPoint":  "after-trusted-key",
+                                    "ExitCode":  10,
+                                    "StateRestored":  true
+                                },
+                                {
+                                    "FaultPoint":  "after-access-smoke",
+                                    "ExitCode":  10,
+                                    "StateRestored":  true
+                                },
+                                {
+                                    "FaultPoint":  "after-current-switch",
+                                    "ExitCode":  10,
+                                    "StateRestored":  true
+                                },
+                                {
+                                    "FaultPoint":  "after-registry",
+                                    "ExitCode":  10,
+                                    "StateRestored":  true
+                                },
+                                {
+                                    "FaultPoint":  "after-verification",
+                                    "ExitCode":  10,
+                                    "StateRestored":  true
+                                }
+                            ],
+    "UninstallExitCode":  0,
+    "UninstallCommand":  "\"C:\\Users\\newst\\AppData\\Local\\ChuanHoa\\InstallerCache\\Development\\1.0.0.107\\ChuanHoa_Development_Test_Setup.exe\" /uninstall /quiet",
+    "AppsFeaturesRegistered":  true,
+    "CachedInstallerSha256":  "84E375C3B396C0C623179ADD15CFBED7EC156A34A41D9C1C0CFFDE614E2E325B",
+    "ReinstallExitCode":  0,
+    "PersonalDictionaryPreserved":  true,
+    "InstalledVersion":  "1.0.0.107",
+    "LoadBehavior":  3,
+    "AccessSmokeExitCode":  0,
+    "AccessSmokeOutput":  "DEVELOPMENT_ACCESS_SMOKE_PASS LOCAL-DEVELOPMENT-ND30-V2 2.0.0 LEXICON=6710 CACHE_5000_MS=1 FAIL_CLOSED_MS=0"
+}

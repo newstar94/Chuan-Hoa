@@ -59,6 +59,11 @@ namespace ChuanHoa.Client.Core.Annotations
                     continue;
                 }
 
+                if (!AnnotationPresentationPolicy.ShouldAnnotate(finding))
+                {
+                    continue;
+                }
+
                 ResolvedAnchor? resolved;
                 AnnotationResolutionCode code;
                 if (!TryResolve(document, finding.Anchor, out resolved, out code))
@@ -78,9 +83,11 @@ namespace ChuanHoa.Client.Core.Annotations
                     Math.Max(1, resolvedAnchor.Length),
                     marker,
                     BuildComment(finding)));
-                if (resolvedAnchor.ShouldMarkRed && resolvedAnchor.Length > 0)
+                if (resolvedAnchor.ShouldMarkRed && resolvedAnchor.Length > 0 &&
+                    AnnotationPresentationPolicy.ShouldMarkRed(finding))
                 {
                     visualRanges.Add(new AnnotationVisualInstruction(
+                        finding.FindingId,
                         resolvedAnchor.StoryType,
                         resolvedAnchor.SectionIndex,
                         resolvedAnchor.Start,
@@ -222,12 +229,14 @@ namespace ChuanHoa.Client.Core.Annotations
         {
             var merged = new List<AnnotationVisualInstruction>();
             foreach (var group in ranges.GroupBy(
-                item => item.StoryType + "\u001f" + item.SectionIndex.ToString(CultureInfo.InvariantCulture),
+                item => item.FindingId + "\u001f" + item.StoryType + "\u001f" +
+                    item.SectionIndex.ToString(CultureInfo.InvariantCulture),
                 StringComparer.Ordinal))
             {
                 foreach (var current in group.OrderBy(item => item.Start).ThenBy(item => item.Length))
                 {
                     var previous = merged.LastOrDefault(item =>
+                        string.Equals(item.FindingId, current.FindingId, StringComparison.Ordinal) &&
                         string.Equals(item.StoryType, current.StoryType, StringComparison.Ordinal) &&
                         item.SectionIndex == current.SectionIndex);
                     if (previous == null || current.Start > previous.Start + previous.Length)
@@ -238,6 +247,7 @@ namespace ChuanHoa.Client.Core.Annotations
 
                     var end = Math.Max(previous.Start + previous.Length, current.Start + current.Length);
                     merged[merged.Count - 1] = new AnnotationVisualInstruction(
+                        previous.FindingId,
                         previous.StoryType,
                         previous.SectionIndex,
                         previous.Start,
@@ -250,7 +260,7 @@ namespace ChuanHoa.Client.Core.Annotations
         private static string BuildComment(AnnotationFinding finding)
         {
             var builder = new StringBuilder();
-            builder.Append("Hiện tại: ").AppendLine(finding.CurrentIssue.Trim());
+            builder.Append("Hiện tại: ").AppendLine(AnnotationPresentationPolicy.CurrentIssue(finding));
             builder.Append("Yêu cầu đúng: ").Append(finding.Expected.Trim());
             return builder.ToString();
         }
@@ -259,9 +269,11 @@ namespace ChuanHoa.Client.Core.Annotations
         {
             return string.Equals(left.RuleCode, right.RuleCode, StringComparison.Ordinal) &&
                 string.Equals(left.Severity, right.Severity, StringComparison.Ordinal) &&
+                left.SeverityLevel == right.SeverityLevel &&
                 string.Equals(left.CurrentIssue, right.CurrentIssue, StringComparison.Ordinal) &&
                 string.Equals(left.Expected, right.Expected, StringComparison.Ordinal) &&
                 string.Equals(left.Citation, right.Citation, StringComparison.Ordinal) &&
+                left.SourceFamily == right.SourceFamily &&
                 left.Anchor.Kind == right.Anchor.Kind &&
                 string.Equals(left.Anchor.StoryType, right.Anchor.StoryType, StringComparison.Ordinal) &&
                 left.Anchor.ParagraphIndex == right.Anchor.ParagraphIndex &&

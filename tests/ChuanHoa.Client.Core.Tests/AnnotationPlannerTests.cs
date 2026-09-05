@@ -34,6 +34,152 @@ public sealed class AnnotationPlannerTests
     }
 
     [Fact]
+    public void Latex_recommendation_gets_two_line_labeled_comment_without_red_visual()
+    {
+        var document = Document(Paragraph("MainTextStory", 1, 1, 0, "1.1. Mục tiêu\r"));
+        var finding = new AnnotationFinding(
+            "latex-1",
+            "LATEX-SEC-STYLE",
+            "Warning",
+            "Đề mục chưa dùng Heading Style.",
+            "Gán Heading 2 sau khi người dùng xác nhận.",
+            "Chuẩn xuất bản",
+            new AnnotationAnchor(AnnotationAnchorKind.Paragraph, "MainTextStory", 1, null, null, ""));
+
+        var plan = Plan(document, finding);
+
+        var comment = Assert.Single(plan.Comments);
+        Assert.Equal(
+            "Hiện tại: [Khuyến nghị LaTeX/Typst] Đề mục chưa dùng Heading Style.\n" +
+            "Yêu cầu đúng: Gán Heading 2 sau khi người dùng xác nhận.",
+            comment.CommentText.Replace("\r\n", "\n"));
+        Assert.Equal(2, comment.CommentText.Replace("\r\n", "\n").Split('\n').Length);
+        Assert.Empty(plan.VisualRanges);
+        Assert.Empty(plan.Unresolved);
+    }
+
+    [Theory]
+    [InlineData("ND30-PL1-M1-K1", AnnotationSourceFamily.Nd30)]
+    [InlineData("HD05-M1-TITLE-LINE", AnnotationSourceFamily.Hd05)]
+    [InlineData("LATEX-PAGINATION-KEEP", AnnotationSourceFamily.LatexTypst)]
+    [InlineData("LOCAL-TYPO-DICT", AnnotationSourceFamily.LocalLanguage)]
+    [InlineData("SPELLING-SENTENCE-CAPITALIZATION", AnnotationSourceFamily.LocalLanguage)]
+    [InlineData("FORMAT-COMPONENT-STYLE", AnnotationSourceFamily.Nd30)]
+    [InlineData("CUSTOM-RULE", AnnotationSourceFamily.Unknown)]
+    public void Derives_canonical_source_family_from_rule_code(
+        string ruleCode,
+        AnnotationSourceFamily expected)
+    {
+        var finding = new AnnotationFinding(
+            "family-1", ruleCode, "Warning", "Hiện tại.", "Yêu cầu.", "",
+            new AnnotationAnchor(AnnotationAnchorKind.Document, "MainTextStory", null, null, null, ""));
+
+        Assert.Equal(expected, finding.SourceFamily);
+    }
+
+    [Theory]
+    [InlineData("Error", AnnotationSeverityLevel.Error)]
+    [InlineData("High", AnnotationSeverityLevel.Error)]
+    [InlineData("Lỗi", AnnotationSeverityLevel.Error)]
+    [InlineData("Warning", AnnotationSeverityLevel.Warning)]
+    [InlineData("Suggestion", AnnotationSeverityLevel.Suggestion)]
+    [InlineData("Medium", AnnotationSeverityLevel.Suggestion)]
+    [InlineData("Unknown", AnnotationSeverityLevel.Unknown)]
+    [InlineData("NotEvaluated", AnnotationSeverityLevel.NotEvaluated)]
+    [InlineData("custom", AnnotationSeverityLevel.Unknown)]
+    public void Derives_canonical_severity_without_changing_legacy_text(
+        string severity,
+        AnnotationSeverityLevel expected)
+    {
+        var finding = new AnnotationFinding(
+            "severity-1", "ND30-RULE", severity, "Hiện tại.", "Yêu cầu.", "",
+            new AnnotationAnchor(AnnotationAnchorKind.Document, "MainTextStory", null, null, null, ""));
+
+        Assert.Equal(expected, finding.SeverityLevel);
+        Assert.Equal(severity, finding.Severity);
+    }
+
+    [Fact]
+    public void Explicit_source_family_overrides_rule_code_derivation()
+    {
+        var finding = new AnnotationFinding(
+            "explicit-1", "CUSTOM-RULE", "Error", "Hiện tại.", "Yêu cầu.", "",
+            new AnnotationAnchor(AnnotationAnchorKind.Document, "MainTextStory", null, null, null, ""),
+            AnnotationSourceFamily.Hd05);
+
+        Assert.Equal(AnnotationSourceFamily.Hd05, finding.SourceFamily);
+    }
+
+    [Fact]
+    public void Invalid_explicit_source_family_fails_closed_as_not_evaluated()
+    {
+        var finding = new AnnotationFinding(
+            "invalid-family", "CUSTOM-RULE", "Error", "Hiện tại.", "Yêu cầu.", "",
+            new AnnotationAnchor(AnnotationAnchorKind.Document, "MainTextStory", null, null, null, ""),
+            (AnnotationSourceFamily)999);
+
+        Assert.Equal(AnnotationSourceFamily.NotEvaluated, finding.SourceFamily);
+    }
+
+    [Theory]
+    [InlineData(AnnotationSourceFamily.Unknown)]
+    [InlineData(AnnotationSourceFamily.NotEvaluated)]
+    public void Does_not_annotate_unknown_or_not_evaluated_source_family(
+        AnnotationSourceFamily sourceFamily)
+    {
+        var document = Document(Paragraph("MainTextStory", 1, 1, 0, "abc\r"));
+        var finding = new AnnotationFinding(
+            "unknown-1", "CUSTOM-RULE", "Warning", "Hiện tại.", "Yêu cầu.", "",
+            new AnnotationAnchor(AnnotationAnchorKind.TextSpan, "MainTextStory", 1, 0, 1, "a"),
+            sourceFamily);
+
+        var plan = Plan(document, finding);
+
+        Assert.Empty(plan.Comments);
+        Assert.Empty(plan.VisualRanges);
+        Assert.Empty(plan.Unresolved);
+    }
+
+    [Theory]
+    [InlineData("Unknown")]
+    [InlineData("NotEvaluated")]
+    [InlineData("custom")]
+    public void Does_not_annotate_unknown_or_not_evaluated_severity(string severity)
+    {
+        var document = Document(Paragraph("MainTextStory", 1, 1, 0, "abc\r"));
+        var finding = new AnnotationFinding(
+            "unknown-severity", "ND30-RULE", severity, "Hiện tại.", "Yêu cầu.", "",
+            new AnnotationAnchor(AnnotationAnchorKind.TextSpan, "MainTextStory", 1, 0, 1, "a"));
+
+        var plan = Plan(document, finding);
+
+        Assert.Empty(plan.Comments);
+        Assert.Empty(plan.VisualRanges);
+        Assert.Empty(plan.Unresolved);
+    }
+
+    [Theory]
+    [InlineData("ND30-PL1-M1-K1", AnnotationSourceFamily.Nd30)]
+    [InlineData("HD05-M1-TITLE-LINE", AnnotationSourceFamily.Hd05)]
+    [InlineData("LOCAL-TYPO-DICT", AnnotationSourceFamily.LocalLanguage)]
+    public void Mandatory_and_local_findings_keep_red_visual_policy(
+        string ruleCode,
+        AnnotationSourceFamily expectedFamily)
+    {
+        var document = Document(Paragraph("MainTextStory", 1, 1, 0, "abc\r"));
+        var finding = new AnnotationFinding(
+            "red-1", ruleCode, "Warning", "Hiện tại.", "Yêu cầu.", "",
+            new AnnotationAnchor(AnnotationAnchorKind.TextSpan, "MainTextStory", 1, 0, 1, "a"));
+
+        var plan = Plan(document, finding);
+
+        Assert.Equal(expectedFamily, finding.SourceFamily);
+        Assert.Single(plan.Comments);
+        Assert.Single(plan.VisualRanges);
+        Assert.Empty(plan.Unresolved);
+    }
+
+    [Fact]
     public void Does_not_fall_back_to_another_occurrence_when_offset_is_stale()
     {
         var document = Document(Paragraph("MainTextStory", 1, 1, 0, "sai và sai\r"));
@@ -132,7 +278,7 @@ public sealed class AnnotationPlannerTests
     }
 
     [Fact]
-    public void Merges_overlapping_red_ranges_but_keeps_each_explanatory_comment()
+    public void Keeps_overlapping_red_ranges_separate_by_finding_for_targeted_cleanup()
     {
         var document = Document(Paragraph("MainTextStory", 1, 1, 0, "abcdef\r"));
         var findings = new[]
@@ -144,9 +290,19 @@ public sealed class AnnotationPlannerTests
         var plan = Plan(document, findings);
 
         Assert.Equal(2, plan.Comments.Count);
-        var visual = Assert.Single(plan.VisualRanges);
-        Assert.Equal(1, visual.Start);
-        Assert.Equal(5, visual.Length);
+        Assert.Collection(plan.VisualRanges,
+            visual =>
+            {
+                Assert.Equal("f-a", visual.FindingId);
+                Assert.Equal(1, visual.Start);
+                Assert.Equal(3, visual.Length);
+            },
+            visual =>
+            {
+                Assert.Equal("f-b", visual.FindingId);
+                Assert.Equal(3, visual.Start);
+                Assert.Equal(3, visual.Length);
+            });
     }
 
     [Fact]
@@ -256,7 +412,7 @@ public sealed class AnnotationPlannerTests
     {
         return new AnnotationFinding(
             id,
-            "RULE-01",
+            "ND30-RULE-01",
             "Lỗi",
             "Phần này sai định dạng.",
             "Dùng Times New Roman cỡ 14.",

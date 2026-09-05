@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-09-05",
+  "headCommit": "73f9d96f8eb04035b08a6cbf831a4576c6ed84e1",
+  "workingTree": "dirty-preserved",
+  "productVersion": "1.0.0.101",
+  "contracts": {
+    "startupCreatesRuntime": false,
+    "startupSubscribesDocumentEvents": false,
+    "passiveRibbonCallbacksReadWord": false,
+    "licenseRefreshTimerIsPermanent": false,
+    "selectedFindingFixBuildsSnapshot": false,
+    "selectedFindingFixRunsDetector": false,
+    "selectedFindingFixRunsScanner": false,
+    "selectedFindingFixStartsMutating": true,
+    "selectedFindingFixClearsExactFindingId": true,
+    "scannerFindingCodesAcknowledgedByOneClick": 92,
+    "typedLatexFindingCodes": 7,
+    "negativePolicyGate": "PASS_REJECTED_ND30-VALIDATOR-FAKE_EXIT_1",
+    "oneClickRepairsDeterministicFindings": true,
+    "reportOnlyFindingsRetainAnnotation": true
+  },
+  "verification": {
+    "vstoSource": "PASS",
+    "vstoBuildGate": "PASS_LOCAL_DEVELOPMENT",
+    "vstoLoadGate": "PASS_WORD16_X64_COM",
+    "vstoVisualGate": "PASS_WORD16_X64_USER_CONFIRMED",
+    "developmentPackaging": "PASS",
+    "solutionTests": {
+      "status": "PASS",
+      "passed": 403,
+      "failed": 0,
+      "projects": {
+        "ChuanHoa.Client.Core.Tests": 350,
+        "ChuanHoa.Contracts.Tests": 4,
+        "ChuanHoa.Domain.Tests": 14,
+        "ChuanHoa.Rules.Tests": 10,
+        "ChuanHoa.Application.Tests": 6,
+        "ChuanHoa.Api.Tests": 19
+      }
+    },
+    "vstoReleaseAssemblyVersion": "1.0.0.101",
+    "passiveStartupSmokeCompile": "PASS",
+    "wordRuntimeSmoke": "PASS_WORD16_X64_PASSIVE_RIBBON_ANNOTATION_ONE_CLICK",
+    "passiveStartupMetrics": {
+      "addInConnected": true,
+      "idleCpuDeltaMs5s": 437.5,
+      "backgroundSaving": 0,
+      "backgroundPrinting": 0,
+      "cacheChanges": 0,
+      "newBackups": 0,
+      "wordExitedCleanly": true
+    },
+    "visiblePassiveLaunchMetrics": {
+      "wordProcessId": 27084,
+      "observationSeconds": 5,
+      "cpuDeltaMs": 46.88,
+      "responding": true,
+      "cacheUnchanged": true,
+      "backupsUnchanged": true,
+      "ribbonActionInvoked": false
+    },
+    "annotationSmoke": {
+      "exitCode": 0,
+      "injectedFailureRollback": "PASS",
+      "stressCharacters": 12000,
+      "firstRunMs": 117,
+      "secondRunMs": 280
+    },
+    "oneClickSmoke": {
+      "exitCode": 0,
+      "lanes": [
+        "DOC",
+        "DOCX",
+        "UNSAVED",
+        "MULTIPLE_DOCUMENTS",
+        "DASHED_MOTTO_LINE",
+        "QUICK_SPELLING_TYPOGRAPHY"
+      ],
+      "correctedSpellingItemsInFixture": 7,
+      "selectedMissingSoResult": "Nghị định số 214/2025/NĐ-CP"
+    },
+    "heavySnapshotSmoke": {
+      "exitCode": 0,
+      "pages": [10, 50, 100],
+      "firstScanMs": [1663, 5297, 10794],
+      "progress": "PASS",
+      "cancellationBeforeMutation": "PASS",
+      "secondScan": "PASS",
+      "saveAs": "PASS"
+    },
+    "performanceSmoke": {
+      "exitCode": 0,
+      "warmupRounds": 1,
+      "measuredRounds": 10,
+      "medianMs": 5181.0,
+      "p95Ms": 5637,
+      "resourcePlateau": "PASS",
+      "wordExitedCleanly": true
+    }
+  },
+  "installedBaseline": {
+    "version": "1.0.0.101",
+    "installExit": 0,
+    "loadBehavior": 3,
+    "accessSmoke": "PASS_LOCAL-DEVELOPMENT-ND30-V2_LEXICON_6710",
+    "passiveStartupWordSmoke": "PASS_CONNECTED_IDLE_NO_CACHE_NO_BACKUP_NO_BACKGROUND_SAVE_PRINT",
+    "ribbonCapabilityWordSmoke": "PASS_SAVED_UNSAVED_CONTROLS_39",
+    "annotationWordSmoke": "PASS_INJECTED_FAILURE_ROLLBACK_SELECTED_FIX_NO_RESCAN",
+    "oneClickWordSmoke": "PASS_DOC_DOCX_UNSAVED_MULTIPLE_DASHED_LINE_QUICK_SPELLING"
+  },
+  "installer": {
+    "status": "PASS_DEVELOPMENT_INSTALLED",
+    "path": "artifacts/installers/development/ChuanHoa_Development_Test_Setup_1.0.0.101.exe",
+    "sizeBytes": 319272,
+    "sha256": "A351A2764760444DFDBD17DBC5831C4588673670690343C507D82D4B0623D460",
+    "authenticode": "Valid",
+    "payloadFiles": 8,
+    "forbiddenHits": 0,
+    "productionReady": false
+  },
+  "openGates": {
+    "visualUserConfirmation101": "PASS_TAB_PERSONAL_DICTIONARY_ICON_IDLE_CURSOR",
+    "repairUninstallReinstallRollback101": "PASS_REPAIR_UNINSTALL_REINSTALL_6_OF_6_ROLLBACK_DICTIONARY_PRESERVED",
+    "installerFailClosedWhileWordOpen": "PASS_EXIT_2_STATE_UNCHANGED",
+    "word2010x86": "NOT_RUN_BLOCKED_ENVIRONMENT",
+    "productionSigningAndIdentity": "BLOCKED_DECISION"
+  }
+}
