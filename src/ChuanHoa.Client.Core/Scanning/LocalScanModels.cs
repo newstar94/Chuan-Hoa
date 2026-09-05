@@ -40,7 +40,8 @@ namespace ChuanHoa.Client.Core.Scanning
             bool isInTable = false, string role = "Unknown", int? fontColor = null, int? underline = null,
             bool hasBottomBorder = false, double? lineSpacingPoints = null, int? lineSpacingRule = null,
             int? outlineLevel = null, int pageNumber = 0, double? pageLeftPoints = null,
-            double? pageTopPoints = null, double? textWidthPoints = null)
+            double? pageTopPoints = null, double? textWidthPoints = null,
+            bool? keepWithNext = null, bool? widowControl = null, string? styleName = null)
         {
             Index = index; Text = text ?? string.Empty; StoryType = storyType ?? string.Empty;
             SectionIndex = sectionIndex; AbsoluteStart = absoluteStart; FontName = fontName;
@@ -52,6 +53,7 @@ namespace ChuanHoa.Client.Core.Scanning
             HasBottomBorder = hasBottomBorder; LineSpacingPoints = lineSpacingPoints;
             LineSpacingRule = lineSpacingRule; OutlineLevel = outlineLevel; PageNumber = pageNumber;
             PageLeftPoints = pageLeftPoints; PageTopPoints = pageTopPoints; TextWidthPoints = textWidthPoints;
+            KeepWithNext = keepWithNext; WidowControl = widowControl; StyleName = styleName;
         }
         public int Index { get; }
         public string Text { get; }
@@ -81,6 +83,9 @@ namespace ChuanHoa.Client.Core.Scanning
         public double? PageLeftPoints { get; }
         public double? PageTopPoints { get; }
         public double? TextWidthPoints { get; }
+        public bool? KeepWithNext { get; }
+        public bool? WidowControl { get; }
+        public string? StyleName { get; }
     }
 
     public sealed class LocalLineShapeSnapshot
@@ -127,6 +132,44 @@ namespace ChuanHoa.Client.Core.Scanning
         public int? EndArrowheadStyle { get; }
     }
 
+    public sealed class LocalTableSnapshot
+    {
+        public LocalTableSnapshot(
+            int index,
+            int rowCount,
+            int columnCount,
+            bool hasMergedCells = false,
+            bool isNested = false,
+            IReadOnlyList<int>? headerRowIndexes = null,
+            bool hasVerticalBorders = false,
+            bool hasHeaderSeparatorBorder = true,
+            int? associatedCaptionParagraphIndex = null,
+            bool isCaptionAbove = true)
+        {
+            Index = index;
+            RowCount = rowCount;
+            ColumnCount = columnCount;
+            HasMergedCells = hasMergedCells;
+            IsNested = isNested;
+            HeaderRowIndexes = headerRowIndexes ?? Array.Empty<int>();
+            HasVerticalBorders = hasVerticalBorders;
+            HasHeaderSeparatorBorder = hasHeaderSeparatorBorder;
+            AssociatedCaptionParagraphIndex = associatedCaptionParagraphIndex;
+            IsCaptionAbove = isCaptionAbove;
+        }
+
+        public int Index { get; }
+        public int RowCount { get; }
+        public int ColumnCount { get; }
+        public bool HasMergedCells { get; }
+        public bool IsNested { get; }
+        public IReadOnlyList<int> HeaderRowIndexes { get; }
+        public bool HasVerticalBorders { get; }
+        public bool HasHeaderSeparatorBorder { get; }
+        public int? AssociatedCaptionParagraphIndex { get; }
+        public bool IsCaptionAbove { get; }
+    }
+
     public sealed class LocalScanSnapshot
     {
         public LocalScanSnapshot(string documentFingerprint, long revision, IReadOnlyList<LocalSectionSnapshot> sections,
@@ -134,7 +177,8 @@ namespace ChuanHoa.Client.Core.Scanning
             IReadOnlyList<LocalLineShapeSnapshot>? lineShapes = null, string regimeCode = "UNKNOWN",
             string documentTypeCode = LocalDocumentTypeCodes.Unknown,
             bool regimeWasSelectedManually = false, bool documentTypeWasSelectedManually = false,
-            string? dictionaryScopeId = null)
+            string? dictionaryScopeId = null,
+            IReadOnlyList<LocalTableSnapshot>? tables = null)
         {
             DocumentFingerprint = documentFingerprint; Revision = revision; Sections = sections;
             Paragraphs = paragraphs; ProtectedSpans = protectedSpans;
@@ -145,6 +189,7 @@ namespace ChuanHoa.Client.Core.Scanning
             DictionaryScopeId = string.IsNullOrWhiteSpace(dictionaryScopeId)
                 ? documentFingerprint
                 : dictionaryScopeId!;
+            Tables = tables ?? Array.Empty<LocalTableSnapshot>();
         }
         public string DocumentFingerprint { get; }
         public long Revision { get; }
@@ -162,6 +207,7 @@ namespace ChuanHoa.Client.Core.Scanning
         /// Non-Word callers default to the fingerprint for backward compatibility.
         /// </summary>
         public string DictionaryScopeId { get; }
+        public IReadOnlyList<LocalTableSnapshot> Tables { get; }
     }
 
     public sealed class LocalScanResult

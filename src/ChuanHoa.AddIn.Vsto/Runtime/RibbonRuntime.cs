@@ -944,10 +944,17 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 var result = _localScanRuntime.ScanAndAnnotate(context, spelling, document,
                     _currentDocumentOperation);
                 SynchronizeDocumentTypeSelection(context);
+                var latexFindings = result.Findings.Count(f => f.RuleCode.StartsWith("LATEX-", StringComparison.Ordinal));
+                var nd30Findings = result.Findings.Count - latexFindings;
+                var details = spelling
+                    ? "Phát hiện và đánh dấu: " + result.Findings.Count + " lỗi.\n"
+                    : "Phát hiện và đánh dấu: " + result.Findings.Count + " điểm cần lưu ý:\n" +
+                      "  • Vi phạm thể thức bắt buộc (NĐ30/HD05): " + nd30Findings + " lỗi.\n" +
+                      "  • Khuyến nghị thẩm mỹ xuất bản (LaTeX/Typst): " + latexFindings + " góp ý.\n";
                 MessageBox.Show(
                     "Đã kiểm tra " + (spelling ? "chính tả" : "thể thức") + " hoàn toàn tại máy.\n" +
                     "Loại văn bản tự nhận diện: " + LocalDocumentTypeCodes.GetDisplayName(context.DocumentTypeCode) + ".\n" +
-                    "Phát hiện và đánh dấu: " + result.Findings.Count + " lỗi.\n" +
+                    details +
                     "Gói quy tắc: " + result.RulePackId + ".\n\nNội dung tài liệu không được gửi lên máy chủ.",
                     "Chuẩn hóa",
                     MessageBoxButtons.OK,

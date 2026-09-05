@@ -52,7 +52,18 @@ namespace ChuanHoa.Client.Core.Scanning
             "ND30-PL2-M3-K1E", "ND30-PL2-M4-K1A", "ND30-PL2-M4-K1B", "ND30-PL2-M5-K5", "ND30-PL2-M5-K7", "ND30-PL2-M5-K8A"
         };
 
+        public static readonly IReadOnlyList<string> LatexRuleCodes = new[]
+        {
+            "LATEX-SEC-STYLE", "LATEX-SEC-CONTINUITY", "LATEX-PAGINATION-KEEP",
+            "LATEX-PAGINATION-WIDOW", "LATEX-TABLE-BOOKTABS", "LATEX-CAPTION-POS",
+            "LATEX-MATH-SYNTAX"
+        };
+
+        public static readonly IReadOnlyList<string> AllRegisteredRuleCodes =
+            RegisteredRuleCodes.Concat(LatexRuleCodes).ToArray();
+
         private readonly DocumentRoleDetector _roleDetector = new DocumentRoleDetector();
+        private readonly LatexTypographicScanner _latexScanner = new LatexTypographicScanner();
         private readonly PersonalDictionaryManager _personalDictionary;
 
         public CanonicalRuleScanner(PersonalDictionaryManager? personalDictionary = null)
@@ -86,6 +97,7 @@ namespace ChuanHoa.Client.Core.Scanning
             CheckAppendices(findings, snapshot, rules, roles);
             CheckFontSizeConsistency(findings, snapshot, rules, roles);
             cancellationToken.ThrowIfCancellationRequested();
+            findings.AddRange(_latexScanner.Scan(snapshot, rules, cancellationToken));
             return findings;
         }
 

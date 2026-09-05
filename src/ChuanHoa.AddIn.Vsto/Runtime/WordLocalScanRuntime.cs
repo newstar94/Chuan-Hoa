@@ -87,7 +87,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     item.SpaceBeforePoints, item.SpaceAfterPoints, item.IsInTable, item.Role, item.FontColor,
                     item.Underline, item.HasBottomBorder, item.LineSpacingPoints, item.LineSpacingRule,
                     item.OutlineLevel, item.PageNumber, item.PageLeftPoints, item.PageTopPoints,
-                    item.TextWidthPoints)).ToArray(),
+                    item.TextWidthPoints, item.KeepWithNext, item.WidowControl, item.StyleName)).ToArray(),
                 source.ProtectedSpans.Select(item => new AnnotationProtectedSpan(item.StoryType, item.AbsoluteStart, item.Length)).ToArray(),
                 source.LineShapes.Select(item => new LocalLineShapeSnapshot(item.Index, item.Name, item.ShapeType,
                     item.AnchorStoryType, item.AnchorSectionIndex, item.AnchorAbsoluteStart,
@@ -99,7 +99,9 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 context == null ? source.DocumentTypeCode : context.DocumentTypeCode,
                 context == null ? source.RegimeWasSelectedManually : context.RegimeWasSelectedManually,
                 context == null ? source.DocumentTypeWasSelectedManually : context.DocumentTypeWasSelectedManually,
-                context == null ? source.DocumentFingerprint : context.DictionaryScopeId);
+                context == null ? source.DocumentFingerprint : context.DictionaryScopeId,
+                source.Tables.Select(t => new LocalTableSnapshot(t.Index, t.RowCount, t.ColumnCount, t.HasMergedCells,
+                    t.IsNested, t.HeaderRowIndexes, t.HasVerticalBorders)).ToArray());
 
         internal static AnnotationDocumentSnapshot ToAnnotationSnapshot(WordDocumentSnapshot source) =>
             new AnnotationDocumentSnapshot(source.DocumentFingerprint, source.Revision,

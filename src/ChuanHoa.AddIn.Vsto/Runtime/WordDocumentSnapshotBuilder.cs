@@ -157,7 +157,10 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             int pageNumber,
             double? pageLeftPoints,
             double? pageTopPoints,
-            double? textWidthPoints)
+            double? textWidthPoints,
+            bool? keepWithNext = null,
+            bool? widowControl = null,
+            string? styleName = null)
         {
             Index = index;
             Text = text;
@@ -188,6 +191,9 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             PageLeftPoints = pageLeftPoints;
             PageTopPoints = pageTopPoints;
             TextWidthPoints = textWidthPoints;
+            KeepWithNext = keepWithNext;
+            WidowControl = widowControl;
+            StyleName = styleName;
         }
 
         public int Index { get; }
@@ -219,6 +225,9 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         public double? PageLeftPoints { get; }
         public double? PageTopPoints { get; }
         public double? TextWidthPoints { get; }
+        public bool? KeepWithNext { get; }
+        public bool? WidowControl { get; }
+        public string? StyleName { get; }
     }
 
     public sealed class WordLineShapeSnapshot
@@ -272,7 +281,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             int columnCount,
             bool hasMergedCells,
             bool isNested,
-            IReadOnlyList<int> headerRowIndexes)
+            IReadOnlyList<int> headerRowIndexes,
+            bool hasVerticalBorders = false)
         {
             Index = index;
             RowCount = rowCount;
@@ -280,6 +290,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             HasMergedCells = hasMergedCells;
             IsNested = isNested;
             HeaderRowIndexes = headerRowIndexes;
+            HasVerticalBorders = hasVerticalBorders;
         }
 
         public int Index { get; }
@@ -288,6 +299,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         public bool HasMergedCells { get; }
         public bool IsNested { get; }
         public IReadOnlyList<int> HeaderRowIndexes { get; }
+        public bool HasVerticalBorders { get; }
     }
 
     public sealed class WordProtectedSpanSnapshot
@@ -516,6 +528,9 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                         double? lineSpacing = null;
                         int? lineSpacingRule = null;
                         int? outlineLevel = null;
+                        bool? keepWithNext = null;
+                        bool? widowControl = null;
+                        string? styleName = null;
                         if (captureFormatting)
                         {
                             font = range.Font;
@@ -534,6 +549,9 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                             lineSpacing = ReadNullableFloat(format.LineSpacing);
                             lineSpacingRule = ReadNullableInteger((int)format.LineSpacingRule);
                             outlineLevel = ReadNullableInteger((int)format.OutlineLevel);
+                            keepWithNext = ReadNullableBoolean(format.KeepWithNext);
+                            widowControl = ReadNullableBoolean(format.WidowControl);
+                            styleName = ReadStyleName(range);
                         }
                         if (captureFormatting || storyParagraphIndex == 1 || storyParagraphIndex % 100 == 0)
                             currentSectionIndex = ReadSectionIndex(range);
@@ -586,7 +604,10 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                             pageNumber,
                             pageLeft,
                             pageTop,
-                            textWidth));
+                            textWidth,
+                            keepWithNext,
+                            widowControl,
+                            styleName));
                     }
                     finally
                     {
@@ -655,6 +676,9 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                         double? lineSpacing = null;
                         int? lineSpacingRule = null;
                         int? outlineLevel = null;
+                        bool? keepWithNext = null;
+                        bool? widowControl = null;
+                        string? styleName = null;
                         if (captureFormatting)
                         {
                             font = range.Font;
@@ -673,6 +697,9 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                             lineSpacing = ReadNullableFloat(format.LineSpacing);
                             lineSpacingRule = ReadNullableInteger((int)format.LineSpacingRule);
                             outlineLevel = ReadNullableInteger((int)format.OutlineLevel);
+                            keepWithNext = ReadNullableBoolean(format.KeepWithNext);
+                            widowControl = ReadNullableBoolean(format.WidowControl);
+                            styleName = ReadStyleName(range);
                         }
                         if (captureFormatting || storyParagraphIndex == 1 || storyParagraphIndex % 100 == 0)
                             currentSectionIndex = ReadSectionIndex(range);
@@ -681,7 +708,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                             fontName, fontSize, bold, italic, alignment, firstLineIndent, spaceBefore,
                             spaceAfter, isInTable, storyType.ToString(), currentSectionIndex, absoluteStart,
                             null, null, null, fontColor, underline, hasBottomBorder, lineSpacing,
-                            lineSpacingRule, outlineLevel, 0, null, null, null));
+                            lineSpacingRule, outlineLevel, 0, null, null, null,
+                            keepWithNext, widowControl, styleName));
                     }
                     finally
                     {
@@ -974,13 +1002,34 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                         hasMergedCells = true;
                     }
 
+                    var hasVerticalBorders = false;
+                    Word.Borders? tableBorders = null;
+                    try
+                    {
+                        tableBorders = table.Borders;
+                        var leftBorder = tableBorders[Word.WdBorderType.wdBorderLeft];
+                        var vertBorder = tableBorders[Word.WdBorderType.wdBorderVertical];
+                        var rightBorder = tableBorders[Word.WdBorderType.wdBorderRight];
+                        hasVerticalBorders = (leftBorder != null && leftBorder.LineStyle != Word.WdLineStyle.wdLineStyleNone) ||
+                                             (vertBorder != null && vertBorder.LineStyle != Word.WdLineStyle.wdLineStyleNone) ||
+                                             (rightBorder != null && rightBorder.LineStyle != Word.WdLineStyle.wdLineStyleNone);
+                    }
+                    catch (COMException)
+                    {
+                    }
+                    finally
+                    {
+                        Release(tableBorders);
+                    }
+
                     snapshots.Add(new WordTableSnapshot(
                         index,
                         rowCount,
                         table.Columns.Count,
                         hasMergedCells,
                         table.NestingLevel > 1,
-                        headerRows));
+                        headerRows,
+                        hasVerticalBorders));
                 }
                 finally
                 {
@@ -1340,6 +1389,23 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             return string.IsNullOrWhiteSpace(name) || name == ""
                 ? null
                 : name;
+        }
+
+        private static string? ReadStyleName(Word.Range range)
+        {
+            try
+            {
+                var style = range.get_Style();
+                if (style is Word.Style s)
+                {
+                    return s.NameLocal;
+                }
+                return style?.ToString();
+            }
+            catch (COMException)
+            {
+                return null;
+            }
         }
 
         private static double? ReadNullableFloat(float value)
