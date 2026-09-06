@@ -94,6 +94,46 @@ def update_xml(tree: ET.ElementTree, contract: dict) -> None:
 
     tab = elements_by_id[contract["tab"]["id"]]
     tab.set("label", contract["tab"]["label"])
+    arrange_compact_columns(root, elements_by_id)
+
+
+def arrange_compact_columns(root: ET.Element, elements: dict) -> None:
+    """Keep secondary actions in three-row columns so later groups fit.
+
+    Word owns responsive group collapse; oversized indivisible groups can leave
+    unused space when the next group cannot expand. Avoid a one-button tab column
+    and six large actions in the startup group. IDs/callbacks stay unchanged.
+    """
+    columns = [
+        ("grpKhoiDong", "boxReviewActions", ["btnKiemTra", "btnKiemTraChinhTa", "btnChuyenDoiUnicode"]),
+        ("grpKhoiDong", "boxFixActions", ["btnSuaLoiDangChon", "btnSuaTatCaChinhTa"]),
+        ("grpDinhDang", "boxKeepPageNum", ["btnKeepWithNext", "btnChenSoTrang", "btnXoaTabKhongLeader"]),
+        ("grpChinhTaSo", "boxLanguageActions", ["mnuBoDau", "btnDoiDauThapPhan", "btnTuDienCaNhan"]),
+    ]
+    for control_id in ("ddQuyDinh", "ddLoaiVanBan"):
+        elements[control_id].set("visible", "false")
+    for group_id, box_id, control_ids in columns:
+        box = elements.get(box_id)
+        if box is None:
+            box = ET.SubElement(elements[group_id], f"{{{RIBBON_NAMESPACE}}}box",
+                                {"id": box_id, "boxStyle": "vertical"})
+            elements[box_id] = box
+        for control_id in control_ids:
+            control = elements[control_id]
+            parent = next(parent for parent in root.iter() if control in list(parent))
+            parent.remove(control)
+            control.set("size", "normal")
+            control.set("label", control.get("label", "").strip())
+            box.append(control)
+    # Third row under the two fix actions, as requested. No extra column.
+    spacing = elements["boxGianChu"]
+    parent = next(parent for parent in root.iter() if spacing in list(parent))
+    parent.remove(spacing)
+    elements["boxFixActions"].append(spacing)
+    # Remove historical label padding; native Ribbon handles spacing itself.
+    for element in root.iter():
+        if "label" in element.attrib:
+            element.set("label", element.get("label", "").strip())
 
 
 def update_optional_attribute(element: ET.Element, name: str, value: str | None) -> None:

@@ -146,6 +146,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             // file, the network or any Word document property. Each explicit command
             // performs its own capability and license checks after the user clicks.
             return _buttonCommands.ContainsKey(controlId) ||
+                string.Equals(controlId, "btnThietLap", StringComparison.Ordinal) ||
                 string.Equals(controlId, "ddQuyDinh", StringComparison.Ordinal) ||
                 string.Equals(controlId, "ddLoaiVanBan", StringComparison.Ordinal) ||
                 string.Equals(controlId, "mnuBoDau", StringComparison.Ordinal) ||
@@ -225,6 +226,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         public void ExecuteButton(string controlId)
         {
             ThrowIfDisposed();
+            if (controlId == "btnThietLap") { ShowRecognitionSettings(); return; }
             Action command;
             if (!_buttonCommands.TryGetValue(controlId, out command))
             {
@@ -240,6 +242,33 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             if (_localAccessManager.IsRefreshInProgress ||
                 Volatile.Read(ref _accessRefreshCompleted) != 0)
                 _accessRefreshTimer.Start();
+        }
+
+        private void ShowRecognitionSettings()
+        {
+            using (var dialog = new Form { Text = "Thiết lập nhận diện", Width = 420, Height = 210,
+                FormBorderStyle = FormBorderStyle.FixedDialog, StartPosition = FormStartPosition.CenterScreen,
+                MinimizeBox = false, MaximizeBox = false })
+            using (var regime = new ComboBox { Left = 105, Top = 20, Width = 275, DropDownStyle = ComboBoxStyle.DropDownList })
+            using (var type = new ComboBox { Left = 105, Top = 65, Width = 275, DropDownStyle = ComboBoxStyle.DropDownList })
+            {
+                regime.Items.AddRange(new object[] { "VB hành chính (NĐ 30)", "Viettel (QĐ 11095)", "VB của Đảng (HD 05)" });
+                regime.SelectedIndex = Math.Max(0, Math.Min(2, GetSelectedItemIndex("ddQuyDinh")));
+                for (var i = 0; i < DocumentTypeItemCount; i++) type.Items.Add(GetDocumentTypeItemLabel(i));
+                type.SelectedIndex = Math.Max(0, Math.Min(type.Items.Count - 1, GetSelectedItemIndex("ddLoaiVanBan")));
+                var oldRegime = regime.SelectedIndex;
+                var oldType = type.SelectedIndex;
+                var save = new Button { Text = "Áp dụng", Left = 205, Top = 115, DialogResult = DialogResult.OK };
+                var cancel = new Button { Text = "Hủy", Left = 295, Top = 115, DialogResult = DialogResult.Cancel };
+                dialog.Controls.AddRange(new Control[] { new Label { Text = "Quy định", Left = 15, Top = 24 },
+                    new Label { Text = "Loại", Left = 15, Top = 69 }, regime, type, save, cancel });
+                dialog.AcceptButton = save; dialog.CancelButton = cancel;
+                if (dialog.ShowDialog() != DialogResult.OK) return;
+                if (regime.SelectedIndex != oldRegime)
+                    SelectDropDownItem("ddQuyDinh", new[] { "iqdND30", "iqdVIETTEL", "iqdDANG" }[regime.SelectedIndex], regime.SelectedIndex);
+                if (type.SelectedIndex != oldType)
+                    SelectDropDownItem("ddLoaiVanBan", "", type.SelectedIndex);
+            }
         }
 
         public object GetImage(string controlId)

@@ -188,7 +188,7 @@ namespace ChuanHoa.Client.Core.Scanning
                 if (NationalTitle.IsMatch(text)) assignedRole = "nationalTitle";
                 else if (Contains(text, "Độc lập") && Contains(text, "Hạnh phúc")) assignedRole = "nationalMotto";
                 else if (Eq(text, "ĐẢNG CỘNG SẢN VIỆT NAM")) assignedRole = "partyTitle";
-                else if (Rx(@"^Số\s*:?").IsMatch(text)) assignedRole = "codeNumber";
+                else if (Rx(@"^Số\s*:?\s*\d").IsMatch(text)) assignedRole = "codeNumber";
                 else if (legalBasisWindowOpen && IsFormalLegalBasisParagraph(text))
                     assignedRole = "legalBasis";
                 else if (IsPlaceDate(text)) assignedRole = "placeAndIssuedDate";
@@ -202,7 +202,10 @@ namespace ChuanHoa.Client.Core.Scanning
                         : "typeName";
                     if (assignedRole == "typeName") typeNameAssigned = true;
                 }
-                else if (previousRole == "typeName" && text.Length < 300) assignedRole = "subject";
+                else if (previousRole == "typeName" && text.Length > 0 &&
+                    !IsStructuralBodyStart(text) && !LegalBasis.IsMatch(text) &&
+                    !SignerAuthority.IsMatch(text) &&
+                    !Rx(@"^(Kính\s+(?:gửi|trình)|Nơi\s+nhận)\b", true).IsMatch(text)) assignedRole = "subject";
                 else if ((previousRole == "subject" || previousRole == "subjectContinuation") &&
                     IsSubjectContinuation(main[i - 1], paragraph, text))
                     assignedRole = "subjectContinuation";
@@ -286,7 +289,7 @@ namespace ChuanHoa.Client.Core.Scanning
             {
                 var text = Collapse(main[position].Text);
                 if (Contains(text, "Độc lập") && Contains(text, "Hạnh phúc")) signals++;
-                else if (Rx(@"^Số\s*:?").IsMatch(text)) signals++;
+                else if (Rx(@"^Số\s*:?\s*\d").IsMatch(text)) signals++;
                 else if (IsPlaceDate(text)) signals++;
                 else if (IsTypeHeading(text)) signals++;
                 else if (Rx(@"^(V/v|Về việc)\b", true).IsMatch(text)) signals++;
@@ -327,7 +330,7 @@ namespace ChuanHoa.Client.Core.Scanning
                 var text = Collapse(main[position].Text);
                 if (NationalTitle.IsMatch(text) ||
                     (Contains(text, "Độc lập") && Contains(text, "Hạnh phúc")) ||
-                    Rx(@"^Số\s*:?").IsMatch(text) || IsPlaceDate(text))
+                    Rx(@"^Số\s*:?\s*\d").IsMatch(text) || IsPlaceDate(text))
                 {
                     earliestSignal = position;
                     signalCount++;
@@ -488,7 +491,7 @@ namespace ChuanHoa.Client.Core.Scanning
             // Multi-line subjects are frequently stored as consecutive Word
             // paragraphs. A blank paragraph (visible through the source index gap)
             // terminates the component, as do normal body/legal/operative starts.
-            if (current.Index != previous.Index + 1 || text.Length == 0 || text.Length > 500)
+            if (current.Index != previous.Index + 1 || text.Length == 0)
                 return false;
             if (LegalBasis.IsMatch(text) || IsTypeHeading(text) ||
                 IsStructuralBodyStart(text) ||

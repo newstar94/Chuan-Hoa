@@ -120,7 +120,23 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 annotations.ClearLane("format");
                 annotations.ClearLane("spelling");
 
-                if (SplitCombinedNationalHeaders(document, local) > 0)
+                // Removing comment references can move subsequent absolute offsets.
+                // Structural edits must use a fresh snapshot, not pre-annotation positions.
+                new WordDocumentReadRuntime(_application, _accessManager).Prepare(
+                    context, DocumentAnalysisScope.Full, document, false);
+                local = context.LastLocalSnapshot!;
+                formatFindings = context.LastFormatScan!.Findings;
+                spellingFindings = context.LastSpellingScan!.Findings;
+                blocks = context.LastLogicalBlocks;
+                roles = context.LastRolesByParagraphIndex;
+                var removedObsoleteLines = RemoveMisclassifiedOwnedLines(document, local, roles);
+                if (removedObsoleteLines > 0)
+                {
+                    new WordDocumentReadRuntime(_application, _accessManager).Prepare(
+                        context, DocumentAnalysisScope.Full, document, false);
+                    local = context.LastLocalSnapshot!;
+                }
+                if (SplitCombinedNationalHeaders(document, local) > 0 || removedObsoleteLines > 0)
                 {
                     // Paragraph indexes and every text anchor changed. Never reuse
                     // the pre-split findings, including spelling replacement spans.
@@ -172,6 +188,12 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     _application.ScreenRefresh();
                 }
                 catch (COMException) { }
+                new WordDocumentReadRuntime(_application, _accessManager).Prepare(
+                    context, DocumentAnalysisScope.Full, document, false);
+                local = context.LastLocalSnapshot!;
+                formatFindings = context.LastFormatScan!.Findings;
+                blocks = context.LastLogicalBlocks;
+                roles = context.LastRolesByParagraphIndex;
                 insertedLines = InsertMissingRequiredLines(document, local, formatFindings,
                     blocks, roles);
 
@@ -305,7 +327,13 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     undoStarted = true;
                 }
 
-                var applied = string.Equals(lane, "spelling", StringComparison.OrdinalIgnoreCase)
+                var combinedParagraph = local.Paragraphs.FirstOrDefault(p =>
+                    p.Index == finding.Anchor.ParagraphIndex &&
+                    CombinedNationalHeader.GetBreakOffsets(p.Text).Length > 0);
+                var applied = lane == "format" && finding.RuleCode == "ND30-PL1-M2-K1-TN-LINE" &&
+                    combinedParagraph != null
+                    ? FixCombinedHeaderFinding(document, context, local, combinedParagraph, rules)
+                    : string.Equals(lane, "spelling", StringComparison.OrdinalIgnoreCase)
                     ? ApplyDeterministicSpellingFixes(document, local, new[] { finding }, rules,
                         context.LastLogicalBlocks) > 0
                     : ApplySelectedFormatFix(document, local, finding, rules,
@@ -1077,6 +1105,26 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 if (role == "appendixTitle")
                     range.Case = Word.WdCharacterCase.wdUpperCase;
                 range.ParagraphFormat.Alignment = style.Alignment;
+                if (role == "subject" || role == "subjectContinuation")
+                {
+                    range.ParagraphFormat.LeftIndent = 0f;
+                    range.ParagraphFormat.RightIndent = 0f;
+                    range.ParagraphFormat.FirstLineIndent = 0f;
+                }
+                if (role == "placeAndIssuedDate" && !party)
+                    range.ParagraphFormat.Alignment = (Word.WdParagraphAlignment)HeaderLayoutPolicy.DateAlignment(
+                        new DocumentRoleDetector().DetectBlocks(snapshot), paragraph.Index);
+                if (role == "nationalTitle" || role == "nationalMotto")
+                {
+                    range.ParagraphFormat.LeftIndent = 0f;
+                    range.ParagraphFormat.RightIndent = 0f;
+                    range.ParagraphFormat.FirstLineIndent = 0f;
+                    range.ParagraphFormat.SpaceBeforeAuto = 0;
+                    range.ParagraphFormat.SpaceAfterAuto = 0;
+                    range.ParagraphFormat.SpaceBefore = 0f;
+                    range.ParagraphFormat.SpaceAfter = 0f;
+                    range.ParagraphFormat.LineSpacingRule = Word.WdLineSpacing.wdLineSpaceSingle;
+                }
                 if (role == "legalBasis")
                 {
                     range.ParagraphFormat.LeftIndent = 0f;
@@ -1089,12 +1137,53 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             finally { Release(range); }
         }
 
-        private static int SplitCombinedNationalHeaders(Word.Document document, LocalScanSnapshot snapshot)
+        private static int RemoveMisclassifiedOwnedLines(Word.Document document, LocalScanSnapshot snapshot,
+            IReadOnlyDictionary<int, string> roles)
+        {
+            var removed = 0;
+            foreach (var line in snapshot.LineShapes.Where(l => LineShapeOwnership.IsOwned(l.Name)))
+            {
+                var expectedRole = line.Name.IndexOf("_ORG_", StringComparison.Ordinal) >= 0 ? "organName" :
+                    line.Name.IndexOf("_MOTTO_", StringComparison.Ordinal) >= 0 ? "nationalMotto" :
+                    line.Name.IndexOf("_SUBJ_", StringComparison.Ordinal) >= 0 ? "subject" :
+                    line.Name.IndexOf("_PARTY_", StringComparison.Ordinal) >= 0 ? "partyTitle" : string.Empty;
+                if (expectedRole.Length == 0) continue;
+                if (roles.Any(r => LineShapeOwnership.IsOwnedForParagraph(line.Name, r.Key) &&
+                    (r.Value == expectedRole || (expectedRole == "subject" && r.Value == "subjectContinuation"))))
+                    continue;
+                // Only discard a derived line whose recorded semantic owner no
+                // longer exists. Never remove an unmarked user-created shape.
+                DeleteOwnedShapeByName(document, line.Name);
+                removed++;
+            }
+            return removed;
+        }
+
+        private bool FixCombinedHeaderFinding(Word.Document document, DocumentContext context,
+            LocalScanSnapshot snapshot, LocalParagraphSnapshot paragraph, LocalRulePack rules)
+        {
+            if (SplitCombinedNationalHeaders(document, snapshot, paragraph.Index) == 0) return false;
+            new WordDocumentReadRuntime(_application, _accessManager).Prepare(
+                context, DocumentAnalysisScope.Full, document, false);
+            var current = context.LastLocalSnapshot!;
+            var title = current.Paragraphs.First(p => p.Index == paragraph.Index);
+            var motto = current.Paragraphs.FirstOrDefault(p => p.Index == paragraph.Index + 1);
+            if (motto == null || !context.LastRolesByParagraphIndex.TryGetValue(motto.Index, out var role) ||
+                role != "nationalMotto") return false;
+            var tier = ResolveHeaderTier(current, context.LastLogicalBlocks, title.Index);
+            ApplyParagraphFormat(document, title, "nationalTitle", current, rules, tier);
+            ApplyParagraphFormat(document, motto, "nationalMotto", current, rules, tier);
+            return NormalizeRequiredLine(document, current, motto, 1d, "ND30-PL1-M2-K1-TN-LINE");
+        }
+
+        private static int SplitCombinedNationalHeaders(Word.Document document, LocalScanSnapshot snapshot,
+            int? onlyParagraph = null)
         {
             var count = 0;
             foreach (var paragraph in snapshot.Paragraphs.Where(p =>
                 p.StoryType == "wdMainTextStory" && p.HasField != true &&
-                p.HasContentControl != true && p.HasHyperlink != true && p.HasMathObject != true)
+                p.HasContentControl != true && p.HasHyperlink != true && p.HasMathObject != true &&
+                !snapshot.IntersectsProtectedSpan(p) && (!onlyParagraph.HasValue || p.Index == onlyParagraph.Value))
                 .OrderByDescending(p => p.AbsoluteStart))
             {
                 var offsets = CombinedNationalHeader.GetBreakOffsets(paragraph.Text);
@@ -1102,15 +1191,17 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 Word.Range? range = null;
                 try
                 {
-                    range = document.Range(paragraph.AbsoluteStart, paragraph.AbsoluteEnd);
+                    range = ResolveCurrentMainParagraphRange(document, paragraph);
                     if (!string.Equals((range.Text ?? string.Empty).TrimEnd('\r', '\a'),
                         paragraph.Text, StringComparison.Ordinal)) continue;
                     // Replace break characters only; preserve all runs, bookmarks,
                     // formatting and table-cell terminators.
                     foreach (var offset in offsets.OrderByDescending(value => value))
                     {
-                        range.SetRange(paragraph.AbsoluteStart + offset, paragraph.AbsoluteStart + offset + 1);
+                        var start = range.Start;
+                        range.SetRange(start + offset, start + offset + 1);
                         range.Text = "\r";
+                        range.SetRange(start, start + offset);
                     }
                     count++;
                 }
@@ -1122,32 +1213,15 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         private static void ApplyBodyParagraphIndent(Word.Range range, string text)
         {
             Word.ParagraphFormat? format = null;
-            Word.TabStops? tabStops = null;
-            Word.TabStop? tabStop = null;
             try
             {
                 format = range.ParagraphFormat;
                 format.RightIndent = 0f;
-                if (ParagraphIndentPolicy.IsDashListParagraph(text))
-                {
-                    tabStops = format.TabStops;
-                    var textPosition = (float)(ParagraphIndentPolicy.ListTextMillimeters * PointsPerMillimeter);
-                    var markerPosition = (float)(ParagraphIndentPolicy.ListMarkerMillimeters * PointsPerMillimeter);
-                    format.LeftIndent = textPosition;
-                    format.FirstLineIndent = markerPosition - textPosition;
-                    if (!HasEquivalentTabStop(tabStops, textPosition))
-                        tabStop = tabStops.Add(textPosition, Word.WdTabAlignment.wdAlignTabLeft,
-                            Word.WdTabLeader.wdTabLeaderSpaces);
-                    return;
-                }
-
                 format.LeftIndent = 0f;
                 format.FirstLineIndent = (float)(ParagraphIndentPolicy.BodyFirstLineMillimeters * PointsPerMillimeter);
             }
             finally
             {
-                Release(tabStop);
-                Release(tabStops);
                 Release(format);
             }
         }
@@ -1248,6 +1322,12 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     work.Add(Tuple.Create(ruleCode, paragraph.Index));
             }
 
+            foreach (var block in blocks)
+            {
+                AddRequiredRoleLines(work, snapshot, block, "nationalMotto", "ND30-PL1-M2-K1-TN-LINE", false);
+                AddRequiredRoleLines(work, snapshot, block, "organName", "ND30-PL1-M2-K2-ORG-LINE", false);
+                AddRequiredRoleLines(work, snapshot, block, "subject", "ND30-PL1-M2-K5A-SUBJ-LINE", true);
+            }
             foreach (var item in work)
             {
                 var paragraphIndex = item.Item2;
@@ -1317,8 +1397,60 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 var width = (float)Math.Max(28d, textWidth * ratio);
                 var beginX = (float)(center.Value - width / 2d);
                 var y = (float)(top + fontSize.GetValueOrDefault(13d) * 1.25d + 2d);
+                range.Font.Underline = Word.WdUnderline.wdUnderlineNone;
+                Word.Border? bottom = null;
+                try
+                {
+                    bottom = range.ParagraphFormat.Borders[Word.WdBorderType.wdBorderBottom];
+                    bottom.LineStyle = Word.WdLineStyle.wdLineStyleNone;
+                }
+                finally { Release(bottom); }
                 var inTable = range.get_Information(Word.WdInformation.wdWithInTable);
-                if (TryNormalizeExistingComponentLine(document, snapshot, paragraph, ruleCode,
+                if (ruleCode == "ND30-PL1-M2-K5A-SUBJ-LINE")
+                {
+                    var detected = new DocumentRoleDetector().Detect(snapshot);
+                    var firstIndex = paragraph.Index;
+                    while (firstIndex > 1 && detected.TryGetValue(firstIndex, out var currentRole) &&
+                        currentRole == "subjectContinuation") firstIndex--;
+                    var firstParagraph = snapshot.Paragraphs.FirstOrDefault(p => p.Index == firstIndex);
+                    if (firstParagraph != null && firstIndex < paragraph.Index)
+                    {
+                        Word.Range? firstRange = null;
+                        try
+                        {
+                            firstRange = ResolveCurrentMainParagraphRange(document, firstParagraph);
+                            var firstTop = WordTextMeasurement.ReadFirstTextLineTop(firstRange);
+                            if (firstTop.HasValue)
+                                foreach (var line in snapshot.LineShapes.Where(l => l.ShapeType == 9 &&
+                                    l.AnchorStoryType == paragraph.StoryType && l.AnchorPageNumber == paragraph.PageNumber &&
+                                    l.PageTopPoints.HasValue && l.PageLeftPoints.HasValue &&
+                                    l.PageTopPoints.Value > firstTop.Value && l.PageTopPoints.Value < top &&
+                                    Math.Abs(l.HeightPoints) <= 3 &&
+                                    Math.Abs(l.PageLeftPoints.Value + l.WidthPoints / 2d - center.Value) <= 18d &&
+                                    l.WidthPoints >= 10 && l.WidthPoints <= textWidth))
+                                    DeleteVerifiedLine(document, line.Name);
+                        }
+                        finally { Release(firstRange); }
+                    }
+                }
+                // Reuse the original separator when a previous release added a
+                // second owned line beside it. Match page and tight rendered
+                // geometry, not a nearby paragraph anchor alone.
+                var page = WordTextMeasurement.SafeInformation(range,
+                    Word.WdInformation.wdActiveEndAdjustedPageNumber).GetValueOrDefault();
+                var originals = snapshot.LineShapes.Where(l => !LineShapeOwnership.IsOwned(l.Name) &&
+                    l.ShapeType == 9 && l.AnchorStoryType == paragraph.StoryType &&
+                    page > 0 && l.AnchorPageNumber == page && l.PageLeftPoints.HasValue && l.PageTopPoints.HasValue &&
+                    Math.Abs(l.PageTopPoints.Value - y) <= 18d && Math.Abs(l.HeightPoints) <= 3d &&
+                    Math.Abs(l.PageLeftPoints.Value + l.WidthPoints / 2d - center.Value) <= 18d &&
+                    l.WidthPoints >= 10d && l.WidthPoints <= WordTextMeasurement.ReadAvailableWidth(range).GetValueOrDefault(600d)).ToArray();
+                if (originals.Length >= 1)
+                {
+                    RemoveObsoleteComponentLines(document, snapshot, paragraph, ruleCode);
+                    foreach (var duplicate in originals)
+                        DeleteVerifiedLine(document, duplicate.Name);
+                }
+                if (originals.Length == 0 && TryNormalizeExistingComponentLine(document, snapshot, paragraph, ruleCode,
                         beginX, y, width))
                     return true;
                 RemoveObsoleteComponentLines(document, snapshot, paragraph, ruleCode);
@@ -1462,6 +1594,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                         continue;
                     }
 
+                    NormalizeLineStyle(candidate);
                     candidate.RelativeHorizontalPosition =
                         Word.WdRelativeHorizontalPosition.wdRelativeHorizontalPositionPage;
                     candidate.RelativeVerticalPosition =
@@ -1471,7 +1604,6 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     candidate.Width = targetWidth;
                     candidate.Height = 0f;
                     candidate.Name = ownedName;
-                    NormalizeLineStyle(candidate);
                     candidate.LockAnchor = 0;
                     normalized = true;
                 }
@@ -1486,13 +1618,18 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         private static void DeleteOwnedShapeByName(Word.Document document, string name)
         {
             if (!LineShapeOwnership.IsOwned(name)) return;
+            DeleteVerifiedLine(document, name);
+        }
+
+        private static void DeleteVerifiedLine(Word.Document document, string name)
+        {
             for (var index = document.Shapes.Count; index >= 1; index--)
             {
                 Word.Shape? candidate = null;
                 try
                 {
                     candidate = document.Shapes[index];
-                    if (string.Equals(candidate.Name, name, StringComparison.Ordinal)) candidate.Delete();
+                    if ((int)candidate.Type == 9 && string.Equals(candidate.Name, name, StringComparison.Ordinal)) candidate.Delete();
                 }
                 catch (COMException) { }
                 finally { Release(candidate); }

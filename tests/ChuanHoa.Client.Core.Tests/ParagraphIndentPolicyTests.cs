@@ -36,7 +36,8 @@ public sealed class ParagraphIndentPolicyTests
     }
 
     [Theory]
-    [InlineData("- Căn cứ Luật", -5, 15, true)]
+    [InlineData("- Căn cứ Luật", -5, 15, false)]
+    [InlineData("- Căn cứ Luật", 10, 0, true)]
     [InlineData("- Cam kết", -5, 25, false)]
     [InlineData("- Cam kết", 0, 15, false)]
     [InlineData("Nội dung", -5, 15, false)]

@@ -471,6 +471,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             var builtInStyles = Measure("built-in-styles", () => CaptureBuiltInStyleNames(document));
             var paragraphs = Measure("paragraphs", () =>
                 CaptureParagraphs(document, tables, sectionBoundaries, builtInStyles, allowPageLayout, operation));
+            paragraphs = CaptureRequiredLineLayout(document, paragraphs, operation);
             operation?.ReportProgress(paragraphs.Count, paragraphs.Count, "đọc đường kẻ");
             var lineShapes = Measure("line-shapes", () =>
                 CaptureLineShapes(document, sections, paragraphs, operation));
@@ -1612,6 +1613,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     Hash(sha256, FormatNullable(paragraph.Bold));
                     Hash(sha256, FormatNullable(paragraph.Italic));
                     Hash(sha256, FormatNullable(paragraph.Alignment));
+                    Hash(sha256, FormatNullable(paragraph.FirstLineIndentPoints));
+                    Hash(sha256, FormatNullable(paragraph.LeftIndentPoints));
                     Hash(sha256, FormatNullable(paragraph.FontColor));
                     Hash(sha256, FormatNullable(paragraph.Underline));
                     Hash(sha256, paragraph.HasBottomBorder ? "1" : "0");
@@ -1704,6 +1707,57 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 sha256.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
                 return "sha256:" + ToHex(sha256.Hash!);
             }
+        }
+
+        private static IReadOnlyList<WordParagraphSnapshot> CaptureRequiredLineLayout(Word.Document document,
+            IReadOnlyList<WordParagraphSnapshot> paragraphs, DocumentOperationSession? operation)
+        {
+            // Table count and absolute paragraph index are not document boundaries.
+            // Retain the bulk-reader safety guards, then measure only semantic line
+            // owners (including later documents), never every table cell.
+            var local = new LocalScanSnapshot("layout", 0, Array.Empty<LocalSectionSnapshot>(),
+                paragraphs.Select(p => new LocalParagraphSnapshot(p.Index, p.Text, p.StoryType,
+                    p.SectionIndex, p.AbsoluteStart, p.FontName ?? string.Empty,
+                    p.TableIndex, p.RowIndex, p.CellIndex, p.FontSizePoints, p.Bold, p.Italic,
+                    p.Alignment, isInTable: p.IsInTable, pageNumber: p.PageNumber)).ToArray(),
+                Array.Empty<ChuanHoa.Client.Core.Annotations.AnnotationProtectedSpan>());
+            var roles = new DocumentRoleDetector().Detect(local);
+            var result = new List<WordParagraphSnapshot>(paragraphs.Count);
+            foreach (var p in paragraphs)
+            {
+                if (!roles.TryGetValue(p.Index, out var role) ||
+                    (role != "nationalMotto" && role != "organName" && role != "partyTitle" &&
+                     role != "subject" && role != "subjectContinuation") ||
+                    ((role == "subject" || role == "subjectContinuation") &&
+                     roles.TryGetValue(p.Index + 1, out var nextRole) && nextRole == "subjectContinuation"))
+                {
+                    result.Add(p);
+                    continue;
+                }
+                operation?.Checkpoint();
+                Word.Range? range = null;
+                try
+                {
+                    range = document.Range(p.AbsoluteStart, p.AbsoluteEnd);
+                    var width = WordTextMeasurement.MeasureParagraphWidth(range, p.FontName,
+                        p.FontSizePoints, p.Bold, p.Italic);
+                    var center = WordTextMeasurement.ReadHorizontalCenter(range);
+                    var top = WordTextMeasurement.ReadLastTextLineTop(range);
+                    result.Add(new WordParagraphSnapshot(p.Index, p.Text, p.Role, p.RoleConfidence,
+                        p.FontName, p.FontSizePoints, p.Bold, p.Italic, p.Alignment,
+                        p.FirstLineIndentPoints, p.SpaceBeforePoints, p.SpaceAfterPoints, p.IsInTable,
+                        p.StoryType, p.SectionIndex, p.AbsoluteStart, p.TableIndex, p.RowIndex, p.CellIndex,
+                        p.FontColor, p.Underline, p.HasBottomBorder, p.LineSpacingPoints, p.LineSpacingRule,
+                        p.OutlineLevel, SafeInformation(range, Word.WdInformation.wdActiveEndAdjustedPageNumber),
+                        center.HasValue ? center.Value - width / 2d : (double?)null, top, width,
+                        p.KeepWithNext, p.WidowControl, p.StyleName, p.AbsoluteEnd, p.BuiltInStyleId,
+                        p.HasField, p.HasMathObject, p.HasHyperlink, p.HasContentControl, p.CaptionKind,
+                        p.TableNestingDepth, p.LeftIndentPoints));
+                }
+                catch (COMException) { result.Add(p); }
+                finally { Release(range); }
+            }
+            return result;
         }
 
         private static bool ShouldCapturePageLayout(Word.WdStoryType storyType, int paragraphIndex,

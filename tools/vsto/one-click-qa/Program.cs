@@ -135,6 +135,10 @@ namespace ChuanHoa.OneClickQa
                     "|align=" + paragraph.Alignment + "|left=" + paragraph.PageLeftPoints +
                     "|top=" + paragraph.PageTopPoints + "|width=" + paragraph.TextWidthPoints +
                     "|text=" + paragraph.Text.Replace("\r", " ").Replace("\n", " "));
+                if (ChuanHoa.Client.Core.Text.CombinedNationalHeader.GetBreakOffsets(paragraph.Text).Length > 0)
+                    Console.WriteLine("COMBINED_FLAGS=" + paragraph.Index + ":" + paragraph.HasField + ":" +
+                        paragraph.HasContentControl + ":" + paragraph.HasHyperlink + ":" + paragraph.HasMathObject +
+                        ":protected=" + snapshot.IntersectsProtectedSpan(paragraph));
             }
             foreach (var line in snapshot.LineShapes)
                 Console.WriteLine("LINE=L" + line.Index + "|name=" + line.Name + "|anchor=P" +

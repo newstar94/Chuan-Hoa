@@ -15,10 +15,6 @@ namespace ChuanHoa.Client.Core.Text
         public static bool IsValidIndent(string text, double firstLineMm, double? leftMm,
             double minimumMm, double maximumMm)
         {
-            if (IsDashListParagraph(text) && firstLineMm < 0)
-                return leftMm.HasValue &&
-                    Math.Abs(leftMm.Value - ListTextMillimeters) <= .5d &&
-                    Math.Abs(leftMm.Value + firstLineMm - ListMarkerMillimeters) <= .5d;
             return firstLineMm >= minimumMm - .5d && firstLineMm <= maximumMm + .5d &&
                 (!leftMm.HasValue || Math.Abs(leftMm.Value) <= .5d);
         }

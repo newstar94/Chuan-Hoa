@@ -163,6 +163,12 @@ try {
     $supportDirectory = Join-Path $payloadDirectory 'DevelopmentSupport'
     New-Item -ItemType Directory -Path $supportDirectory -Force | Out-Null
     Copy-Item -LiteralPath $trustedKey.Path -Destination (Join-Path $supportDirectory 'trusted-key.xml')
+    # Verify the exact staged assembly, embedded trust and version-bound lease
+    # before producing a distributable EXE. Build success alone is insufficient.
+    & (Join-Path $payloadDirectory 'ChuanHoa.DevelopmentAccessSmoke.exe')
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Staged Development access verification failed. Start the Development API and rebuild; no installer was produced.'
+    }
 
     $certificateDestination = Join-Path $payloadDirectory 'ChuanHoa.LocalDevelopment.Public.cer'
     $publishedCertificate = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new(

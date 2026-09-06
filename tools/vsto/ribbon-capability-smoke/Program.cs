@@ -22,7 +22,7 @@ namespace ChuanHoa.RibbonCapabilitySmoke
             "btnKieuOaUy", "btnKieuOaUy2", "btnDoiDauThapPhan",
             "mnuThongTinTienIch", "btnKiemTraPhienBanMoi", "btnGuiPhanHoi",
             "btnGioiThieu", "btnSuaLoiDangChon", "btnSuaTatCaChinhTa",
-            "btnTuDienCaNhan"
+            "btnTuDienCaNhan", "btnXoaTabKhongLeader"
         };
 
         [STAThread]

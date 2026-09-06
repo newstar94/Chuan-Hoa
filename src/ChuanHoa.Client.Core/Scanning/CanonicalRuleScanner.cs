@@ -430,6 +430,10 @@ namespace ChuanHoa.Client.Core.Scanning
             var positioned = styled.Where(line => IsBelow(line, paragraph)).ToArray();
             if (positioned.Length == 0) return RequiredLineStatus.InvalidPosition;
 
+            if (positioned.Count(line => IsHorizontal(line) &&
+                HasExpectedWidthAndCenter(line, paragraph, minimumWidthRatio, maximumWidthRatio)) > 1)
+                return RequiredLineStatus.InvalidGeometry;
+
             return positioned.Any(line => IsHorizontal(line) &&
                 HasExpectedWidthAndCenter(line, paragraph, minimumWidthRatio, maximumWidthRatio))
                 ? RequiredLineStatus.Valid
@@ -668,9 +672,11 @@ namespace ChuanHoa.Client.Core.Scanning
             LocalRulePack rules, IDictionary<int, string> roles)
         {
             var party = IsParty(snapshot);
+            var blocks = new DocumentRoleDetector().DetectBlocks(snapshot);
             foreach (var paragraph in WithRole(snapshot, roles, "placeAndIssuedDate"))
             {
-                CheckStyle(findings, "ND30-PL1-M2-K4-STYLE", paragraph, rules, party ? 14 : 13, 14, false, true, 1, "Địa danh và ngày tháng");
+                CheckStyle(findings, "ND30-PL1-M2-K4-STYLE", paragraph, rules, party ? 14 : 13, 14, false, true,
+                    party ? 1 : HeaderLayoutPolicy.DateAlignment(blocks, paragraph.Index), "Địa danh và ngày tháng");
                 var match = PlaceDate.Match(paragraph.Text);
                 if (!match.Success) continue;
                 if (match.Groups["comma"].Length == 0)
@@ -1396,6 +1402,7 @@ namespace ChuanHoa.Client.Core.Scanning
                 case "superiorOrganName":
                 case "organName":
                 case "typeName":
+                case "standaloneTitle":
                 case "subject":
                 case "signerAuthority":
                 case "appendixLabel":

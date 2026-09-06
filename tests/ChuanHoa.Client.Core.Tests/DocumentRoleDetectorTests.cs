@@ -315,4 +315,12 @@ public sealed class DocumentRoleDetectorTests
         new(index, text, "wdMainTextStory", 1, index * 100,
             "Times New Roman", fontSizePoints: 14, bold: true, alignment: 1,
             pageNumber: page);
+
+    [Fact]
+    public void Identity_card_label_is_not_an_administrative_document_number()
+    {
+        var roles = new DocumentRoleDetector().Detect(Snapshot("Số CCCD/Hộ chiếu: 000000000000, cấp ngày 01/01/2026"));
+        Assert.False(roles.TryGetValue(1, out var role) && role == "codeNumber");
+        Assert.Equal("codeNumber", new DocumentRoleDetector().Detect(Snapshot("Số: 126/QĐ-ABC"))[1]);
+    }
 }

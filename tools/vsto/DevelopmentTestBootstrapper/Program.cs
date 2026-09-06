@@ -1915,6 +1915,8 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
             var startInfo = new ProcessStartInfo
             {
                 FileName = verifierPath,
+                StandardOutputEncoding = Encoding.UTF8,
+                StandardErrorEncoding = Encoding.UTF8,
                 WorkingDirectory = installDirectory,
                 UseShellExecute = false,
                 CreateNoWindow = true,

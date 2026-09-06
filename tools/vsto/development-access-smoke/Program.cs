@@ -11,6 +11,7 @@ namespace ChuanHoa.DevelopmentAccessSmoke
     {
         private static int Main(string[] args)
         {
+            Console.OutputEncoding = System.Text.Encoding.UTF8;
             // Process-local negative fixture: packaged access must work even when
             // the external Development key path does not exist.
             if (args.Contains("--missing-external-trust"))
@@ -32,11 +33,13 @@ namespace ChuanHoa.DevelopmentAccessSmoke
                 {
                     access.WarmUp();
                     var refreshDeadline = Stopwatch.StartNew();
-                    while (!access.HasCachedFeature(LocalAccessManager.FormatFeature) &&
+                    while (access.IsRefreshInProgress && !access.HasCachedFeature(LocalAccessManager.FormatFeature) &&
                         refreshDeadline.Elapsed < TimeSpan.FromSeconds(10))
                     {
                         Thread.Sleep(25);
                     }
+                    if (!access.HasCachedFeature(LocalAccessManager.FormatFeature))
+                        throw new InvalidOperationException(access.DescribeStatus());
                     var format = access.GetRulePack(LocalAccessManager.FormatFeature);
                     var spelling = access.GetRulePack(LocalAccessManager.SpellingFeature);
                     var autoFix = access.GetRulePack(LocalAccessManager.AutoFixFeature);

@@ -306,6 +306,8 @@ namespace ChuanHoa.OneClickSmoke
                         item.Name.StartsWith("CHUANHOA2_MOTTO_", StringComparison.Ordinal));
                     Assert(normalized.DashStyle == (int)Office.MsoLineDashStyle.msoLineSolid,
                         "The normalized motto Line Shape is not solid.");
+                    Assert(!context.LastLocalSnapshot.LineShapes.Any(item => item.Name == "SMOKE_DASHED_MOTTO_LINE"),
+                        "The original dashed separator was left behind next to the normalized line.");
                 }
             }
             finally

@@ -203,6 +203,10 @@ namespace ChuanHoa.AddIn.Vsto.Ribbon
         {
             Runtime.ExecuteButton(RequireControlId(control));
         }
+        public void OnThietLap(Office.IRibbonControl control)
+        {
+            Runtime.ExecuteButton(RequireControlId(control));
+        }
         public void OnTuDienCaNhan(Office.IRibbonControl control)
         {
             Runtime.ExecuteButton(RequireControlId(control));

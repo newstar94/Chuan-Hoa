@@ -950,6 +950,59 @@ public sealed class CanonicalRouteScannerTests
         return new LocalSectionSnapshot(1, 210 * pt, 297 * pt, 20 * pt, 20 * pt, 30 * pt, 15 * pt, false, true);
     }
 
+    [Fact]
+    public void Combined_national_header_reports_the_missing_independent_motto_line()
+    {
+        var paragraph = P(1, "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\vĐộc lập - Tự do - Hạnh phúc\v---------------");
+        var snapshot = new LocalScanSnapshot("sha256:combined-header", 1, new[] { ValidSection() },
+            new[] { paragraph }, Array.Empty<AnnotationProtectedSpan>());
+        var scan = new LocalDocumentScanner().ScanFormat(snapshot, Rules());
+        Assert.Contains(scan.Findings, f => f.RuleCode == "ND30-PL1-M2-K1-TN-LINE" &&
+            f.Anchor.ParagraphIndex == 1);
+    }
+
+    [Fact]
+    public void Long_decision_subject_is_centered_not_body_text()
+    {
+        var text = "Về việc phê duyệt " + string.Join(" ", Enumerable.Repeat("nhiệm vụ của dự án", 60));
+        var snapshot = new LocalScanSnapshot("long-subject", 1, new[] { ValidSection() },
+            new[] { P(1, "QUYẾT ĐỊNH", bold: true, alignment: 1),
+                P(2, text, bold: true, alignment: 1, indent: 0, after: 0),
+                P(3, "Căn cứ Luật Đấu thầu;", italic: true) }, Array.Empty<AnnotationProtectedSpan>());
+        Assert.Equal("subject", new DocumentRoleDetector().Detect(snapshot)[2]);
+        var findings = new LocalDocumentScanner().ScanFormat(snapshot, Rules()).Findings;
+        Assert.DoesNotContain(findings, f => f.Anchor.ParagraphIndex == 2 &&
+            new[] { "ND30-PL1-M2-K6E-ALIGN", "ND30-PL1-M2-K6E-INDENT", "ND30-PL1-M2-K6E-SPACEAFTER" }.Contains(f.RuleCode));
+    }
+
+    [Fact]
+    public void Two_valid_motto_lines_are_reported_instead_of_accepting_the_first()
+    {
+        var motto = P(1, "Độc lập - Tự do - Hạnh phúc", "nationalMotto", alignment: 1,
+            page: 1, left: 300, top: 70, width: 170);
+        var snapshot = new LocalScanSnapshot("sha256:duplicate-lines", 1, new[] { ValidSection() },
+            new[] { motto }, Array.Empty<AnnotationProtectedSpan>(),
+            new[] { Line(1, motto, 300, 88, 170), Line(2, motto, 300, 91, 170) });
+        Assert.Contains(new LocalDocumentScanner().ScanFormat(snapshot, Rules()).Findings,
+            f => f.RuleCode == "ND30-PL1-M2-K1-TN-LINE");
+    }
+
+    [Theory]
+    [InlineData(15, -5, true)]
+    [InlineData(25, -5, true)]
+    [InlineData(15, 0, true)]
+    public void Scanner_checks_list_geometry_not_only_negative_first_line(double left, double first, bool invalid)
+    {
+        const double points = 72d / 25.4d;
+        var paragraph = new LocalParagraphSnapshot(1, "- Nội dung cam kết thực hiện nhiệm vụ", "wdMainTextStory", 1, 0,
+            "Times New Roman", fontSizePoints: 14, alignment: 3, firstLineIndentPoints: first * points,
+            leftIndentPoints: left * points);
+        var snapshot = new LocalScanSnapshot("sha256:hanging", 1, new[] { ValidSection() },
+            new[] { paragraph }, Array.Empty<AnnotationProtectedSpan>());
+        var scan = new LocalDocumentScanner().ScanFormat(snapshot, Rules());
+        Assert.Equal(invalid, scan.Findings.Any(f => f.RuleCode == "ND30-PL1-M2-K6E-INDENT"));
+    }
+
     private static LocalParagraphSnapshot P(int index, string text, string role = "Unknown", string font = "Times New Roman",
         double? size = 13, bool? bold = false, bool? italic = false, int? alignment = 3, double? indent = 30,
         double? before = 0, double? after = 6, double? lineSpacing = 12, int? color = 0, int section = 1,

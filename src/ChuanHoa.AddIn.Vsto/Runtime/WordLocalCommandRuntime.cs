@@ -122,17 +122,39 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                                 {
                                     format = paragraph.Format;
                                     tabs = format.TabStops;
+                                    var preserved = new List<Tuple<float, Word.WdTabAlignment, Word.WdTabLeader>>();
+                                    var remove = new List<Word.TabStop>();
+                                    try
+                                    {
                                     for (var i = tabs.Count; i >= 1; i--)
                                     {
                                         Word.TabStop? tab = null;
                                         try
                                         {
                                             tab = tabs[i];
-                                            if (tab.Leader == Word.WdTabLeader.wdTabLeaderSpaces)
-                                                tab.Clear();
+                                            if (tab.CustomTab && tab.Leader == Word.WdTabLeader.wdTabLeaderSpaces)
+                                            {
+                                                remove.Add(tab);
+                                                tab = null;
+                                            }
+                                            else if (tab.CustomTab)
+                                                preserved.Add(Tuple.Create(tab.Position, tab.Alignment, tab.Leader));
                                         }
                                         finally { Release(tab); }
                                     }
+                                    foreach (var tab in remove) tab.Clear();
+                                    // Word can reset the next custom tab's leader when
+                                    // clearing its predecessor. Restore survivor values,
+                                    // never default tabs or deleted tab positions.
+                                    if (remove.Count > 0)
+                                        foreach (var item in preserved)
+                                        {
+                                            Word.TabStop? restored = null;
+                                            try { restored = tabs.Add(item.Item1, item.Item2, item.Item3); }
+                                            finally { Release(restored); }
+                                        }
+                                    }
+                                    finally { foreach (var tab in remove) Release(tab); }
                                 }
                                 finally { Release(tabs); Release(format); Release(paragraph); }
                             }

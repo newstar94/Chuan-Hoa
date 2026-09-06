@@ -76,6 +76,61 @@ namespace ChuanHoa.LocalCommandSmoke
                 {
                     var commands = new WordLocalCommandRuntime(application, access);
 
+                    var tabRanges = new[] { document.Paragraphs[1].Range,
+                        table.Cell(1, 1).Range,
+                        document.Sections[1].Headers[Word.WdHeaderFooterIndex.wdHeaderFooterPrimary].Range,
+                        document.Sections[1].Footers[Word.WdHeaderFooterIndex.wdHeaderFooterPrimary].Range };
+                    try
+                    {
+                        var texts = new List<string>();
+                        foreach (var tabRange in tabRanges)
+                        {
+                            texts.Add(tabRange.Text);
+                            tabRange.ParagraphFormat.TabStops.ClearAll();
+                            tabRange.ParagraphFormat.TabStops.Add(30f, Word.WdTabAlignment.wdAlignTabLeft,
+                                Word.WdTabLeader.wdTabLeaderSpaces);
+                            tabRange.ParagraphFormat.TabStops.Add(60f, Word.WdTabAlignment.wdAlignTabRight,
+                                Word.WdTabLeader.wdTabLeaderDots);
+                            tabRange.ParagraphFormat.TabStops.Add(90f, Word.WdTabAlignment.wdAlignTabLeft,
+                                Word.WdTabLeader.wdTabLeaderDashes);
+                        }
+                        backups.Add(commands.RemoveLeaderlessTabStops());
+                        for (var i = 0; i < tabRanges.Length; i++)
+                        {
+                            Assert(tabRanges[i].Text == texts[i], "Tab cleanup changed text.");
+                            var stops = tabRanges[i].ParagraphFormat.TabStops;
+                            var customLeaders = new List<Word.WdTabLeader>();
+                            for (var tabIndex = 1; tabIndex <= stops.Count; tabIndex++)
+                            {
+                                var observed = stops[tabIndex];
+                                if (observed.CustomTab) customLeaders.Add(observed.Leader);
+                                Release(observed);
+                            }
+                            Assert(customLeaders.Count == 2, "Tab cleanup did not preserve exactly the two custom leader tabs in scope " + i + ".");
+                            Console.WriteLine("CUSTOM_LEADERS=" + i + ":" + string.Join(",", customLeaders));
+                            Assert(customLeaders[0] == Word.WdTabLeader.wdTabLeaderDots &&
+                                customLeaders[1] == Word.WdTabLeader.wdTabLeaderDashes,
+                                "Tab cleanup changed non-None leaders.");
+                            Release(stops);
+                        }
+                        backups.Add(commands.RemoveLeaderlessTabStops());
+                        foreach (var tabRange in tabRanges)
+                        {
+                            var stops = tabRange.ParagraphFormat.TabStops;
+                            var customCount = 0;
+                            for (var j = 1; j <= stops.Count; j++)
+                            {
+                                var stop = stops[j];
+                                if (stop.CustomTab) customCount++;
+                                Release(stop);
+                            }
+                            Assert(customCount == 2, "Tab cleanup was not idempotent.");
+                            Release(stops);
+                        }
+                        Console.WriteLine("LEADERLESS_TAB_STOPS_PASS BODY TABLE HEADER FOOTER PRESERVE_LEADERS TEXT IDEMPOTENT");
+                    }
+                    finally { foreach (var tabRange in tabRanges) Release(tabRange); }
+
                     document.Content.InsertAfter("\r\r\r");
                     var trailingLength = document.Content.End;
                     var deleteTimer = Stopwatch.StartNew();

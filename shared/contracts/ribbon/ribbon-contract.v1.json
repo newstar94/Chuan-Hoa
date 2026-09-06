@@ -43,11 +43,11 @@
   "counts": {
     "tabs": 1,
     "groups": 6,
-    "buttons": 35,
+    "buttons": 36,
     "menus": 3,
     "dropDowns": 2,
     "checkBoxes": 0,
-    "interactiveControls": 40
+    "interactiveControls": 41
   },
   "approvedProductChanges": [
     {
@@ -114,6 +114,20 @@
     "UNKNOWN_OPERATION_FAILS_CLOSED"
   ],
   "controls": [
+    {
+      "order": 0,
+      "groupId": "grpKhoiDong",
+      "parentContainerId": "boxDocDuLieu",
+      "controlType": "button",
+      "id": "btnThietLap",
+      "label": "Thiết lập",
+      "size": "normal",
+      "imageMso": "PropertySheet",
+      "callbacks": {"getEnabled": "GetEnabledHasDocument", "onAction": "OnThietLap"},
+      "screenTip": "Thiết lập nhận diện",
+      "superTip": "Chọn thủ công Quy định và Loại văn bản khi cần.",
+      "staticItems": []
+    },
     {
       "order": 1,
       "groupId": "grpAutoFixHero",
@@ -638,7 +652,7 @@
       "parentContainerId": null,
       "controlType": "button",
       "id": "btnXoaTabKhongLeader",
-      "label": "Xóa tab Leader=None",
+      "label": "Xóa tab",
       "size": "normal",
       "imageMso": "ClearFormatting",
       "callbacks": {
