@@ -263,8 +263,32 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 var oldType = type.SelectedIndex;
                 var save = new Button { Text = "Áp dụng", Left = 205, Top = 115, DialogResult = DialogResult.OK };
                 var cancel = new Button { Text = "Hủy", Left = 295, Top = 115, DialogResult = DialogResult.Cancel };
-                dialog.Controls.AddRange(new Control[] { new Label { Text = "Quy định", Left = 15, Top = 24 },
-                    new Label { Text = "Loại", Left = 15, Top = 69 }, regime, type, save, cancel });
+                dialog.Font = new System.Drawing.Font("Segoe UI", 9F);
+                dialog.AutoScaleMode = AutoScaleMode.Font;
+                dialog.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
+                dialog.ClientSize = new System.Drawing.Size(480, 240);
+                dialog.BackColor = System.Drawing.SystemColors.Window;
+                var layout = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(24),
+                    ColumnCount = 2, RowCount = 4 };
+                layout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+                layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+                layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+                layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+                layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+                layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+                var hint = new Label { AutoSize = true, Text = "Chọn thủ công khi kết quả nhận diện chưa phù hợp.",
+                    Margin = new Padding(0, 0, 0, 22) };
+                layout.Controls.Add(hint, 0, 0); layout.SetColumnSpan(hint, 2);
+                layout.Controls.Add(new Label { Text = "Quy định", AutoSize = true, Margin = new Padding(0, 6, 16, 16) }, 0, 1);
+                layout.Controls.Add(new Label { Text = "Loại văn bản", AutoSize = true, Margin = new Padding(0, 6, 16, 16) }, 0, 2);
+                regime.Dock = DockStyle.Fill; type.Dock = DockStyle.Fill;
+                regime.Margin = type.Margin = new Padding(0, 0, 0, 16);
+                layout.Controls.Add(regime, 1, 1); layout.Controls.Add(type, 1, 2);
+                var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, AutoSize = true };
+                foreach (var button in new[] { cancel, save })
+                { button.AutoSize = true; button.MinimumSize = new System.Drawing.Size(96, 34); buttons.Controls.Add(button); }
+                layout.Controls.Add(buttons, 0, 3); layout.SetColumnSpan(buttons, 2);
+                dialog.Controls.Add(layout);
                 dialog.AcceptButton = save; dialog.CancelButton = cancel;
                 if (dialog.ShowDialog() != DialogResult.OK) return;
                 if (regime.SelectedIndex != oldRegime)

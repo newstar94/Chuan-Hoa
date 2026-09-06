@@ -188,6 +188,58 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             Controls.Add(btnClose);
             Controls.Add(_statusLabel);
 
+            // Layout in logical units with text-sized action columns. Fixed pixel
+            // coordinates clipped captions when Word supplied a larger UI font.
+            SuspendLayout();
+            Text = "Từ điển cá nhân";
+            AutoScaleMode = AutoScaleMode.Font;
+            AutoScaleDimensions = new SizeF(7F, 15F);
+            ClientSize = new Size(720, 500);
+            MinimumSize = new Size(620, 460);
+            FormBorderStyle = FormBorderStyle.Sizable;
+            BackColor = SystemColors.Window;
+            var layout = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(20),
+                ColumnCount = 2, RowCount = 6 };
+            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            layout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            Controls.Clear();
+            titleLabel.Text = "Quản lý thuật ngữ riêng và các từ bỏ qua khi kiểm tra.";
+            titleLabel.Margin = new Padding(0, 0, 0, 16);
+            layout.Controls.Add(titleLabel, 0, 0); layout.SetColumnSpan(titleLabel, 2);
+            var search = new TableLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, ColumnCount = 2 };
+            search.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            search.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            search.Controls.Add(searchLabel); search.Controls.Add(_searchBox);
+            _searchBox.Dock = DockStyle.Fill;
+            layout.Controls.Add(search, 0, 1); layout.SetColumnSpan(search, 2);
+            _wordListBox.Dock = DockStyle.Fill;
+            layout.Controls.Add(_wordListBox, 0, 2);
+            var actions = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.TopDown,
+                WrapContents = false, Dock = DockStyle.Fill, Padding = new Padding(12, 0, 0, 0) };
+            foreach (var button in new[] { _deleteButton, btnClearIgnores, btnAddSelection, btnIgnoreSelection })
+            {
+                button.AutoSize = true; button.MinimumSize = new Size(160, 36);
+                button.Margin = new Padding(0, 0, 0, 8); actions.Controls.Add(button);
+            }
+            layout.Controls.Add(actions, 1, 2);
+            layout.Controls.Add(_countLabel, 0, 3);
+            var add = new TableLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, ColumnCount = 2 };
+            add.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            add.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            add.Controls.Add(newWordLabel); add.Controls.Add(_newWordBox); _newWordBox.Dock = DockStyle.Fill;
+            layout.Controls.Add(add, 0, 4); layout.Controls.Add(btnAdd, 1, 4);
+            _statusLabel.Dock = DockStyle.Fill; _statusLabel.MinimumSize = new Size(0, 44);
+            layout.Controls.Add(_statusLabel, 0, 5); layout.Controls.Add(btnClose, 1, 5);
+            foreach (var button in new[] { btnAdd, btnClose }) { button.AutoSize = true; button.MinimumSize = new Size(160, 36); }
+            Controls.Add(layout);
+            ResumeLayout(true);
+
             CancelButton = btnClose;
 
             RefreshWordList();

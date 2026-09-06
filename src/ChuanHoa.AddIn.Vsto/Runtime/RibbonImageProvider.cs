@@ -20,13 +20,14 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
         public object GetImage(string controlId)
         {
-            if (_disposed || !string.Equals(controlId, "btnTuDienCaNhan", StringComparison.Ordinal))
+            var scale = controlId == "btnScaleGiam" || controlId == "btnScale100" || controlId == "btnScaleTang";
+            if (_disposed || (!scale && !string.Equals(controlId, "btnTuDienCaNhan", StringComparison.Ordinal)))
                 return null!;
             object picture;
             if (_pictures.TryGetValue(controlId, out picture)) return picture;
             try
             {
-                var bitmap = LoadBitmap(PersonalDictionaryResource);
+                var bitmap = scale ? DrawScaleIcon(controlId) : LoadBitmap(PersonalDictionaryResource);
                 picture = PictureDispConverter.ToPictureDisp(bitmap);
                 _bitmaps.Add(controlId, bitmap);
                 _pictures.Add(controlId, picture);
@@ -46,6 +47,22 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             _pictures.Clear();
             _bitmaps.Clear();
             _disposed = true;
+        }
+
+        private static Bitmap DrawScaleIcon(string id)
+        {
+            var bitmap = new Bitmap(32, 32);
+            using (var graphics = Graphics.FromImage(bitmap))
+            using (var font = new Font("Segoe UI", id == "btnScale100" ? 10f : 16f, FontStyle.Bold, GraphicsUnit.Pixel))
+            using (var brush = new SolidBrush(Color.FromArgb(25, 85, 145)))
+            using (var format = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
+            {
+                graphics.Clear(Color.White);
+                graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;
+                graphics.DrawString(id == "btnScale100" ? "100" : id == "btnScaleGiam" ? "A−" : "A+",
+                    font, brush, new RectangleF(0, 0, 32, 32), format);
+            }
+            return bitmap;
         }
 
         private static Bitmap LoadBitmap(string resourceName)

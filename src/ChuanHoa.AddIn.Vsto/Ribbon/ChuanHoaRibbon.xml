@@ -46,9 +46,11 @@
             <button id="btnXoaTabKhongLeader" label="Xóa tab" size="normal" imageMso="ClearFormatting" screentip="Xóa tab stop không có leader" supertip="Xóa mọi tab stop có Leader=None trong tài liệu, kể cả bảng, đầu trang và chân trang. Giữ ký tự tab và các tab stop có leader khác. Có thể hoàn tác bằng Undo." getEnabled="GetEnabledHasDocument" onAction="OnXoaTabKhongLeader" />
           </box>
           <box id="boxCharacterTools" boxStyle="vertical">
-            <button id="btnScaleGiam" label="Scale −" size="normal" imageMso="CharacterScale" screentip="Giảm độ rộng chữ 1 điểm phần trăm" supertip="Giảm độ rộng chữ 1 điểm phần trăm cho vùng chọn; áp dụng ngay." getEnabled="GetEnabledHasDocument" onAction="OnScaleGiam" />
-            <button id="btnScale100" label="100%" size="normal" imageMso="CharacterScale" screentip="Khôi phục độ rộng chữ 100%" supertip="Khôi phục độ rộng chữ 100% cho vùng chọn; áp dụng ngay." getEnabled="GetEnabledHasDocument" onAction="OnScale100" />
-            <button id="btnScaleTang" label="Scale +" size="normal" imageMso="CharacterScale" screentip="Tăng độ rộng chữ 1 điểm phần trăm" supertip="Tăng độ rộng chữ 1 điểm phần trăm cho vùng chọn; áp dụng ngay." getEnabled="GetEnabledHasDocument" onAction="OnScaleTang" />
+            <box id="boxScaleIcons" boxStyle="horizontal">
+              <button id="btnScaleGiam" label="A−" size="normal" screentip="Giảm độ rộng chữ 1 điểm phần trăm" supertip="Giảm độ rộng chữ 1 điểm phần trăm cho vùng chọn; áp dụng ngay." getEnabled="GetEnabledHasDocument" onAction="OnScaleGiam" showLabel="true" showImage="false" />
+              <button id="btnScale100" label="100%" size="normal" screentip="Khôi phục độ rộng chữ 100%" supertip="Khôi phục độ rộng chữ 100% cho vùng chọn; áp dụng ngay." getEnabled="GetEnabledHasDocument" onAction="OnScale100" showLabel="true" showImage="false" />
+              <button id="btnScaleTang" label="A+" size="normal" screentip="Tăng độ rộng chữ 1 điểm phần trăm" supertip="Tăng độ rộng chữ 1 điểm phần trăm cho vùng chọn; áp dụng ngay." getEnabled="GetEnabledHasDocument" onAction="OnScaleTang" showLabel="true" showImage="false" />
+            </box>
             <box id="boxGianChu" boxStyle="horizontal">
               <button id="btnCoChu" label="◀" size="normal" imageMso="CharacterSpacingCondensed" screentip="Co chữ lại" supertip="Co chữ đang chọn -0,1pt" getEnabled="GetEnabledHasDocument" onAction="OnCoChu" />
               <button id="btnGianChuNormal" label="⬤" size="normal" imageMso="CharacterSpacingNormal" screentip="Về Normal" supertip="Bỏ co giãn chữ" getEnabled="GetEnabledHasDocument" onAction="OnGianChuNormal" />
@@ -83,14 +85,14 @@
             <button id="btnTuDienCaNhan" label="Từ điển cá nhân" size="normal" screentip="Quản lý từ điển cá nhân" supertip="Xem, thêm và xóa thuật ngữ riêng mà bộ kiểm tra chính tả cần bỏ qua." getEnabled="GetEnabledAlways" getImage="GetImageTuDienCaNhan" onAction="OnTuDienCaNhan" />
           </box>
         </group>
-        <group id="grpAbout" label="Thiết lập và trợ giúp">
-          <box id="boxSettingsTools" boxStyle="vertical">
-            <button id="btnThietLap" label="Thiết lập" size="normal" imageMso="PropertySheet" screentip="Thiết lập nhận diện" supertip="Chọn thủ công Quy định và Loại văn bản khi cần." getEnabled="GetEnabledHasDocument" onAction="OnThietLap" />
-            <menu id="mnuThongTinTienIch" label="Thông tin tiện ích" size="normal" imageMso="Info" screentip="Thông tin tiện ích" supertip="Xem thông tin sản phẩm, phiên bản, tác giả">
-              <button id="btnKiemTraPhienBanMoi" label="Kiểm tra phiên bản mới" imageMso="FileStartWorkflow" screentip="Kiểm tra phiên bản mới" supertip="Kiểm tra phiên bản mới và xem hướng dẫn sử dụng" onAction="OnKiemTraPhienBanMoi" />
-              <button id="btnGioiThieu" label="Thông tin tiện ích" imageMso="Info" screentip="Thông tin tiện ích" supertip="Thông tin sản phẩm, phiên bản, tác giả" onAction="OnGioiThieu" />
-            </menu>
-          </box>
+        <group id="grpAbout" label="Thiết lập">
+          <button id="btnThietLap" label="Thiết lập" size="large" imageMso="PropertySheet" screentip="Thiết lập nhận diện" supertip="Chọn thủ công Quy định và Loại văn bản khi cần." getEnabled="GetEnabledHasDocument" onAction="OnThietLap" />
+        </group>
+        <group id="grpInformation" label="Thông tin">
+          <menu id="mnuThongTinTienIch" label="Thông tin tiện ích" size="large" imageMso="Info" screentip="Thông tin tiện ích" supertip="Xem thông tin sản phẩm, phiên bản, tác giả">
+            <button id="btnKiemTraPhienBanMoi" label="Kiểm tra phiên bản mới" imageMso="FileStartWorkflow" screentip="Kiểm tra phiên bản mới" supertip="Kiểm tra phiên bản mới và xem hướng dẫn sử dụng" onAction="OnKiemTraPhienBanMoi" />
+            <button id="btnGioiThieu" label="Thông tin tiện ích" imageMso="Info" screentip="Thông tin tiện ích" supertip="Thông tin sản phẩm, phiên bản, tác giả" onAction="OnGioiThieu" />
+          </menu>
         </group>
       </tab>
     </tabs>

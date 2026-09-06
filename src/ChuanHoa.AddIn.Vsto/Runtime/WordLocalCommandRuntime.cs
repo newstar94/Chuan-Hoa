@@ -244,23 +244,39 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     if (reset) font.Scaling = 100;
                     else
                     {
-                        // Preserve relative scaling in a mixed-format selection.
-                        for (var index = 1; index <= range.Characters.Count; index++)
-                        {
-                            Word.Range? character = null;
-                            Word.Font? characterFont = null;
-                            try
-                            {
-                                character = range.Characters[index];
-                                characterFont = character.Font;
-                                characterFont.Scaling = Math.Max(1, Math.Min(600, characterFont.Scaling + delta));
-                            }
-                            finally { Release(characterFont); Release(character); }
-                        }
+                        ApplyScaleToUniformRanges(range, delta);
                     }
                 }
                 finally { Release(font); Release(range); Release(selection); }
             });
+        }
+
+        private static void ApplyScaleToUniformRanges(Word.Range range, int delta)
+        {
+            Word.Font? font = null;
+            Word.Range? left = null;
+            Word.Range? right = null;
+            try
+            {
+                font = range.Font;
+                var scale = font.Scaling;
+                if (scale >= 1 && scale <= 600)
+                {
+                    font.Scaling = Math.Max(1, Math.Min(600, scale + delta));
+                    return;
+                }
+                // Word returns wdUndefined for mixed values. Split only those
+                // ranges, not every character of an otherwise uniform paragraph.
+                var start = range.Start;
+                var end = range.End;
+                if (end - start <= 1) return;
+                var middle = start + (end - start) / 2;
+                left = range.Duplicate; left.SetRange(start, middle);
+                right = range.Duplicate; right.SetRange(middle, end);
+                ApplyScaleToUniformRanges(left, delta);
+                ApplyScaleToUniformRanges(right, delta);
+            }
+            finally { Release(right); Release(left); Release(font); }
         }
 
         public string RepeatTableHeaders()

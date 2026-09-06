@@ -129,13 +129,37 @@ def arrange_compact_columns(root: ET.Element, elements: dict) -> None:
             control.set("size", "normal")
             control.set("label", control.get("label", "").strip())
             box.append(control)
-    # Third row under the two fix actions, as requested. No extra column.
+    # Two compact horizontal rows: scale and character spacing.
+    scale_row = ET.SubElement(elements["boxCharacterTools"], f"{{{RIBBON_NAMESPACE}}}box",
+                              {"id": "boxScaleIcons", "boxStyle": "horizontal"})
+    for control_id, icon in (("btnScaleGiam", "CharacterSpacingCondensed"),
+                             ("btnScale100", "CharacterSpacingNormal"),
+                             ("btnScaleTang", "CharacterSpacingExpanded")):
+        control = elements[control_id]
+        elements["boxCharacterTools"].remove(control)
+        control.set("showLabel", "true")
+        control.set("showImage", "false")
+        control.set("label", {"btnScaleGiam": "A−", "btnScale100": "100%", "btnScaleTang": "A+"}[control_id])
+        control.attrib.pop("imageMso", None)
+        control.attrib.pop("getImage", None)
+        scale_row.append(control)
     spacing = elements["boxGianChu"]
     parent = next(parent for parent in root.iter() if spacing in list(parent))
     parent.remove(spacing)
     elements["boxCharacterTools"].append(spacing)
     elements["grpKhoiDong"].set("label", "Kiểm tra và sửa lỗi")
-    elements["grpAbout"].set("label", "Thiết lập và trợ giúp")
+    elements["grpAbout"].set("label", "Thiết lập")
+    tab = next(parent for parent in root.iter() if elements["grpAbout"] in list(parent))
+    info_group = ET.SubElement(tab, f"{{{RIBBON_NAMESPACE}}}group",
+                               {"id": "grpInformation", "label": "Thông tin"})
+    # Independent controls can use the available width without collapsing a
+    # single indivisible vertical box containing both settings and information.
+    for control_id in ("btnThietLap", "mnuThongTinTienIch"):
+        control = elements[control_id]
+        elements["boxSettingsTools"].remove(control)
+        control.set("size", "large")
+        (info_group if control_id == "mnuThongTinTienIch" else elements["grpAbout"]).append(control)
+    elements["grpAbout"].remove(elements["boxSettingsTools"])
     for box_id in ("boxDocDuLieu", "boxChenTrang"):
         box = elements[box_id]
         if not any(child.get("visible") != "false" for child in box):
