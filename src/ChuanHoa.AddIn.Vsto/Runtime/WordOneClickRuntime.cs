@@ -1082,6 +1082,9 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     range.Font.Size = party ? 14f : ValidOr(paragraph.FontSizePoints, 13, 14, 14);
                     range.ParagraphFormat.Alignment = Word.WdParagraphAlignment.wdAlignParagraphJustify;
                     ApplyBodyParagraphIndent(range, paragraph.Text);
+                    range.ParagraphFormat.SpaceBeforeAuto = 0;
+                    range.ParagraphFormat.SpaceAfterAuto = 0;
+                    range.ParagraphFormat.SpaceBefore = 0f;
                     range.ParagraphFormat.SpaceAfter = 6f;
                     if (party)
                     {
@@ -1105,6 +1108,12 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 if (role == "appendixTitle")
                     range.Case = Word.WdCharacterCase.wdUpperCase;
                 range.ParagraphFormat.Alignment = style.Alignment;
+                if (role == "recipientLabel" || role == "recipientList")
+                {
+                    range.ParagraphFormat.LeftIndent = 0f;
+                    range.ParagraphFormat.FirstLineIndent = 0f;
+                    range.ParagraphFormat.RightIndent = 0f;
+                }
                 if (role == "subject" || role == "subjectContinuation")
                 {
                     range.ParagraphFormat.LeftIndent = 0f;
@@ -1127,6 +1136,10 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 }
                 if (role == "legalBasis")
                 {
+                    range.ParagraphFormat.SpaceBeforeAuto = 0;
+                    range.ParagraphFormat.SpaceAfterAuto = 0;
+                    range.ParagraphFormat.SpaceBefore = 0f;
+                    range.ParagraphFormat.LineSpacingRule = Word.WdLineSpacing.wdLineSpaceSingle;
                     range.ParagraphFormat.LeftIndent = 0f;
                     range.ParagraphFormat.RightIndent = 0f;
                     range.ParagraphFormat.FirstLineIndent = 10f * PointsPerMillimeter;
@@ -1441,8 +1454,11 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 var originals = snapshot.LineShapes.Where(l => !LineShapeOwnership.IsOwned(l.Name) &&
                     l.ShapeType == 9 && l.AnchorStoryType == paragraph.StoryType &&
                     page > 0 && l.AnchorPageNumber == page && l.PageLeftPoints.HasValue && l.PageTopPoints.HasValue &&
-                    Math.Abs(l.PageTopPoints.Value - y) <= 18d && Math.Abs(l.HeightPoints) <= 3d &&
-                    Math.Abs(l.PageLeftPoints.Value + l.WidthPoints / 2d - center.Value) <= 18d &&
+                    (Math.Abs(l.PageTopPoints.Value - y) <= 18d &&
+                     Math.Abs(l.PageLeftPoints.Value + l.WidthPoints / 2d - center.Value) <= 18d ||
+                     IsLegacyHeaderSeparator(snapshot, paragraph, l, ruleCode, top, center.Value, textWidth,
+                         WordTextMeasurement.ReadAvailableWidth(range).GetValueOrDefault(textWidth))) &&
+                    Math.Abs(l.HeightPoints) <= 3d &&
                     l.WidthPoints >= 10d && l.WidthPoints <= WordTextMeasurement.ReadAvailableWidth(range).GetValueOrDefault(600d)).ToArray();
                 if (originals.Length >= 1)
                 {
@@ -1537,6 +1553,26 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 return false;
             }
             return marks >= 3;
+        }
+
+        private static bool IsLegacyHeaderSeparator(LocalScanSnapshot snapshot,
+            LocalParagraphSnapshot paragraph, LocalLineShapeSnapshot line, string ruleCode,
+            double textTop, double center, double textWidth, double containerWidth)
+        {
+            if (!paragraph.IsInTable || !paragraph.TableIndex.HasValue ||
+                (ruleCode != "ND30-PL1-M2-K1-TN-LINE" && ruleCode != "ND30-PL1-M2-K2-ORG-LINE")) return false;
+            var anchor = snapshot.Paragraphs.FirstOrDefault(p => p.Index == line.AnchorParagraphIndex &&
+                p.StoryType == paragraph.StoryType);
+            if (anchor == null || anchor.TableIndex != paragraph.TableIndex ||
+                anchor.CellIndex != paragraph.CellIndex || !anchor.RowIndex.HasValue || !paragraph.RowIndex.HasValue ||
+                anchor.RowIndex.Value < paragraph.RowIndex.Value ||
+                anchor.RowIndex.Value > paragraph.RowIndex.Value + 1) return false;
+            var distance = line.PageTopPoints.GetValueOrDefault(double.MinValue) - textTop;
+            var lineCenter = line.PageLeftPoints.GetValueOrDefault(double.MinValue) + line.WidthPoints / 2d;
+            return distance >= 0 && distance <= 60 &&
+                Math.Abs(lineCenter - center) + line.WidthPoints / 2d <= containerWidth / 2d + 1d &&
+                line.WidthPoints >= textWidth * .25 && line.WidthPoints <= textWidth * 1.2 &&
+                line.BeginArrowheadStyle == 1 && line.EndArrowheadStyle == 1;
         }
 
         private static bool TryNormalizeExistingComponentLine(Word.Document document,

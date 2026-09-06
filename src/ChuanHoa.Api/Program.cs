@@ -14,6 +14,7 @@ builder.Services.AddControllers();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<DevelopmentArtifactIssuer>();
 builder.Services.AddSingleton<DevelopmentAdminStore>();
+builder.Services.AddSingleton<ChuanHoa.Api.Billing.PayOsGateway>();
 builder.Services
     .AddAuthentication(FailClosedAuthenticationDefaults.Scheme)
     .AddScheme<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions, FailClosedAuthenticationHandler>(

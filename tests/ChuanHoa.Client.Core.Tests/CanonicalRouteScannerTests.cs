@@ -14,8 +14,9 @@ public sealed class CanonicalRouteScannerTests
     [Fact]
     public void Registry_contains_product_routes_and_shape_rules_without_removed_tone_or_iy()
     {
-        Assert.Equal(77, CanonicalRuleScanner.RegisteredRuleCodes.Count);
-        Assert.Equal(77, CanonicalRuleScanner.RegisteredRuleCodes.Distinct(StringComparer.Ordinal).Count());
+        Assert.Equal(76, CanonicalRuleScanner.RegisteredRuleCodes.Count);
+        Assert.Equal(76, CanonicalRuleScanner.RegisteredRuleCodes.Distinct(StringComparer.Ordinal).Count());
+        Assert.DoesNotContain("ND30-PL1-M2-K9B-LUU", CanonicalRuleScanner.RegisteredRuleCodes);
         Assert.DoesNotContain("ND30-PL1-M1-K2", CanonicalRuleScanner.RegisteredRuleCodes);
         Assert.DoesNotContain(CanonicalRuleScanner.RegisteredRuleCodes,
             code => code.Contains("TONE", StringComparison.OrdinalIgnoreCase) || code.Contains("IY", StringComparison.OrdinalIgnoreCase));
@@ -1001,6 +1002,38 @@ public sealed class CanonicalRouteScannerTests
             new[] { paragraph }, Array.Empty<AnnotationProtectedSpan>());
         var scan = new LocalDocumentScanner().ScanFormat(snapshot, Rules());
         Assert.Equal(invalid, scan.Findings.Any(f => f.RuleCode == "ND30-PL1-M2-K6E-INDENT"));
+    }
+
+    [Fact]
+    public void Automatic_recipient_list_is_checked_without_adding_bullet_to_source_text()
+    {
+        var paragraphs = new[] {
+            P(1, "Nơi nhận:", size: 12, bold: true, italic: true, alignment: 0),
+            new LocalParagraphSnapshot(2, "Như Điều 4;", "wdMainTextStory", 1, 100,
+                "Times New Roman", fontSizePoints: 14, italic: true, alignment: 3,
+                firstLineIndentPoints: 28, leftIndentPoints: 28, listMarker: "-"),
+            new LocalParagraphSnapshot(3, "Lưu VT.", "wdMainTextStory", 1, 200,
+                "Times New Roman", fontSizePoints: 14, italic: true, alignment: 3, listMarker: "-") };
+        var snapshot = new LocalScanSnapshot("auto-recipients", 1, new[] { ValidSection() },
+            paragraphs, Array.Empty<AnnotationProtectedSpan>());
+        Assert.Equal("recipientList", new DocumentRoleDetector().Detect(snapshot)[2]);
+        var findings = new LocalDocumentScanner().ScanFormat(snapshot, Rules()).Findings;
+        Assert.Contains(findings, f => f.RuleCode == "ND30-PL1-M2-K9B-LIST" && f.Anchor.ParagraphIndex == 2);
+        Assert.DoesNotContain(findings, f => f.RuleCode == "ND30-PL1-M2-K9B-LUU");
+        Assert.Equal("Như Điều 4;", paragraphs[1].Text);
+    }
+
+    [Fact]
+    public void Proper_auto_list_archive_line_accepts_comma_and_final_period()
+    {
+        var snapshot = new LocalScanSnapshot("valid-recipients", 1, new[] { ValidSection() },
+            new[] { P(1, "Nơi nhận:", size:12, bold:true, italic:true, alignment:0),
+                new LocalParagraphSnapshot(2, "Lưu: VT, HC (02).", "wdMainTextStory", 1, 100,
+                    "Times New Roman", fontSizePoints:11, italic:false, bold:false, alignment:0,
+                    firstLineIndentPoints:0, leftIndentPoints:0, listMarker:"-") },
+            Array.Empty<AnnotationProtectedSpan>());
+        Assert.DoesNotContain(new LocalDocumentScanner().ScanFormat(snapshot, Rules()).Findings,
+            f => f.RuleCode == "ND30-PL1-M2-K9B-LUU");
     }
 
     private static LocalParagraphSnapshot P(int index, string text, string role = "Unknown", string font = "Times New Roman",

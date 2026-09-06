@@ -188,7 +188,7 @@ namespace ChuanHoa.Client.Core.Scanning
                 if (NationalTitle.IsMatch(text)) assignedRole = "nationalTitle";
                 else if (Contains(text, "Độc lập") && Contains(text, "Hạnh phúc")) assignedRole = "nationalMotto";
                 else if (Eq(text, "ĐẢNG CỘNG SẢN VIỆT NAM")) assignedRole = "partyTitle";
-                else if (Rx(@"^Số\s*:?\s*\d").IsMatch(text)) assignedRole = "codeNumber";
+                else if (Rx(@"^Số\s*:?\s*(?:\d|[.…]+\s*/)").IsMatch(text)) assignedRole = "codeNumber";
                 else if (legalBasisWindowOpen && IsFormalLegalBasisParagraph(text))
                     assignedRole = "legalBasis";
                 else if (IsPlaceDate(text)) assignedRole = "placeAndIssuedDate";
@@ -212,7 +212,11 @@ namespace ChuanHoa.Client.Core.Scanning
                 else if (Rx(@"^Kính\s+(gửi|trình)\s*:", true).IsMatch(text)) assignedRole = text.EndsWith(":", StringComparison.Ordinal) ? "recipientSalutation" : "recipientSalutationInline";
                 else if ((previousRole == "recipientSalutation" || previousRole == "recipientSalutationList") && text.StartsWith("-", StringComparison.Ordinal)) assignedRole = "recipientSalutationList";
                 else if (Rx(@"^Nơi\s+nhận", true).IsMatch(text)) assignedRole = "recipientLabel";
-                else if ((previousRole == "recipientLabel" || previousRole == "recipientList") && text.StartsWith("-", StringComparison.Ordinal)) assignedRole = "recipientList";
+                else if ((previousRole == "recipientLabel" || previousRole == "recipientList") &&
+                    i > 0 && main[i - 1].Index + 1 == paragraph.Index &&
+                    main[i - 1].TableIndex == paragraph.TableIndex && main[i - 1].CellIndex == paragraph.CellIndex &&
+                    (text.StartsWith("-", StringComparison.Ordinal) || !string.IsNullOrWhiteSpace(paragraph.ListMarker) ||
+                     Rx(@"^(Như\s+Điều\b|Lưu\b)", true).IsMatch(text))) assignedRole = "recipientList";
                 else if (Rx(@"^Phụ\s+lục(?:\s+[IVXLCDM\d]+)?\b", true).IsMatch(text)) assignedRole = "appendixLabel";
                 else if (Rx(@"^(Phần|Chương)\s+(?:[IVXLCDM]+|thứ\s+\p{L}+)$", true).IsMatch(text)) assignedRole = "partChapterHeading";
                 else if (Rx(@"^(Mục|Tiểu mục)\s+\d+$", true).IsMatch(text)) assignedRole = "sectionHeading";
@@ -550,6 +554,8 @@ namespace ChuanHoa.Client.Core.Scanning
         {
             if (LegalBasis.IsMatch(text) || text.IndexOf(';') >= 0) return false;
             var match = PlaceDate.Match(text);
+            if (!match.Success && Rx(@"^[\p{L}][\p{L}\s.]{0,70},\s*ngày\s+[.…]+\s+tháng\s+(?:\d{1,2}|[.…]+)\s+năm\s+(?:\d{4}|[.…]+)$", true).IsMatch(text))
+                return true;
             if (!match.Success) return false;
             var place = match.Groups["place"].Value.Trim();
             return place.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries).Length <= 8;

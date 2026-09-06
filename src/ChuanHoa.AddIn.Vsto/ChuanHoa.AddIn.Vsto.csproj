@@ -88,6 +88,10 @@
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Windows.Forms" />
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="WindowsBase" />
+    <Reference Include="System.Xaml" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="Microsoft.Office.Interop.Word">
       <EmbedInteropTypes>true</EmbedInteropTypes>
@@ -145,6 +149,7 @@
     <Compile Include="Runtime\WordLocalScanRuntime.cs" />
     <Compile Include="Runtime\WordOneClickRuntime.cs" />
     <Compile Include="Runtime\CustomDictionaryDialog.cs" />
+    <Compile Include="Runtime\AccountSettingsWindow.cs" />
     <Compile Include="Runtime\WordRecoveryCopyManager.cs" />
     <Compile Include="Runtime\WordTextMeasurement.cs" />
     <Compile Include="Runtime\WordMutationRuntime.cs" />

@@ -47,6 +47,9 @@ public sealed partial class IdempotencyKeyValidationMiddleware(RequestDelegate n
 
     private static bool RequiresIdempotencyKey(HttpRequest request)
     {
+        // payOS does not send our client idempotency header. The signed provider
+        // reference must instead be deduplicated by the durable purchase store.
+        if (HttpMethods.IsPost(request.Method) && request.Path == "/v1/billing/payos/webhook") return false;
         if (!request.Path.StartsWithSegments("/v1"))
         {
             return false;

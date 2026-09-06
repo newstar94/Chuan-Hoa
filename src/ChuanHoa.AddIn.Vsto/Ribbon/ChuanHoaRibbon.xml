@@ -45,16 +45,18 @@
             <button id="btnKeepWithNext" label="Keep with next" size="normal" imageMso="FootnoteNextWord" screentip="Keep with next" supertip="Giữ đoạn hiện tại cùng trang với đoạn kế tiếp" getEnabled="GetEnabledHasDocument" onAction="OnKeepWithNext" />
             <button id="btnXoaTabKhongLeader" label="Xóa tab" size="normal" imageMso="ClearFormatting" screentip="Xóa tab stop không có leader" supertip="Xóa mọi tab stop có Leader=None trong tài liệu, kể cả bảng, đầu trang và chân trang. Giữ ký tự tab và các tab stop có leader khác. Có thể hoàn tác bằng Undo." getEnabled="GetEnabledHasDocument" onAction="OnXoaTabKhongLeader" />
           </box>
-          <box id="boxCharacterTools" boxStyle="vertical">
-            <box id="boxScaleIcons" boxStyle="horizontal">
+          <box id="boxCharacterTools" boxStyle="horizontal">
+            <box id="boxCharacterDecrease" boxStyle="vertical">
               <button id="btnScaleGiam" label="A−" size="normal" screentip="Giảm độ rộng chữ 1 điểm phần trăm" supertip="Giảm độ rộng chữ 1 điểm phần trăm cho vùng chọn; áp dụng ngay." getEnabled="GetEnabledHasDocument" onAction="OnScaleGiam" showLabel="true" showImage="false" />
-              <button id="btnScale100" label="100%" size="normal" screentip="Khôi phục độ rộng chữ 100%" supertip="Khôi phục độ rộng chữ 100% cho vùng chọn; áp dụng ngay." getEnabled="GetEnabledHasDocument" onAction="OnScale100" showLabel="true" showImage="false" />
-              <button id="btnScaleTang" label="A+" size="normal" screentip="Tăng độ rộng chữ 1 điểm phần trăm" supertip="Tăng độ rộng chữ 1 điểm phần trăm cho vùng chọn; áp dụng ngay." getEnabled="GetEnabledHasDocument" onAction="OnScaleTang" showLabel="true" showImage="false" />
+              <button id="btnCoChu" label="◀" size="normal" screentip="Co chữ lại" supertip="Co chữ đang chọn -0,1pt" getEnabled="GetEnabledHasDocument" onAction="OnCoChu" showLabel="true" showImage="false" />
             </box>
-            <box id="boxGianChu" boxStyle="horizontal">
-              <button id="btnCoChu" label="◀" size="normal" imageMso="CharacterSpacingCondensed" screentip="Co chữ lại" supertip="Co chữ đang chọn -0,1pt" getEnabled="GetEnabledHasDocument" onAction="OnCoChu" />
-              <button id="btnGianChuNormal" label="⬤" size="normal" imageMso="CharacterSpacingNormal" screentip="Về Normal" supertip="Bỏ co giãn chữ" getEnabled="GetEnabledHasDocument" onAction="OnGianChuNormal" />
-              <button id="btnGianChuRa" label="▶" size="normal" imageMso="CharacterSpacingExpanded" screentip="Giãn chữ ra" supertip="Giãn chữ đang chọn +0,1pt" getEnabled="GetEnabledHasDocument" onAction="OnGianChuRa" />
+            <box id="boxCharacterReset" boxStyle="vertical">
+              <button id="btnScale100" label="100%" size="normal" screentip="Khôi phục độ rộng chữ 100%" supertip="Khôi phục độ rộng chữ 100% cho vùng chọn; áp dụng ngay." getEnabled="GetEnabledHasDocument" onAction="OnScale100" showLabel="true" showImage="false" />
+              <button id="btnGianChuNormal" label="⬤" size="normal" screentip="Về Normal" supertip="Bỏ co giãn chữ" getEnabled="GetEnabledHasDocument" onAction="OnGianChuNormal" showLabel="true" showImage="false" />
+            </box>
+            <box id="boxCharacterIncrease" boxStyle="vertical">
+              <button id="btnScaleTang" label="A+" size="normal" screentip="Tăng độ rộng chữ 1 điểm phần trăm" supertip="Tăng độ rộng chữ 1 điểm phần trăm cho vùng chọn; áp dụng ngay." getEnabled="GetEnabledHasDocument" onAction="OnScaleTang" showLabel="true" showImage="false" />
+              <button id="btnGianChuRa" label="▶" size="normal" screentip="Giãn chữ ra" supertip="Giãn chữ đang chọn +0,1pt" getEnabled="GetEnabledHasDocument" onAction="OnGianChuRa" showLabel="true" showImage="false" />
             </box>
           </box>
           <box id="boxPageTools" boxStyle="vertical">

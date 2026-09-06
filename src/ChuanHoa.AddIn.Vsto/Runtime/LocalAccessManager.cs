@@ -21,6 +21,31 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         public const string SpellingFeature = "SPELLING_SCAN";
         public const string DocumentToolsFeature = "DOCUMENT_TOOLS";
         public const string AutoFixFeature = "AUTOFIX";
+        public const string TableImageToolsFeature = "TABLE_IMAGE_TOOLS";
+
+        public bool CanUseCommand(string commandId)
+        {
+            var feature = ProductFeaturePolicy.RequiredFeature(commandId);
+            if (feature.Length == 0) return true;
+            return HasCachedFeature(feature) || (feature == TableImageToolsFeature &&
+                HasCachedFeature(DocumentToolsFeature));
+        }
+
+        public void RequireCommand(string commandId)
+        {
+            var feature = ProductFeaturePolicy.RequiredFeature(commandId);
+            if (feature.Length == 0) return;
+            if (feature == TableImageToolsFeature) GetTableImageRulePack();
+            else GetRulePack(feature);
+        }
+
+        public LocalRulePack GetTableImageRulePack()
+        {
+            // Existing signed paid/Development leases include DOCUMENT_TOOLS.
+            // Free leases grant only the narrower TABLE_IMAGE_TOOLS capability.
+            return GetRulePack(HasCachedFeature(DocumentToolsFeature)
+                ? DocumentToolsFeature : TableImageToolsFeature);
+        }
         private const string DevelopmentKeyId = "CHUANHOA-LOCAL-DEVELOPMENT-1";
         private readonly string _clientReleaseId;
         private readonly string _cacheDirectory;

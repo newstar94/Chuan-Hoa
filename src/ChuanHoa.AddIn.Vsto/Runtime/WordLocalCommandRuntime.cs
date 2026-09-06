@@ -281,7 +281,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
         public string RepeatTableHeaders()
         {
-            return Execute("Lặp tiêu đề bảng", (document, _) =>
+            return ExecuteTableImage("Lặp tiêu đề bảng", (document, _) =>
             {
                 Word.Range? originalSelection = null;
                 try
@@ -455,7 +455,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
         public string CenterTables()
         {
-            return Execute("Căn giữa bảng", (document, _) =>
+            return ExecuteTableImage("Căn giữa bảng", (document, _) =>
             {
                 foreach (Word.Table table in document.Tables)
                 {
@@ -558,7 +558,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
         public string CenterImages()
         {
-            return Execute("Căn giữa ảnh", (document, _) =>
+            return ExecuteTableImage("Căn giữa ảnh", (document, _) =>
             {
                 foreach (Word.InlineShape shape in document.InlineShapes)
                 {
@@ -586,7 +586,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
         public string AlignCurrentCells(bool middle)
         {
-            return Execute(middle ? "Căn giữa ô" : "Căn đỉnh ô", (_, __) =>
+            return ExecuteTableImage(middle ? "Căn giữa ô" : "Căn đỉnh ô", (_, __) =>
             {
                 if (!_application.Selection.get_Information(Word.WdInformation.wdWithInTable))
                     throw new InvalidOperationException("Hãy đặt con trỏ trong bảng hoặc chọn các ô cần căn.");
@@ -605,7 +605,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
         public string CleanExcelTableCharacters()
         {
-            return Execute("Xóa ký tự thừa trong bảng", (_, __) =>
+            return ExecuteTableImage("Xóa ký tự thừa trong bảng", (_, __) =>
             {
                 if (!_application.Selection.get_Information(Word.WdInformation.wdWithInTable))
                     throw new InvalidOperationException("Hãy đặt con trỏ trong bảng được dán từ Excel.");
@@ -1207,10 +1207,13 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     0, 0, 0, 0, false, false, Word.WdOutlineLevel.wdOutlineLevelBodyText, 0);
         }
 
+        private string ExecuteTableImage(string title, Action<Word.Document, LocalRulePack> operation) =>
+            Execute(title, operation, tableImageOnly: true);
+
         private string Execute(
             string title,
             Action<Word.Document, LocalRulePack> operation,
-            bool createBackup = false)
+            bool createBackup = false, bool tableImageOnly = false)
         {
             var ownsDocument = _documentProvider == null;
             Word.Document? document = null;
@@ -1223,7 +1226,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 if (!capability.CanReadDocument) throw new InvalidOperationException(capability.Reason);
                 if (capability.IsReadOnly || capability.IsProtected || capability.TrackChangesEnabled)
                     throw new InvalidOperationException("Tài liệu phải cho phép chỉnh sửa, không bảo vệ và tắt Track Changes.");
-                var rules = _accessManager.GetRulePack(LocalAccessManager.DocumentToolsFeature);
+                var rules = tableImageOnly ? _accessManager.GetTableImageRulePack() :
+                    _accessManager.GetRulePack(LocalAccessManager.DocumentToolsFeature);
                 var backup = createBackup ? CreateBackup(document) : string.Empty;
                 var previousScreenUpdating = _application.ScreenUpdating;
                 var undoStarted = false;

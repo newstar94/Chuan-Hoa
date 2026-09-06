@@ -60,7 +60,7 @@ namespace ChuanHoa.Client.Core.Scanning
             "ND30-PL1-M2-K6E-ALIGN", "ND30-PL1-M2-K6E-DOTSLASH", "ND30-PL1-M2-K6E-INDENT", "ND30-PL1-M2-K6E-LINESPACING",
             "ND30-PL1-M2-K6E-SPACEAFTER", "ND30-PL1-M2-K7B-AUTH", "ND30-PL1-M2-K7D-STYLE", "ND30-PL1-M2-K9A-COLON",
             "ND30-PL1-M2-K9A-INLINE-END", "ND30-PL1-M2-K9A-LAYOUT", "ND30-PL1-M2-K9A-PUNCT", "ND30-PL1-M2-K9B-LABEL",
-            "ND30-PL1-M2-K9B-LIST", "ND30-PL1-M2-K9B-LUU", "ND30-PL1-M3-K1A-NUM", "ND30-PL1-M3-K1A-REF",
+            "ND30-PL1-M2-K9B-LIST", "ND30-PL1-M3-K1A-NUM", "ND30-PL1-M3-K1A-REF",
             "ND30-PL1-M3-K1B", "ND30-PL1-M3-K1C", "ND30-PL1-M3-K1D", "ND30-PL1-MV-CT1", "ND30-PL2-M1",
             "ND30-PL2-M2-K1", "ND30-PL2-M3-K1A", "ND30-PL2-M3-K1B", "ND30-PL2-M3-K1C", "ND30-PL2-M3-K1D",
             "ND30-PL2-M3-K1E", "ND30-PL2-M4-K1A", "ND30-PL2-M4-K1B", "ND30-PL2-M5-K5", "ND30-PL2-M5-K7", "ND30-PL2-M5-K8A"
@@ -884,24 +884,20 @@ namespace ChuanHoa.Client.Core.Scanning
                     findings.Add(ParagraphQualified("ND30-PL1-M2-K9B-LABEL", paragraph,
                         "underline", "Nơi nhận của văn bản Đảng chưa gạch chân.",
                         "Gạch chân cụm từ Nơi nhận.", rules));
-                if (!Rx(@"^\s*Nơi\s+nhận\s*:", true).IsMatch(paragraph.Text))
-                    findings.Add(ParagraphQualified("ND30-PL1-M2-K9B-LABEL", paragraph,
-                        "colon", "Nơi nhận thiếu dấu hai chấm.", "Viết Nơi nhận:", rules));
             }
-            var recipientItems = WithRole(snapshot, roles, "recipientList").OrderBy(p => p.Index).ToArray();
+            foreach (var recipientBlock in ConsecutiveRoleBlocks(Scannable(snapshot).OrderBy(p => p.Index), roles, "recipientList"))
+            {
+            var recipientItems = recipientBlock.ToArray();
             for (var i = 0; i < recipientItems.Length; i++)
             {
                 CheckStyle(findings, "ND30-PL1-M2-K9B-LIST", recipientItems[i], rules, party ? 12 : 11,
                     party ? 12 : 11, false, false, 0, "Danh sách Nơi nhận");
-                var text = recipientItems[i].Text.Trim();
-                if (!text.StartsWith("-", StringComparison.Ordinal) || (i < recipientItems.Length - 1 && !text.EndsWith(";", StringComparison.Ordinal)))
-                    findings.Add(ParagraphQualified("ND30-PL1-M2-K9B-LIST",
-                        recipientItems[i], "punctuation",
-                        "Danh sách Nơi nhận sai gạch đầu dòng hoặc dấu câu.",
-                        "Mỗi dòng bắt đầu bằng gạch ngang và các dòng trước kết thúc bằng chấm phẩy.", rules));
+                if (Math.Abs(recipientItems[i].LeftIndentPoints.GetValueOrDefault()) > 1.5d ||
+                    Math.Abs(recipientItems[i].FirstLineIndentPoints.GetValueOrDefault()) > 1.5d)
+                    findings.Add(ParagraphQualified("ND30-PL1-M2-K9B-LIST", recipientItems[i], "indent",
+                        "Danh sách Nơi nhận bị thụt lề.", "Đặt gạch đầu dòng sát lề trái.", rules));
             }
-            if (recipientItems.Length > 0 && !Rx(@"^\s*-\s*Lưu\s*:\s*[^;,.]+[.;]?\s*$", true).IsMatch(recipientItems[recipientItems.Length - 1].Text))
-                findings.Add(Paragraph("ND30-PL1-M2-K9B-LUU", recipientItems[recipientItems.Length - 1], "Dòng Lưu chưa đúng cấu trúc.", "Dòng cuối có dạng - Lưu: VT, ...", rules));
+            }
         }
 
         private static void CheckAppendices(ICollection<AnnotationFinding> findings, LocalScanSnapshot snapshot,

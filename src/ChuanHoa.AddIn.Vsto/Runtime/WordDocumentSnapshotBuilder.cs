@@ -169,7 +169,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             int? builtInStyleId = null, bool? hasField = null,
             bool? hasMathObject = null, bool? hasHyperlink = null,
             bool? hasContentControl = null, string? captionKind = null,
-            int tableNestingDepth = 0, double? leftIndentPoints = null)
+            int tableNestingDepth = 0, double? leftIndentPoints = null, string? listMarker = null)
         {
             Index = index;
             Text = text;
@@ -182,6 +182,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             Alignment = alignment;
             FirstLineIndentPoints = firstLineIndentPoints;
             LeftIndentPoints = leftIndentPoints;
+            ListMarker = listMarker;
             SpaceBeforePoints = spaceBeforePoints;
             SpaceAfterPoints = spaceAfterPoints;
             IsInTable = isInTable;
@@ -225,6 +226,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         public int? Alignment { get; }
         public double? FirstLineIndentPoints { get; }
         public double? LeftIndentPoints { get; }
+        public string? ListMarker { get; }
         public double? SpaceBeforePoints { get; }
         public double? SpaceAfterPoints { get; }
         public bool IsInTable { get; }
@@ -846,7 +848,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                             hasHyperlink,
                             hasContentControl,
                             captionKind,
-                            tableCoordinates.Item4, format == null ? null : ReadNullableFloat(format.LeftIndent)));
+                            tableCoordinates.Item4, format == null ? null : ReadNullableFloat(format.LeftIndent), ReadListMarker(range)));
                         AddElapsed(ref snapshotTicks, phaseStarted);
                     }
                     finally
@@ -977,7 +979,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                             lineSpacingRule, outlineLevel, 0, null, null, null,
                             keepWithNext, widowControl, styleName, absoluteEnd, builtInStyleId,
                             hasField, hasMathObject, hasHyperlink, hasContentControl, captionKind,
-                            tableCoordinates.Item4, format == null ? null : ReadNullableFloat(format.LeftIndent)));
+                            tableCoordinates.Item4, format == null ? null : ReadNullableFloat(format.LeftIndent), ReadListMarker(range)));
                     }
                     finally
                     {
@@ -1615,6 +1617,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     Hash(sha256, FormatNullable(paragraph.Alignment));
                     Hash(sha256, FormatNullable(paragraph.FirstLineIndentPoints));
                     Hash(sha256, FormatNullable(paragraph.LeftIndentPoints));
+                    Hash(sha256, paragraph.ListMarker ?? string.Empty);
                     Hash(sha256, FormatNullable(paragraph.FontColor));
                     Hash(sha256, FormatNullable(paragraph.Underline));
                     Hash(sha256, paragraph.HasBottomBorder ? "1" : "0");
@@ -1752,7 +1755,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                         center.HasValue ? center.Value - width / 2d : (double?)null, top, width,
                         p.KeepWithNext, p.WidowControl, p.StyleName, p.AbsoluteEnd, p.BuiltInStyleId,
                         p.HasField, p.HasMathObject, p.HasHyperlink, p.HasContentControl, p.CaptionKind,
-                        p.TableNestingDepth, p.LeftIndentPoints));
+                        p.TableNestingDepth, p.LeftIndentPoints, p.ListMarker));
                 }
                 catch (COMException) { result.Add(p); }
                 finally { Release(range); }
@@ -2042,6 +2045,14 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             return string.IsNullOrWhiteSpace(extension)
                 ? document.SaveFormat.ToString()
                 : extension.ToLowerInvariant();
+        }
+
+        private static string? ReadListMarker(Word.Range range)
+        {
+            Word.ListFormat? list = null;
+            try { list = range.ListFormat; return list.ListString; }
+            catch (COMException) { return null; }
+            finally { Release(list); }
         }
 
         private static string NormalizeParagraphText(string? value)

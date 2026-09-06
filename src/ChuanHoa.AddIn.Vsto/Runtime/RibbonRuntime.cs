@@ -148,13 +148,13 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             // in-memory lookup: it must not touch ActiveDocument, Selection, a lease
             // file, the network or any Word document property. Each explicit command
             // performs its own capability and license checks after the user clicks.
-            return _buttonCommands.ContainsKey(controlId) ||
+            return _localAccessManager.CanUseCommand(controlId) && (_buttonCommands.ContainsKey(controlId) ||
                 string.Equals(controlId, "btnThietLap", StringComparison.Ordinal) ||
                 string.Equals(controlId, "ddQuyDinh", StringComparison.Ordinal) ||
                 string.Equals(controlId, "ddLoaiVanBan", StringComparison.Ordinal) ||
                 string.Equals(controlId, "mnuBoDau", StringComparison.Ordinal) ||
                 string.Equals(controlId, "mnuDungBoStyle", StringComparison.Ordinal) ||
-                string.Equals(controlId, "mnuThongTinTienIch", StringComparison.Ordinal);
+                string.Equals(controlId, "mnuThongTinTienIch", StringComparison.Ordinal));
         }
 
         public int GetSelectedItemIndex(string controlId)
@@ -229,7 +229,12 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         public void ExecuteButton(string controlId)
         {
             ThrowIfDisposed();
-            if (controlId == "btnThietLap") { ShowRecognitionSettings(); return; }
+            if (controlId == "btnThietLap")
+            {
+                var window = new AccountSettingsWindow(_localAccessManager, ShowRecognitionSettings);
+                window.ShowDialog();
+                return;
+            }
             Action command;
             if (!_buttonCommands.TryGetValue(controlId, out command))
             {
@@ -237,6 +242,13 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 return;
             }
 
+            try { _localAccessManager.RequireCommand(controlId); }
+            catch (InvalidOperationException)
+            {
+                MessageBox.Show("Chức năng này cần quyền sử dụng hợp lệ. Hãy mở Thiết lập để kiểm tra tài khoản và gói sử dụng.",
+                    "Quyền sử dụng", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
             command();
             // GetRulePack starts a background refresh only when the signed local
             // cache is unavailable. Poll the completion flag only for that bounded

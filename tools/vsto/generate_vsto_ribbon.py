@@ -147,6 +147,44 @@ def arrange_compact_columns(root: ET.Element, elements: dict) -> None:
     parent = next(parent for parent in root.iter() if spacing in list(parent))
     parent.remove(spacing)
     elements["boxCharacterTools"].append(spacing)
+    # Pair controls by column instead of two independently measured rows.
+    # The wider 100% caption must not shift the increase/decrease positions.
+    character_tools = elements["boxCharacterTools"]
+    character_tools.set("boxStyle", "horizontal")
+    character_tools.remove(scale_row)
+    character_tools.remove(spacing)
+    for column_id, scale_id, spacing_id in (
+        ("boxCharacterDecrease", "btnScaleGiam", "btnCoChu"),
+        ("boxCharacterReset", "btnScale100", "btnGianChuNormal"),
+        ("boxCharacterIncrease", "btnScaleTang", "btnGianChuRa"),
+    ):
+        column = ET.SubElement(character_tools, f"{{{RIBBON_NAMESPACE}}}box",
+                               {"id": column_id, "boxStyle": "vertical"})
+        scale_control = elements[scale_id]
+        spacing_control = elements[spacing_id]
+        scale_row.remove(scale_control)
+        spacing.remove(spacing_control)
+        # Small text-only buttons preserve the two-row layout. Large buttons
+        # consume the Ribbon height and cannot be stacked into these columns.
+        for control in (scale_control, spacing_control):
+            control.set("size", "normal")
+            control.set("showLabel", "true")
+            control.set("showImage", "false")
+            control.attrib.pop("imageMso", None)
+            control.attrib.pop("getImage", None)
+        spacing_control.set("label", spacing_control.get("label", "").strip())
+        if scale_id == "btnScale100":
+            # Ribbon normal-button icons are square. Keep 100% as native text;
+            # never squeeze a wide text bitmap into that icon slot.
+            scale_control.set("label", "100%")
+            spacing_control.set("label", "⬤")
+            spacing_control.set("showLabel", "true")
+            spacing_control.set("showImage", "false")
+            spacing_control.attrib.pop("getImage", None)
+        if scale_id in ("btnScaleGiam", "btnScaleTang"):
+            scale_control.set("label", "A−" if scale_id == "btnScaleGiam" else "A+")
+        column.append(scale_control)
+        column.append(spacing_control)
     elements["grpKhoiDong"].set("label", "Kiểm tra và sửa lỗi")
     elements["grpAbout"].set("label", "Thiết lập")
     tab = next(parent for parent in root.iter() if elements["grpAbout"] in list(parent))
@@ -167,7 +205,7 @@ def arrange_compact_columns(root: ET.Element, elements: dict) -> None:
     # Remove historical label padding; native Ribbon handles spacing itself.
     for element in root.iter():
         if "label" in element.attrib:
-            element.set("label", element.get("label", "").strip())
+            element.set("label", element.get("label", "").strip(" \t\r\n"))
 
 
 def update_optional_attribute(element: ET.Element, name: str, value: str | None) -> None:
