@@ -6,15 +6,14 @@
         <group id="grpAutoFixHero" label="1-Click Auto-Fix">
           <button id="btnAutoFixAll2026" label="CHUẨN HÓA TOÀN BỘ" size="large" imageMso="AutoFormatNow" screentip="1-Click Auto-Fix Toàn Diện (2026)" supertip="Tự động căn lề A4, đổi font Times New Roman, in đậm Quốc hiệu, kẻ đường chuẩn NĐ30/HD05, lặp header bảng, chống rách hàng và xóa trang trắng thừa chỉ với 1 click!" onAction="OnAutoFixAll2026" getEnabled="GetEnabledAutoFixAll2026" />
         </group>
-        <group id="grpKhoiDong" label="Khởi động">
-          <box id="boxDocDuLieu" boxStyle="vertical">
+        <group id="grpKhoiDong" label="Kiểm tra và sửa lỗi">
+          <box id="boxDocDuLieu" boxStyle="vertical" visible="false">
             <dropDown id="ddQuyDinh" label="Quy định:" screentip="Quy định thể thức" supertip="Chọn bộ quy định về thể thức áp dụng cho văn bản này. Add-in tự nhận diện, bạn có thể chọn lại thủ công" getEnabled="GetEnabledHasDocument" getSelectedItemIndex="GetSelectedIndexQuyDinh" onAction="OnChonQuyDinh" visible="false">
               <item id="iqdND30" label="VB hành chính (NĐ 30)" />
               <item id="iqdVIETTEL" label="Viettel (QĐ 11095)" />
               <item id="iqdDANG" label="VB của Đảng (HD 05)" />
             </dropDown>
             <dropDown id="ddLoaiVanBan" label="Loại:" screentip="Loại văn bản" supertip="Add-in tự nhận diện loại văn bản đang soạn thảo. Bạn có thể chọn lại thủ công. Danh mục thay đổi theo Quy định đang chọn (Viettel có thêm 5 loại riêng)" getEnabled="GetEnabledLoaiVanBan" getItemCount="GetItemCountLoaiVanBan" getItemLabel="GetItemLabelLoaiVanBan" getSelectedItemIndex="GetSelectedIndexLoaiVanBan" onAction="OnChonLoaiVanBan" visible="false" />
-            <button id="btnThietLap" label="Thiết lập" size="normal" imageMso="PropertySheet" screentip="Thiết lập nhận diện" supertip="Chọn thủ công Quy định và Loại văn bản khi cần." getEnabled="GetEnabledHasDocument" onAction="OnThietLap" />
           </box>
           <box id="boxReviewActions" boxStyle="vertical">
             <button id="btnKiemTra" label="Kiểm tra thể thức" size="normal" imageMso="FileCompatibilityCheckerWord" screentip="Kiểm tra thể thức" supertip="Kiểm tra khổ giấy, lề, kiểu chữ và thành phần thể thức; thêm comment giải thích và tô đỏ đúng chỗ sai." getEnabled="GetEnabledKiemTra" onAction="OnKiemTra" />
@@ -24,20 +23,13 @@
           <box id="boxFixActions" boxStyle="vertical">
             <button id="btnSuaLoiDangChon" label="Sửa lỗi đang chọn" size="normal" imageMso="ReviewAcceptChange" screentip="Sửa lỗi đang chọn" supertip="Bấm vào phần văn bản đang được Chuẩn hóa comment hoặc tô đỏ, sau đó bấm nút này để sửa một lỗi có phương án an toàn. Comment sẽ biến mất khi kiểm tra lại xác nhận lỗi đã hết." getEnabled="GetEnabledAutoFixAll2026" onAction="OnSuaLoiDangChon" />
             <button id="btnSuaTatCaChinhTa" label="Sửa nhanh chính tả" size="normal" imageMso="AutoCorrect" screentip="Sửa nhanh chính tả và dọn lỗi gõ" supertip="Sửa các lỗi chính tả rule-based có phương án an toàn; đồng thời dọn khoảng trắng, khoảng cách dấu câu và chuẩn hóa dấu ngoặc." getEnabled="GetEnabledAutoFixAll2026" onAction="OnSuaTatCaChinhTa" />
-            <box id="boxGianChu" boxStyle="horizontal">
-              <button id="btnCoChu" label="◀" size="normal" imageMso="CharacterSpacingCondensed" screentip="Co chữ lại" supertip="Co chữ đang chọn -0,1pt" getEnabled="GetEnabledHasDocument" onAction="OnCoChu" />
-              <button id="btnGianChuNormal" label="⬤" size="normal" imageMso="CharacterSpacingNormal" screentip="Về Normal" supertip="Bỏ co giãn chữ" getEnabled="GetEnabledHasDocument" onAction="OnGianChuNormal" />
-              <button id="btnGianChuRa" label="▶" size="normal" imageMso="CharacterSpacingExpanded" screentip="Giãn chữ ra" supertip="Giãn chữ đang chọn +0,1pt" getEnabled="GetEnabledHasDocument" onAction="OnGianChuRa" />
-            </box>
+            <button id="btnXoaTrangThua" label="Xóa trang thừa" size="normal" imageMso="ReviewRejectChangeMenu" screentip="Xóa trang thừa" supertip="Xóa trang trống thừa ở cuối văn bản" getEnabled="GetEnabledHasDocument" onAction="OnXoaTrangThua" />
           </box>
         </group>
         <group id="grpDinhDang" label="Định dạng">
           <button id="btnDinhDangTrangGiay" label="Định dạng trang giấy" size="large" imageMso="PageSizeGallery" screentip="Định dạng trang giấy" supertip="Định dạng cỡ giấy và khoảng cách lề" getEnabled="GetEnabledHasDocument" onAction="OnDinhDangTrangGiay" />
-          <box id="boxChenTrang" boxStyle="vertical">
-            <button id="btnChenTrangNgang" label="Chèn trang ngang" size="normal" imageMso="PageOrientationLandscape" screentip="Chèn trang ngang" supertip="Chèn trang mới theo chiều ngang" getEnabled="GetEnabledHasDocument" onAction="OnChenTrangNgang" />
-            <button id="btnChenTrangDoc" label="Chèn trang dọc" size="normal" imageMso="PageOrientationPortrait" screentip="Chèn trang dọc" supertip="Chèn trang mới theo chiều dọc" getEnabled="GetEnabledHasDocument" onAction="OnChenTrangDoc" />
-            <button id="btnXoaTrangThua" label="Xóa trang thừa" size="normal" imageMso="ReviewRejectChangeMenu" screentip="Xóa trang thừa" supertip="Xóa trang trống thừa ở cuối văn bản" getEnabled="GetEnabledHasDocument" onAction="OnXoaTrangThua" />
-          </box>
+          <box id="boxChenTrang" boxStyle="vertical" visible="false">
+            </box>
           <menu id="mnuDungBoStyle" label="Dựng bộ Style" size="large" imageMso="StyleGalleryClassic" screentip="Dựng bộ Style" supertip="Dựng bộ Style để soạn thảo văn bản" getEnabled="GetEnabledHasDocument">
             <button id="btnDungBoStyleCo15" label="Cỡ chữ 15" imageMso="FontSizeIncreaseWord" screentip="Dựng bộ Style — Cỡ chữ 15" supertip="Dựng bộ Style với bộ cỡ chữ 15" getEnabled="GetEnabledCoChu15" onAction="OnDungBoStyle15" />
             <button id="btnDungBoStyleCo14" label="Cỡ chữ 14" imageMso="ActiveXLabel" screentip="Dựng bộ Style — Cỡ chữ 14" supertip="Dựng bộ Style với bộ cỡ chữ 14" getEnabled="GetEnabledCoChu14" onAction="OnDungBoStyle14" />
@@ -49,9 +41,24 @@
             <button id="btnCoChu13" label="Cỡ chữ 13" size="normal" imageMso="FontSizeDecreaseWord" screentip="Cỡ chữ 13" supertip="Chuyển toàn bộ văn bản thành bộ cỡ chữ 13" getEnabled="GetEnabledCoChu13" onAction="OnCoChu13" />
           </box>
           <box id="boxKeepPageNum" boxStyle="vertical">
+            <button id="btnParagraph" label="Paragraph" size="normal" imageMso="ParagraphDialog" screentip="Mở Paragraph" supertip="Mở hộp thoại Paragraph của Word cho đoạn hiện tại hoặc vùng chọn." getEnabled="GetEnabledHasDocument" onAction="OnParagraph" />
             <button id="btnKeepWithNext" label="Keep with next" size="normal" imageMso="FootnoteNextWord" screentip="Keep with next" supertip="Giữ đoạn hiện tại cùng trang với đoạn kế tiếp" getEnabled="GetEnabledHasDocument" onAction="OnKeepWithNext" />
-            <button id="btnChenSoTrang" label="Chèn số trang" size="normal" imageMso="HeaderFooterPageNumberInsert" screentip="Chèn số trang" supertip="Chèn số trang tự động" getEnabled="GetEnabledHasDocument" onAction="OnChenSoTrang" />
             <button id="btnXoaTabKhongLeader" label="Xóa tab" size="normal" imageMso="ClearFormatting" screentip="Xóa tab stop không có leader" supertip="Xóa mọi tab stop có Leader=None trong tài liệu, kể cả bảng, đầu trang và chân trang. Giữ ký tự tab và các tab stop có leader khác. Có thể hoàn tác bằng Undo." getEnabled="GetEnabledHasDocument" onAction="OnXoaTabKhongLeader" />
+          </box>
+          <box id="boxCharacterTools" boxStyle="vertical">
+            <button id="btnScaleGiam" label="Scale −" size="normal" imageMso="CharacterScale" screentip="Giảm độ rộng chữ 1 điểm phần trăm" supertip="Giảm độ rộng chữ 1 điểm phần trăm cho vùng chọn; áp dụng ngay." getEnabled="GetEnabledHasDocument" onAction="OnScaleGiam" />
+            <button id="btnScale100" label="100%" size="normal" imageMso="CharacterScale" screentip="Khôi phục độ rộng chữ 100%" supertip="Khôi phục độ rộng chữ 100% cho vùng chọn; áp dụng ngay." getEnabled="GetEnabledHasDocument" onAction="OnScale100" />
+            <button id="btnScaleTang" label="Scale +" size="normal" imageMso="CharacterScale" screentip="Tăng độ rộng chữ 1 điểm phần trăm" supertip="Tăng độ rộng chữ 1 điểm phần trăm cho vùng chọn; áp dụng ngay." getEnabled="GetEnabledHasDocument" onAction="OnScaleTang" />
+            <box id="boxGianChu" boxStyle="horizontal">
+              <button id="btnCoChu" label="◀" size="normal" imageMso="CharacterSpacingCondensed" screentip="Co chữ lại" supertip="Co chữ đang chọn -0,1pt" getEnabled="GetEnabledHasDocument" onAction="OnCoChu" />
+              <button id="btnGianChuNormal" label="⬤" size="normal" imageMso="CharacterSpacingNormal" screentip="Về Normal" supertip="Bỏ co giãn chữ" getEnabled="GetEnabledHasDocument" onAction="OnGianChuNormal" />
+              <button id="btnGianChuRa" label="▶" size="normal" imageMso="CharacterSpacingExpanded" screentip="Giãn chữ ra" supertip="Giãn chữ đang chọn +0,1pt" getEnabled="GetEnabledHasDocument" onAction="OnGianChuRa" />
+            </box>
+          </box>
+          <box id="boxPageTools" boxStyle="vertical">
+            <button id="btnChenTrangNgang" label="Chèn trang ngang" size="normal" imageMso="PageOrientationLandscape" screentip="Chèn trang ngang" supertip="Chèn trang mới theo chiều ngang" getEnabled="GetEnabledHasDocument" onAction="OnChenTrangNgang" />
+            <button id="btnChenTrangDoc" label="Chèn trang dọc" size="normal" imageMso="PageOrientationPortrait" screentip="Chèn trang dọc" supertip="Chèn trang mới theo chiều dọc" getEnabled="GetEnabledHasDocument" onAction="OnChenTrangDoc" />
+            <button id="btnChenSoTrang" label="Chèn số trang" size="normal" imageMso="HeaderFooterPageNumberInsert" screentip="Chèn số trang" supertip="Chèn số trang tự động" getEnabled="GetEnabledHasDocument" onAction="OnChenSoTrang" />
           </box>
         </group>
         <group id="grpBangBieu" label="Bảng biểu và hình ảnh">
@@ -76,12 +83,14 @@
             <button id="btnTuDienCaNhan" label="Từ điển cá nhân" size="normal" screentip="Quản lý từ điển cá nhân" supertip="Xem, thêm và xóa thuật ngữ riêng mà bộ kiểm tra chính tả cần bỏ qua." getEnabled="GetEnabledAlways" getImage="GetImageTuDienCaNhan" onAction="OnTuDienCaNhan" />
           </box>
         </group>
-        <group id="grpAbout" label="About">
-          <menu id="mnuThongTinTienIch" label="Thông tin tiện ích" size="large" imageMso="Info" screentip="Thông tin tiện ích" supertip="Gửi phản hồi hoặc xem thông tin sản phẩm, phiên bản, tác giả">
-            <button id="btnKiemTraPhienBanMoi" label="Kiểm tra phiên bản mới" imageMso="FileStartWorkflow" screentip="Kiểm tra phiên bản mới" supertip="Kiểm tra phiên bản mới và xem hướng dẫn sử dụng" onAction="OnKiemTraPhienBanMoi" />
-            <button id="btnGuiPhanHoi" label="Gửi phản hồi" imageMso="Callout" screentip="Gửi phản hồi" supertip="Gửi phản hồi hoặc báo lỗi" onAction="OnGuiPhanHoi" />
-            <button id="btnGioiThieu" label="Thông tin tiện ích" imageMso="Info" screentip="Thông tin tiện ích" supertip="Thông tin sản phẩm, phiên bản, tác giả" onAction="OnGioiThieu" />
-          </menu>
+        <group id="grpAbout" label="Thiết lập và trợ giúp">
+          <box id="boxSettingsTools" boxStyle="vertical">
+            <button id="btnThietLap" label="Thiết lập" size="normal" imageMso="PropertySheet" screentip="Thiết lập nhận diện" supertip="Chọn thủ công Quy định và Loại văn bản khi cần." getEnabled="GetEnabledHasDocument" onAction="OnThietLap" />
+            <menu id="mnuThongTinTienIch" label="Thông tin tiện ích" size="normal" imageMso="Info" screentip="Thông tin tiện ích" supertip="Xem thông tin sản phẩm, phiên bản, tác giả">
+              <button id="btnKiemTraPhienBanMoi" label="Kiểm tra phiên bản mới" imageMso="FileStartWorkflow" screentip="Kiểm tra phiên bản mới" supertip="Kiểm tra phiên bản mới và xem hướng dẫn sử dụng" onAction="OnKiemTraPhienBanMoi" />
+              <button id="btnGioiThieu" label="Thông tin tiện ích" imageMso="Info" screentip="Thông tin tiện ích" supertip="Thông tin sản phẩm, phiên bản, tác giả" onAction="OnGioiThieu" />
+            </menu>
+          </box>
         </group>
       </tab>
     </tabs>

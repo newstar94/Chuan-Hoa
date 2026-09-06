@@ -43,11 +43,11 @@
   "counts": {
     "tabs": 1,
     "groups": 6,
-    "buttons": 36,
+    "buttons": 39,
     "menus": 3,
     "dropDowns": 2,
     "checkBoxes": 0,
-    "interactiveControls": 41
+    "interactiveControls": 44
   },
   "approvedProductChanges": [
     {
@@ -116,6 +116,74 @@
   "controls": [
     {
       "order": 0,
+      "groupId": "grpDinhDang",
+      "parentContainerId": null,
+      "controlType": "button",
+      "id": "btnScaleGiam",
+      "label": "Scale −",
+      "size": "normal",
+      "imageMso": "CharacterScale",
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument",
+        "onAction": "OnScaleGiam"
+      },
+      "screenTip": "Giảm độ rộng chữ 1 điểm phần trăm",
+      "superTip": "Giảm độ rộng chữ 1 điểm phần trăm cho vùng chọn; áp dụng ngay.",
+      "staticItems": []
+    },
+    {
+      "order": 0,
+      "groupId": "grpDinhDang",
+      "parentContainerId": null,
+      "controlType": "button",
+      "id": "btnScale100",
+      "label": "100%",
+      "size": "normal",
+      "imageMso": "CharacterScale",
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument",
+        "onAction": "OnScale100"
+      },
+      "screenTip": "Khôi phục độ rộng chữ 100%",
+      "superTip": "Khôi phục độ rộng chữ 100% cho vùng chọn; áp dụng ngay.",
+      "staticItems": []
+    },
+    {
+      "order": 0,
+      "groupId": "grpDinhDang",
+      "parentContainerId": null,
+      "controlType": "button",
+      "id": "btnScaleTang",
+      "label": "Scale +",
+      "size": "normal",
+      "imageMso": "CharacterScale",
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument",
+        "onAction": "OnScaleTang"
+      },
+      "screenTip": "Tăng độ rộng chữ 1 điểm phần trăm",
+      "superTip": "Tăng độ rộng chữ 1 điểm phần trăm cho vùng chọn; áp dụng ngay.",
+      "staticItems": []
+    },
+    {
+      "order": 0,
+      "groupId": "grpDinhDang",
+      "parentContainerId": null,
+      "controlType": "button",
+      "id": "btnParagraph",
+      "label": "Paragraph",
+      "size": "normal",
+      "imageMso": "ParagraphDialog",
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument",
+        "onAction": "OnParagraph"
+      },
+      "screenTip": "Mở Paragraph",
+      "superTip": "Mở hộp thoại Paragraph của Word cho đoạn hiện tại hoặc vùng chọn.",
+      "staticItems": []
+    },
+    {
+      "order": 0,
       "groupId": "grpKhoiDong",
       "parentContainerId": "boxDocDuLieu",
       "controlType": "button",
@@ -123,7 +191,10 @@
       "label": "Thiết lập",
       "size": "normal",
       "imageMso": "PropertySheet",
-      "callbacks": {"getEnabled": "GetEnabledHasDocument", "onAction": "OnThietLap"},
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument",
+        "onAction": "OnThietLap"
+      },
       "screenTip": "Thiết lập nhận diện",
       "superTip": "Chọn thủ công Quy định và Loại văn bản khi cần.",
       "staticItems": []
@@ -668,12 +739,25 @@
         "entitlement": "DOCUMENT_TOOLS",
         "riskTier": "CONFIRM",
         "mutationScope": "ALL_STORIES_LEADERLESS_TAB_STOPS",
-        "preconditions": ["ACTIVE_DOCUMENT", "DOCUMENT_WRITABLE", "NOT_PROTECTED", "NO_ACTIVE_MUTATION_JOB", "AUTHENTICATED", "DEVICE_ACTIVE", "ENTITLEMENT_ACTIVE", "RELEASE_ALLOWED", "SIGNED_EXECUTION_GRANT_VALID", "DOCUMENT_FINGERPRINT_MATCH"],
+        "preconditions": [
+          "ACTIVE_DOCUMENT",
+          "DOCUMENT_WRITABLE",
+          "NOT_PROTECTED",
+          "NO_ACTIVE_MUTATION_JOB",
+          "AUTHENTICATED",
+          "DEVICE_ACTIVE",
+          "ENTITLEMENT_ACTIVE",
+          "RELEASE_ALLOWED",
+          "SIGNED_EXECUTION_GRANT_VALID",
+          "DOCUMENT_FINGERPRINT_MATCH"
+        ],
         "capability": "WORD_TAB_STOPS",
         "undoPolicy": "ONE_CUSTOM_UNDO_RECORD",
         "backupPolicy": "REQUIRED",
         "telemetryAllowlist": [],
-        "testIds": ["CONTROL-btnXoaTabKhongLeader"]
+        "testIds": [
+          "CONTROL-btnXoaTabKhongLeader"
+        ]
       }
     },
     {
@@ -1781,7 +1865,7 @@
       "imageMso": "Info",
       "callbacks": {},
       "screenTip": "Thông tin tiện ích",
-      "superTip": "Gửi phản hồi hoặc xem thông tin sản phẩm, phiên bản, tác giả",
+      "superTip": "Xem thông tin sản phẩm, phiên bản, tác giả",
       "staticItems": [],
       "commandContract": {
         "commandId": "mnuThongTinTienIch",
@@ -1845,48 +1929,6 @@
         "testIds": [
           "RIBBON-034",
           "CONTROL-btnKiemTraPhienBanMoi"
-        ]
-      }
-    },
-    {
-      "order": 35,
-      "groupId": "grpAbout",
-      "parentContainerId": "mnuThongTinTienIch",
-      "controlType": "button",
-      "id": "btnGuiPhanHoi",
-      "label": "Gửi phản hồi",
-      "size": null,
-      "imageMso": "Callout",
-      "callbacks": {
-        "onAction": "OnGuiPhanHoi"
-      },
-      "screenTip": "Gửi phản hồi",
-      "superTip": "Gửi phản hồi hoặc báo lỗi",
-      "staticItems": [],
-      "commandContract": {
-        "commandId": "btnGuiPhanHoi",
-        "executionMode": "SYSTEM_BROWSER",
-        "entitlement": "FEEDBACK",
-        "riskTier": "REPORT_ONLY",
-        "mutationScope": "NONE_READ_ONLY",
-        "preconditions": [
-          "OFFICIAL_FEEDBACK_URL_CONFIGURED",
-          "USER_CONSENT_FOR_TECHNICAL_METADATA"
-        ],
-        "capability": "SYSTEM_BROWSER",
-        "undoPolicy": "NOT_APPLICABLE",
-        "backupPolicy": "NOT_APPLICABLE",
-        "telemetryAllowlist": [
-          "commandId",
-          "resultCode",
-          "durationBucket",
-          "clientRelease",
-          "wordVersion",
-          "bitness"
-        ],
-        "testIds": [
-          "RIBBON-035",
-          "CONTROL-btnGuiPhanHoi"
         ]
       }
     },

@@ -20,9 +20,9 @@ namespace ChuanHoa.RibbonCapabilitySmoke
             "btnGianChuRa", "btnLapDongTieuDe", "btnChuanHoaBang", "btnChuanHoaAnh",
             "btnCanDinhO", "btnCanGiuaO", "btnXoaKyTuThuaBangExcel", "mnuBoDau",
             "btnKieuOaUy", "btnKieuOaUy2", "btnDoiDauThapPhan",
-            "mnuThongTinTienIch", "btnKiemTraPhienBanMoi", "btnGuiPhanHoi",
+            "mnuThongTinTienIch", "btnKiemTraPhienBanMoi",
             "btnGioiThieu", "btnSuaLoiDangChon", "btnSuaTatCaChinhTa",
-            "btnTuDienCaNhan", "btnXoaTabKhongLeader"
+            "btnTuDienCaNhan", "btnXoaTabKhongLeader", "btnThietLap", "btnScaleGiam", "btnScale100", "btnScaleTang", "btnParagraph"
         };
 
         [STAThread]

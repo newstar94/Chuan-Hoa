@@ -202,10 +202,8 @@ namespace ChuanHoa.Client.Core.Scanning
                         : "typeName";
                     if (assignedRole == "typeName") typeNameAssigned = true;
                 }
-                else if (previousRole == "typeName" && text.Length > 0 &&
-                    !IsStructuralBodyStart(text) && !LegalBasis.IsMatch(text) &&
-                    !SignerAuthority.IsMatch(text) &&
-                    !Rx(@"^(Kính\s+(?:gửi|trình)|Nơi\s+nhận)\b", true).IsMatch(text)) assignedRole = "subject";
+                else if (previousRole == "typeName" && (text.Length < 300 ||
+                    Rx(@"^Về\s+việc\b", true).IsMatch(text))) assignedRole = "subject";
                 else if ((previousRole == "subject" || previousRole == "subjectContinuation") &&
                     IsSubjectContinuation(main[i - 1], paragraph, text))
                     assignedRole = "subjectContinuation";

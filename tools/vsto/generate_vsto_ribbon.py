@@ -107,7 +107,11 @@ def arrange_compact_columns(root: ET.Element, elements: dict) -> None:
     columns = [
         ("grpKhoiDong", "boxReviewActions", ["btnKiemTra", "btnKiemTraChinhTa", "btnChuyenDoiUnicode"]),
         ("grpKhoiDong", "boxFixActions", ["btnSuaLoiDangChon", "btnSuaTatCaChinhTa"]),
-        ("grpDinhDang", "boxKeepPageNum", ["btnKeepWithNext", "btnChenSoTrang", "btnXoaTabKhongLeader"]),
+        ("grpDinhDang", "boxKeepPageNum", ["btnParagraph", "btnKeepWithNext", "btnXoaTabKhongLeader"]),
+        ("grpDinhDang", "boxCharacterTools", ["btnScaleGiam", "btnScale100", "btnScaleTang"]),
+        ("grpDinhDang", "boxPageTools", ["btnChenTrangNgang", "btnChenTrangDoc", "btnChenSoTrang"]),
+        ("grpKhoiDong", "boxFixActions", ["btnXoaTrangThua"]),
+        ("grpAbout", "boxSettingsTools", ["btnThietLap", "mnuThongTinTienIch"]),
         ("grpChinhTaSo", "boxLanguageActions", ["mnuBoDau", "btnDoiDauThapPhan", "btnTuDienCaNhan"]),
     ]
     for control_id in ("ddQuyDinh", "ddLoaiVanBan"):
@@ -129,7 +133,13 @@ def arrange_compact_columns(root: ET.Element, elements: dict) -> None:
     spacing = elements["boxGianChu"]
     parent = next(parent for parent in root.iter() if spacing in list(parent))
     parent.remove(spacing)
-    elements["boxFixActions"].append(spacing)
+    elements["boxCharacterTools"].append(spacing)
+    elements["grpKhoiDong"].set("label", "Kiểm tra và sửa lỗi")
+    elements["grpAbout"].set("label", "Thiết lập và trợ giúp")
+    for box_id in ("boxDocDuLieu", "boxChenTrang"):
+        box = elements[box_id]
+        if not any(child.get("visible") != "false" for child in box):
+            box.set("visible", "false")
     # Remove historical label padding; native Ribbon handles spacing itself.
     for element in root.iter():
         if "label" in element.attrib:

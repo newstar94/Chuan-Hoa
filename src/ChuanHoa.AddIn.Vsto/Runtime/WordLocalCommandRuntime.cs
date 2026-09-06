@@ -209,6 +209,60 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             });
         }
 
+        public string ShowParagraphDialog()
+        {
+            return Execute("Paragraph", (_, __) =>
+            {
+                Word.Dialog? dialog = null;
+                try { dialog = _application.Dialogs[Word.WdWordDialog.wdDialogFormatParagraph]; dialog.Show(); }
+                finally { Release(dialog); }
+            });
+        }
+
+        public string SetFontScale(int delta, bool reset)
+        {
+            Word.Selection? currentSelection = null;
+            try
+            {
+                currentSelection = _application.Selection;
+                if (currentSelection == null || currentSelection.Start == currentSelection.End)
+                    throw new InvalidOperationException("Hãy chọn phần chữ cần Scale.");
+            }
+            finally { Release(currentSelection); }
+            return Execute("Scale chữ", (_, __) =>
+            {
+                Word.Selection? selection = null;
+                Word.Range? range = null;
+                Word.Font? font = null;
+                try
+                {
+                    selection = _application.Selection;
+                    range = selection.Range.Duplicate;
+                    if (range.Start == range.End)
+                        throw new InvalidOperationException("Hãy chọn phần chữ cần Scale.");
+                    font = range.Font;
+                    if (reset) font.Scaling = 100;
+                    else
+                    {
+                        // Preserve relative scaling in a mixed-format selection.
+                        for (var index = 1; index <= range.Characters.Count; index++)
+                        {
+                            Word.Range? character = null;
+                            Word.Font? characterFont = null;
+                            try
+                            {
+                                character = range.Characters[index];
+                                characterFont = character.Font;
+                                characterFont.Scaling = Math.Max(1, Math.Min(600, characterFont.Scaling + delta));
+                            }
+                            finally { Release(characterFont); Release(character); }
+                        }
+                    }
+                }
+                finally { Release(font); Release(range); Release(selection); }
+            });
+        }
+
         public string RepeatTableHeaders()
         {
             return Execute("Lặp tiêu đề bảng", (document, _) =>

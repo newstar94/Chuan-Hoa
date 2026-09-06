@@ -109,6 +109,10 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 { "btnKeepWithNext", () => RunLocalCommand("Keep with next", _localCommandRuntime.KeepWithNext) },
                 { "btnChenSoTrang", () => RunLocalCommand("Chèn số trang", _localCommandRuntime.InsertPageNumbers) },
                 { "btnCoChu", () => RunLocalCommand("Co chữ", () => _localCommandRuntime.SetCharacterSpacing(-0.1f, false), showSuccessNotification: false) },
+                { "btnScaleGiam", () => RunLocalCommand("Giảm Scale", () => _localCommandRuntime.SetFontScale(-1, false), showSuccessNotification: false) },
+                { "btnScale100", () => RunLocalCommand("Scale 100%", () => _localCommandRuntime.SetFontScale(0, true), showSuccessNotification: false) },
+                { "btnScaleTang", () => RunLocalCommand("Tăng Scale", () => _localCommandRuntime.SetFontScale(1, false), showSuccessNotification: false) },
+                { "btnParagraph", () => RunLocalCommand("Paragraph", _localCommandRuntime.ShowParagraphDialog, showSuccessNotification: false) },
                 { "btnGianChuNormal", () => RunLocalCommand("Giãn chữ bình thường", () => _localCommandRuntime.SetCharacterSpacing(0f, true)) },
                 { "btnGianChuRa", () => RunLocalCommand("Giãn chữ", () => _localCommandRuntime.SetCharacterSpacing(0.1f, false)) },
                 { "btnLapDongTieuDe", () => RunLocalCommand("Lặp tiêu đề bảng", _localCommandRuntime.RepeatTableHeaders) },
@@ -122,7 +126,6 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 { "btnDoiDauThapPhan", () => RunLocalCommand("Dấu phẩy thập phân", _localCommandRuntime.ConvertDecimalSeparators) },
                 { "btnTuDienCaNhan", () => _localCommandRuntime.OpenCustomDictionaryDialog() },
                 { "btnKiemTraPhienBanMoi", ShowUpdateStatus },
-                { "btnGuiPhanHoi", OpenFeedback },
                 { "btnGioiThieu", ShowAbout }
             };
         }
@@ -454,23 +457,6 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             var context = TryGetActiveContext();
             if (context == null) throw new InvalidOperationException("Hãy mở một tài liệu Word.");
             return context;
-        }
-
-        private static void OpenFeedback()
-        {
-            const string url = "https://ngoctien.id.vn/chuan-hoa-the-thuc/feedback";
-            try
-            {
-                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
-            }
-            catch (Exception exception)
-            {
-                MessageBox.Show(
-                    "Không thể mở trang phản hồi.\n\n" + exception.Message,
-                    "Gửi phản hồi",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
-            }
         }
 
         private void ShowAbout()
