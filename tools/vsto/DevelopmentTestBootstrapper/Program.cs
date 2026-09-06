@@ -30,11 +30,15 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
             "ChuanHoa.DevelopmentInstaller.SigningRootCertificate.sha256";
         private const string ExpectedCertificateSubject = "CN=Chuan Hoa Local Development";
         private const string ExpectedRootCertificateSubject =
-            "CN=Chuan Hoa Local Development Root";
+            "CN=Chuan Hoa Local Development";
         private const string WordRibbonValidationValueName =
             "ChuanHoa.AddIn.Vsto.Microsoft.Word.Document";
         private const string AppsFeaturesRegistryPath =
             @"Software\Microsoft\Windows\CurrentVersion\Uninstall\ChuanHoa.DevelopmentTest";
+        private const string VstoInclusionRegistryPath =
+            @"Software\Microsoft\VSTO\Security\Inclusion\4C0C31DD-40D3-4E61-92AB-F9219E561E76";
+        private const string LegacyVstoInclusionRegistryPath =
+            @"Software\Microsoft\VSTO\Security\Inclusion\{4C0C31DD-40D3-4E61-92AB-F9219E561E76}";
         private const string CachedInstallerFileName =
             "ChuanHoa_Development_Test_Setup.exe";
         private static readonly Guid WinTrustActionGenericVerifyV2 =
@@ -80,6 +84,13 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
                     }
                     return 2;
                 }
+
+                // Click-to-Run can present a different registry/filesystem view to
+                // Word than to a standalone installer. Perform the entire existing
+                // transaction (including repair/uninstall) inside Office's view,
+                // rather than asserting success against only the external registry.
+                var officeExitCode = TryRunInOfficeContext(args ?? new string[0]);
+                if (officeExitCode.HasValue) return officeExitCode.Value;
 
                 var baseDirectory = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -140,6 +151,10 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
                         InjectFault("after-access-smoke");
 
                         transaction.Activate();
+                        transaction.InstallVstoInclusion(
+                            Path.Combine(installDirectory,
+                                "ChuanHoa.LocalDevelopment.Public.cer"),
+                            signingCertificatePin);
                         InjectFault("after-current-switch");
                         var cachedInstallerPath = transaction.CacheRunningInstaller(
                             signingCertificatePin);
@@ -201,13 +216,66 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
             }
         }
 
+        private static int? TryRunInOfficeContext(string[] args)
+        {
+            var forwarded = args.Any(value => string.Equals(value,
+                "/office-context", StringComparison.OrdinalIgnoreCase));
+            var virtualized = Process.GetCurrentProcess().Modules.Cast<ProcessModule>()
+                .Any(module => module.ModuleName.StartsWith("AppVIsvSubsystems",
+                    StringComparison.OrdinalIgnoreCase));
+            if (virtualized) return null;
+            if (forwarded)
+                throw new InvalidOperationException(
+                    "Office Click-to-Run did not provide its installation context.");
+
+            string? installationPath = null;
+            foreach (var view in new[] { RegistryView.Registry64, RegistryView.Registry32 })
+            {
+                using (var machine = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, view))
+                using (var configuration = machine.OpenSubKey(
+                    @"SOFTWARE\Microsoft\Office\ClickToRun\Configuration"))
+                    installationPath = configuration == null ? null :
+                        configuration.GetValue("InstallationPath") as string;
+                if (!string.IsNullOrWhiteSpace(installationPath)) break;
+            }
+            if (string.IsNullOrWhiteSpace(installationPath)) return null; // MSI Office
+            var launcher = Path.Combine(installationPath, "root", "Client", "AppVLP.exe");
+            if (!File.Exists(launcher))
+                throw new FileNotFoundException(
+                    "Office Click-to-Run launcher is missing. Repair Office before installing.", launcher);
+            var executable = Assembly.GetExecutingAssembly().Location;
+            if (args.Any(value => value.IndexOf('"') >= 0))
+                throw new ArgumentException("Installer arguments cannot contain quotation marks.");
+            var arguments = "\"" + executable + "\" " +
+                string.Join(" ", args.Select(value => "\"" + value + "\"")) + " /office-context";
+            using (var child = Process.Start(new ProcessStartInfo
+            {
+                FileName = launcher,
+                Arguments = arguments,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                WindowStyle = ProcessWindowStyle.Hidden
+            }))
+            {
+                if (child == null) throw new InvalidOperationException("Cannot start Office installer context.");
+                child.WaitForExit();
+                return child.ExitCode;
+            }
+        }
+
         private static void UninstallDevelopmentChannel(string baseDirectory)
         {
             UninstallClickOnceDevelopmentAddIn(baseDirectory);
             var ownedCertificates = ReadOwnedDevelopmentCertificates(baseDirectory);
+            RemoveVstoInclusion(GetDevelopmentManifestDirectoryUri(
+                Path.Combine(baseDirectory, "Current")));
+            RemoveVstoInclusion(new Uri(Path.Combine(baseDirectory, "Current",
+                "ChuanHoa.AddIn.Vsto.vsto")));
             RemoveDirectRegistrationIfOwned(baseDirectory);
             using (var currentUser = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Default))
             {
+                currentUser.DeleteSubKeyTree(VstoInclusionRegistryPath, false);
+                currentUser.DeleteSubKeyTree(LegacyVstoInclusionRegistryPath, false);
                 currentUser.DeleteSubKeyTree(@"Software\ChuanHoa\DevelopmentInstaller", false);
                 currentUser.DeleteSubKeyTree(AppsFeaturesRegistryPath, false);
             }
@@ -410,13 +478,11 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
                 {
                     try
                     {
-                        if (!string.Equals(certificate.Subject, ExpectedCertificateSubject,
-                                StringComparison.Ordinal) ||
-                            !string.Equals(ComputeSha256(certificate.RawData), expectedSha256,
+                        if (!string.Equals(ComputeSha256(certificate.RawData), expectedSha256,
                                 StringComparison.Ordinal))
                             throw new InvalidOperationException(
                                 "Certificate Development trong " + storeName +
-                                " khÃ´ng khá»›p subject/SHA-256 Ä‘Ã£ pin.");
+                                " khÃ´ng khá»›p SHA-256 Ä‘Ã£ pin.");
                         return true;
                     }
                     finally { certificate.Dispose(); }
@@ -750,20 +816,6 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
                         StringComparison.OrdinalIgnoreCase) || !File.Exists(payloadPath))
                     throw new InvalidOperationException(
                         "Manifest tham chiếu payload thiếu hoặc ngoài staging: " + codebase);
-
-                // Mage records the pre-Authenticode size/digest for project PE
-                // files. Authenticode appends a certificate table after that
-                // manifest is generated, so a raw-file comparison would reject
-                // a correctly signed build. Those two owned PE files are
-                // instead covered by WinVerifyTrust plus the signer pin above.
-                // Non-PE dependencies and the application manifest still use
-                // the exact manifest size/SHA-256 checks below.
-                var payloadFileName = Path.GetFileName(payloadPath);
-                if (string.Equals(payloadFileName, "ChuanHoa.AddIn.Vsto.dll",
-                        StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(payloadFileName, "ChuanHoa.Client.Core.dll",
-                        StringComparison.OrdinalIgnoreCase))
-                    continue;
 
                 long expectedSize;
                 if (!long.TryParse((string)element.Attribute("size"), out expectedSize) ||
@@ -1186,6 +1238,11 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
             using (var appsFeatures = currentUser.OpenSubKey(AppsFeaturesRegistryPath))
             {
                 var command = "\"" + cachedInstallerPath + "\"";
+                var expectedInclusionUrl = GetDevelopmentManifestDirectoryUri(
+                    installDirectory).AbsoluteUri;
+                var expectedPublicKey = GetCertificatePublicKeyXml(Path.Combine(
+                    installDirectory, "ChuanHoa.LocalDevelopment.Public.cer"),
+                    signingCertificateSha256);
                 if (addIn == null || state == null || appsFeatures == null ||
                     !string.Equals(Convert.ToString(addIn.GetValue("Manifest")), expectedManifest, StringComparison.OrdinalIgnoreCase) ||
                     Convert.ToInt32(addIn.GetValue("LoadBehavior", 0)) != 3 ||
@@ -1199,7 +1256,9 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
                     !string.Equals(Convert.ToString(appsFeatures.GetValue("InstallLocation")), installDirectory, StringComparison.OrdinalIgnoreCase) ||
                     !string.Equals(Convert.ToString(appsFeatures.GetValue("UninstallString")), command + " /uninstall", StringComparison.Ordinal) ||
                     !string.Equals(Convert.ToString(appsFeatures.GetValue("QuietUninstallString")), command + " /uninstall /quiet", StringComparison.Ordinal) ||
-                    !string.Equals(Convert.ToString(appsFeatures.GetValue("ModifyPath")), command + " /repair", StringComparison.Ordinal))
+                    !string.Equals(Convert.ToString(appsFeatures.GetValue("ModifyPath")), command + " /repair", StringComparison.Ordinal) ||
+                    !ContainsVstoInclusion(new Uri(expectedInclusionUrl), expectedPublicKey) ||
+                    !ContainsVstoInclusion(new Uri(manifestPath), expectedPublicKey))
                     throw new InvalidOperationException(
                         "Không xác minh được đăng ký trực tiếp của add-in Development.");
             }
@@ -1327,10 +1386,12 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
             private readonly RegistryValueSnapshot _addInRegistrySnapshot;
             private readonly RegistryValueSnapshot _installerStateSnapshot;
             private readonly RegistryValueSnapshot _appsFeaturesRegistrySnapshot;
+            private readonly RegistryValueSnapshot _vstoInclusionRegistrySnapshot;
             private readonly FileValueSnapshot[] _accessCacheSnapshots;
             private readonly List<Tuple<StoreName, string, string>> _addedCertificates =
                 new List<Tuple<StoreName, string, string>>();
             private bool _trustedKeyChanged;
+            private readonly List<Uri> _addedVstoInclusions = new List<Uri>();
             private bool _cacheChanged;
             private bool _activationStarted;
             private bool _activated;
@@ -1362,6 +1423,7 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
                 _addInRegistrySnapshot = CaptureRegistryValues(AddInRegistryPath);
                 _installerStateSnapshot = CaptureRegistryValues(InstallerStateRegistryPath);
                 _appsFeaturesRegistrySnapshot = CaptureRegistryValues(AppsFeaturesRegistryPath);
+                _vstoInclusionRegistrySnapshot = CaptureRegistryValues(VstoInclusionRegistryPath);
                 var cacheDirectory = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                     "ChuanHoa", "Cache");
@@ -1381,7 +1443,9 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
                     rootCertificatePath, expectedRootSha256,
                     ExpectedRootCertificateSubject))
                 {
-                    if (AddCertificate(StoreName.Root, rootCertificatePath,
+                    if (!string.Equals(expectedRootSha256, expectedSha256,
+                            StringComparison.Ordinal) &&
+                        AddCertificate(StoreName.Root, rootCertificatePath,
                             rootCertificate, expectedRootSha256))
                         _addedCertificates.Add(Tuple.Create(
                             StoreName.Root, rootCertificate.Thumbprint,
@@ -1434,6 +1498,30 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
                 {
                     if (File.Exists(temporaryPath)) File.Delete(temporaryPath);
                 }
+            }
+
+            public void InstallVstoInclusion(string certificatePath,
+                string expectedCertificateSha256)
+            {
+                using (var currentUser = RegistryKey.OpenBaseKey(
+                    RegistryHive.CurrentUser, RegistryView.Default))
+                {
+                    // Older development installers wrote a deterministic raw key.
+                    // VSTO's inclusion-list API can report that key as present even
+                    // though the runtime ignores it. Remove it before using the API.
+                    currentUser.DeleteSubKeyTree(VstoInclusionRegistryPath, false);
+                    currentUser.DeleteSubKeyTree(LegacyVstoInclusionRegistryPath, false);
+                }
+                var publicKey = GetCertificatePublicKeyXml(
+                    certificatePath, expectedCertificateSha256);
+                foreach (var uri in new[]
+                {
+                    GetDevelopmentManifestDirectoryUri(_installDirectory),
+                    new Uri(Path.Combine(_installDirectory,
+                        "ChuanHoa.AddIn.Vsto.vsto"))
+                })
+                    if (AddVstoInclusion(uri, publicKey))
+                        _addedVstoInclusions.Add(uri);
             }
 
             public void Activate()
@@ -1507,6 +1595,8 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
                     InstallerStateRegistryPath, _installerStateSnapshot), failures);
                 TryRollback(() => RestoreRegistryValues(
                     AppsFeaturesRegistryPath, _appsFeaturesRegistrySnapshot), failures);
+                TryRollback(() => RestoreRegistryValues(
+                    VstoInclusionRegistryPath, _vstoInclusionRegistrySnapshot), failures);
 
                 if (_cacheChanged)
                     TryRollback(RestoreInstallerCache, failures);
@@ -1541,6 +1631,9 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
                 {
                     TryRollback(() => File.Delete(_trustedKeyBackupPath), failures);
                 }
+
+                foreach (var uri in _addedVstoInclusions.AsEnumerable().Reverse())
+                    TryRollback(() => RemoveVstoInclusion(uri), failures);
 
                 foreach (var cacheSnapshot in _accessCacheSnapshots)
                     TryRollback(cacheSnapshot.Restore, failures);
@@ -1729,6 +1822,79 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
                     "Development certificate does not match the pinned SHA-256.");
             }
             return certificate;
+        }
+
+        private static string GetCertificatePublicKeyXml(string certificatePath,
+            string expectedSha256)
+        {
+            using (var certificate = new X509Certificate2(certificatePath))
+            {
+                if (!string.Equals(ComputeSha256(certificate.RawData), expectedSha256,
+                        StringComparison.Ordinal))
+                    throw new InvalidOperationException(
+                        "Certificate VSTO inclusion không khớp SHA-256 đã pin.");
+                using (var rsa = certificate.GetRSAPublicKey())
+                {
+                    if (rsa == null)
+                        throw new InvalidOperationException(
+                            "Certificate VSTO inclusion không chứa khóa RSA.");
+                    return rsa.ToXmlString(false);
+                }
+            }
+        }
+
+        private static Uri GetDevelopmentManifestDirectoryUri(string installDirectory)
+        {
+            return new Uri(Path.GetFullPath(installDirectory).TrimEnd(
+                Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) +
+                Path.DirectorySeparatorChar);
+        }
+
+        private static object CreateVstoSecurityEntry(Uri uri, string publicKey,
+            out Type inclusionListType)
+        {
+            var runtime = Assembly.Load(
+                "Microsoft.VisualStudio.Tools.Office.Runtime, Version=10.0.0.0, " +
+                "Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
+            var entryType = runtime.GetType(
+                "Microsoft.VisualStudio.Tools.Office.Runtime.Security.AddInSecurityEntry", true);
+            inclusionListType = runtime.GetType(
+                "Microsoft.VisualStudio.Tools.Office.Runtime.Security.UserInclusionList", true);
+            return Activator.CreateInstance(entryType, new object[] { uri, publicKey });
+        }
+
+        private static bool ContainsVstoInclusion(Uri uri, string publicKey)
+        {
+            Type listType;
+            var entry = CreateVstoSecurityEntry(uri, publicKey, out listType);
+            return (bool)listType.GetMethod("Contains", BindingFlags.Public |
+                BindingFlags.Static).Invoke(null, new[] { entry });
+        }
+
+        private static bool AddVstoInclusion(Uri uri, string publicKey)
+        {
+            Type listType;
+            var entry = CreateVstoSecurityEntry(uri, publicKey, out listType);
+            var contains = listType.GetMethod("Contains", BindingFlags.Public |
+                BindingFlags.Static);
+            if ((bool)contains.Invoke(null, new[] { entry })) return false;
+            listType.GetMethod("Add", BindingFlags.Public | BindingFlags.Static)
+                .Invoke(null, new[] { entry });
+            if (!(bool)contains.Invoke(null, new[] { entry }))
+                throw new InvalidOperationException(
+                    "VSTO inclusion Development không được ghi nhận.");
+            return true;
+        }
+
+        private static void RemoveVstoInclusion(Uri uri)
+        {
+            var runtime = Assembly.Load(
+                "Microsoft.VisualStudio.Tools.Office.Runtime, Version=10.0.0.0, " +
+                "Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
+            var listType = runtime.GetType(
+                "Microsoft.VisualStudio.Tools.Office.Runtime.Security.UserInclusionList", true);
+            listType.GetMethod("Remove", BindingFlags.Public | BindingFlags.Static)
+                .Invoke(null, new object[] { uri });
         }
 
         private static bool AddCertificate(StoreName storeName, string certificatePath,

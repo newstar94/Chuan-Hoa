@@ -99,6 +99,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 { "btnChenTrangNgang", () => RunLocalCommand("Chèn trang ngang", () => _localCommandRuntime.InsertSection(true)) },
                 { "btnChenTrangDoc", () => RunLocalCommand("Chèn trang dọc", () => _localCommandRuntime.InsertSection(false)) },
                 { "btnXoaTrangThua", () => RunLocalCommand("Xóa trang thừa", _localCommandRuntime.RemoveTrailingBlankParagraphs) },
+                { "btnXoaTabKhongLeader", () => RunLocalCommand("Xóa tab stop không có leader", _localCommandRuntime.RemoveLeaderlessTabStops) },
                 { "btnDungBoStyleCo15", () => RunAnalysisBackedLocalCommand("Dựng bộ Style cỡ 15", context => _localCommandRuntime.BuildStyleSet(context, 15f)) },
                 { "btnDungBoStyleCo14", () => RunAnalysisBackedLocalCommand("Dựng bộ Style cỡ 14", context => _localCommandRuntime.BuildStyleSet(context, 14f)) },
                 { "btnDungBoStyleCo13", () => RunAnalysisBackedLocalCommand("Dựng bộ Style cỡ 13", context => _localCommandRuntime.BuildStyleSet(context, 13f)) },
@@ -446,7 +447,9 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         private void ShowAbout()
         {
             MessageBox.Show(
-                "Chuẩn hóa cho Microsoft Word\nNền tảng VSTO, hỗ trợ mục tiêu Word 2010 trở lên.\n\n" +
+                "Chuẩn hóa cho Microsoft Word\nPhiên bản: " +
+                typeof(RibbonRuntime).Assembly.GetName().Version +
+                "\nNền tảng VSTO, hỗ trợ mục tiêu Word 2010 trở lên.\n\n" +
                 _localAccessManager.DescribeStatus(),
                 "Thông tin Chuẩn hóa",
                 MessageBoxButtons.OK,

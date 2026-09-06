@@ -103,6 +103,10 @@ namespace ChuanHoa.Client.Core.Scanning
     public sealed class DocumentRoleDetector
     {
         private static readonly Regex NationalTitle = Rx(@"CỘNG\s+H(?:ÒA|OÀ)\s+XÃ\s+HỘI\s+CHỦ\s+NGHĨA\s+VIỆT\s+NAM", true);
+        private static bool IsExtendedReportTitle(string text) =>
+            text.Length <= 160 && Regex.IsMatch(text, @"^BÁO CÁO\s+[\p{Lu}\p{M}\d ,/()-]+$");
+        private static bool IsTypeHeading(string text) => TypeName.IsMatch(text) ||
+            IsExtendedReportTitle(text) || Eq(text, "BẢN CAM KẾT");
         private static readonly Regex PlaceDate = Rx(@"^\s*(?<place>[\p{L}][\p{L}\s.]{0,70}?)(?<comma>,?)\s+ngày\s+(?<day>\d{1,2})\s+tháng\s+(?<month>\d{1,2})\s+năm\s+(?<year>\d{4})\s*$", true);
         private static readonly Regex TypeName = Rx(@"^(?<type>NGHỊ QUYẾT|QUYẾT ĐỊNH|CHỈ THỊ|THÔNG TƯ|THÔNG CÁO|THÔNG BÁO|HƯỚNG DẪN|CHƯƠNG TRÌNH|KẾ HOẠCH|PHƯƠNG ÁN|ĐỀ ÁN|DỰ ÁN|BÁO CÁO|TỜ TRÌNH|QUY CHẾ|QUY ĐỊNH|GIẤY MỜI|CÔNG ĐIỆN|GIẤY GIỚI THIỆU|BIÊN BẢN|GIẤY NGHỈ PHÉP|GIẤY ỦY QUYỀN|PHIẾU GỬI|PHIẾU CHUYỂN|PHIẾU BÁO|KẾT LUẬN)(?:\s*[.:]?\s*\d{1,2})?$", true);
         private static readonly Regex LegalBasis = Rx(@"^(?:[-–—]\s*)?(Căn cứ|Xét|Xét đề nghị|Theo đề nghị)\b", true);
@@ -188,12 +192,12 @@ namespace ChuanHoa.Client.Core.Scanning
                 else if (legalBasisWindowOpen && IsFormalLegalBasisParagraph(text))
                     assignedRole = "legalBasis";
                 else if (IsPlaceDate(text)) assignedRole = "placeAndIssuedDate";
-                else if (TypeName.IsMatch(text))
+                else if (IsTypeHeading(text))
                 {
                     // A Decision commonly repeats "QUYẾT ĐỊNH" as the operative
                     // formula immediately before Điều 1. Only the first occurrence is
                     // the document type whose following paragraph is the subject.
-                    assignedRole = typeNameAssigned
+                    assignedRole = Eq(text, "BẢN CAM KẾT") ? "standaloneTitle" : typeNameAssigned
                         ? "structuralTitle"
                         : "typeName";
                     if (assignedRole == "typeName") typeNameAssigned = true;
@@ -254,9 +258,9 @@ namespace ChuanHoa.Client.Core.Scanning
                     }
                 }
 
-                if (TypeName.IsMatch(text) || Rx(@"^(V/v|Về việc)\b", true).IsMatch(text))
+                if (IsTypeHeading(text) || Rx(@"^(V/v|Về việc)\b", true).IsMatch(text))
                 {
-                    if (currentHasDocumentIdentity && TypeName.IsMatch(text))
+                    if (currentHasDocumentIdentity && IsTypeHeading(text))
                     {
                         var headerStart = FindHeaderClusterStartBefore(main, position, currentStart);
                         if (headerStart > currentStart)
@@ -275,7 +279,8 @@ namespace ChuanHoa.Client.Core.Scanning
 
         private static bool HasHeaderClusterAhead(LocalParagraphSnapshot[] main, int titlePosition)
         {
-            var signals = 0;
+            var signals = Contains(main[titlePosition].Text, "Độc lập") &&
+                Contains(main[titlePosition].Text, "Hạnh phúc") ? 1 : 0;
             var end = Math.Min(main.Length - 1, titlePosition + 12);
             for (var position = titlePosition + 1; position <= end; position++)
             {
@@ -283,7 +288,7 @@ namespace ChuanHoa.Client.Core.Scanning
                 if (Contains(text, "Độc lập") && Contains(text, "Hạnh phúc")) signals++;
                 else if (Rx(@"^Số\s*:?").IsMatch(text)) signals++;
                 else if (IsPlaceDate(text)) signals++;
-                else if (TypeName.IsMatch(text)) signals++;
+                else if (IsTypeHeading(text)) signals++;
                 else if (Rx(@"^(V/v|Về việc)\b", true).IsMatch(text)) signals++;
                 if (signals >= 2) return true;
                 if (IsStructuralBodyStart(text)) break;
@@ -335,7 +340,7 @@ namespace ChuanHoa.Client.Core.Scanning
         private static bool IsLikelyOrganHeading(string text)
         {
             if (text.Length < 4 || text.Length > 220 || !IsMostlyUppercase(text)) return false;
-            if (SignerAuthority.IsMatch(text) || TypeName.IsMatch(text) || IsStructuralBodyStart(text)) return false;
+            if (SignerAuthority.IsMatch(text) || IsTypeHeading(text) || IsStructuralBodyStart(text)) return false;
             return !Eq(text, "QUỐC HỘI");
         }
 
@@ -408,16 +413,18 @@ namespace ChuanHoa.Client.Core.Scanning
 
         private static string ResolveDocumentTypeFromContent(LocalParagraphSnapshot[] main)
         {
-            var typeParagraph = main.FirstOrDefault(p => TypeName.IsMatch(Collapse(p.Text)));
+            var typeParagraph = main.FirstOrDefault(p => IsTypeHeading(Collapse(p.Text)));
             if (typeParagraph != null)
             {
+                if (IsExtendedReportTitle(Collapse(typeParagraph.Text))) return LocalDocumentTypeCodes.Report;
+                if (Eq(Collapse(typeParagraph.Text), "BẢN CAM KẾT")) return LocalDocumentTypeCodes.Unknown;
                 var match = TypeName.Match(Collapse(typeParagraph.Text));
                 var type = match.Groups["type"].Value.ToUpper(CultureInfo.GetCultureInfo("vi-VN"));
                 return MapTypeName(type);
             }
 
             if (main.Any(p => Rx(@"^(V/v|Về việc)\b", true).IsMatch(Collapse(p.Text))) &&
-                main.All(p => !TypeName.IsMatch(Collapse(p.Text))))
+                main.All(p => !IsTypeHeading(Collapse(p.Text))))
                 return LocalDocumentTypeCodes.OfficialLetter;
             return LocalDocumentTypeCodes.Unknown;
         }
@@ -483,7 +490,7 @@ namespace ChuanHoa.Client.Core.Scanning
             // terminates the component, as do normal body/legal/operative starts.
             if (current.Index != previous.Index + 1 || text.Length == 0 || text.Length > 500)
                 return false;
-            if (LegalBasis.IsMatch(text) || TypeName.IsMatch(text) ||
+            if (LegalBasis.IsMatch(text) || IsTypeHeading(text) ||
                 IsStructuralBodyStart(text) ||
                 Rx(@"^(Kính\s+(?:gửi|trình)|Nơi\s+nhận)\b", true).IsMatch(text))
                 return false;

@@ -120,6 +120,19 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 annotations.ClearLane("format");
                 annotations.ClearLane("spelling");
 
+                if (SplitCombinedNationalHeaders(document, local) > 0)
+                {
+                    // Paragraph indexes and every text anchor changed. Never reuse
+                    // the pre-split findings, including spelling replacement spans.
+                    new WordDocumentReadRuntime(_application, _accessManager).Prepare(
+                        context, DocumentAnalysisScope.Full, document, false);
+                    local = context.LastLocalSnapshot!;
+                    formatFindings = context.LastFormatScan!.Findings;
+                    spellingFindings = context.LastSpellingScan!.Findings;
+                    blocks = context.LastLogicalBlocks;
+                    roles = context.LastRolesByParagraphIndex;
+                }
+
                 // Apply text edits first while every explicit-read offset is still exact.
                 // Later layout operations resolve main-story paragraphs by their stable
                 // paragraph index, so replacements that change character counts cannot
@@ -144,12 +157,23 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                         changedParagraphs++;
                 }
 
-                insertedLines = InsertMissingRequiredLines(document, local, formatFindings,
-                    blocks, roles);
                 EnsurePageNumbers(document, local, rules);
                 normalizedTables = NormalizeTables(document, local, roles);
                 WordAppendixPaginationNormalizer.Normalize(document, roles);
                 RemoveTrailingBlankParagraphs(document);
+
+                // Component lines use absolute page coordinates. Create or move them
+                // only after every operation that can change margins, header-table
+                // widths, pagination or paragraph placement; otherwise Word keeps the
+                // old X coordinate while the centred caption moves on repagination.
+                try
+                {
+                    document.Repaginate();
+                    _application.ScreenRefresh();
+                }
+                catch (COMException) { }
+                insertedLines = InsertMissingRequiredLines(document, local, formatFindings,
+                    blocks, roles);
 
                 if (undoStarted)
                 {
@@ -1055,12 +1079,44 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 range.ParagraphFormat.Alignment = style.Alignment;
                 if (role == "legalBasis")
                 {
+                    range.ParagraphFormat.LeftIndent = 0f;
+                    range.ParagraphFormat.RightIndent = 0f;
                     range.ParagraphFormat.FirstLineIndent = 10f * PointsPerMillimeter;
                     range.ParagraphFormat.SpaceAfter = 6f;
                 }
                 return true;
             }
             finally { Release(range); }
+        }
+
+        private static int SplitCombinedNationalHeaders(Word.Document document, LocalScanSnapshot snapshot)
+        {
+            var count = 0;
+            foreach (var paragraph in snapshot.Paragraphs.Where(p =>
+                p.StoryType == "wdMainTextStory" && p.HasField != true &&
+                p.HasContentControl != true && p.HasHyperlink != true && p.HasMathObject != true)
+                .OrderByDescending(p => p.AbsoluteStart))
+            {
+                var offsets = CombinedNationalHeader.GetBreakOffsets(paragraph.Text);
+                if (offsets.Length == 0) continue;
+                Word.Range? range = null;
+                try
+                {
+                    range = document.Range(paragraph.AbsoluteStart, paragraph.AbsoluteEnd);
+                    if (!string.Equals((range.Text ?? string.Empty).TrimEnd('\r', '\a'),
+                        paragraph.Text, StringComparison.Ordinal)) continue;
+                    // Replace break characters only; preserve all runs, bookmarks,
+                    // formatting and table-cell terminators.
+                    foreach (var offset in offsets.OrderByDescending(value => value))
+                    {
+                        range.SetRange(paragraph.AbsoluteStart + offset, paragraph.AbsoluteStart + offset + 1);
+                        range.Text = "\r";
+                    }
+                    count++;
+                }
+                finally { Release(range); }
+            }
+            return count;
         }
 
         private static void ApplyBodyParagraphIndent(Word.Range range, string text)
@@ -1096,6 +1152,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             }
         }
 
+
         private static bool HasEquivalentTabStop(Word.TabStops tabStops, float position)
         {
             var count = tabStops.Count;
@@ -1119,6 +1176,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         {
             switch (role)
             {
+                case "standaloneTitle": return S(14, true, false, Word.WdParagraphAlignment.wdAlignParagraphCenter);
                 case "nationalTitle": return party ? null : S((float)headerFontTier.NationalTitle, true, false,
                     Word.WdParagraphAlignment.wdAlignParagraphCenter);
                 case "nationalMotto": return party ? null : S((float)headerFontTier.NationalMotto, true, false,
@@ -1165,19 +1223,18 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 .Select(f => Tuple.Create(f.RuleCode, f.Anchor.ParagraphIndex.GetValueOrDefault()))
                 .ToList();
 
-            // 1.0.0.43 could leave an OOXML line object that Word exposed through COM
-            // but did not paint. Those owned shapes have the legacy CHUANHOA_* marker,
-            // so migrate them once even when the geometry-only scanner calls them valid.
-            // A valid user-created line is left untouched. Missing/invalid lines are
-            // already represented by findings. Only lines explicitly owned by an older
-            // Chuẩn hóa build are added here for a one-time migration.
+            // Every line owned by Chuẩn hóa must be measured again after the final
+            // layout pass. A line can be valid in the input snapshot and become offset
+            // when 1-Click changes a header table's indent or column widths. Legacy
+            // CHUANHOA_* lines are migrated and current CHUANHOA2_* lines are moved in
+            // place. User-created shapes are never added to this maintenance path.
             foreach (var line in snapshot.LineShapes.Where(item =>
-                LineShapeOwnership.IsLegacyOwned(item.Name)))
+                LineShapeOwnership.IsOwned(item.Name)))
             {
-                var componentRole = line.Name.StartsWith("CHUANHOA_ORG_", StringComparison.Ordinal) ? "organName" :
-                    line.Name.StartsWith("CHUANHOA_SUBJ_", StringComparison.Ordinal) ? "subject" :
-                    line.Name.StartsWith("CHUANHOA_PARTY_", StringComparison.Ordinal) ? "partyTitle" :
-                    line.Name.StartsWith("CHUANHOA_MOTTO_", StringComparison.Ordinal) ? "nationalMotto" : string.Empty;
+                var componentRole = line.Name.IndexOf("_ORG_", StringComparison.Ordinal) >= 0 ? "organName" :
+                    line.Name.IndexOf("_SUBJ_", StringComparison.Ordinal) >= 0 ? "subject" :
+                    line.Name.IndexOf("_PARTY_", StringComparison.Ordinal) >= 0 ? "partyTitle" :
+                    line.Name.IndexOf("_MOTTO_", StringComparison.Ordinal) >= 0 ? "nationalMotto" : string.Empty;
                 var ruleCode = componentRole == "organName" ? "ND30-PL1-M2-K2-ORG-LINE" :
                     componentRole == "subject" ? "ND30-PL1-M2-K5A-SUBJ-LINE" :
                     componentRole == "partyTitle" ? "HD05-M1-TITLE-LINE" :
@@ -1186,7 +1243,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 var paragraph = snapshot.Paragraphs.FirstOrDefault(item =>
                     roles.ContainsKey(item.Index) &&
                     string.Equals(roles[item.Index], componentRole, StringComparison.Ordinal) &&
-                    IsAssociatedLine(line, item));
+                    LineShapeOwnership.IsOwnedForParagraph(line.Name, item.Index));
                 if (paragraph != null && !work.Any(item => item.Item1 == ruleCode && item.Item2 == paragraph.Index))
                     work.Add(Tuple.Create(ruleCode, paragraph.Index));
             }

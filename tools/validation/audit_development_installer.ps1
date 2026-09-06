@@ -12,7 +12,11 @@ param(
 
     [Parameter(Mandatory = $true)]
     [ValidatePattern('^[0-9a-fA-F -]{64,95}$')]
-    [string]$SigningCertificateSha256
+    [string]$SigningCertificateSha256,
+
+    [Parameter(Mandatory = $true)]
+    [ValidatePattern('^[0-9a-fA-F -]{64,95}$')]
+    [string]$SigningRootCertificateSha256
 )
 
 $ErrorActionPreference = 'Stop'
@@ -24,6 +28,8 @@ $trustedKeyPin = Normalize-ChuanHoaSha256 `
     -Value $TrustedPublicKeySha256 -Label 'TrustedPublicKeySha256'
 $certificatePin = Normalize-ChuanHoaSha256 `
     -Value $SigningCertificateSha256 -Label 'SigningCertificateSha256'
+$rootCertificatePin = Normalize-ChuanHoaSha256 `
+    -Value $SigningRootCertificateSha256 -Label 'SigningRootCertificateSha256'
 
 $resolvedInstaller = (Resolve-Path -LiteralPath $InstallerPath).Path
 Assert-ChuanHoaManagedAssemblyVersion `
@@ -63,6 +69,7 @@ $payloadResource = 'ChuanHoa.DevelopmentInstaller.Payload.zip'
 $versionResource = 'ChuanHoa.DevelopmentInstaller.Version.txt'
 $trustedKeyPinResource = 'ChuanHoa.DevelopmentInstaller.TrustedPublicKey.sha256'
 $certificatePinResource = 'ChuanHoa.DevelopmentInstaller.SigningCertificate.sha256'
+$rootCertificatePinResource = 'ChuanHoa.DevelopmentInstaller.SigningRootCertificate.sha256'
 
 $embeddedVersion = Read-InstallerTextResource -Name $versionResource
 if (![string]::Equals($embeddedVersion, $expectedVersion,
@@ -75,9 +82,14 @@ $embeddedTrustedKeyPin = Normalize-ChuanHoaSha256 `
 $embeddedCertificatePin = Normalize-ChuanHoaSha256 `
     -Value (Read-InstallerTextResource -Name $certificatePinResource) `
     -Label 'EmbeddedSigningCertificateSha256'
+$embeddedRootCertificatePin = Normalize-ChuanHoaSha256 `
+    -Value (Read-InstallerTextResource -Name $rootCertificatePinResource) `
+    -Label 'EmbeddedSigningRootCertificateSha256'
 if (![string]::Equals($embeddedTrustedKeyPin, $trustedKeyPin,
         [System.StringComparison]::Ordinal) -or
     ![string]::Equals($embeddedCertificatePin, $certificatePin,
+        [System.StringComparison]::Ordinal) -or
+    ![string]::Equals($embeddedRootCertificatePin, $rootCertificatePin,
         [System.StringComparison]::Ordinal)) {
     throw 'Installer embedded pins do not match the external build/audit contract.'
 }
@@ -95,6 +107,7 @@ $expectedEntries = @(
     'ChuanHoa.DevelopmentAccessSmoke.exe',
     'Microsoft.Office.Tools.Common.v4.0.Utilities.dll',
     'ChuanHoa.LocalDevelopment.Public.cer',
+    'ChuanHoa.LocalDevelopment.Root.cer',
     'DevelopmentSupport/trusted-key.xml'
 )
 $forbiddenPatterns = @(
@@ -221,11 +234,34 @@ $payloadCertificate = [System.Security.Cryptography.X509Certificates.X509Certifi
     [byte[]]$entryBytes['ChuanHoa.LocalDevelopment.Public.cer'])
 try {
     $actualCertificatePin = Get-ChuanHoaCertificateSha256 -Certificate $payloadCertificate
+    $payloadCertificateIssuer = $payloadCertificate.Issuer
 }
 finally { $payloadCertificate.Dispose() }
 if (![string]::Equals($actualCertificatePin, $certificatePin,
         [System.StringComparison]::Ordinal)) {
     throw "Payload certificate does not match the approved SHA-256. Expected=$certificatePin Actual=$actualCertificatePin"
+}
+$payloadRootCertificate = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new(
+    [byte[]]$entryBytes['ChuanHoa.LocalDevelopment.Root.cer'])
+try {
+    $actualRootCertificatePin = Get-ChuanHoaCertificateSha256 `
+        -Certificate $payloadRootCertificate
+    if (![string]::Equals($payloadRootCertificate.Subject,
+            'CN=Chuan Hoa Local Development',
+            [System.StringComparison]::Ordinal) -or
+        ![string]::Equals($payloadRootCertificate.Subject,
+            $payloadRootCertificate.Issuer,
+            [System.StringComparison]::Ordinal) -or
+        ![string]::Equals($payloadCertificateIssuer,
+            $payloadRootCertificate.Subject,
+            [System.StringComparison]::Ordinal)) {
+        throw 'Payload Development certificate chain is invalid.'
+    }
+}
+finally { $payloadRootCertificate.Dispose() }
+if (![string]::Equals($actualRootCertificatePin, $rootCertificatePin,
+        [System.StringComparison]::Ordinal)) {
+    throw "Payload root certificate does not match the approved SHA-256. Expected=$rootCertificatePin Actual=$actualRootCertificatePin"
 }
 
 function Assert-ManifestBytesVersion {
@@ -330,6 +366,7 @@ if (@($innerSignatures | Where-Object {
     signerThumbprint = $signature.SignerCertificate.Thumbprint
     signerSha256 = $outerSignerPin
     trustedPublicKeySha256 = $actualTrustedKeyPin
+    signingRootCertificateSha256 = $actualRootCertificatePin
     payloadFiles = $payloadEvidence
     innerPeSignatures = $innerSignatures
     forbiddenHits = $forbiddenHits.Count

@@ -34,4 +34,26 @@ public sealed class ParagraphIndentPolicyTests
         Assert.Equal(15d, ParagraphIndentPolicy.ListTextMillimeters);
         Assert.Equal(10d, ParagraphIndentPolicy.BodyFirstLineMillimeters);
     }
+
+    [Theory]
+    [InlineData("- Căn cứ Luật", -5, 15, true)]
+    [InlineData("- Cam kết", -5, 25, false)]
+    [InlineData("- Cam kết", 0, 15, false)]
+    [InlineData("Nội dung", -5, 15, false)]
+    [InlineData("Nội dung", 10, 0, true)]
+    [InlineData("Nội dung", 10, 15, false)]
+    public void Checks_effective_marker_and_text_positions(string text, double first, double left, bool expected)
+    {
+        Assert.Equal(expected, ParagraphIndentPolicy.IsValidIndent(text, first, left, 10, 12.7));
+    }
+
+    [Theory]
+    [InlineData("CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\vĐộc lập - Tự do - Hạnh phúc\v---------------", 2)]
+    [InlineData("CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\vĐộc lập - Tự do - Hạnh phúc", 1)]
+    [InlineData("Nội dung\v---------------", 0)]
+    [InlineData("CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\vĐộc lập - Tự do - Hạnh phúc\vNội dung", 0)]
+    public void Splits_only_complete_combined_header_lines(string text, int expected)
+    {
+        Assert.Equal(expected, CombinedNationalHeader.GetBreakOffsets(text).Length);
+    }
 }

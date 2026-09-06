@@ -8,6 +8,7 @@ using System.Threading;
 using ChuanHoa.Client.Core.Annotations;
 using ChuanHoa.Client.Core.Lexicon;
 using ChuanHoa.Client.Core.Rules;
+using ChuanHoa.Client.Core.Text;
 
 namespace ChuanHoa.Client.Core.Scanning
 {
@@ -194,7 +195,9 @@ namespace ChuanHoa.Client.Core.Scanning
                     (paragraph.FontSizePoints.Value < minimumSize - .1d || paragraph.FontSizePoints.Value > maximumSize + .1d))
                     findings.Add(Paragraph("ND30-PL1-MV-CT1", paragraph, "Cỡ chữ nội dung không đúng chế độ đã chọn.",
                         "Dùng cỡ " + minimumSize.ToString("0.#", CultureInfo.InvariantCulture) + "–" + maximumSize.ToString("0.#", CultureInfo.InvariantCulture) + ".", rules));
-                if (paragraph.FirstLineIndentPoints.HasValue && !Between(paragraph.FirstLineIndentPoints.Value,
+                if (paragraph.FirstLineIndentPoints.HasValue && !ParagraphIndentPolicy.IsValidIndent(
+                    paragraph.Text, paragraph.FirstLineIndentPoints.Value / PointsPerMillimeter,
+                    paragraph.LeftIndentPoints / PointsPerMillimeter,
                     rules.BodyFirstLineIndentMinMm, rules.BodyFirstLineIndentMaxMm))
                     findings.Add(Paragraph("ND30-PL1-M2-K6E-INDENT", paragraph, "Thụt đầu dòng không đúng.", "Thụt đầu dòng 1–1,27 cm.", rules));
                 if (paragraph.SpaceAfterPoints.HasValue && paragraph.SpaceAfterPoints.Value < rules.BodySpaceAfterMinPoints - TolerancePoints)
@@ -292,10 +295,17 @@ namespace ChuanHoa.Client.Core.Scanning
         {
             var party = IsParty(snapshot);
             if (!party)
+            {
+                foreach (var combined in Scannable(snapshot).Where(p =>
+                    CombinedNationalHeader.GetBreakOffsets(p.Text).Length > 0))
+                    findings.Add(Paragraph("ND30-PL1-M2-K1-TN-LINE", combined,
+                        "Quốc hiệu và Tiêu ngữ đang chung đoạn; chưa có đường kẻ Tiêu ngữ độc lập.",
+                        "Tách Quốc hiệu và Tiêu ngữ thành hai đoạn, dùng đường kẻ nét liền dưới Tiêu ngữ.", rules));
                 foreach (var motto in WithRole(snapshot, roles, "nationalMotto"))
                     AddRequiredLineFinding(findings, snapshot, motto, rules.MottoLineMinRatio,
                         rules.MottoLineMaxRatio, "ND30-PL1-M2-K1-TN-LINE", "Tiêu ngữ",
                         "dài bằng dòng Tiêu ngữ", rules);
+            }
 
             foreach (var organ in WithRole(snapshot, roles, "organName"))
                 if (!party)

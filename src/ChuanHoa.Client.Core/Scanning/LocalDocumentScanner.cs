@@ -7,6 +7,7 @@ using System.Threading;
 using ChuanHoa.Client.Core.Annotations;
 using ChuanHoa.Client.Core.Lexicon;
 using ChuanHoa.Client.Core.Rules;
+using ChuanHoa.Client.Core.Text;
 
 namespace ChuanHoa.Client.Core.Scanning
 {
@@ -136,7 +137,9 @@ namespace ChuanHoa.Client.Core.Scanning
             if (paragraph.FirstLineIndentPoints.HasValue)
             {
                 var indentMm = paragraph.FirstLineIndentPoints.Value / PointsPerMillimeter;
-                if (indentMm < rules.BodyFirstLineIndentMinMm - 0.5d || indentMm > rules.BodyFirstLineIndentMaxMm + 0.5d)
+                if (!ParagraphIndentPolicy.IsValidIndent(paragraph.Text, indentMm,
+                    paragraph.LeftIndentPoints / PointsPerMillimeter,
+                    rules.BodyFirstLineIndentMinMm, rules.BodyFirstLineIndentMaxMm))
                     issues.Add("thụt đầu dòng ngoài " + Range(rules.BodyFirstLineIndentMinMm, rules.BodyFirstLineIndentMaxMm) + " mm");
             }
             if (paragraph.SpaceAfterPoints.HasValue && paragraph.SpaceAfterPoints.Value + 0.1d < rules.BodySpaceAfterMinPoints)

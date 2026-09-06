@@ -98,12 +98,60 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 Word.Cell? cell = null;
                 Word.Range? cellRange = null;
                 Word.Range? cellStart = null;
+                Word.Tables? tables = null;
+                Word.Table? table = null;
+                Word.Row? row = null;
+                Word.Sections? cellSections = null;
+                Word.Section? cellSection = null;
+                Word.PageSetup? cellSetup = null;
                 try
                 {
                     cells = range.Cells;
                     if (cells.Count == 0) return null;
                     cell = cells[1];
                     cellRange = cell.Range.Duplicate;
+                    tables = cellRange.Tables;
+                    table = tables.Count > 0 ? tables[1] : null;
+                    cellSections = cellRange.Sections;
+                    cellSection = cellSections.Count > 0 ? cellSections[1] : null;
+                    cellSetup = cellSection?.PageSetup;
+
+                    // Information(wdHorizontalPositionRelativeToPage) can keep the
+                    // pre-resize X coordinate until Word saves or reopens the file.
+                    // For the left-aligned header layout table, derive the cell text
+                    // origin from current table geometry instead. This keeps a line
+                    // centred after 1-Click changes the table indent/column widths.
+                    if (table != null && cellSetup != null &&
+                        table.Rows.Alignment == Word.WdRowAlignment.wdAlignRowLeft)
+                    {
+                        row = table.Rows[cell.RowIndex];
+                        var precedingWidth = 0d;
+                        for (var index = 1; index <= row.Cells.Count; index++)
+                        {
+                            Word.Cell? candidate = null;
+                            Word.Range? candidateRange = null;
+                            try
+                            {
+                                candidate = row.Cells[index];
+                                candidateRange = candidate.Range;
+                                if (candidateRange.Start >= cellRange.Start) break;
+                                precedingWidth += candidate.Width;
+                            }
+                            finally { Release(candidateRange); Release(candidate); }
+                        }
+                        var tableIndent = ValidIndent(table.Rows.LeftIndent);
+                        var cellOuterLeft = cellSetup.LeftMargin + tableIndent + precedingWidth;
+                        var cellLeftPadding = ValidIndent(cell.LeftPadding);
+                        var cellRightPadding = ValidIndent(cell.RightPadding);
+                        var cellAvailableWidth = Math.Max(12d,
+                            cell.Width - cellLeftPadding - cellRightPadding);
+                        var cellContentLeft = cellOuterLeft + cellLeftPadding + leftIndent + firstLineIndent;
+                        var cellContentRight = cellOuterLeft + cellLeftPadding + cellAvailableWidth - rightIndent;
+                        return cellContentRight > cellContentLeft
+                            ? cellContentLeft + (cellContentRight - cellContentLeft) / 2d
+                            : cellOuterLeft + cellLeftPadding + cellAvailableWidth / 2d;
+                    }
+
                     cellStart = cellRange.Duplicate;
                     cellStart.SetRange(cellRange.Start, Math.Min(cellRange.Start + 1, cellRange.End));
                     // A one-character cell range returns the start of the cell's text
@@ -126,7 +174,19 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 {
                     return null;
                 }
-                finally { Release(cellStart); Release(cellRange); Release(cell); Release(cells); }
+                finally
+                {
+                    Release(cellSetup);
+                    Release(cellSection);
+                    Release(cellSections);
+                    Release(row);
+                    Release(table);
+                    Release(tables);
+                    Release(cellStart);
+                    Release(cellRange);
+                    Release(cell);
+                    Release(cells);
+                }
             }
 
             Word.Sections? sections = null;

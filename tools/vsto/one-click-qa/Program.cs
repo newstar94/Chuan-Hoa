@@ -92,6 +92,12 @@ namespace ChuanHoa.OneClickQa
                 Console.WriteLine("POST_COMMENTS=" + document.Comments.Count);
                 foreach (var finding in result.RemainingFindingItems)
                     Console.WriteLine("FINDING=" + finding.RuleCode + "|" + finding.CurrentIssue + "|" + finding.Expected);
+                var remainingLine = postFormat.Findings.FirstOrDefault(item =>
+                    item.RuleCode.EndsWith("-LINE", StringComparison.Ordinal));
+                if (remainingLine != null)
+                    throw new InvalidOperationException(
+                        "1-Click left a required Line Shape missing or offset: " +
+                        remainingLine.RuleCode + ".");
                 return 0;
             }
             catch (Exception exception)

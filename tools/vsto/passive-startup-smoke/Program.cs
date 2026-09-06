@@ -18,6 +18,7 @@ namespace ChuanHoa.PassiveStartupSmoke
         [STAThread]
         private static int Main()
         {
+            OleMessageFilter.Register();
             var testDirectory = Path.Combine(Path.GetTempPath(),
                 "ChuanHoaPassiveStartup-" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(testDirectory);
@@ -25,6 +26,7 @@ namespace ChuanHoa.PassiveStartupSmoke
             Word.Application application = null;
             Word.Document document = null;
             Office.COMAddIn addIn = null;
+            Process launchedWord = null;
             try
             {
                 var cacheBefore = CaptureFiles(Path.Combine(
@@ -33,16 +35,43 @@ namespace ChuanHoa.PassiveStartupSmoke
                 var backupsBefore = CaptureFiles(Path.Combine(
                     Path.GetTempPath(), "ChuanHoa", "Backups"));
 
-                Console.WriteLine("PASSIVE_STEP=create-word");
-                application = new Word.Application
+                Console.WriteLine("PASSIVE_STEP=launch-word-as-user");
+                launchedWord = Process.Start(new ProcessStartInfo
                 {
-                    Visible = false,
-                    DisplayAlerts = Word.WdAlertLevel.wdAlertsNone
-                };
+                    FileName = "winword.exe",
+                    Arguments = "/q /w",
+                    UseShellExecute = true,
+                    WindowStyle = ProcessWindowStyle.Minimized
+                });
+                var applicationWait = Stopwatch.StartNew();
+                while (application == null &&
+                    applicationWait.Elapsed < TimeSpan.FromSeconds(15))
+                {
+                    try
+                    {
+                        application = (Word.Application)Marshal.GetActiveObject(
+                            "Word.Application");
+                    }
+                    catch (COMException)
+                    {
+                        Thread.Sleep(100);
+                    }
+                }
+                Assert(application != null,
+                    "Word did not publish its normal user session to the running object table.");
+                application.Visible = false;
+                application.DisplayAlerts = Word.WdAlertLevel.wdAlertsNone;
                 addIn = application.COMAddIns.Item(AddInProgId);
+                var connectWait = Stopwatch.StartNew();
+                while (addIn != null && !addIn.Connect &&
+                    connectWait.Elapsed < TimeSpan.FromSeconds(10))
+                    Thread.Sleep(100);
+                connectWait.Stop();
                 Assert(addIn != null && addIn.Connect,
                     "The installed Chuẩn hóa add-in is not connected.");
                 Console.WriteLine("PASSIVE_ADDIN_CONNECTED=True");
+                Console.WriteLine("PASSIVE_CONNECT_WAIT_MS=" +
+                    Math.Round(connectWait.Elapsed.TotalMilliseconds));
 
                 Console.WriteLine("PASSIVE_STEP=create-saved-document");
                 document = application.Documents.Add();
@@ -116,8 +145,19 @@ namespace ChuanHoa.PassiveStartupSmoke
                 Release(document);
                 Release(addIn);
                 Release(application);
+                if (launchedWord != null)
+                {
+                    try
+                    {
+                        if (!launchedWord.HasExited) launchedWord.Kill();
+                        launchedWord.WaitForExit(5000);
+                    }
+                    catch { }
+                    launchedWord.Dispose();
+                }
                 try { Directory.Delete(testDirectory, true); }
                 catch { }
+                OleMessageFilter.Revoke();
             }
         }
 
@@ -147,6 +187,65 @@ namespace ChuanHoa.PassiveStartupSmoke
         {
             if (value != null && Marshal.IsComObject(value))
                 Marshal.FinalReleaseComObject(value);
+        }
+
+        [ComImport]
+        [Guid("00000016-0000-0000-C000-000000000046")]
+        [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+        private interface IOleMessageFilter
+        {
+            [PreserveSig]
+            int HandleInComingCall(int callType, IntPtr taskCaller,
+                int tickCount, IntPtr interfaceInfo);
+
+            [PreserveSig]
+            int RetryRejectedCall(IntPtr taskCallee, int tickCount,
+                int rejectType);
+
+            [PreserveSig]
+            int MessagePending(IntPtr taskCallee, int tickCount,
+                int pendingType);
+        }
+
+        private sealed class OleMessageFilter : IOleMessageFilter
+        {
+            private static IOleMessageFilter current;
+
+            public static void Register()
+            {
+                current = new OleMessageFilter();
+                IOleMessageFilter previous;
+                CoRegisterMessageFilter(current, out previous);
+            }
+
+            public static void Revoke()
+            {
+                IOleMessageFilter previous;
+                CoRegisterMessageFilter(null, out previous);
+                current = null;
+            }
+
+            public int HandleInComingCall(int callType, IntPtr taskCaller,
+                int tickCount, IntPtr interfaceInfo)
+            {
+                return 0;
+            }
+
+            public int RetryRejectedCall(IntPtr taskCallee, int tickCount,
+                int rejectType)
+            {
+                return rejectType == 2 ? 100 : -1;
+            }
+
+            public int MessagePending(IntPtr taskCallee, int tickCount,
+                int pendingType)
+            {
+                return 2;
+            }
+
+            [DllImport("ole32.dll")]
+            private static extern int CoRegisterMessageFilter(
+                IOleMessageFilter newFilter, out IOleMessageFilter oldFilter);
         }
     }
 }

@@ -103,6 +103,49 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 _application.Selection.ParagraphFormat.KeepWithNext = -1);
         }
 
+        public string RemoveLeaderlessTabStops()
+        {
+            return Execute("Xóa tab stop không có leader", (document, _) =>
+            {
+                foreach (Word.Range root in document.StoryRanges)
+                {
+                    Word.Range? story = root;
+                    try
+                    {
+                        while (story != null)
+                        {
+                            foreach (Word.Paragraph paragraph in story.Paragraphs)
+                            {
+                                Word.TabStops? tabs = null;
+                                Word.ParagraphFormat? format = null;
+                                try
+                                {
+                                    format = paragraph.Format;
+                                    tabs = format.TabStops;
+                                    for (var i = tabs.Count; i >= 1; i--)
+                                    {
+                                        Word.TabStop? tab = null;
+                                        try
+                                        {
+                                            tab = tabs[i];
+                                            if (tab.Leader == Word.WdTabLeader.wdTabLeaderSpaces)
+                                                tab.Clear();
+                                        }
+                                        finally { Release(tab); }
+                                    }
+                                }
+                                finally { Release(tabs); Release(format); Release(paragraph); }
+                            }
+                            var next = story.NextStoryRange;
+                            Release(story);
+                            story = next;
+                        }
+                    }
+                    finally { Release(story); }
+                }
+            }, createBackup: true);
+        }
+
         public string SetCharacterSpacing(float delta, bool reset)
         {
             Word.Selection? currentSelection = null;

@@ -97,6 +97,50 @@ if ($LASTEXITCODE -ne 0) {
     throw "VSTO Development publish-only failed with exit code $LASTEXITCODE."
 }
 
+$publishedApplicationManifest = Get-ChildItem -LiteralPath $publishDirectory `
+    -Recurse -File -Filter 'ChuanHoa.AddIn.Vsto.dll.manifest' |
+    Select-Object -First 1
+$publishedAddIn = Get-ChildItem -LiteralPath $publishDirectory -Recurse -File `
+    -Filter 'ChuanHoa.AddIn.Vsto.dll.deploy' | Select-Object -First 1
+$publishedClientCore = Get-ChildItem -LiteralPath $publishDirectory -Recurse -File `
+    -Filter 'ChuanHoa.Client.Core.dll.deploy' | Select-Object -First 1
+$publishedDeploymentManifest = Join-Path $publishDirectory 'ChuanHoa.AddIn.Vsto.vsto'
+if ($null -eq $publishedApplicationManifest -or $null -eq $publishedAddIn -or
+    $null -eq $publishedClientCore -or
+    !(Test-Path -LiteralPath $publishedDeploymentManifest)) {
+    throw 'Published VSTO payload is incomplete before manifest finalization.'
+}
+Update-ChuanHoaSignedVstoManifests `
+    -ApplicationManifestPath $publishedApplicationManifest.FullName `
+    -DeploymentManifestPath $publishedDeploymentManifest `
+    -ApplicationPayloadPaths @{
+        'ChuanHoa.AddIn.Vsto.dll' = $publishedAddIn.FullName
+        'ChuanHoa.Client.Core.dll' = $publishedClientCore.FullName
+    } `
+    -Certificate $certificate
+
+# The one-file Development bootstrapper stages the directly loadable runtime
+# from bin\Development. Keep its manifests byte-identical to the finalized
+# published manifests whose hashes cover the signed DLL bytes.
+Copy-Item -LiteralPath $publishedApplicationManifest.FullName -Destination `
+    (Join-Path $root 'src\ChuanHoa.AddIn.Vsto\bin\Development\ChuanHoa.AddIn.Vsto.dll.manifest') -Force
+Copy-Item -LiteralPath $publishedDeploymentManifest -Destination `
+    (Join-Path $root 'src\ChuanHoa.AddIn.Vsto\bin\Development\ChuanHoa.AddIn.Vsto.vsto') -Force
+$runtimeApplicationManifest = Join-Path $root `
+    'src\ChuanHoa.AddIn.Vsto\bin\Development\ChuanHoa.AddIn.Vsto.dll.manifest'
+$runtimeDeploymentManifest = Join-Path $root `
+    'src\ChuanHoa.AddIn.Vsto\bin\Development\ChuanHoa.AddIn.Vsto.vsto'
+Update-ChuanHoaSignedVstoManifests `
+    -ApplicationManifestPath $runtimeApplicationManifest `
+    -DeploymentManifestPath $runtimeDeploymentManifest `
+    -ApplicationPayloadPaths @{
+        'ChuanHoa.AddIn.Vsto.dll' = (Join-Path $root 'src\ChuanHoa.AddIn.Vsto\bin\Development\ChuanHoa.AddIn.Vsto.dll')
+        'ChuanHoa.Client.Core.dll' = (Join-Path $root 'src\ChuanHoa.AddIn.Vsto\bin\Development\ChuanHoa.Client.Core.dll')
+    } `
+    -DeploymentApplicationCodebase 'ChuanHoa.AddIn.Vsto.dll.manifest' `
+    -DisableDeploymentFileExtensionMapping `
+    -Certificate $certificate
+
 $setupPath = Join-Path $publishDirectory 'setup.exe'
 $manifestPath = Join-Path $publishDirectory 'ChuanHoa.AddIn.Vsto.vsto'
 $certificatePath = Join-Path $publishDirectory 'ChuanHoa.LocalDevelopment.Public.cer'

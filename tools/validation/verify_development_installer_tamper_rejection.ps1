@@ -9,8 +9,9 @@ param(
 $ErrorActionPreference = 'Stop'
 $resolvedInstaller = (Resolve-Path -LiteralPath $InstallerPath).Path
 $signature = Get-AuthenticodeSignature -LiteralPath $resolvedInstaller
-if ($signature.Status -ne 'Valid') {
-    throw "Baseline installer Authenticode must be Valid, actual=$($signature.Status)."
+if ($signature.Status -in @('NotSigned', 'HashMismatch') -or
+    $null -eq $signature.SignerCertificate) {
+    throw "Baseline installer Authenticode signature is unusable, actual=$($signature.Status)."
 }
 
 Add-Type -AssemblyName System.IO.Compression
@@ -93,6 +94,8 @@ $trustedKeyPin = Read-TextResource `
     -Name 'ChuanHoa.DevelopmentInstaller.TrustedPublicKey.sha256'
 $signingPin = Read-TextResource `
     -Name 'ChuanHoa.DevelopmentInstaller.SigningCertificate.sha256'
+$signingRootPin = Read-TextResource `
+    -Name 'ChuanHoa.DevelopmentInstaller.SigningRootCertificate.sha256'
 $temporaryRoot = Join-Path ([IO.Path]::GetTempPath()) `
     ('ChuanHoa-Tamper-Rejection-' + [Guid]::NewGuid().ToString('N'))
 $payloadDirectory = Join-Path $temporaryRoot 'Payload'
@@ -134,7 +137,8 @@ try {
     finally { $payloadStream.Dispose() }
 
     [object[]]$payloadArguments = @(
-        $payloadDirectory, $version, $trustedKeyPin, $signingPin)
+        $payloadDirectory, $version, $trustedKeyPin, $signingPin,
+        $signingRootPin)
     [object[]]$signerArguments = @($resolvedInstaller, $signingPin)
     $baselinePayloadError = Invoke-PrivateGate `
         -Method $verifyPayload -Arguments $payloadArguments
@@ -168,6 +172,12 @@ try {
             path = (Join-Path $payloadDirectory 'ChuanHoa.DevelopmentAccessSmoke.exe')
             gate = $verifyPayload
             expectedMessage = '0x80096010'
+        },
+        [ordered]@{
+            target = 'ChuanHoa.LocalDevelopment.Root.cer'
+            path = (Join-Path $payloadDirectory 'ChuanHoa.LocalDevelopment.Root.cer')
+            gate = $verifyPayload
+            expectedMessage = 'root SHA-256'
         },
         [ordered]@{
             target = 'Microsoft.Office.Tools.Common.v4.0.Utilities.dll'

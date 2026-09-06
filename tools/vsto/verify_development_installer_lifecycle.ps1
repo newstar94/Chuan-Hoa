@@ -224,8 +224,13 @@ function Assert-InstalledCurrent {
         (Join-Path $currentDirectory 'ChuanHoa.DevelopmentAccessSmoke.exe')
     )) {
         $signature = Get-AuthenticodeSignature -LiteralPath $ownedPe
-        if ($signature.Status -ne 'Valid' -or $null -eq $signature.SignerCertificate) {
-            throw "Installed owned PE signature is not valid: $ownedPe ($($signature.Status))"
+        # Development deliberately uses the pinned self-signed end-entity
+        # certificate. Windows reports UnknownError because it is not a public CA,
+        # while HashMismatch/NotSigned still identify a damaged payload. The exact
+        # signer certificate is pinned immediately below.
+        if ($signature.Status -in @('NotSigned', 'HashMismatch') -or
+            $null -eq $signature.SignerCertificate) {
+            throw "Installed owned PE signature is unusable: $ownedPe ($($signature.Status))"
         }
         $sha256 = [Security.Cryptography.SHA256]::Create()
         try {

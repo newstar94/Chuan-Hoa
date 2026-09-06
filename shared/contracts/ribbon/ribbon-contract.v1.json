@@ -43,11 +43,11 @@
   "counts": {
     "tabs": 1,
     "groups": 6,
-    "buttons": 34,
+    "buttons": 35,
     "menus": 3,
     "dropDowns": 2,
     "checkBoxes": 0,
-    "interactiveControls": 39
+    "interactiveControls": 40
   },
   "approvedProductChanges": [
     {
@@ -630,6 +630,36 @@
           "RIBBON-010",
           "CONTROL-btnXoaTrangThua"
         ]
+      }
+    },
+    {
+      "order": 11,
+      "groupId": "grpDinhDang",
+      "parentContainerId": null,
+      "controlType": "button",
+      "id": "btnXoaTabKhongLeader",
+      "label": "Xóa tab Leader=None",
+      "size": "normal",
+      "imageMso": "ClearFormatting",
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument",
+        "onAction": "OnXoaTabKhongLeader"
+      },
+      "screenTip": "Xóa tab stop không có leader",
+      "superTip": "Xóa mọi tab stop có Leader=None trong tài liệu, kể cả bảng, đầu trang và chân trang. Giữ ký tự tab và các tab stop có leader khác. Có thể hoàn tác bằng Undo.",
+      "staticItems": [],
+      "commandContract": {
+        "commandId": "btnXoaTabKhongLeader",
+        "executionMode": "LOCAL_EXECUTION_GRANT",
+        "entitlement": "DOCUMENT_TOOLS",
+        "riskTier": "CONFIRM",
+        "mutationScope": "ALL_STORIES_LEADERLESS_TAB_STOPS",
+        "preconditions": ["ACTIVE_DOCUMENT", "DOCUMENT_WRITABLE", "NOT_PROTECTED", "NO_ACTIVE_MUTATION_JOB", "AUTHENTICATED", "DEVICE_ACTIVE", "ENTITLEMENT_ACTIVE", "RELEASE_ALLOWED", "SIGNED_EXECUTION_GRANT_VALID", "DOCUMENT_FINGERPRINT_MATCH"],
+        "capability": "WORD_TAB_STOPS",
+        "undoPolicy": "ONE_CUSTOM_UNDO_RECORD",
+        "backupPolicy": "REQUIRED",
+        "telemetryAllowlist": [],
+        "testIds": ["CONTROL-btnXoaTabKhongLeader"]
       }
     },
     {

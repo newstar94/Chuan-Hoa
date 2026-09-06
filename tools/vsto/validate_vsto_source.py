@@ -431,7 +431,11 @@ def validate() -> dict:
         "WinVerifyTrust(",
         "ChuanHoa.SigningCertificateSha256",
         "X509Certificate.CreateFromSignedFile(path)",
-        'Path.Combine(installDirectory, "ChuanHoa.Client.Core.dll")',
+        "typeof(VietnameseTypographyCleaner).Assembly",
+        "GetOriginPath(clientCoreAssembly)",
+        "assembly.CodeBase",
+        "clientCoreAssembly.GetName().Version != assembly.GetName().Version",
+        "StringComparison.OrdinalIgnoreCase",
         "throw new SecurityException",
         "WTD_CACHE_ONLY_URL_RETRIEVAL",
     )

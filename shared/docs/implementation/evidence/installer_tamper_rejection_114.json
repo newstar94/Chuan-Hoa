@@ -1,0 +1,51 @@
+﻿{
+    "schemaVersion":  1,
+    "status":  "PASS_TAMPER_REJECTED_ON_TEMP_COPY",
+    "productVersion":  "1.0.0.114",
+    "installerFile":  "ChuanHoa_Development_Test_Setup_1.0.0.114.exe",
+    "installerSha256":  "384EA7EF00621C138B421E9249F3E00FE829AB951B5664ED893562259A658C8D",
+    "baseline":  "PASS",
+    "cases":  [
+                  {
+                      "target":  "outer-installer",
+                      "status":  "PASS_REJECTED",
+                      "rejection":  "Chữ ký Authenticode không hợp lệ: 0x80096010."
+                  },
+                  {
+                      "target":  "ChuanHoa.AddIn.Vsto.dll",
+                      "status":  "PASS_REJECTED",
+                      "rejection":  "Chữ ký Authenticode không hợp lệ: 0x80096010."
+                  },
+                  {
+                      "target":  "ChuanHoa.Client.Core.dll",
+                      "status":  "PASS_REJECTED",
+                      "rejection":  "Chữ ký Authenticode không hợp lệ: 0x80096010."
+                  },
+                  {
+                      "target":  "ChuanHoa.DevelopmentAccessSmoke.exe",
+                      "status":  "PASS_REJECTED",
+                      "rejection":  "Chữ ký Authenticode không hợp lệ: 0x80096010."
+                  },
+                  {
+                      "target":  "ChuanHoa.LocalDevelopment.Root.cer",
+                      "status":  "PASS_REJECTED",
+                      "rejection":  "Chuỗi certificate Development không khớp root SHA-256 đã pin."
+                  },
+                  {
+                      "target":  "Microsoft.Office.Tools.Common.v4.0.Utilities.dll",
+                      "status":  "PASS_REJECTED",
+                      "rejection":  "SHA-256 payload không khớp manifest: Microsoft.Office.Tools.Common.v4.0.Utilities.dll"
+                  },
+                  {
+                      "target":  "ChuanHoa.AddIn.Vsto.vsto",
+                      "status":  "PASS_REJECTED",
+                      "rejection":  "Chữ ký manifest không hợp lệ hoặc không khớp certificate đã pin: ChuanHoa.AddIn.Vsto.vsto"
+                  },
+                  {
+                      "target":  "ChuanHoa.AddIn.Vsto.dll.manifest",
+                      "status":  "PASS_REJECTED",
+                      "rejection":  "Kích thước payload không khớp manifest: ChuanHoa.AddIn.Vsto.dll.manifest"
+                  }
+              ],
+    "installedStateTouched":  false
+}

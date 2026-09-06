@@ -74,13 +74,14 @@ namespace ChuanHoa.Client.Core.Scanning
             int? absoluteEnd = null, int? builtInStyleId = null,
             bool? hasField = null, bool? hasMathObject = null, bool? hasHyperlink = null,
             bool? hasContentControl = null, string? captionKind = null,
-            int tableNestingDepth = 0)
+            int tableNestingDepth = 0, double? leftIndentPoints = null)
         {
             Index = index; Text = text ?? string.Empty; StoryType = storyType ?? string.Empty;
             SectionIndex = sectionIndex; AbsoluteStart = absoluteStart; FontName = fontName;
             TableIndex = tableIndex; RowIndex = rowIndex; CellIndex = cellIndex;
             FontSizePoints = fontSizePoints; Bold = bold; Italic = italic; Alignment = alignment;
             FirstLineIndentPoints = firstLineIndentPoints; SpaceBeforePoints = spaceBeforePoints;
+            LeftIndentPoints = leftIndentPoints;
             SpaceAfterPoints = spaceAfterPoints; IsInTable = isInTable;
             Role = role ?? "Unknown"; FontColor = fontColor; Underline = underline;
             HasBottomBorder = hasBottomBorder; LineSpacingPoints = lineSpacingPoints;
@@ -107,6 +108,7 @@ namespace ChuanHoa.Client.Core.Scanning
         public bool? Italic { get; }
         public int? Alignment { get; }
         public double? FirstLineIndentPoints { get; }
+        public double? LeftIndentPoints { get; }
         public double? SpaceBeforePoints { get; }
         public double? SpaceAfterPoints { get; }
         public bool IsInTable { get; }

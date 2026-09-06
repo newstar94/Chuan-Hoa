@@ -35,7 +35,7 @@ $SigningRootCertificateSha256 = Normalize-ChuanHoaSha256 `
 $rootCertificate = Get-ChuanHoaSigningCertificate `
     -ExpectedSha256 $SigningRootCertificateSha256
 if (![string]::Equals($rootCertificate.Subject,
-        'CN=Chuan Hoa Local Development Root',
+        'CN=Chuan Hoa Local Development',
         [System.StringComparison]::Ordinal) -or
     ![string]::Equals($certificate.Issuer, $rootCertificate.Subject,
         [System.StringComparison]::Ordinal)) {
@@ -71,6 +71,8 @@ if (Test-Path -LiteralPath $publishDirectory) {
     [System.IO.Directory]::Delete($resolvedPublish, $true)
 }
 $previousSigningPin = $env:CHUANHOA_DEVELOPMENT_SIGNING_CERT_SHA256
+$previousTrustResource = $env:DevelopmentTrustedPublicKeyPath
+$env:DevelopmentTrustedPublicKeyPath = (Resolve-Path -LiteralPath $TrustedPublicKeyPath).Path
 $env:CHUANHOA_DEVELOPMENT_SIGNING_CERT_SHA256 = $SigningCertificateSha256
 try {
     & $publishScript
@@ -78,6 +80,7 @@ try {
 }
 finally {
     $env:CHUANHOA_DEVELOPMENT_SIGNING_CERT_SHA256 = $previousSigningPin
+    $env:DevelopmentTrustedPublicKeyPath = $previousTrustResource
 }
 if ($publishExitCode -ne 0 -or !(Test-Path -LiteralPath $publishDirectory)) {
     throw "Fresh VSTO Development publish failed for $ApplicationVersion."
@@ -97,6 +100,16 @@ if ($embeddedResources -notcontains 'ChuanHoa.AddIn.Vsto.Ribbon.ChuanHoaRibbon.x
     throw 'The directly loadable Development VSTO assembly is missing the embedded Ribbon XML resource.'
 }
 Assert-ChuanHoaManagedAssemblyVersion -Path $runtimeAssembly -ExpectedVersion $ApplicationVersion
+$embeddedTrustStream = $loadedRuntimeAssembly.GetManifestResourceStream('ChuanHoa.Development.TrustedPublicKey.xml')
+if ($null -eq $embeddedTrustStream) { throw 'Packaged Development DLL must embed its public trust key.' }
+$embeddedTrustSha = [Security.Cryptography.SHA256]::Create()
+try {
+    $embeddedTrustHash = [BitConverter]::ToString($embeddedTrustSha.ComputeHash($embeddedTrustStream)).Replace('-', '')
+    if ($embeddedTrustHash -ne $TrustedPublicKeySha256.Replace(' ', '').Replace('-', '').ToUpperInvariant()) {
+        throw 'Embedded Development public key does not match the approved key pin.'
+    }
+}
+finally { $embeddedTrustStream.Dispose(); $embeddedTrustSha.Dispose() }
 Assert-ChuanHoaManifestVersion -Path $runtimeManifest `
     -IdentityName 'ChuanHoa.AddIn.Vsto.vsto' -ExpectedVersion $ApplicationVersion
 $bootstrapperCode = Get-Content -LiteralPath $bootstrapperSource -Raw

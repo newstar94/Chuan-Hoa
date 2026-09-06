@@ -158,6 +158,123 @@ function Get-ChuanHoaSignTool {
     return $selected.FullName
 }
 
+function Update-ChuanHoaSignedVstoManifests {
+    param(
+        [Parameter(Mandatory = $true)][string]$ApplicationManifestPath,
+        [Parameter(Mandatory = $true)][string]$DeploymentManifestPath,
+        [Parameter(Mandatory = $true)][hashtable]$ApplicationPayloadPaths,
+        [Parameter(Mandatory = $true)]
+        [System.Security.Cryptography.X509Certificates.X509Certificate2]$Certificate,
+        [Parameter(Mandatory = $false)]
+        [string]$DeploymentApplicationCodebase = '',
+        [Parameter(Mandatory = $false)]
+        [switch]$DisableDeploymentFileExtensionMapping
+    )
+
+    $mageCandidates = @(
+        (Join-Path ${env:ProgramFiles(x86)} 'Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8.1 Tools\mage.exe'),
+        (Join-Path ${env:ProgramFiles(x86)} 'Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\mage.exe')
+    )
+    $magePath = $mageCandidates | Where-Object {
+        Test-Path -LiteralPath $_ -PathType Leaf
+    } | Select-Object -First 1
+    if ([string]::IsNullOrWhiteSpace($magePath)) {
+        throw 'Mage.exe from the .NET Framework 4.8 SDK is required to sign VSTO manifests.'
+    }
+
+    function Update-ManifestPayload([string]$manifestPath, [hashtable]$payloadPaths) {
+        [xml]$document = Get-Content -LiteralPath $manifestPath -Raw
+        $signatureNodes = @($document.SelectNodes("//*[local-name()='Signature']"))
+        foreach ($signatureNode in $signatureNodes) {
+            $null = $signatureNode.ParentNode.RemoveChild($signatureNode)
+        }
+        foreach ($element in @($document.SelectNodes(
+            "//*[local-name()='file' or local-name()='dependentAssembly']"))) {
+            $codebase = [string]$element.GetAttribute('codebase')
+            if ([string]::IsNullOrWhiteSpace($codebase) -or
+                !$payloadPaths.ContainsKey($codebase)) { continue }
+            $payloadPath = [string]$payloadPaths[$codebase]
+            if (!(Test-Path -LiteralPath $payloadPath -PathType Leaf)) {
+                throw "Manifest payload is missing: $payloadPath"
+            }
+            $bytes = [IO.File]::ReadAllBytes($payloadPath)
+            $element.SetAttribute('size', $bytes.Length.ToString(
+                [Globalization.CultureInfo]::InvariantCulture))
+            $digest = $element.SelectSingleNode(
+                ".//*[local-name()='DigestValue']")
+            if ($null -eq $digest) {
+                throw "Manifest entry has no digest: $codebase"
+            }
+            $sha256 = [Security.Cryptography.SHA256]::Create()
+            try { $digest.InnerText = [Convert]::ToBase64String($sha256.ComputeHash($bytes)) }
+            finally { $sha256.Dispose() }
+        }
+        $settings = [Xml.XmlWriterSettings]::new()
+        $settings.Encoding = [Text.UTF8Encoding]::new($false)
+        $settings.Indent = $true
+        $writer = [Xml.XmlWriter]::Create($manifestPath, $settings)
+        try { $document.Save($writer) } finally { $writer.Dispose() }
+    }
+
+    function Sign-Manifest([string]$manifestPath) {
+        # Mage can be unreliable with non-ASCII publish paths. Sign an identical
+        # temporary copy through an ASCII-only path, then put the signed bytes back.
+        $signingDirectory = Join-Path ([IO.Path]::GetTempPath()) (
+            'chs-' + [Guid]::NewGuid().ToString('N').Substring(0, 8))
+        $null = New-Item -ItemType Directory -Path $signingDirectory
+        $temporaryManifestPath = Join-Path $signingDirectory 'm.manifest'
+        try {
+            Copy-Item -LiteralPath $manifestPath -Destination $temporaryManifestPath -Force
+            & $magePath -Sign $temporaryManifestPath -CertHash $Certificate.Thumbprint
+            if ($LASTEXITCODE -ne 0) {
+                throw "Mage.exe failed to sign VSTO manifest: $manifestPath"
+            }
+            Copy-Item -LiteralPath $temporaryManifestPath -Destination $manifestPath -Force
+        }
+        finally {
+            Remove-Item -LiteralPath $signingDirectory -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    Update-ManifestPayload $ApplicationManifestPath $ApplicationPayloadPaths
+    Sign-Manifest $ApplicationManifestPath
+    [xml]$deploymentDocument = Get-Content -LiteralPath $DeploymentManifestPath -Raw
+    if ($DisableDeploymentFileExtensionMapping) {
+        $deploymentNode = $deploymentDocument.SelectSingleNode(
+            "//*[local-name()='deployment']")
+        if ($null -eq $deploymentNode) {
+            throw 'Deployment manifest has no deployment element.'
+        }
+        $deploymentNode.SetAttribute('mapFileExtensions', 'false')
+    }
+    $applicationReference = @($deploymentDocument.SelectNodes(
+        "//*[local-name()='dependentAssembly']")) | Where-Object {
+            ([string]$_.GetAttribute('codebase')).EndsWith(
+                [IO.Path]::GetFileName($ApplicationManifestPath),
+                [StringComparison]::OrdinalIgnoreCase)
+        } | Select-Object -First 1
+    if ($null -eq $applicationReference) {
+        throw 'Deployment manifest does not reference the application manifest.'
+    }
+    $applicationCodebase = [string]$applicationReference.GetAttribute('codebase')
+    if (![string]::IsNullOrWhiteSpace($DeploymentApplicationCodebase)) {
+        $applicationReference.SetAttribute('codebase', $DeploymentApplicationCodebase)
+        $applicationCodebase = $DeploymentApplicationCodebase
+    }
+    if ($DisableDeploymentFileExtensionMapping -or
+        ![string]::IsNullOrWhiteSpace($DeploymentApplicationCodebase)) {
+        $settings = [Xml.XmlWriterSettings]::new()
+        $settings.Encoding = [Text.UTF8Encoding]::new($false)
+        $settings.Indent = $true
+        $writer = [Xml.XmlWriter]::Create($DeploymentManifestPath, $settings)
+        try { $deploymentDocument.Save($writer) } finally { $writer.Dispose() }
+    }
+    Update-ManifestPayload $DeploymentManifestPath @{
+        $applicationCodebase = $ApplicationManifestPath
+    }
+    Sign-Manifest $DeploymentManifestPath
+}
+
 function Invoke-ChuanHoaAuthenticodeSign {
     param(
         [Parameter(Mandatory = $true)]

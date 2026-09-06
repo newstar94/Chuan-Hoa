@@ -1,0 +1,17 @@
+﻿{
+    "SchemaVersion":  1,
+    "Status":  "PASS_INSTALLED_DLL_TAMPER_FAIL_CLOSED_AND_REPAIRED",
+    "ProductVersion":  "1.0.0.134",
+    "InstallerFile":  "ChuanHoa_Development_Test_Setup_1.0.0.134.exe",
+    "InstallerSha256":  "C4C4929642116FC103238295A41ABCABF4B894575330D26161D0F19A94CE3DEF",
+    "TamperedTarget":  "ChuanHoa.AddIn.Vsto.dll",
+    "TamperedAuthenticodeStatus":  "HashMismatch",
+    "WordRejectedTamperedAddIn":  true,
+    "RejectionSmokeExitCode":  1,
+    "RepairExitCode":  0,
+    "ExactPayloadHashRestored":  true,
+    "LoadBehavior":  3,
+    "PostRepairPassiveStartupExitCode":  0,
+    "PostRepairRibbonCapabilityExitCode":  0,
+    "UserDocumentsTouched":  false
+}

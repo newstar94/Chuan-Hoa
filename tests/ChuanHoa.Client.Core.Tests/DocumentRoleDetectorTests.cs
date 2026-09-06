@@ -287,6 +287,30 @@ public sealed class DocumentRoleDetectorTests
             documentTypeWasSelectedManually: selectedManually);
     }
 
+    [Fact]
+    public void Separates_report_decision_and_two_combined_header_commitments()
+    {
+        const string title = "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM";
+        const string header = title + "\vĐộc lập - Tự do - Hạnh phúc\v---------------";
+        var texts = new[] {
+            header, "Hà Nội, ngày 07 tháng 09 năm 2026", "BÁO CÁO THẨM ĐỊNH HỒ SƠ MỜI THẦU", "Nội dung báo cáo",
+            title, "Độc lập - Tự do - Hạnh phúc", "Số: 01/QĐ-ABC", "QUYẾT ĐỊNH", "Về việc phê duyệt", "Điều 1. Nội dung",
+            header, "Hà Nội, ngày 14 tháng 08 năm 2026", "BẢN CAM KẾT", "Tôi tên là: Nguyễn Văn A", "- Cam kết thực hiện",
+            header, "Hà Nội, ngày 14 tháng 08 năm 2026", "BẢN CAM KẾT", "Tôi tên là: Nguyễn Văn B"
+        };
+        var snapshot = new LocalScanSnapshot("sha256:mixed", 1,
+            Array.Empty<LocalSectionSnapshot>(), texts.Select((text, i) => Paragraph(i + 1, text)).ToArray(),
+            Array.Empty<AnnotationProtectedSpan>());
+        var blocks = new DocumentRoleDetector().DetectBlocks(snapshot);
+        Assert.Equal(4, blocks.Count);
+        Assert.Equal(LocalDocumentTypeCodes.Report, blocks[0].DocumentTypeCode);
+        Assert.Equal(LocalDocumentTypeCodes.Decision, blocks[1].DocumentTypeCode);
+        Assert.Equal(LocalDocumentTypeCodes.Unknown, blocks[2].DocumentTypeCode);
+        Assert.Equal("standaloneTitle", blocks[2].Roles[13]);
+        Assert.False(blocks[2].Roles.ContainsKey(14));
+        Assert.Equal("standaloneTitle", blocks[3].Roles[18]);
+    }
+
     private static LocalParagraphSnapshot Paragraph(int index, string text, int page = 0) =>
         new(index, text, "wdMainTextStory", 1, index * 100,
             "Times New Roman", fontSizePoints: 14, bold: true, alignment: 1,

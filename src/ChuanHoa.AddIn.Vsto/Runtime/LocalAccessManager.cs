@@ -230,10 +230,23 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         private RsaSha256ArtifactVerifier CreateVerifier()
         {
 #if CHUANHOA_DEVELOPMENT
-            var path = Environment.GetEnvironmentVariable("CHUANHOA_DEVELOPMENT_TRUST_PATH");
-            if (string.IsNullOrWhiteSpace(path))
-                path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ChuanHoa", "Development", "trusted-key.xml");
-            var root = XElement.Load(path, LoadOptions.None);
+            XElement root;
+            // The packaged public key is covered by the add-in's signature. Use it
+            // before the optional development path: Word and the installer may see
+            // different filesystem views. Never package private signing material.
+            using (var stream = typeof(LocalAccessManager).Assembly.GetManifestResourceStream(
+                "ChuanHoa.Development.TrustedPublicKey.xml"))
+            {
+                if (stream != null)
+                    root = XElement.Load(stream, LoadOptions.None);
+                else
+                {
+                    var path = Environment.GetEnvironmentVariable("CHUANHOA_DEVELOPMENT_TRUST_PATH");
+                    if (string.IsNullOrWhiteSpace(path))
+                        path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ChuanHoa", "Development", "trusted-key.xml");
+                    root = XElement.Load(path, LoadOptions.None);
+                }
+            }
             var keyId = (string)root.Attribute("keyId");
             if (!string.Equals(keyId, DevelopmentKeyId, StringComparison.Ordinal))
                 throw new CryptographicException("Khóa Development không đúng định danh tin cậy.");

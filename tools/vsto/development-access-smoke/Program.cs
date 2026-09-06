@@ -9,8 +9,22 @@ namespace ChuanHoa.DevelopmentAccessSmoke
 {
     internal static class Program
     {
-        private static int Main()
+        private static int Main(string[] args)
         {
+            // Process-local negative fixture: packaged access must work even when
+            // the external Development key path does not exist.
+            if (args.Contains("--missing-external-trust"))
+            {
+                if (!typeof(LocalAccessManager).Assembly.GetManifestResourceNames()
+                    .Contains("ChuanHoa.Development.TrustedPublicKey.xml"))
+                {
+                    Console.Error.WriteLine("EMBEDDED_TRUST_RESOURCE_MISSING");
+                    return 1;
+                }
+                Environment.SetEnvironmentVariable("CHUANHOA_DEVELOPMENT_TRUST_PATH",
+                    System.IO.Path.Combine(System.IO.Path.GetTempPath(),
+                        "ChuanHoa-Missing-" + Guid.NewGuid().ToString("N"), "trusted-key.xml"));
+            }
             try
             {
                 using (var access = new LocalAccessManager(

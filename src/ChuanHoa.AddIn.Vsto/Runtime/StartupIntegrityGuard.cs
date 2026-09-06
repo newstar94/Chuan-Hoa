@@ -16,6 +16,9 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         private static readonly object Sync = new object();
         private static readonly Guid WinTrustActionGenericVerifyV2 =
             new Guid("00AAC56B-CD44-11d0-8CC2-00C04FC295EE");
+        private const uint CertEUntrustedRoot = 0x800B0109;
+        private const uint CertEChaining = 0x800B010A;
+        private const uint TrustESubjectNotTrusted = 0x800B0004;
         private static bool _verified;
 
         internal static void VerifyOrThrow()
@@ -32,7 +35,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     .SingleOrDefault() ?? string.Empty;
                 expectedPin = NormalizeSha256(expectedPin);
 
-                var addInPath = Path.GetFullPath(assembly.Location);
+                var addInPath = GetOriginPath(assembly);
                 var installDirectory = Path.GetDirectoryName(addInPath);
                 if (string.IsNullOrWhiteSpace(installDirectory))
                     throw new SecurityException(
@@ -45,8 +48,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 // which incorrectly soft-disables an intact installation. Requiring
                 // the loaded dependency to reside beside the add-in prevents this
                 // from becoming a fallback to an assembly from another location.
-                var clientCorePath = Path.GetFullPath(
-                    typeof(VietnameseTypographyCleaner).Assembly.Location);
+                var clientCoreAssembly = typeof(VietnameseTypographyCleaner).Assembly;
+                var clientCorePath = GetOriginPath(clientCoreAssembly);
                 var clientCoreDirectory = Path.GetDirectoryName(clientCorePath);
                 if (string.IsNullOrWhiteSpace(clientCoreDirectory) ||
                     !string.Equals(
@@ -56,9 +59,28 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     throw new SecurityException(
                         "Thành phần Chuẩn hóa được nạp từ thư mục không hợp lệ: " +
                         Path.GetFileName(clientCorePath));
+                if (clientCoreAssembly.GetName().Version != assembly.GetName().Version)
+                    throw new SecurityException(
+                        "Phiên bản thành phần Chuẩn hóa không đồng nhất: " +
+                        Path.GetFileName(clientCorePath));
                 VerifySignedPe(clientCorePath, expectedPin);
                 _verified = true;
             }
+        }
+
+        private static string GetOriginPath(Assembly assembly)
+        {
+            // VSTO may shadow-copy dependencies into separate ClickOnce cache
+            // directories. Location then describes the execution copy, while
+            // CodeBase retains the signed deployment origin selected by VSTO.
+            // Compare and verify that origin so an intact installation is not
+            // rejected merely because the CLR used shadow copying.
+            var codeBase = assembly.CodeBase;
+            if (!string.IsNullOrWhiteSpace(codeBase) &&
+                Uri.TryCreate(codeBase, UriKind.Absolute, out var origin) &&
+                origin.IsFile)
+                return Path.GetFullPath(origin.LocalPath);
+            return Path.GetFullPath(assembly.Location);
         }
 
         private static string NormalizeSha256(string value)
@@ -79,7 +101,13 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 throw new SecurityException(
                     "Thiếu thành phần đã ký của Chuẩn hóa: " + Path.GetFileName(path));
             var trustStatus = VerifyAuthenticodeSignature(path);
-            if (trustStatus != 0)
+            // Development uses a pinned self-signed code-signing certificate.
+            // WinVerifyTrust can report only its expected missing public root;
+            // all content/signature failures remain fatal, and the exact signer
+            // certificate is verified immediately below.
+            if (trustStatus != 0 && trustStatus != CertEUntrustedRoot &&
+                trustStatus != CertEChaining &&
+                trustStatus != TrustESubjectNotTrusted)
                 throw new SecurityException(
                     "Thành phần Chuẩn hóa đã bị sửa hoặc chữ ký không còn tin cậy: " +
                     Path.GetFileName(path) + " (0x" + trustStatus.ToString("X8") + ").");

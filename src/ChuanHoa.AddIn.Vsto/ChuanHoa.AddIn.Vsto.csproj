@@ -33,6 +33,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="$(DevelopmentTrustedPublicKeyPath)" Condition="'$(Configuration)' == 'Development' and '$(DevelopmentTrustedPublicKeyPath)' != ''">
+      <LogicalName>ChuanHoa.Development.TrustedPublicKey.xml</LogicalName>
+    </EmbeddedResource>
     <BootstrapperPackage Include="Microsoft.VSTORuntime.4.0">
       <Visible>false</Visible>
       <ProductName>Microsoft Visual Studio 2010 Tools for Office Runtime (x86 and x64)</ProductName>

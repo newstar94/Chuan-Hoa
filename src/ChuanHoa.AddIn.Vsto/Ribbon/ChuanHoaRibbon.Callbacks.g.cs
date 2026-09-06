@@ -211,6 +211,10 @@ namespace ChuanHoa.AddIn.Vsto.Ribbon
         {
             Runtime.ExecuteButton(RequireControlId(control));
         }
+        public void OnXoaTabKhongLeader(Office.IRibbonControl control)
+        {
+            Runtime.ExecuteButton(RequireControlId(control));
+        }
         public void OnXoaTrangThua(Office.IRibbonControl control)
         {
             Runtime.ExecuteButton(RequireControlId(control));

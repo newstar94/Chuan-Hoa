@@ -90,7 +90,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     item.TextWidthPoints, item.KeepWithNext, item.WidowControl, item.StyleName,
                     item.AbsoluteEnd, item.BuiltInStyleId, item.HasField, item.HasMathObject,
                     item.HasHyperlink, item.HasContentControl, item.CaptionKind,
-                    item.TableNestingDepth)).ToArray(),
+                    item.TableNestingDepth, item.LeftIndentPoints)).ToArray(),
                 source.ProtectedSpans.Select(item => new AnnotationProtectedSpan(item.StoryType, item.AbsoluteStart, item.Length)).ToArray(),
                 source.LineShapes.Select(item => new LocalLineShapeSnapshot(item.Index, item.Name, item.ShapeType,
                     item.AnchorStoryType, item.AnchorSectionIndex, item.AnchorAbsoluteStart,
