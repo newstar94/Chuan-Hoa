@@ -14,12 +14,19 @@ namespace ChuanHoa.LocalCommandSmoke
     internal static class Program
     {
         [STAThread]
-        private static int Main()
+        private static int Main(string[] args)
         {
             var directory = Path.Combine(Path.GetTempPath(), "ChuanHoaLocalCommandSmoke-" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(directory);
             try
             {
+                if (args.Length == 1 && args[0] == "--blank-section")
+                {
+                    RunBlankSection();
+                    RunBlankSection(true);
+                    Console.WriteLine("TRAILING_BLANK_SECTION_PASS");
+                    return 0;
+                }
                 TestBackupCleanupPolicy(directory);
                 Run(Path.Combine(directory, "sample.docx"), Word.WdSaveFormat.wdFormatXMLDocument);
                 Run(Path.Combine(directory, "sample.doc"), Word.WdSaveFormat.wdFormatDocument97);
@@ -271,6 +278,66 @@ namespace ChuanHoa.LocalCommandSmoke
                 if (document != null) { object save = Word.WdSaveOptions.wdDoNotSaveChanges; document.Close(ref save); }
                 if (application != null) { object save = Word.WdSaveOptions.wdDoNotSaveChanges; application.Quit(ref save); }
                 Release(mergedHeaderTable); Release(table); Release(document); Release(application);
+            }
+        }
+
+        private static void RunBlankSection(bool withStories = false)
+        {
+            Word.Application app = null;
+            Word.Document doc = null;
+            try
+            {
+                app = new Word.Application { Visible = false, DisplayAlerts = Word.WdAlertLevel.wdAlertsNone };
+                doc = app.Documents.Add();
+                doc.Content.Text = "Nội dung trang trước phải giữ nguyên.\r";
+                if (withStories)
+                {
+                    var header = doc.Sections[1].Headers[Word.WdHeaderFooterIndex.wdHeaderFooterPrimary].Range;
+                    header.Text = "ĐẦU TRANG CẦN GIỮ";
+                    header.Font.Bold = -1; header.Font.Size = 11;
+                    Release(header);
+                    var footer = doc.Sections[1].Footers[Word.WdHeaderFooterIndex.wdHeaderFooterPrimary].Range;
+                    footer.Text = "CHÂN TRANG · ";
+                    footer.Collapse(Word.WdCollapseDirection.wdCollapseEnd);
+                    var field = footer.Fields.Add(footer, Word.WdFieldType.wdFieldPage);
+                    Release(field); Release(footer);
+                }
+                var end = doc.Range(doc.Content.End - 1, doc.Content.End - 1);
+                end.InsertBreak(Word.WdBreakType.wdSectionBreakNextPage);
+                Release(end);
+                doc.Repaginate();
+                var beforePages = doc.ComputeStatistics(Word.WdStatistic.wdStatisticPages);
+                Assert(beforePages == 2, "Fixture did not create a trailing blank page.");
+                var beforeText = doc.Content.Text;
+                var capture = typeof(WordLocalCommandRuntime).Assembly.GetType(
+                    "ChuanHoa.AddIn.Vsto.Runtime.WordTrailingBlankPageCleaner").GetMethod(
+                        "CaptureHeaderFooterXml", BindingFlags.Static | BindingFlags.NonPublic);
+                var beforeStories = (string[])capture.Invoke(null, new object[] { doc.Sections[1] });
+                var beforeXml = doc.Sections[1].Range.WordOpenXML;
+                using (var access = new LocalAccessManager(typeof(LocalAccessManager).Assembly.GetName().Version.ToString()))
+                {
+                    var commands = new WordLocalCommandRuntime(app, access);
+                    commands.RemoveTrailingBlankParagraphs();
+                    Assert(doc.ComputeStatistics(Word.WdStatistic.wdStatisticPages) == 1,
+                        "Blank section page was not removed.");
+                    Assert(doc.Content.Text == beforeText, "Section cleanup changed text or deleted the section.");
+                    var compare = typeof(WordLocalCommandRuntime).Assembly.GetType(
+                        "ChuanHoa.AddIn.Vsto.Runtime.WordTrailingBlankPageCleaner").GetMethod(
+                            "SameFormattingXml", BindingFlags.Static | BindingFlags.NonPublic);
+                    Assert((bool)compare.Invoke(null, new object[] { beforeXml, doc.Sections[1].Range.WordOpenXML }),
+                        "Previous section formatting changed.");
+                    var afterStories = (string[])capture.Invoke(null, new object[] { doc.Sections[1] });
+                    for (var i = 0; i < beforeStories.Length; i++)
+                        Assert((bool)compare.Invoke(null, new object[] { beforeStories[i], afterStories[i] }), "Header/footer changed.");
+                    commands.RemoveTrailingBlankParagraphs();
+                    Assert(doc.ComputeStatistics(Word.WdStatistic.wdStatisticPages) == 1, "Cleanup is not idempotent.");
+                }
+            }
+            finally
+            {
+                if (doc != null) doc.Close(Word.WdSaveOptions.wdDoNotSaveChanges);
+                if (app != null) app.Quit(Word.WdSaveOptions.wdDoNotSaveChanges);
+                Release(doc); Release(app);
             }
         }
 

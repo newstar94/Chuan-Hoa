@@ -25,6 +25,9 @@ namespace ChuanHoa.AddIn.Vsto.Ribbon
 
         private IChuanHoaRibbonRuntime Runtime => _runtime ?? _deferredRuntime;
 
+        public string GetResetLabel(Office.IRibbonControl control) =>
+            ResetLabelLayout.GetLabel(RequireControlId(control));
+
         internal void ConfigureRuntimeFactory(Func<IChuanHoaRibbonRuntime> runtimeFactory)
         {
             if (runtimeFactory == null) throw new ArgumentNullException("runtimeFactory");

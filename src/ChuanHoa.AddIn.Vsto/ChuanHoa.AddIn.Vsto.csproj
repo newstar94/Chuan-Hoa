@@ -154,6 +154,7 @@
     <Compile Include="Runtime\WordTextMeasurement.cs" />
     <Compile Include="Runtime\WordMutationRuntime.cs" />
     <Compile Include="Runtime\RibbonImageProvider.cs" />
+    <Compile Include="Ribbon\ResetLabelLayout.cs" />
     <EmbeddedResource Include="Ribbon\ChuanHoaRibbon.xml">
       <LogicalName>ChuanHoa.AddIn.Vsto.Ribbon.ChuanHoaRibbon.xml</LogicalName>
       <ManifestResourceName>ChuanHoa.AddIn.Vsto.Ribbon.ChuanHoaRibbon.xml</ManifestResourceName>

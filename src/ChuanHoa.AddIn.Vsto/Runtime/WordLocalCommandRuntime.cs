@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using System.Xml.Linq;
 using ChuanHoa.Client.Core.Rules;
 using ChuanHoa.Client.Core.Scanning;
 using ChuanHoa.Client.Core.Text;
@@ -1342,6 +1343,110 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         public static int Remove(Word.Document document)
         {
             if (document == null) throw new ArgumentNullException(nameof(document));
+            var removed = RemoveEmptyParagraphs(document);
+            return removed + CollapseEmptyFinalSection(document);
+        }
+
+        private static int CollapseEmptyFinalSection(Word.Document document)
+        {
+            Word.Sections? sections = null;
+            Word.Section? last = null;
+            Word.Section? previous = null;
+            Word.Range? tail = null;
+            Word.Range? prior = null;
+            Word.Range? priorContentEnd = null;
+            Word.PageSetup? setup = null;
+            Word.ParagraphFormat? originalFormat = null;
+            Word.Font? originalFont = null;
+            var changed = false;
+            var accepted = false;
+            var oldStart = Word.WdSectionStart.wdSectionNewPage;
+            try
+            {
+                sections = document.Sections;
+                if (sections.Count < 2) return 0;
+                last = sections[sections.Count];
+                previous = sections[sections.Count - 1];
+                tail = last.Range.Duplicate;
+                // No tables, fields, objects or authored text may be discarded.
+                // Whitespace-only main text is not proof of a blank header/footer.
+                if ((tail.Text ?? string.Empty).Trim('\r', ' ', '\t').Length != 0 ||
+                    tail.Tables.Count != 0 || tail.Fields.Count != 0 ||
+                    tail.InlineShapes.Count != 0 || tail.ContentControls.Count != 0 ||
+                    tail.Bookmarks.Count != 0) return 0;
+                foreach (Word.Shape shape in document.Shapes)
+                {
+                    Word.Range? anchor = null;
+                    try { anchor = shape.Anchor; if (anchor.Start >= tail.Start) return 0; }
+                    finally { Release(anchor); Release(shape); }
+                }
+                foreach (Word.HeaderFooter footer in last.Footers)
+                {
+                    try { if (footer.Exists && !footer.LinkToPrevious) return 0; }
+                    finally { Release(footer); }
+                }
+                foreach (Word.HeaderFooter header in last.Headers)
+                {
+                    try { if (header.Exists && !header.LinkToPrevious) return 0; }
+                    finally { Release(header); }
+                }
+                setup = last.PageSetup;
+                // A continuous break across different page geometry is unsafe.
+                if (setup.PageWidth != previous.PageSetup.PageWidth ||
+                    setup.PageHeight != previous.PageSetup.PageHeight ||
+                    setup.TopMargin != previous.PageSetup.TopMargin ||
+                    setup.BottomMargin != previous.PageSetup.BottomMargin ||
+                    setup.LeftMargin != previous.PageSetup.LeftMargin ||
+                    setup.RightMargin != previous.PageSetup.RightMargin) return 0;
+                document.Repaginate();
+                var pages = document.ComputeStatistics(Word.WdStatistic.wdStatisticPages);
+                prior = previous.Range.Duplicate;
+                var previousXml = prior.WordOpenXML;
+                var previousStories = CaptureHeaderFooterXml(previous);
+                priorContentEnd = prior.Duplicate;
+                priorContentEnd.SetRange(Math.Max(prior.Start, prior.End - 2), Math.Max(prior.Start, prior.End - 1));
+                var previousEndPage = priorContentEnd.get_Information(Word.WdInformation.wdActiveEndPageNumber);
+                if (tail.get_Information(Word.WdInformation.wdActiveEndPageNumber) <= previousEndPage) return 0;
+                originalFormat = tail.ParagraphFormat.Duplicate;
+                originalFont = tail.Font.Duplicate;
+                oldStart = setup.SectionStart;
+                changed = true;
+                // Keep the section itself: deleting it makes Word transfer the
+                // following section's formatting onto the previous content.
+                setup.SectionStart = Word.WdSectionStart.wdSectionContinuous;
+                tail.Font.Size = 1;
+                tail.ParagraphFormat.SpaceBeforeAuto = 0;
+                tail.ParagraphFormat.SpaceAfterAuto = 0;
+                tail.ParagraphFormat.SpaceBefore = 0;
+                tail.ParagraphFormat.SpaceAfter = 0;
+                tail.ParagraphFormat.LineSpacingRule = Word.WdLineSpacing.wdLineSpaceExactly;
+                tail.ParagraphFormat.LineSpacing = 1;
+                tail.ParagraphFormat.PageBreakBefore = 0;
+                tail.ParagraphFormat.KeepWithNext = 0;
+                document.Repaginate();
+                var after = document.ComputeStatistics(Word.WdStatistic.wdStatisticPages);
+                accepted = after < pages && SameFormattingXml(previousXml, prior.WordOpenXML) &&
+                    previousStories.Zip(CaptureHeaderFooterXml(previous), SameFormattingXml).All(equal => equal) &&
+                    previousEndPage == priorContentEnd.get_Information(Word.WdInformation.wdActiveEndPageNumber);
+                return accepted ? pages - after : 0;
+            }
+            finally
+            {
+                if (changed && !accepted && tail != null && setup != null)
+                {
+                    setup.SectionStart = oldStart;
+                    if (originalFormat != null) tail.ParagraphFormat = originalFormat;
+                    if (originalFont != null) tail.Font = originalFont;
+                    document.Repaginate();
+                }
+                Release(originalFont); Release(originalFormat); Release(setup);
+                Release(priorContentEnd); Release(prior); Release(tail); Release(previous); Release(last); Release(sections);
+            }
+        }
+
+        private static int RemoveEmptyParagraphs(Word.Document document)
+        {
+            if (document == null) throw new ArgumentNullException(nameof(document));
             Word.Paragraphs? paragraphs = null;
             Word.Paragraph? paragraph = null;
             Word.Range? paragraphRange = null;
@@ -1395,6 +1500,130 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 Release(paragraph);
                 Release(paragraphs);
             }
+        }
+
+        internal static bool SameFormattingXml(string before, string after)
+        {
+            System.Xml.Linq.XDocument Normalize(string xml)
+            {
+                var parsed = System.Xml.Linq.XDocument.Parse(xml);
+                // rsid values track editing sessions, not text or formatting.
+                foreach (var attribute in parsed.Descendants().Attributes().Where(a =>
+                    a.Name.NamespaceName == "http://schemas.openxmlformats.org/wordprocessingml/2006/main" &&
+                    a.Name.LocalName.StartsWith("rsid", StringComparison.Ordinal)).ToArray()) attribute.Remove();
+                foreach (var element in parsed.Descendants().Where(e =>
+                    e.Name.NamespaceName == "http://schemas.openxmlformats.org/wordprocessingml/2006/main" &&
+                    e.Name.LocalName == "rsids").ToArray()) element.Remove();
+                XNamespace pkg = "http://schemas.microsoft.com/office/2006/xmlPackage";
+                XNamespace w = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+                XNamespace rel = "http://schemas.openxmlformats.org/package/2006/relationships";
+                XNamespace r = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+                // Header/footer content is compared separately, in all six slots.
+                // Range exports can include or omit those auxiliary parts; remove
+                // only their packaging here, never the exported story's body.
+                foreach (var reference in parsed.Descendants().Where(e => e.Name == w + "headerReference" || e.Name == w + "footerReference").ToArray()) reference.Remove();
+                foreach (var relationship in parsed.Descendants(rel + "Relationship").Where(e =>
+                    (string?)e.Attribute("Type") == r.NamespaceName + "/header" ||
+                    (string?)e.Attribute("Type") == r.NamespaceName + "/footer").ToArray()) relationship.Remove();
+                foreach (var part in parsed.Descendants(pkg + "part").Where(p =>
+                    ((string?)p.Attribute(pkg + "contentType") ?? "").EndsWith(".header+xml", StringComparison.Ordinal) ||
+                    ((string?)p.Attribute(pkg + "contentType") ?? "").EndsWith(".footer+xml", StringComparison.Ordinal)).ToArray()) part.Remove();
+                foreach (var defaults in parsed.Descendants().Where(e => e.Name == w + "hdrShapeDefaults" || e.Name == w + "shapeDefaults").ToArray())
+                {
+                    // Office drawing allocation counters carry no layout content.
+                    foreach (var counter in defaults.Descendants().Attributes().Where(a => a.Name.LocalName == "spidmax" || a.Name.LocalName == "data").ToArray()) counter.Remove();
+                    if (!defaults.Descendants().Any(e => e.Name.LocalName != "shapedefaults" && e.Name.LocalName != "shapelayout" && e.Name.LocalName != "idmap")) defaults.Remove();
+                }
+                // Range.WordOpenXML sometimes exports dangling header/footer IDs
+                // without their relationship or story parts. Compare those stories
+                // independently through HeaderFooter.Range.WordOpenXML below.
+                var ids = new HashSet<string>(parsed.Descendants(rel + "Relationship")
+                    .Select(e => (string?)e.Attribute("Id") ?? string.Empty));
+                foreach (var reference in parsed.Descendants().Where(e =>
+                    (e.Name == w + "headerReference" || e.Name == w + "footerReference") &&
+                    !ids.Contains((string?)e.Attribute(r + "id") ?? string.Empty)).ToArray()) reference.Remove();
+                // Word may materialize then omit an entirely empty header/footer
+                // part during range export. Only the exact empty-paragraph shape
+                // is equivalent to absence; formatted or populated stories remain.
+                foreach (var part in parsed.Descendants(pkg + "part").ToArray())
+                {
+                    var story = part.Element(pkg + "xmlData")?.Elements().SingleOrDefault();
+                    if (story == null || (story.Name != w + "hdr" && story.Name != w + "ftr") ||
+                        story.Elements().Any(p => p.Name != w + "p" || p.HasElements || p.HasAttributes || p.Value.Length != 0))
+                        continue;
+                    var name = (string?)part.Attribute(pkg + "name");
+                    if (name == null) continue;
+                    foreach (var relationship in parsed.Descendants(rel + "Relationship").Where(e =>
+                        (string?)e.Attribute("TargetMode") != "External" &&
+                        ((string?)e.Attribute("Type") == r.NamespaceName + "/header" ||
+                         (string?)e.Attribute("Type") == r.NamespaceName + "/footer") &&
+                        ((string?)e.Attribute("Target") == name ||
+                         "/word/" + (string?)e.Attribute("Target") == name)).ToArray())
+                    {
+                        var id = (string?)relationship.Attribute("Id");
+                        foreach (var reference in parsed.Descendants().Where(e =>
+                            (e.Name == w + "headerReference" || e.Name == w + "footerReference") &&
+                            (string?)e.Attribute(r + "id") == id).ToArray()) reference.Remove();
+                        relationship.Remove();
+                    }
+                    part.Remove();
+                }
+                // Relationship IDs and package ordering are serialization details.
+                // Rebind references within their owning part before comparing.
+                foreach (var relationshipsPart in parsed.Descendants(pkg + "part").Where(p =>
+                    ((string?)p.Attribute(pkg + "name") ?? "").EndsWith(".rels", StringComparison.Ordinal)).ToArray())
+                {
+                    var name = (string)relationshipsPart.Attribute(pkg + "name")!;
+                    var sourceName = name == "/_rels/.rels" ? "/" :
+                        name.Replace("/_rels/", "/").Substring(0, name.Replace("/_rels/", "/").Length - 5);
+                    var owner = parsed.Descendants(pkg + "part").FirstOrDefault(p => (string?)p.Attribute(pkg + "name") == sourceName);
+                    var relationships = relationshipsPart.Descendants(rel + "Relationship").OrderBy(e =>
+                        (string?)e.Attribute("Type"), StringComparer.Ordinal).ThenBy(e =>
+                        (string?)e.Attribute("Target"), StringComparer.Ordinal).ToArray();
+                    var map = relationships.Select((e, i) => new { Old = (string)e.Attribute("Id")!, New = "canonical" + i })
+                        .ToDictionary(e => e.Old, e => e.New);
+                    if (owner != null)
+                        foreach (var attribute in owner.Descendants().Attributes().Where(a => a.Name.Namespace == r))
+                            if (map.TryGetValue(attribute.Value, out var value)) attribute.Value = value;
+                    foreach (var relationship in relationships)
+                        relationship.SetAttributeValue("Id", map[(string)relationship.Attribute("Id")!]);
+                    var parent = relationshipsPart.Descendants(rel + "Relationships").Single();
+                    parent.ReplaceNodes(relationships);
+                }
+                var package = parsed.Root;
+                if (package != null && package.Name == pkg + "package")
+                    package.ReplaceNodes(package.Elements(pkg + "part").OrderBy(p => (string?)p.Attribute(pkg + "name"), StringComparer.Ordinal).ToArray());
+                return parsed;
+            }
+            return XNode.DeepEquals(Normalize(before), Normalize(after));
+        }
+
+        private static string[] CaptureHeaderFooterXml(Word.Section section)
+        {
+            var result = new List<string>();
+            foreach (var isHeader in new[] { true, false })
+            {
+                Word.HeadersFooters? stories = null;
+                try
+                {
+                    stories = isHeader ? section.Headers : section.Footers;
+                    for (var index = 1; index <= 3; index++)
+                    {
+                        Word.HeaderFooter? story = null;
+                        Word.Range? range = null;
+                        try
+                        {
+                            story = stories[(Word.WdHeaderFooterIndex)index];
+                            if (!story.Exists) { result.Add("<absent/>"); continue; }
+                            range = story.Range;
+                            result.Add(range.WordOpenXML);
+                        }
+                        finally { Release(range); Release(story); }
+                    }
+                }
+                finally { Release(stories); }
+            }
+            return result.ToArray();
         }
 
         private static void Release(object? value)

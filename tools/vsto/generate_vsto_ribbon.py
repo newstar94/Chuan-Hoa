@@ -181,6 +181,9 @@ def arrange_compact_columns(root: ET.Element, elements: dict) -> None:
             spacing_control.set("showLabel", "true")
             spacing_control.set("showImage", "false")
             spacing_control.attrib.pop("getImage", None)
+            for control in (scale_control, spacing_control):
+                control.attrib.pop("label", None)
+                control.set("getLabel", "GetResetLabel")
         if scale_id in ("btnScaleGiam", "btnScaleTang"):
             scale_control.set("label", "A−" if scale_id == "btnScaleGiam" else "A+")
         column.append(scale_control)

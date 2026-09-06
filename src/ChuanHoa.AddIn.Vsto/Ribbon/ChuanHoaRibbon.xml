@@ -51,8 +51,8 @@
               <button id="btnCoChu" label="◀" size="normal" screentip="Co chữ lại" supertip="Co chữ đang chọn -0,1pt" getEnabled="GetEnabledHasDocument" onAction="OnCoChu" showLabel="true" showImage="false" />
             </box>
             <box id="boxCharacterReset" boxStyle="vertical">
-              <button id="btnScale100" label="100%" size="normal" screentip="Khôi phục độ rộng chữ 100%" supertip="Khôi phục độ rộng chữ 100% cho vùng chọn; áp dụng ngay." getEnabled="GetEnabledHasDocument" onAction="OnScale100" showLabel="true" showImage="false" />
-              <button id="btnGianChuNormal" label="⬤" size="normal" screentip="Về Normal" supertip="Bỏ co giãn chữ" getEnabled="GetEnabledHasDocument" onAction="OnGianChuNormal" showLabel="true" showImage="false" />
+              <button id="btnScale100" size="normal" screentip="Khôi phục độ rộng chữ 100%" supertip="Khôi phục độ rộng chữ 100% cho vùng chọn; áp dụng ngay." getEnabled="GetEnabledHasDocument" onAction="OnScale100" showLabel="true" showImage="false" getLabel="GetResetLabel" />
+              <button id="btnGianChuNormal" size="normal" screentip="Về Normal" supertip="Bỏ co giãn chữ" getEnabled="GetEnabledHasDocument" onAction="OnGianChuNormal" showLabel="true" showImage="false" getLabel="GetResetLabel" />
             </box>
             <box id="boxCharacterIncrease" boxStyle="vertical">
               <button id="btnScaleTang" label="A+" size="normal" screentip="Tăng độ rộng chữ 1 điểm phần trăm" supertip="Tăng độ rộng chữ 1 điểm phần trăm cho vùng chọn; áp dụng ngay." getEnabled="GetEnabledHasDocument" onAction="OnScaleTang" showLabel="true" showImage="false" />
