@@ -43,17 +43,16 @@ namespace ChuanHoa.Client.Core.Lexicon
     /// </summary>
     public static class VietnameseWordTokenizer
     {
-        // Combined regex capturing URLs/Emails, Numbers, Words (with Vietnamese diacritics), Whitespace, and Punctuation
+        // Ordered protection for URL/e-mail/domain spans. Trailing sentence punctuation
+        // is deliberately excluded so every token can be mapped to the source verbatim.
         private static readonly Regex TokenRegex = new Regex(
-            @"(?<url>https?://[^\s/$.?#].[^\s]*|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})|" +
+            @"(?<url>(?:https?://|www\.)[^\s<>""'()]+(?<![.,;:!?])|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}|(?<![@\w.-])(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+(?:vn|com|org|net|gov|edu)(?:\.vn)?(?:/[^\s<>""'()]*)?(?<![.,;:!?]))|" +
             @"(?<space>[ \t\r\n]+)|" +
             @"(?<number>\d+(?:[.,]\d+)*)|" +
             @"(?<word>[\p{L}\p{M}]+(?:[-'][\p{L}\p{M}]+)*)|" +
             @"(?<punct>[,.;:!?()[\]{}/\\""“”—–…\-])|" +
             @"(?<other>[^\s])",
             RegexOptions.Compiled | RegexOptions.CultureInvariant);
-
-        private static readonly Regex SentenceBoundaryRegex = new Regex(@"[.!?]+(?:\s+|$)", RegexOptions.Compiled);
 
         public static IReadOnlyList<VietnameseTokenSpan> TokenizeParagraph(string text, int paragraphIndex = 0)
         {

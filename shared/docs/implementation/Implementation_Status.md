@@ -3,10 +3,21 @@
 | Thuộc tính | Giá trị |
 | --- | --- |
 | Workspace thực thi | `D:\Chuẩn Hóa` |
-| Ngày cập nhật | 2026-09-05 |
+| Ngày cập nhật | 2026-09-07 |
 | Gate hiện tại | Giai đoạn 0–4 đang triển khai theo dependency; chưa có phase release |
 | Trạng thái tổng | RULE_ONLY_DEVELOPMENT_1.0.0.110_INSTALLED_WORD16_X64_SMOKE_VISUAL_TAMPER_PASS; INNER_PE_MANIFEST_AND_APPS_FEATURES_PASS; ND30_HD05_LATEX_SOURCE_COMPLETE; QR_AI_RETIRED; production signing/timestamp và Word 2010/x86 chưa chạy |
 | Nguồn hợp đồng | `Prompt_ThucThi_KeHoach_Addin_VSTO_Word_2010_Plus.md` và kế hoạch chi tiết |
+
+## Cập nhật accuracy/reference-data 1.0.0.158 ngày 2026-09-07
+
+- Đã loại gitlink tạm `tmp/deps/hunspell-vi`; runtime tiếp tục dùng asset có provenance/GPLv3 dưới `shared/dictionaries/hunspell-vi`, còn `/tmp/` được ignore. Không thêm submodule hoặc dependency online runtime.
+- Dữ liệu hiện hành được sinh deterministic từ phụ lục chính thức của Quyết định 19/2025/QĐ-TTg: 34 đơn vị cấp tỉnh, 3.321 đơn vị cấp xã, 0 đơn vị cấp huyện active. 29 tên tỉnh trước sắp xếp nằm riêng trong lớp historical; không bị trả về như đơn vị hiện hành.
+- `special_capitalizations.json` đã được xây lại từ tên hành chính hiện hành, tên lịch sử đã phân lớp và danh sách cơ quan/sự kiện có chủ đích; validator chặn fragment, duplicate, malformed Unicode, identity/cycle correction, sai count/code/parent/effective date và checksum drift.
+- Role detector dùng candidate scoring deterministic với evidence nội bộ; trích yếu dài, không có “Về việc”, không bold/căn giữa và trích yếu nhiều đoạn có regression test âm/dương. Vocabulary căn cứ và citation được dùng chung; bare short date chỉ cảnh báo trong căn cứ main-story phù hợp.
+- Typography bảo vệ toàn span URL/e-mail/domain trước mutation; quote thẳng lẻ được giữ nguyên. Tokenizer giữ offset UTF-16 qua NFC/NFD, emoji và dấu kết thúc đoạn. Title-case ở đầu câu không còn được miễn spell-check mù quáng; phonetic alternate chỉ xếp hạng gợi ý và không auto-fix.
+- Full solution Release ngày 2026-09-07 PASS 490/490 (Core 431, Contracts 4, Domain 14, Rules 10, Application 6, API 25). Source-quality gate đầy đủ PASS 490/490, gồm NuGet audit 14 project/0 vulnerable package, privacy, secret, supply-chain và reference-data gates. Backend TypeScript build/test PASS sau clean install dependency.
+- EXE Development 1.0.0.158 chưa được sinh: build dừng fail-closed trước mutation vì Microsoft Word đang mở. Không tái sử dụng/ghi đè EXE 1.0.0.157; cần đóng Word rồi chạy lại build/audit trước khi coi packaging là PASS.
+- Synthetic role corpus hiện chỉ là foundation công khai/an toàn: 0 miss và 0 forbidden assignment trên các case đã khai báo. Chưa có corpus văn bản thực đủ rộng để công bố precision/recall sản phẩm. Remote GitHub Source Quality, Word smoke với source mới, production signing và compatibility Word 2010/x86 vẫn NOT_RUN.
 
 ## Cập nhật source/build 1.0.0.110 ngày 2026-09-05
 

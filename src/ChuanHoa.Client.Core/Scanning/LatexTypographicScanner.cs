@@ -148,6 +148,9 @@ namespace ChuanHoa.Client.Core.Scanning
             foreach (var issue in _headingDetector.AnalyzeContinuity(headings,
                 new HeadingContinuityOptions(false, analysis.LogicalBlockIdsByParagraphIndex)))
             {
+                // Academic scanning also runs on excerpts. A missing parent cannot be
+                // established unless the caller declares the sequence complete.
+                if (issue.IssueKind == HeadingIssueKind.MissingParent) continue;
                 LocalParagraphSnapshot paragraph;
                 if (!paragraphMap.TryGetValue(issue.Heading.ParagraphIndex, out paragraph)) continue;
                 AddParagraph(findings, AcademicTypographyRuleCodes.SectionContinuity, paragraph,

@@ -135,6 +135,116 @@ public sealed class DocumentRoleDetectorTests
     }
 
     [Fact]
+    public void Long_subject_without_ve_viec_is_detected_from_adjacency_and_style()
+    {
+        var longSubject = "Phê duyệt " + new string('x', 330);
+        var paragraphs = new[]
+        {
+            Paragraph(1, "QUYẾT ĐỊNH"),
+            Paragraph(2, longSubject),
+            Paragraph(3, "Căn cứ Bộ luật Lao động số 45/2019/QH14;")
+        };
+        var snapshot = new LocalScanSnapshot("sha256:long-subject", 1,
+            Array.Empty<LocalSectionSnapshot>(), paragraphs, Array.Empty<AnnotationProtectedSpan>());
+
+        var roles = new DocumentRoleDetector().Detect(snapshot);
+
+        Assert.Equal("subject", roles[2]);
+        Assert.Equal("legalBasis", roles[3]);
+    }
+
+    [Fact]
+    public void Subject_continuation_can_be_plain_when_its_other_style_signals_match()
+    {
+        var paragraphs = new[]
+        {
+            Paragraph(1, "QUYẾT ĐỊNH"),
+            new LocalParagraphSnapshot(2, "Phê duyệt kế hoạch", "wdMainTextStory", 1, 200,
+                "Times New Roman", fontSizePoints: 14, bold: false, alignment: 0),
+            new LocalParagraphSnapshot(3, "lựa chọn nhà thầu năm 2026", "wdMainTextStory", 1, 300,
+                "Times New Roman", fontSizePoints: 14, bold: false, alignment: 0),
+            Paragraph(4, "Điều 1. Phê duyệt kế hoạch.")
+        };
+        var snapshot = new LocalScanSnapshot("sha256:plain-continuation", 1,
+            Array.Empty<LocalSectionSnapshot>(), paragraphs, Array.Empty<AnnotationProtectedSpan>());
+
+        var roles = new DocumentRoleDetector().Detect(snapshot);
+
+        Assert.Equal("subjectContinuation", roles[3]);
+        Assert.False(roles.ContainsKey(4));
+    }
+
+    [Fact]
+    public void Plain_subject_is_detected_from_position_font_and_following_boundary()
+    {
+        var paragraphs = new[]
+        {
+            Paragraph(1, "QUYẾT ĐỊNH"),
+            new LocalParagraphSnapshot(2, "Phê duyệt kế hoạch công tác năm 2026",
+                "wdMainTextStory", 1, 200, "Times New Roman", fontSizePoints: 14,
+                bold: false, alignment: 0),
+            Paragraph(3, "Căn cứ Luật Tổ chức chính quyền địa phương;")
+        };
+        var snapshot = new LocalScanSnapshot("sha256:plain-subject", 1,
+            Array.Empty<LocalSectionSnapshot>(), paragraphs, Array.Empty<AnnotationProtectedSpan>());
+
+        var roles = new DocumentRoleDetector().Detect(snapshot);
+
+        Assert.Equal("subject", roles[2]);
+        Assert.Equal("legalBasis", roles[3]);
+    }
+
+    [Fact]
+    public void Plain_body_sentence_after_type_is_not_swallowed_as_subject()
+    {
+        var paragraphs = new[]
+        {
+            Paragraph(1, "BÁO CÁO"),
+            new LocalParagraphSnapshot(2, "Nội dung báo cáo được tổng hợp từ các đơn vị.",
+                "wdMainTextStory", 1, 200, "Times New Roman", fontSizePoints: 13,
+                bold: false, alignment: 3),
+            new LocalParagraphSnapshot(3, "Kết quả thực hiện nhiệm vụ được trình bày dưới đây.",
+                "wdMainTextStory", 1, 300, "Times New Roman", fontSizePoints: 13,
+                bold: false, alignment: 3)
+        };
+        var snapshot = new LocalScanSnapshot("sha256:body-after-type", 1,
+            Array.Empty<LocalSectionSnapshot>(), paragraphs, Array.Empty<AnnotationProtectedSpan>());
+
+        var roles = new DocumentRoleDetector().Detect(snapshot);
+
+        Assert.False(roles.TryGetValue(2, out var role) && role == "subject");
+        Assert.False(roles.TryGetValue(3, out role) && role == "subjectContinuation");
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void Legal_basis_window_allows_one_or_two_neutral_bridge_paragraphs(int bridgeCount)
+    {
+        var paragraphs = new List<LocalParagraphSnapshot>
+        {
+            Paragraph(1, "QUYẾT ĐỊNH"),
+            Paragraph(2, "Về việc phê duyệt kế hoạch"),
+            Paragraph(3, "Căn cứ Luật Tổ chức chính quyền địa phương;")
+        };
+        for (var index = 0; index < bridgeCount; index++)
+        {
+            paragraphs.Add(new LocalParagraphSnapshot(4 + index, "tiếp tục nội dung viện dẫn của căn cứ trước",
+                "wdMainTextStory", 1, 400 + index * 100, "Times New Roman",
+                fontSizePoints: 13, bold: false, alignment: 3));
+        }
+        paragraphs.Add(Paragraph(4 + bridgeCount,
+            "Căn cứ Nghị định số 30/2020/NĐ-CP của Chính phủ;"));
+        var snapshot = new LocalScanSnapshot("sha256:legal-bridge-" + bridgeCount, 1,
+            Array.Empty<LocalSectionSnapshot>(), paragraphs, Array.Empty<AnnotationProtectedSpan>());
+
+        var roles = new DocumentRoleDetector().Detect(snapshot);
+
+        Assert.Equal("legalBasis", roles[3]);
+        Assert.Equal("legalBasis", roles[4 + bridgeCount]);
+    }
+
+    [Fact]
     public void Recognizes_legal_basis_only_inside_the_formal_preamble_window()
     {
         var paragraphs = new[]
@@ -341,5 +451,19 @@ public sealed class DocumentRoleDetectorTests
         var roles = new DocumentRoleDetector().Detect(Snapshot("Số CCCD/Hộ chiếu: 000000000000, cấp ngày 01/01/2026"));
         Assert.False(roles.TryGetValue(1, out var role) && role == "codeNumber");
         Assert.Equal("codeNumber", new DocumentRoleDetector().Detect(Snapshot("Số: 126/QĐ-ABC"))[1]);
+    }
+
+    [Fact]
+    public void Code_number_can_follow_the_organ_name_inside_the_same_table_cell()
+    {
+        var paragraph = new LocalParagraphSnapshot(1,
+            "ỦY BAN NHÂN DÂN\vSố: 01/QĐ-UBND", "wdMainTextStory", 1, 0,
+            "Times New Roman", tableIndex: 1, rowIndex: 1, cellIndex: 1,
+            isInTable: true, fontSizePoints: 13);
+        var snapshot = new LocalScanSnapshot("sha256:inline-table-number", 1,
+            Array.Empty<LocalSectionSnapshot>(), new[] { paragraph },
+            Array.Empty<AnnotationProtectedSpan>());
+
+        Assert.Equal("codeNumber", new DocumentRoleDetector().Detect(snapshot)[1]);
     }
 }

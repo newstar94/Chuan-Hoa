@@ -516,7 +516,8 @@ namespace ChuanHoa.Client.Core.Scanning
                     state.PreviousDecimalLevel + " lên cấp " + heading.Level + ".",
                     "Chỉ chuyển tối đa đến cấp " + (state.PreviousDecimalLevel + 1) + ".");
             }
-            else if (heading.Level > 1 && !state.SeenDecimalPaths.Contains(parentPath))
+            else if (heading.Level > 1 && !state.SeenDecimalPaths.Contains(parentPath) &&
+                     !state.LastDecimalByParent.ContainsKey(parentPath))
             {
                 structuralIssue = Issue(
                     heading,

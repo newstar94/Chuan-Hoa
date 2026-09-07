@@ -35,9 +35,14 @@
       "label": "Chính tả và số"
     },
     {
-      "order": 7,
+      "order": 6,
       "id": "grpAbout",
-      "label": "About"
+      "label": "Thiết lập"
+    },
+    {
+      "order": 7,
+      "id": "grpInformation",
+      "label": "Thông tin"
     }
   ],
   "counts": {
@@ -184,12 +189,12 @@
     },
     {
       "order": 0,
-      "groupId": "grpKhoiDong",
-      "parentContainerId": "boxDocDuLieu",
+      "groupId": "grpAbout",
+      "parentContainerId": null,
       "controlType": "button",
       "id": "btnThietLap",
       "label": "Thiết lập",
-      "size": "normal",
+      "size": "large",
       "imageMso": "PropertySheet",
       "callbacks": {
         "getEnabled": "GetEnabledHasDocument",
@@ -1856,7 +1861,7 @@
     },
     {
       "order": 33,
-      "groupId": "grpAbout",
+      "groupId": "grpInformation",
       "parentContainerId": null,
       "controlType": "menu",
       "id": "mnuThongTinTienIch",
@@ -1893,7 +1898,7 @@
     },
     {
       "order": 34,
-      "groupId": "grpAbout",
+      "groupId": "grpInformation",
       "parentContainerId": "mnuThongTinTienIch",
       "controlType": "button",
       "id": "btnKiemTraPhienBanMoi",
@@ -1934,7 +1939,7 @@
     },
     {
       "order": 36,
-      "groupId": "grpAbout",
+      "groupId": "grpInformation",
       "parentContainerId": "mnuThongTinTienIch",
       "controlType": "button",
       "id": "btnGioiThieu",

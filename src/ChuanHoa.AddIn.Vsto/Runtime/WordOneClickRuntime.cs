@@ -1242,15 +1242,34 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         private static void ApplyBodyParagraphIndent(Word.Range range, string text)
         {
             Word.ParagraphFormat? format = null;
+            Word.TabStops? tabStops = null;
+            Word.TabStop? insertedTab = null;
             try
             {
                 format = range.ParagraphFormat;
                 format.RightIndent = 0f;
-                format.LeftIndent = 0f;
-                format.FirstLineIndent = (float)(ParagraphIndentPolicy.BodyFirstLineMillimeters * PointsPerMillimeter);
+                if (ParagraphIndentPolicy.IsDashListParagraph(text))
+                {
+                    var markerPosition = (float)(ParagraphIndentPolicy.ListMarkerMillimeters * PointsPerMillimeter);
+                    var textPosition = (float)(ParagraphIndentPolicy.ListTextMillimeters * PointsPerMillimeter);
+                    format.LeftIndent = textPosition;
+                    format.FirstLineIndent = markerPosition - textPosition;
+                    tabStops = format.TabStops;
+                    if (!HasEquivalentTabStop(tabStops, textPosition))
+                        insertedTab = tabStops.Add(textPosition,
+                            Word.WdTabAlignment.wdAlignTabLeft,
+                            Word.WdTabLeader.wdTabLeaderSpaces);
+                }
+                else
+                {
+                    format.LeftIndent = 0f;
+                    format.FirstLineIndent = (float)(ParagraphIndentPolicy.BodyFirstLineMillimeters * PointsPerMillimeter);
+                }
             }
             finally
             {
+                Release(insertedTab);
+                Release(tabStops);
                 Release(format);
             }
         }

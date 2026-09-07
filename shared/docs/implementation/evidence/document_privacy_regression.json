@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "testId": "DOCUMENT-PRIVACY-REGRESSION-001",
   "status": "PASS",
-  "verifiedOn": "2026-09-06",
+  "verifiedOn": "2026-09-07",
   "scope": "src/ChuanHoa.AddIn.Vsto source; no Word document was opened or uploaded",
-  "vstoSourceFilesReviewed": 27,
+  "vstoSourceFilesReviewed": 29,
   "networkSourceAllowlist": [
     "Runtime/LocalAccessManager.cs"
   ],
@@ -15,7 +15,7 @@
     "clientReleaseId",
     "deviceThumbprint"
   ],
-  "localAccessManagerSha256": "EA1E36F3299456B73B0E61BE859E6BBA2BC33F9C55496416E69BB2F81D0B29B3",
+  "localAccessManagerSha256": "D6AB9FC83C4FEBE7B8BDBA8E4735E38FB13507963C42F6739602A7BB9F25CF94",
   "negativeSelfTests": {
     "network_outside_allowlist": true,
     "document_payload_field": true,

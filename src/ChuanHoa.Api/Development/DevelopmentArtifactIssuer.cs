@@ -134,7 +134,7 @@ public sealed class DevelopmentArtifactIssuer
                 new XElement("character", new XAttribute("codePoint", "FEFF")),
                 new XElement("character", new XAttribute("codePoint", "00A0"))),
             new XElement("capitalizations",
-                CapitalizationEntries().Select(item => new XElement("entry",
+                LoadCapitalizationEntries().Select(item => new XElement("entry",
                     new XAttribute("category", item.Category), new XAttribute("expected", item.Expected)))),
             new XElement("documentTypeAbbreviations",
                 DocumentTypeEntries().Select(item => new XElement("entry",
@@ -210,13 +210,34 @@ public sealed class DevelopmentArtifactIssuer
         return value;
     }
 
-    private static IEnumerable<(string Category, string Expected)> CapitalizationEntries()
+    private IEnumerable<(string Category, string Expected)> LoadCapitalizationEntries()
     {
-        yield return ("administrative", "Hà Nội");
-        yield return ("administrative", "Thành phố Hồ Chí Minh");
-        yield return ("administrative", "Đà Nẵng");
-        yield return ("administrative", "Hải Phòng");
-        yield return ("administrative", "Cần Thơ");
+        var dictionaryDirectory = Path.GetFullPath(Path.Combine(
+            _environment.ContentRootPath, "..", "..", "shared", "dictionaries"));
+        var administrativePath = _configuration["ChuanHoa:DevelopmentAdministrativeUnitsPath"];
+        if (string.IsNullOrWhiteSpace(administrativePath))
+            administrativePath = Path.Combine(dictionaryDirectory, "administrative_units.json");
+        var specialPath = _configuration["ChuanHoa:DevelopmentSpecialCapitalizationsPath"];
+        if (string.IsNullOrWhiteSpace(specialPath))
+            specialPath = Path.Combine(dictionaryDirectory, "special_capitalizations.json");
+        if (!File.Exists(administrativePath) || !File.Exists(specialPath))
+            throw new InvalidOperationException("Development capitalization reference data is missing.");
+        using (var stream = File.OpenRead(administrativePath))
+        {
+            using var data = JsonDocument.Parse(stream);
+            foreach (var item in data.RootElement.EnumerateArray())
+            {
+                if (item.GetProperty("status").GetString() != "Active") continue;
+                var expected = item.GetProperty("canonicalName").GetString();
+                if (!string.IsNullOrWhiteSpace(expected)) yield return ("administrative", expected);
+            }
+        }
+        using (var stream = File.OpenRead(specialPath))
+        {
+            var entries = JsonSerializer.Deserialize<string[]>(stream) ?? Array.Empty<string>();
+            foreach (var expected in entries.Where(item => !string.IsNullOrWhiteSpace(item)))
+                yield return ("specialOrgan", expected);
+        }
         yield return ("geographic", "Việt Nam");
         yield return ("geographic", "Đông Nam Á");
         yield return ("terrain", "sông Hồng");

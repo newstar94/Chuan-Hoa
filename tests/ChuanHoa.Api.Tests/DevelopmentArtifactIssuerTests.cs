@@ -171,6 +171,8 @@ public sealed class DevelopmentArtifactIssuerTests
             {
                 var privateKeyPath = Path.Combine(directory, "key.xml");
                 var dictionaryPath = Path.Combine(directory, "dictionary.json");
+                var administrativePath = Path.Combine(directory, "administrative_units.json");
+                var capitalizationPath = Path.Combine(directory, "special_capitalizations.json");
                 var lexiconDirectory = Path.Combine(directory, "lexicon");
                 Directory.CreateDirectory(lexiconDirectory);
                 await File.WriteAllLinesAsync(Path.Combine(lexiconDirectory, "vi-test.dic"),
@@ -180,6 +182,12 @@ public sealed class DevelopmentArtifactIssuerTests
                 {
                     ["sát nhập"] = "sáp nhập"
                 }));
+                await File.WriteAllTextAsync(administrativePath, JsonSerializer.Serialize(new[]
+                {
+                    new { status = "Active", canonicalName = "Thành phố Hà Nội" }
+                }));
+                await File.WriteAllTextAsync(capitalizationPath,
+                    JsonSerializer.Serialize(new[] { "Chính phủ" }));
 
                 var builder = WebApplication.CreateBuilder(new WebApplicationOptions
                 {
@@ -192,6 +200,8 @@ public sealed class DevelopmentArtifactIssuerTests
                     ["ChuanHoa:DevelopmentSigningKeyPath"] = privateKeyPath,
                     ["ChuanHoa:DevelopmentRuleDictionaryPath"] = dictionaryPath,
                     ["ChuanHoa:DevelopmentRuleLexiconDirectory"] = lexiconDirectory
+                    ,["ChuanHoa:DevelopmentAdministrativeUnitsPath"] = administrativePath
+                    ,["ChuanHoa:DevelopmentSpecialCapitalizationsPath"] = capitalizationPath
                 };
                 if (overrides != null)
                 {

@@ -763,6 +763,46 @@ public sealed class CanonicalRouteScannerTests
     }
 
     [Fact]
+    public void Bare_short_date_is_not_reported_in_body_table_or_parenthesized_citation()
+    {
+        var paragraphs = new[]
+        {
+            P(1, "Thời hạn thực hiện: 01/07/2025."),
+            new LocalParagraphSnapshot(2, "01/07/2025", "wdMainTextStory", 1, 200,
+                "Times New Roman", tableIndex: 1, rowIndex: 1, cellIndex: 1,
+                isInTable: true, fontSizePoints: 13),
+            P(3, "Căn cứ Nghị định số 30/2020/NĐ-CP (05/03/2020) của Chính phủ;",
+                "legalBasis", size: 14, italic: true, alignment: 3)
+        };
+        var snapshot = new LocalScanSnapshot("sha256:context-aware-date", 1,
+            new[] { ValidSection() }, paragraphs, Array.Empty<AnnotationProtectedSpan>());
+
+        var findings = new LocalDocumentScanner().ScanSpelling(snapshot, Rules()).Findings;
+
+        Assert.DoesNotContain(findings, item => item.RuleCode == "ND30-PL1-M2-K6B-DATE");
+    }
+
+    [Theory]
+    [InlineData("Bộ luật số 45/2019/QH14")]
+    [InlineData("Lệnh số 01/2025/L-CTN")]
+    [InlineData("Công văn số 12/BNV-TCBC")]
+    [InlineData("Tờ trình số 09/TTr-CP")]
+    [InlineData("Nghị quyết liên tịch số 01/2025/NQLT")]
+    [InlineData("Thông tư liên tịch số 02/2025/TTLT")]
+    public void Shared_citation_vocabulary_recognizes_required_document_types(string citation)
+    {
+        var paragraph = P(1, citation + " ngày 01 tháng 7 năm 2025 của Chính phủ.",
+            size: 14, italic: true, alignment: 3);
+        var snapshot = new LocalScanSnapshot("sha256:citation-vocabulary", 1,
+            new[] { ValidSection() }, new[] { paragraph }, Array.Empty<AnnotationProtectedSpan>());
+
+        var findings = new LocalDocumentScanner().ScanFormat(snapshot, Rules()).Findings;
+
+        Assert.DoesNotContain(findings, item => item.RuleCode == "ND30-PL1-M2-K6B-SO");
+        Assert.DoesNotContain(findings, item => item.RuleCode == "ND30-PL1-M2-K6B-CITE");
+    }
+
+    [Fact]
     public void Citation_completeness_is_checked_inside_each_citation_segment()
     {
         var paragraph = P(1,
@@ -954,9 +994,9 @@ public sealed class CanonicalRouteScannerTests
 
     private static LocalScanSnapshot BadSpellingSnapshot()
     {
-        var text = "nội dung đầu. câu sau  sai , ông nguyễn văn an doof. hà nội, việt nam, sông hồng, tây nguyên, bộ nội vụ, ban chấp hành trung ương, ngày quốc khánh, giáp thìn, phường iv, chương I và Điều 2 Khoản 1 Điểm a), hạn 05/03/2020, sát nhập.\u200B";
+        var text = "Căn cứ Nghị định số 30/2020/NĐ-CP 05/03/2020 của Chính phủ; nội dung đầu. câu sau  sai , ông nguyễn văn an doof. hà nội, việt nam, sông hồng, tây nguyên, bộ nội vụ, ban chấp hành trung ương, ngày quốc khánh, giáp thìn, phường iv, chương I và Điều 2 Khoản 1 Điểm a), sát nhập.\u200B";
         return new LocalScanSnapshot("sha256:bad-spelling", 1, new[] { ValidSection() },
-            new[] { P(1, text, font: "Times New Roman", size: 13) }, Array.Empty<AnnotationProtectedSpan>());
+            new[] { P(1, text, "legalBasis", font: "Times New Roman", size: 13) }, Array.Empty<AnnotationProtectedSpan>());
     }
 
     private static LocalSectionSnapshot ValidSection()

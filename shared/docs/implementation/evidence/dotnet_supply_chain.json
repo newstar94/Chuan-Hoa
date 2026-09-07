@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "testId": "DOTNET-SUPPLY-CHAIN-001",
   "status": "PASS",
-  "verifiedOn": "2026-09-06",
+  "verifiedOn": "2026-09-07",
   "lockedMode": "CI=true",
   "managedCiWorkflow": ".github/workflows/source-quality.yml",
   "managedCiConfigured": true,
@@ -11,7 +11,7 @@
     {
       "project": "src/ChuanHoa.Api/ChuanHoa.Api.csproj",
       "lockFile": "src/ChuanHoa.Api/packages.lock.json",
-      "sha256": "D746814835432137E5AFDFBBC15C4218A367BA76AC2F0456A35A0B8946570A5C"
+      "sha256": "EC06AF3AEA8076D661436E35128EB854BE95B40162EB86F6ED70F70ABE3E722A"
     },
     {
       "project": "src/ChuanHoa.Infrastructure/ChuanHoa.Infrastructure.csproj",
@@ -21,7 +21,7 @@
     {
       "project": "tests/ChuanHoa.Api.Tests/ChuanHoa.Api.Tests.csproj",
       "lockFile": "tests/ChuanHoa.Api.Tests/packages.lock.json",
-      "sha256": "D0016082F4612EAB1486051726ED65C2F76500D222F190260780BD0D5F311D99"
+      "sha256": "732BA2FC74EBF307FE07DD32A77BB353D32F844E089ED6680C6688F8B5277EDD"
     },
     {
       "project": "tests/ChuanHoa.Application.Tests/ChuanHoa.Application.Tests.csproj",
@@ -57,9 +57,9 @@
   "sbom": {
     "format": "CycloneDX",
     "specVersion": "1.6",
-    "componentCount": 22,
+    "componentCount": 34,
     "lockFileCount": 14,
-    "sha256": "08947212D7A5EFA68F7D0E2BC29E20B0BDF71A2DF7C231CC6835179707CA481B",
+    "sha256": "7A95E34CA2A44C7F4F1B208A489710AFE2818673F5226F1FCACE478776BC4D6E",
     "deterministic": true
   },
   "limitations": [

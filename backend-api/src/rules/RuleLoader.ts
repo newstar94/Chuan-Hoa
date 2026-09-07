@@ -2,6 +2,19 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { RegimeType } from '../types';
 
+export interface AdministrativeUnitReference {
+  code: string;
+  name: string;
+  canonicalName: string;
+  level: 'Province' | 'Commune';
+  type: 'Province' | 'CentrallyGovernedCity' | 'Commune' | 'Ward' | 'SpecialZone';
+  provinceCode: string | null;
+  effectiveFrom: string;
+  effectiveTo: string | null;
+  status: 'Active';
+  source: string;
+}
+
 export class RuleLoader {
   private static instance: RuleLoader;
   private sharedDir: string;
@@ -15,7 +28,7 @@ export class RuleLoader {
 
   public typoDict: Record<string, string> = {};
   public iyDict: Record<string, string> = {};
-  public adminUnits: string[] = [];
+  public adminUnits: AdministrativeUnitReference[] = [];
   public nonEndingAbbrs: string[] = [];
   public docTypeAbbrs: Record<string, string> = {};
   public specialCaps: string[] = [];
