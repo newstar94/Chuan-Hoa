@@ -131,6 +131,16 @@ public sealed class DevelopmentArtifactIssuerTests
             issuer.Issue(new DevelopmentBootstrapRequest("device-test", "1.0.0.0")));
     }
 
+    [Fact]
+    public async Task Development_issuer_resolves_reference_data_from_repository_content_root()
+    {
+        await using var fixture = await DevelopmentIssuerFixture.Create(useDefaultReferencePaths: true);
+
+        var response = fixture.Issuer.Issue(new DevelopmentBootstrapRequest("device-test", "1.0.0.0"));
+
+        Assert.NotEmpty(response.RulePack);
+    }
+
     private static string PrivateKeyXml(RSA rsa)
     {
         var key = rsa.ExportParameters(true);
@@ -162,7 +172,8 @@ public sealed class DevelopmentArtifactIssuerTests
 
         public static async Task<DevelopmentIssuerFixture> Create(
             IReadOnlyDictionary<string, string?>? overrides = null,
-            string environmentName = "Development")
+            string environmentName = "Development",
+            bool useDefaultReferencePaths = false)
         {
             var directory = Path.Combine(Path.GetTempPath(), "ChuanHoaIssuerTest-" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(directory);
@@ -171,8 +182,12 @@ public sealed class DevelopmentArtifactIssuerTests
             {
                 var privateKeyPath = Path.Combine(directory, "key.xml");
                 var dictionaryPath = Path.Combine(directory, "dictionary.json");
-                var administrativePath = Path.Combine(directory, "administrative_units.json");
-                var capitalizationPath = Path.Combine(directory, "special_capitalizations.json");
+                var referenceDirectory = useDefaultReferencePaths
+                    ? Path.Combine(directory, "shared", "dictionaries")
+                    : directory;
+                Directory.CreateDirectory(referenceDirectory);
+                var administrativePath = Path.Combine(referenceDirectory, "administrative_units.json");
+                var capitalizationPath = Path.Combine(referenceDirectory, "special_capitalizations.json");
                 var lexiconDirectory = Path.Combine(directory, "lexicon");
                 Directory.CreateDirectory(lexiconDirectory);
                 await File.WriteAllLinesAsync(Path.Combine(lexiconDirectory, "vi-test.dic"),
@@ -200,9 +215,12 @@ public sealed class DevelopmentArtifactIssuerTests
                     ["ChuanHoa:DevelopmentSigningKeyPath"] = privateKeyPath,
                     ["ChuanHoa:DevelopmentRuleDictionaryPath"] = dictionaryPath,
                     ["ChuanHoa:DevelopmentRuleLexiconDirectory"] = lexiconDirectory
-                    ,["ChuanHoa:DevelopmentAdministrativeUnitsPath"] = administrativePath
-                    ,["ChuanHoa:DevelopmentSpecialCapitalizationsPath"] = capitalizationPath
                 };
+                if (!useDefaultReferencePaths)
+                {
+                    configuration["ChuanHoa:DevelopmentAdministrativeUnitsPath"] = administrativePath;
+                    configuration["ChuanHoa:DevelopmentSpecialCapitalizationsPath"] = capitalizationPath;
+                }
                 if (overrides != null)
                 {
                     foreach (var item in overrides) configuration[item.Key] = item.Value;

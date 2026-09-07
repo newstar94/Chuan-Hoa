@@ -213,7 +213,7 @@ public sealed class DevelopmentArtifactIssuer
     private IEnumerable<(string Category, string Expected)> LoadCapitalizationEntries()
     {
         var dictionaryDirectory = Path.GetFullPath(Path.Combine(
-            _environment.ContentRootPath, "..", "..", "shared", "dictionaries"));
+            _environment.ContentRootPath, "shared", "dictionaries"));
         var administrativePath = _configuration["ChuanHoa:DevelopmentAdministrativeUnitsPath"];
         if (string.IsNullOrWhiteSpace(administrativePath))
             administrativePath = Path.Combine(dictionaryDirectory, "administrative_units.json");
