@@ -146,6 +146,10 @@ function Invoke-Installer([string[]]$arguments, [string]$faultPoint = '') {
     if (![string]::IsNullOrWhiteSpace($faultPoint)) {
         $start.EnvironmentVariables['CHUANHOA_INSTALLER_ENABLE_FAULT_INJECTION'] = '1'
         $start.EnvironmentVariables['CHUANHOA_INSTALLER_FAULT_POINT'] = $faultPoint
+        # AppVLP can sanitize custom environment variables while crossing into
+        # the Office Click-to-Run context. Forward the same test-only signal as
+        # arguments so the virtualized child exercises the rollback path.
+        $start.Arguments += ' /test-fault-injection /test-fault-point:' + $faultPoint
     }
     $process = New-Object Diagnostics.Process
     $process.StartInfo = $start
@@ -290,14 +294,30 @@ Assert-DictionaryPreserved $dictionaryHash
 
 $rollbackResults = @()
 foreach ($faultPoint in $faultPoints) {
-    $beforeHash = Get-StateHash (Get-ManagedState)
+    $beforeState = Get-ManagedState
+    $beforeHash = Get-StateHash $beforeState
     $result = Invoke-Installer @('/repair', '/quiet') $faultPoint
-    $afterHash = Get-StateHash (Get-ManagedState)
+    $afterState = Get-ManagedState
+    $afterHash = Get-StateHash $afterState
     if ($result.ExitCode -ne 10) {
         throw "Fault point $faultPoint returned $($result.ExitCode), expected 10. $($result.Stderr)"
     }
     if (![string]::Equals($beforeHash, $afterHash, [StringComparison]::Ordinal)) {
-        throw "Installer rollback did not restore exact managed state at $faultPoint."
+        $diagnosticPath = if ([string]::IsNullOrWhiteSpace($EvidencePath)) {
+            Join-Path $env:TEMP 'ChuanHoaInstallerLifecycleFailure.json'
+        } else { $EvidencePath + '.failure.json' }
+        $diagnostic = [ordered]@{
+            FaultPoint = $faultPoint
+            BeforeHash = $beforeHash
+            AfterHash = $afterHash
+            BeforeState = $beforeState
+            AfterState = $afterState
+        }
+        [IO.File]::WriteAllText(
+            [IO.Path]::GetFullPath($diagnosticPath),
+            ($diagnostic | ConvertTo-Json -Depth 12),
+            [Text.UTF8Encoding]::new($false))
+        throw "Installer rollback did not restore exact managed state at $faultPoint. Diagnostic=$diagnosticPath"
     }
     Assert-DictionaryPreserved $dictionaryHash
     $rollbackResults += [ordered]@{ FaultPoint = $faultPoint; ExitCode = $result.ExitCode; StateRestored = $true }

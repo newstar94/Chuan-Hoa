@@ -3,7 +3,7 @@
   "testId": "PRODUCT-DECISION-CONSISTENCY-001",
   "status": "PASS",
   "verifiedOn": "2026-09-07",
-  "productVersion": "1.0.0.158",
+  "productVersion": "1.0.0.166",
   "ribbonCounts": {
     "tabs": 1,
     "groups": 7,
