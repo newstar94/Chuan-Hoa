@@ -122,6 +122,20 @@ namespace ChuanHoa.Client.Core.Scanning
             @"hồ\s+sơ\s+(?:đề\s+nghị|xin|đăng\s+ký)" +
             @")\b)", true);
         private static readonly Regex SignerAuthority = Rx(@"^(?:(?:TM|KT|TL|TUQ|T/M|K/T|T/L|Q)\.?\s+|CHỦ TỊCH|PHÓ CHỦ TỊCH|GIÁM ĐỐC|PHÓ GIÁM ĐỐC|BỘ TRƯỞNG|THỨ TRƯỞNG|BÍ THƯ|PHÓ BÍ THƯ|TRƯỞNG BAN|PHÓ TRƯỞNG BAN|CHÁNH VĂN PHÒNG|PHÓ CHÁNH VĂN PHÒNG)\b", true);
+        private static readonly Regex CodeNumberPattern = Rx(@"^Số\s*:?\s*(?:\d|[.…]+\s*/)");
+        private static readonly Regex CodeNumberSimple = Rx(@"^Số\s*:?\s*\d");
+        private static readonly Regex AboutPrefixRegex = Rx(@"^Về\s+việc\b", true);
+        private static readonly Regex OfficialLetterSubjectRegex = Rx(@"^(V/v|Về việc)\b", true);
+        private static readonly Regex RecipientSalutationPrefixRegex = Rx(@"^Kính\s+(gửi|trình)\s*:", true);
+        private static readonly Regex RecipientLabelPattern = Rx(@"^Nơi\s+nhận", true);
+        private static readonly Regex RecipientListContinuationRegex = Rx(@"^(Như\s+Điều\b|Lưu\b)", true);
+        private static readonly Regex AppendixLabelPattern = Rx(@"^Phụ\s+lục(?:\s+[IVXLCDM\d]+)?\b", true);
+        private static readonly Regex PartChapterHeadingRegex = Rx(@"^(Phần|Chương)\s+(?:[IVXLCDM]+|thứ\s+\p{L}+)$", true);
+        private static readonly Regex SectionHeadingRegex = Rx(@"^(Mục|Tiểu mục)\s+\d+$", true);
+        private static readonly Regex StructuralTitlePrevRegex = Rx(@"^(Phần|Chương|Mục|Tiểu mục)\b", true);
+        private static readonly Regex SubjectTerminatorRegex = Rx(@"^(Kính\s+(?:gửi|trình)|Nơi\s+nhận)\b", true);
+        private static readonly Regex StructuralBodyStartRegex = Rx(@"^(?:Điều\s+\d+|(?:\d+(?:\.\d+)*|[IVXLCDM]+)[.)]\s+\p{L}|[a-zđ]\)\s+\p{L}|Phần\b|Chương\b|Mục\b|Tiểu\s+mục\b)", true);
+        private static readonly Regex PlaceDateDraftPattern = Rx(@"^[\p{L}][\p{L}\s.]{0,70},\s*ngày\s+[.…]+\s+tháng\s+(?:\d{1,2}|[.…]+)\s+năm\s+(?:\d{4}|[.…]+)$", true);
 
         public Dictionary<int, string> Detect(LocalScanSnapshot snapshot)
         {
@@ -189,7 +203,7 @@ namespace ChuanHoa.Client.Core.Scanning
                 if (NationalTitle.IsMatch(text)) assignedRole = "nationalTitle";
                 else if (Contains(text, "Độc lập") && Contains(text, "Hạnh phúc")) assignedRole = "nationalMotto";
                 else if (Eq(text, "ĐẢNG CỘNG SẢN VIỆT NAM")) assignedRole = "partyTitle";
-                else if (Rx(@"^Số\s*:?\s*(?:\d|[.…]+\s*/)").IsMatch(text)) assignedRole = "codeNumber";
+                else if (CodeNumberPattern.IsMatch(text)) assignedRole = "codeNumber";
                 else if (legalBasisWindowOpen && (IsFormalLegalBasisParagraph(text) ||
                     (legalBasisSequenceStarted && LegalBasis.IsMatch(text))))
                     assignedRole = "legalBasis";
@@ -205,23 +219,23 @@ namespace ChuanHoa.Client.Core.Scanning
                     if (assignedRole == "typeName") typeNameAssigned = true;
                 }
                 else if (previousRole == "typeName" && (text.Length < 300 ||
-                    Rx(@"^Về\s+việc\b", true).IsMatch(text))) assignedRole = "subject";
+                    AboutPrefixRegex.IsMatch(text))) assignedRole = "subject";
                 else if ((previousRole == "subject" || previousRole == "subjectContinuation") &&
                     IsSubjectContinuation(main[i - 1], paragraph, text))
                     assignedRole = "subjectContinuation";
-                else if (documentType == LocalDocumentTypeCodes.OfficialLetter && Rx(@"^(V/v|Về việc)\b", true).IsMatch(text)) assignedRole = "officialLetterSubject";
+                else if (documentType == LocalDocumentTypeCodes.OfficialLetter && OfficialLetterSubjectRegex.IsMatch(text)) assignedRole = "officialLetterSubject";
                 else if (SignerAuthority.IsMatch(text)) assignedRole = "signerAuthority";
-                else if (Rx(@"^Kính\s+(gửi|trình)\s*:", true).IsMatch(text)) assignedRole = text.EndsWith(":", StringComparison.Ordinal) ? "recipientSalutation" : "recipientSalutationInline";
+                else if (RecipientSalutationPrefixRegex.IsMatch(text)) assignedRole = text.EndsWith(":", StringComparison.Ordinal) ? "recipientSalutation" : "recipientSalutationInline";
                 else if ((previousRole == "recipientSalutation" || previousRole == "recipientSalutationList") && text.StartsWith("-", StringComparison.Ordinal)) assignedRole = "recipientSalutationList";
-                else if (Rx(@"^Nơi\s+nhận", true).IsMatch(text)) assignedRole = "recipientLabel";
+                else if (RecipientLabelPattern.IsMatch(text)) assignedRole = "recipientLabel";
                 else if ((previousRole == "recipientLabel" || previousRole == "recipientList") &&
                     i > 0 && main[i - 1].Index + 1 == paragraph.Index &&
                     main[i - 1].TableIndex == paragraph.TableIndex && main[i - 1].CellIndex == paragraph.CellIndex &&
                     (text.StartsWith("-", StringComparison.Ordinal) || !string.IsNullOrWhiteSpace(paragraph.ListMarker) ||
-                     Rx(@"^(Như\s+Điều\b|Lưu\b)", true).IsMatch(text))) assignedRole = "recipientList";
-                else if (Rx(@"^Phụ\s+lục(?:\s+[IVXLCDM\d]+)?\b", true).IsMatch(text)) assignedRole = "appendixLabel";
-                else if (Rx(@"^(Phần|Chương)\s+(?:[IVXLCDM]+|thứ\s+\p{L}+)$", true).IsMatch(text)) assignedRole = "partChapterHeading";
-                else if (Rx(@"^(Mục|Tiểu mục)\s+\d+$", true).IsMatch(text)) assignedRole = "sectionHeading";
+                     RecipientListContinuationRegex.IsMatch(text))) assignedRole = "recipientList";
+                else if (AppendixLabelPattern.IsMatch(text)) assignedRole = "appendixLabel";
+                else if (PartChapterHeadingRegex.IsMatch(text)) assignedRole = "partChapterHeading";
+                else if (SectionHeadingRegex.IsMatch(text)) assignedRole = "sectionHeading";
                 else if (IsStructuralTitle(main, i, text)) assignedRole = "structuralTitle";
 
                 if (assignedRole != null) result[paragraph.Index] = assignedRole;
@@ -265,7 +279,7 @@ namespace ChuanHoa.Client.Core.Scanning
                     }
                 }
 
-                if (IsTypeHeading(text) || Rx(@"^(V/v|Về việc)\b", true).IsMatch(text))
+                if (IsTypeHeading(text) || OfficialLetterSubjectRegex.IsMatch(text))
                 {
                     if (currentHasDocumentIdentity && IsTypeHeading(text))
                     {
@@ -293,10 +307,10 @@ namespace ChuanHoa.Client.Core.Scanning
             {
                 var text = Collapse(main[position].Text);
                 if (Contains(text, "Độc lập") && Contains(text, "Hạnh phúc")) signals++;
-                else if (Rx(@"^Số\s*:?\s*\d").IsMatch(text)) signals++;
+                else if (CodeNumberSimple.IsMatch(text)) signals++;
                 else if (IsPlaceDate(text)) signals++;
                 else if (IsTypeHeading(text)) signals++;
-                else if (Rx(@"^(V/v|Về việc)\b", true).IsMatch(text)) signals++;
+                else if (OfficialLetterSubjectRegex.IsMatch(text)) signals++;
                 if (signals >= 2) return true;
                 if (IsStructuralBodyStart(text)) break;
             }
@@ -430,7 +444,7 @@ namespace ChuanHoa.Client.Core.Scanning
                 return MapTypeName(type);
             }
 
-            if (main.Any(p => Rx(@"^(V/v|Về việc)\b", true).IsMatch(Collapse(p.Text))) &&
+            if (main.Any(p => OfficialLetterSubjectRegex.IsMatch(Collapse(p.Text))) &&
                 main.All(p => !IsTypeHeading(Collapse(p.Text))))
                 return LocalDocumentTypeCodes.OfficialLetter;
             return LocalDocumentTypeCodes.Unknown;
@@ -486,7 +500,7 @@ namespace ChuanHoa.Client.Core.Scanning
         {
             if (!IsMostlyUppercase(text) || text.Length < 4 || text.Length > 180 || index == 0) return false;
             var previous = Collapse(main[index - 1].Text);
-            return Rx(@"^(Phần|Chương|Mục|Tiểu mục)\b", true).IsMatch(previous);
+            return StructuralTitlePrevRegex.IsMatch(previous);
         }
 
         private static bool IsSubjectContinuation(LocalParagraphSnapshot previous,
@@ -499,7 +513,7 @@ namespace ChuanHoa.Client.Core.Scanning
                 return false;
             if (LegalBasis.IsMatch(text) || IsTypeHeading(text) ||
                 IsStructuralBodyStart(text) ||
-                Rx(@"^(Kính\s+(?:gửi|trình)|Nơi\s+nhận)\b", true).IsMatch(text))
+                SubjectTerminatorRegex.IsMatch(text))
                 return false;
             if (IsMostlyUppercase(text)) return false;
             return current.Alignment == 1 || current.Bold.GetValueOrDefault();
@@ -584,15 +598,14 @@ namespace ChuanHoa.Client.Core.Scanning
 
         private static bool IsStructuralBodyStart(string text)
         {
-            return Rx(@"^(?:Điều\s+\d+|(?:\d+(?:\.\d+)*|[IVXLCDM]+)[.)]\s+\p{L}|[a-zđ]\)\s+\p{L}|Phần\b|Chương\b|Mục\b|Tiểu\s+mục\b)", true)
-                .IsMatch(text);
+            return StructuralBodyStartRegex.IsMatch(text);
         }
 
         private static bool IsPlaceDate(string text)
         {
             if (LegalBasis.IsMatch(text) || text.IndexOf(';') >= 0) return false;
             var match = PlaceDate.Match(text);
-            if (!match.Success && Rx(@"^[\p{L}][\p{L}\s.]{0,70},\s*ngày\s+[.…]+\s+tháng\s+(?:\d{1,2}|[.…]+)\s+năm\s+(?:\d{4}|[.…]+)$", true).IsMatch(text))
+            if (!match.Success && PlaceDateDraftPattern.IsMatch(text))
                 return true;
             if (!match.Success) return false;
             var place = match.Groups["place"].Value.Trim();

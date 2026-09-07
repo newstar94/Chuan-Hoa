@@ -35,12 +35,32 @@ namespace ChuanHoa.Client.Core.Scanning
         private static readonly Regex Article = Rx(@"^\s*Điều\s+(?<number>\d+)\s*\.?(?<title>.*)$", true);
         private static readonly Regex Clause = Rx(@"^\s*(?<number>\d+)\.\s+", false);
         private static readonly Regex Point = Rx(@"^\s*(?<letter>[a-zđ])\)\s+", true);
-        private static readonly Regex Citation = Rx(@"(?<type>nghị\s+quyết|nghị\s+định|quyết\s+định|chỉ\s+thị|thông\s+tư|luật|pháp\s+lệnh)(?<so>\s+số)?\s+(?<code>\d+[\wĐđ/-]+)", true);
+        private static readonly Regex Citation = Rx(@"(?<type>nghị\s+quyết\s+liên\s+tịch|nghị\s+quyết|nghị\s+định|quyết\s+định|chỉ\s+thị|thông\s+tư\s+liên\s+tịch|thông\s+tư|bộ\s+luật|luật|pháp\s+lệnh|lệnh|công\s+văn|tờ\s+trình)(?<so>\s+số)?\s+(?<code>\d+[\wĐđ/-]+)", true);
         private static readonly Regex AbbreviatedDate = Rx(@"ngày\s+(?<day>\d{1,2})[/.-](?<month>\d{1,2})[/.-](?<year>\d{4})", true);
         private static readonly Regex LegalBasisShortDate = Rx(@"\b(?<day>\d{1,2})[/.-](?<month>\d{1,2})[/.-](?<year>\d{4})\b", true);
         private static readonly Regex LeadingListMarkers = Rx(
             @"^\s*(?:(?:[-–—+•·▪◦‣⁃]\s+)|(?:\(\s*(?:\d+(?:\.\d+)*|[a-zđ])\s*\)\s*)|(?:(?:\d+(?:\.\d+)*|[a-zđ])[.)]\s+))+(?<letter>\p{L})",
             true);
+        private static readonly Regex MultipleWhitespaceRegex = Rx(@"[ \t]{2,}");
+        private static readonly Regex WhitespaceBeforePunctuationRegex = Rx(@"[ \t]+(?=[,.;:!?])");
+        private static readonly Regex RecipientOrAuthorityEndBoundaryRegex = Rx(@"^(?:Nơi\s+nhận\s*:|(?:TM\.|KT\.|TL\.|TUQ\.)\s*)", true);
+        private static readonly Regex CodeNotationPartyRegex = Rx(@"^[\p{L}\d]+/[\p{L}\d-]+$");
+        private static readonly Regex CodeNotationStateRegex = Rx(@"^[\p{L}\d-]+$");
+        private static readonly Regex DashBulletPrefixRegex = Rx(@"^\s*[-–—]\s*");
+        private static readonly Regex LawOrOrdinanceRegex = Rx(@"^(bộ\s+luật|luật|pháp\s+lệnh)$", true);
+        private static readonly Regex FullDateInTextRegex = Rx(@"ngày\s+\d{1,2}\s+tháng\s+\d{1,2}\s+năm\s+\d{4}", true);
+        private static readonly Regex SignerAuthorityPartyAbbrRegex = Rx(@"^\s*(?<abbr>t/m|k/t|t/l|q)\.?", true);
+        private static readonly Regex SignerAuthorityStateAbbrRegex = Rx(@"^\s*(?<abbr>tm|kt|tl|tuq|q)\.", true);
+        private static readonly Regex SalutationStartRegex = Rx(@"^\s*Kính\s+(gửi|trình)", true);
+        private static readonly Regex AppendixNumberedRegex = Rx(@"^\s*Phụ\s+lục\s+(?:[IVXLCDM]+|\d+)\b", true);
+        private static readonly Regex DateTrailingWordRegex = Rx(@"\bngày\s*$", true);
+        private static readonly Regex SentenceStartLowerLetterRegex = Rx(@"[.!?]\s+(?<letter>\p{Ll})");
+        private static readonly Regex AbbrPrefixExemptRegex = Rx(@"^(tm|kt|tl|tuq|q|ts|ths|pgs|gs|tp|p)\.", true);
+        private static readonly Regex PersonNamePatternRegex = Rx(@"\b(?:ông|bà|anh|chị)\s+(?<name>\p{L}+(?:\s+\p{L}+){1,5})", true);
+        private static readonly Regex AdministrativeUnitRomanRegex = Rx(@"\b(?<unit>quận|phường|xã|huyện)\s+(?<roman>[ivxlcdm]+)\b", true);
+        private static readonly Regex StructureLevelHeadingRegex = Rx(@"\b(?<keyword>chương|phần|mục|tiểu\s+mục|phụ\s+lục)\s+(?:[IVXLCDM]+|\d+)", false);
+        private static readonly Regex ArticleHeadingCheckRegex = Rx(@"Điều\s+\d+", true);
+        private static readonly Regex ClauseOrPointRefRegex = Rx(@"\b(?<keyword>Khoản|Điểm)\s+(?:\d+|[a-zđ]\))", false);
         private static readonly HashSet<string> AllowedForeignWords = new HashSet<string>(
             new[] { "email", "e-mail", "website", "online", "internet", "software", "hardware", "file", "link", "wifi" },
             StringComparer.OrdinalIgnoreCase);
@@ -128,8 +148,8 @@ namespace ChuanHoa.Client.Core.Scanning
             foreach (var paragraph in paragraphs)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                AddMatches(findings, paragraph, Rx(@"[ \t]{2,}"), "LOCAL-TYPO-SPACE", "Có khoảng trắng thừa.", "Chỉ để một khoảng trắng.", rules);
-                AddMatches(findings, paragraph, Rx(@"[ \t]+(?=[,.;:!?])"), "LOCAL-TYPO-PUNCT", "Có khoảng trắng trước dấu câu.", "Xóa khoảng trắng trước dấu câu.", rules);
+                AddMatches(findings, paragraph, MultipleWhitespaceRegex, "LOCAL-TYPO-SPACE", "Có khoảng trắng thừa.", "Chỉ để một khoảng trắng.", rules);
+                AddMatches(findings, paragraph, WhitespaceBeforePunctuationRegex, "LOCAL-TYPO-PUNCT", "Có khoảng trắng trước dấu câu.", "Xóa khoảng trắng trước dấu câu.", rules);
                 CheckHiddenCharacters(findings, paragraph, rules);
                 CheckDictionary(findings, paragraph, rules, snapshot.DictionaryScopeId, _personalDictionary);
                 CheckLexicon(findings, paragraph, rules, lexicon, snapshot.DictionaryScopeId, _personalDictionary);
@@ -219,8 +239,7 @@ namespace ChuanHoa.Client.Core.Scanning
             if (!endBoundary.HasValue)
             {
                 var recipientPara = Scannable(snapshot)
-                    .Where(p => Rx(@"^Nơi\s+nhận\s*:", true).IsMatch(p.Text) ||
-                                Rx(@"^(?:TM\.|KT\.|TL\.|TUQ\.)\s*", true).IsMatch(p.Text))
+                    .Where(p => RecipientOrAuthorityEndBoundaryRegex.IsMatch(p.Text))
                     .OrderBy(p => p.Index)
                     .FirstOrDefault();
                 if (recipientPara != null)
@@ -660,8 +679,8 @@ namespace ChuanHoa.Client.Core.Scanning
                 var separator = match.Groups["separator"];
                 var notation = match.Groups["notation"];
                 var separatorValid = party
-                    ? separator.Value == "-" && Rx(@"^[\p{L}\d]+/[\p{L}\d-]+$").IsMatch(notation.Value)
-                    : separator.Value == "/" && Rx(@"^[\p{L}\d-]+$").IsMatch(notation.Value);
+                    ? separator.Value == "-" && CodeNotationPartyRegex.IsMatch(notation.Value)
+                    : separator.Value == "/" && CodeNotationStateRegex.IsMatch(notation.Value);
                 if (!separatorValid)
                     findings.Add(Paragraph("ND30-PL1-M2-K3-SEP", paragraph, "Dấu phân cách số, ký hiệu không đúng.",
                         party ? "Dùng Số 01-QĐ/TW." : "Dùng dấu / và dấu - giữa các nhóm ký hiệu.", rules));
@@ -760,7 +779,7 @@ namespace ChuanHoa.Client.Core.Scanning
                                 : "Thay dấu kết thúc hiện tại hoặc thêm dấu chấm phẩy (;) sau căn cứ này.",
                             rules));
                     }
-                    if (party && !Rx(@"^\s*[-–—]\s*").IsMatch(paragraph.Text))
+                    if (party && !DashBulletPrefixRegex.IsMatch(paragraph.Text))
                         findings.Add(ParagraphQualified("ND30-PL1-M2-K6A-STYLE", paragraph,
                             "dash", "Căn cứ của văn bản Đảng thiếu gạch ngang đầu dòng.",
                             "Thêm một dấu gạch ngang trước mỗi căn cứ.", rules));
@@ -778,7 +797,7 @@ namespace ChuanHoa.Client.Core.Scanning
                 {
                     var match = citations[citationIndex];
                     var citedType = match.Groups["type"].Value;
-                    var isLawOrOrdinance = Rx(@"^(luật|pháp\s+lệnh)$", true).IsMatch(citedType);
+                    var isLawOrOrdinance = LawOrOrdinanceRegex.IsMatch(citedType);
                     var so = match.Groups["so"];
                     if (!isLawOrOrdinance && so.Length == 0)
                         findings.Add(Span("ND30-PL1-M2-K6B-SO", paragraph, match.Index, match.Length, "Viện dẫn thiếu từ số.", "Thêm từ số sau tên loại văn bản.", rules));
@@ -789,7 +808,7 @@ namespace ChuanHoa.Client.Core.Scanning
                             ? citations[citationIndex + 1].Index
                             : paragraph.Text.Length;
                         var segment = paragraph.Text.Substring(match.Index, segmentEnd - match.Index);
-                        var hasFullDate = Rx(@"ngày\s+\d{1,2}\s+tháng\s+\d{1,2}\s+năm\s+\d{4}", true).IsMatch(segment);
+                        var hasFullDate = FullDateInTextRegex.IsMatch(segment);
                         var hasAbbreviatedDate = AbbreviatedDate.IsMatch(segment);
                         var hasShortDate = LegalBasisShortDate.IsMatch(segment);
                         var hasIssuingAgency = segment.IndexOf("của ", StringComparison.OrdinalIgnoreCase) >= 0;
@@ -862,12 +881,12 @@ namespace ChuanHoa.Client.Core.Scanning
             foreach (var paragraph in WithRole(snapshot, roles, "signerAuthority"))
             {
                 CheckStyle(findings, "ND30-PL1-M2-K7D-STYLE", paragraph, rules, party ? 14 : 13, 14, true, false, 1, "Quyền hạn, chức vụ người ký");
-                var match = Rx(party ? @"^\s*(?<abbr>t/m|k/t|t/l|q)\.?" : @"^\s*(?<abbr>tm|kt|tl|tuq|q)\.", true).Match(paragraph.Text);
+                var match = (party ? SignerAuthorityPartyAbbrRegex : SignerAuthorityStateAbbrRegex).Match(paragraph.Text);
                 if (match.Success && match.Groups["abbr"].Value.Any(char.IsLower))
                     findings.Add(Span("ND30-PL1-M2-K7B-AUTH", paragraph, match.Groups["abbr"].Index, match.Groups["abbr"].Length,
                         "Chữ viết tắt thẩm quyền ký viết thường.", party ? "Viết hoa T/M, K/T, T/L hoặc Q." : "Viết hoa TM., KT., TL., TUQ. hoặc Q.", rules));
             }
-            foreach (var paragraph in Scannable(snapshot).Where(p => Rx(@"^\s*Kính\s+(gửi|trình)", true).IsMatch(p.Text)))
+            foreach (var paragraph in Scannable(snapshot).Where(p => SalutationStartRegex.IsMatch(p.Text)))
             {
                 CheckStyle(findings, "ND30-PL1-M2-K9A-LAYOUT", paragraph, rules, party ? 14 : 13, party ? 15 : 14,
                     false, party, paragraph.Alignment.GetValueOrDefault(3), "Kính gửi/Kính trình");
@@ -924,7 +943,7 @@ namespace ChuanHoa.Client.Core.Scanning
             if (labels.Length > 1)
             {
                 foreach (var label in labels)
-                    if (!Rx(@"^\s*Phụ\s+lục\s+(?:[IVXLCDM]+|\d+)\b", true).IsMatch(label.Text))
+                    if (!AppendixNumberedRegex.IsMatch(label.Text))
                         findings.Add(Paragraph("ND30-PL1-M3-K1A-NUM", label, "Phụ lục chưa có số thứ tự.",
                             "Dùng số Ả Rập (Phụ lục 1, 2, 3...) hoặc số La Mã (Phụ lục I, II, III...).", rules));
             }
@@ -1018,8 +1037,11 @@ namespace ChuanHoa.Client.Core.Scanning
         private static void CheckDictionary(ICollection<AnnotationFinding> findings, LocalParagraphSnapshot paragraph,
             LocalRulePack rules, string documentId, PersonalDictionaryManager personalDictionary)
         {
+            if (string.IsNullOrWhiteSpace(paragraph.Text)) return;
+            var mapped = NormalizedTextOffsetMap.Create(paragraph.Text);
+
             foreach (var correction in rules.Corrections)
-            foreach (var occurrence in WholePhraseMatches(paragraph.Text, correction.Wrong))
+            foreach (var occurrence in WholePhraseMatches(mapped, correction.Wrong))
             {
                 var actual = paragraph.Text.Substring(occurrence.Item1, occurrence.Item2);
                 if (personalDictionary.IsKnownOrIgnored(actual, documentId)) continue;
@@ -1027,7 +1049,7 @@ namespace ChuanHoa.Client.Core.Scanning
             }
 
             foreach (var pair in ChuanHoa.Client.Core.Lexicon.VietnameseConfusionSets.AdministrativeConfusionPairs)
-            foreach (var occurrence in WholePhraseMatches(paragraph.Text, pair.Key))
+            foreach (var occurrence in WholePhraseMatches(mapped, pair.Key))
             {
                 if (OverlapsExistingTextFinding(findings, paragraph, occurrence.Item1, occurrence.Item2)) continue;
                 var actual = paragraph.Text.Substring(occurrence.Item1, occurrence.Item2);
@@ -1128,7 +1150,7 @@ namespace ChuanHoa.Client.Core.Scanning
             foreach (Match match in LegalBasisShortDate.Matches(paragraph.Text))
             {
                 var prefix = paragraph.Text.Substring(0, match.Index);
-                if (Rx(@"\bngày\s*$", true).IsMatch(prefix)) continue;
+                if (DateTrailingWordRegex.IsMatch(prefix)) continue;
                 findings.Add(Span("ND30-PL1-M2-K6B-DATE", paragraph, match.Index, match.Length,
                     "Ngày viết dạng số nhưng thiếu từ “ngày” phía trước.",
                     "Thêm từ “ngày” trước ngày tháng, ví dụ: ngày " + match.Value + ".", rules));
@@ -1154,12 +1176,12 @@ namespace ChuanHoa.Client.Core.Scanning
                     followsListMarker ? "Viết hoa chữ cái đầu nội dung sau ký hiệu chỉ mục." : "Viết hoa chữ cái đầu câu.", rules));
                 reportedOffsets.Add(first);
             }
-            foreach (Match match in Rx(@"[.!?]\s+(?<letter>\p{Ll})").Matches(paragraph.Text))
+            foreach (Match match in SentenceStartLowerLetterRegex.Matches(paragraph.Text))
             {
                 var group = match.Groups["letter"];
                 if (followsListMarker && group.Index < first) continue;
                 var remaining = paragraph.Text.Substring(group.Index);
-                if (Rx(@"^(tm|kt|tl|tuq|q|ts|ths|pgs|gs|tp|p)\.", true).IsMatch(remaining)) continue;
+                if (AbbrPrefixExemptRegex.IsMatch(remaining)) continue;
                 if (!reportedOffsets.Add(group.Index)) continue;
                 findings.Add(Span("ND30-PL2-M1", paragraph, group.Index, group.Length, "Chữ cái đầu câu chưa viết hoa.", "Viết hoa chữ cái đầu câu.", rules));
             }
@@ -1180,7 +1202,7 @@ namespace ChuanHoa.Client.Core.Scanning
 
         private static void CheckPersonNames(ICollection<AnnotationFinding> findings, LocalParagraphSnapshot paragraph, LocalRulePack rules)
         {
-            foreach (Match match in Rx(@"\b(?:ông|bà|anh|chị)\s+(?<name>\p{L}+(?:\s+\p{L}+){1,5})", true).Matches(paragraph.Text))
+            foreach (Match match in PersonNamePatternRegex.Matches(paragraph.Text))
             {
                 var name = match.Groups["name"];
                 if (!IsTitleCase(name.Value))
@@ -1198,22 +1220,29 @@ namespace ChuanHoa.Client.Core.Scanning
                 { "organ", "ND30-PL2-M4-K1A" }, { "specialOrgan", "ND30-PL2-M4-K1B" },
                 { "holiday", "ND30-PL2-M5-K5" }, { "lunarYear", "ND30-PL2-M5-K8A" }
             };
+            var paragraphList = paragraphs.ToArray();
+            var maps = new Dictionary<int, NormalizedTextOffsetMap>();
+            foreach (var p in paragraphList)
+            {
+                if (!IsMostlyUppercase(p.Text) && !string.IsNullOrWhiteSpace(p.Text))
+                    maps[p.Index] = NormalizedTextOffsetMap.Create(p.Text);
+            }
             foreach (var rule in rules.Capitalizations)
             {
                 string code;
                 if (!codes.TryGetValue(rule.Category, out code) || string.IsNullOrWhiteSpace(rule.Expected)) continue;
-                foreach (var paragraph in paragraphs)
+                foreach (var paragraph in paragraphList)
                 {
-                string role;
-                if (roles.TryGetValue(paragraph.Index, out role) && IsCapitalizationExemptRole(role)) continue;
-                if (IsMostlyUppercase(paragraph.Text)) continue;
-                foreach (var occurrence in WholePhraseMatches(paragraph.Text, rule.Expected))
-                {
-                    var actual = paragraph.Text.Substring(occurrence.Item1, occurrence.Item2);
-                    if (!string.Equals(actual, rule.Expected, StringComparison.Ordinal))
-                        findings.Add(Span(code, paragraph, occurrence.Item1, occurrence.Item2, "Tên riêng sai chữ hoa.", "Viết “" + rule.Expected + "”.", rules,
-                            rule.Category == "organ" || rule.Category == "administrative" ? "Warning" : "Error"));
-                }
+                    string role;
+                    if (roles.TryGetValue(paragraph.Index, out role) && IsCapitalizationExemptRole(role)) continue;
+                    if (!maps.TryGetValue(paragraph.Index, out var mapped)) continue;
+                    foreach (var occurrence in WholePhraseMatches(mapped, rule.Expected))
+                    {
+                        var actual = paragraph.Text.Substring(occurrence.Item1, occurrence.Item2);
+                        if (!string.Equals(actual, rule.Expected, StringComparison.Ordinal))
+                            findings.Add(Span(code, paragraph, occurrence.Item1, occurrence.Item2, "Tên riêng sai chữ hoa.", "Viết “" + rule.Expected + "”.", rules,
+                                rule.Category == "organ" || rule.Category == "administrative" ? "Warning" : "Error"));
+                    }
                 }
             }
         }
@@ -1221,9 +1250,8 @@ namespace ChuanHoa.Client.Core.Scanning
         private static void CheckAdministrativeNumerals(ICollection<AnnotationFinding> findings,
             IEnumerable<LocalParagraphSnapshot> paragraphs, LocalRulePack rules)
         {
-            var regex = Rx(@"\b(?<unit>quận|phường|xã|huyện)\s+(?<roman>[ivxlcdm]+)\b", true);
             foreach (var paragraph in paragraphs)
-            foreach (Match match in regex.Matches(paragraph.Text))
+            foreach (Match match in AdministrativeUnitRomanRegex.Matches(paragraph.Text))
             {
                 var roman = match.Groups["roman"];
                 if (roman.Value.Any(char.IsLower))
@@ -1234,14 +1262,14 @@ namespace ChuanHoa.Client.Core.Scanning
         private static void CheckArticleClauseCapitalization(ICollection<AnnotationFinding> findings,
             LocalParagraphSnapshot paragraph, LocalRulePack rules)
         {
-            foreach (Match match in Rx(@"\b(?<keyword>chương|phần|mục|tiểu\s+mục|phụ\s+lục)\s+(?:[IVXLCDM]+|\d+)", false).Matches(paragraph.Text))
+            foreach (Match match in StructureLevelHeadingRegex.Matches(paragraph.Text))
             {
                 var keyword = match.Groups["keyword"];
                 if (keyword.Value.Length > 0 && char.IsLower(keyword.Value[0]))
                     findings.Add(Span("ND30-PL2-M5-K7", paragraph, match.Index, match.Length, "Tên cấp cấu trúc chưa viết hoa.", "Viết hoa chữ cái đầu của Chương, Phần, Mục, Phụ lục.", rules));
             }
-            if (Rx(@"Điều\s+\d+", true).IsMatch(paragraph.Text))
-            foreach (Match match in Rx(@"\b(?<keyword>Khoản|Điểm)\s+(?:\d+|[a-zđ]\))", false).Matches(paragraph.Text))
+            if (ArticleHeadingCheckRegex.IsMatch(paragraph.Text))
+            foreach (Match match in ClauseOrPointRefRegex.Matches(paragraph.Text))
             {
                 var keyword = match.Groups["keyword"];
                 if (keyword.Value.Length > 0 && char.IsUpper(keyword.Value[0]))
@@ -1487,8 +1515,15 @@ namespace ChuanHoa.Client.Core.Scanning
         }
         private static IEnumerable<Tuple<int, int>> WholePhraseMatches(string text, string phrase)
         {
-            if (string.IsNullOrWhiteSpace(phrase)) yield break;
+            if (string.IsNullOrWhiteSpace(text) || string.IsNullOrWhiteSpace(phrase)) yield break;
             var mapped = NormalizedTextOffsetMap.Create(text);
+            foreach (var match in WholePhraseMatches(mapped, phrase))
+                yield return match;
+        }
+
+        private static IEnumerable<Tuple<int, int>> WholePhraseMatches(NormalizedTextOffsetMap mapped, string phrase)
+        {
+            if (mapped == null || string.IsNullOrWhiteSpace(phrase)) yield break;
             var normalizedText = mapped.Normalized;
             var normalizedPhrase = phrase.Normalize(NormalizationForm.FormC);
             var offset = 0;

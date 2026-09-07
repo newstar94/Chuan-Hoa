@@ -13,16 +13,15 @@ namespace ChuanHoa.Client.Core.Text
         private static readonly Regex MultipleSpacesRegex = new Regex(@"[ ]{2,}", RegexOptions.Compiled);
         private static readonly Regex SpaceBeforePunctuationRegex = new Regex(@"[ ]+([,.:;!?])", RegexOptions.Compiled);
         // Exclude space insertion when a digit follows a comma (decimal: 1,5)
-        // or a digit follows a colon (time: 14:30).
-        private static readonly Regex SpaceAfterPunctuationRegex = new Regex(@"([,](?!\d)|[;!?]|:(?!//|\d))([A-Za-zÀ-ỹ])", RegexOptions.Compiled);
-        // Comprehensive list of Vietnamese administrative abbreviations that should
-        // NOT trigger space insertion after the period. Ordered longest-first so that
-        // e.g. "PGS." matches before "P.".
+        // or a digit follows a colon (time: 14:30). Supports \uE000 placeholder for shielded URLs/emails.
+        private static readonly Regex SpaceAfterPunctuationRegex = new Regex(@"([,](?!\d)|[;!?]|:(?!//|\d))([A-Za-zÀ-ỹ]|\uE000)", RegexOptions.Compiled);
+        // Do not split compound abbreviations without spaces (e.g. v.v, PGS.TS, GS.TS, BS.CKI, BS.CKII, Th.S, TP.HCM).
+        // For standalone titles (e.g. ThS. Nguyễn, TS. Lê), space is inserted normally.
         private static readonly Regex PeriodFollowedByLetterRegex = new Regex(
-            @"(?<!\b(?:v\.v|PGS|ThS|Ths|TUQ|PGĐ|Th\.?S|TS|GS|tp|gs|ts|pgs|ths|TM|KT|TL|Tr|Th|Ph|Q|P)\.)\.([A-Za-zÀ-ỹ])",
+            @"(?<!\b(?:v|PGS|GS|BS|Th|TP))\.(?!(?:v\b|TS\b|S\b|CKI\b|CKII\b|HCM\b))([A-Za-zÀ-ỹ]|\uE000)",
             RegexOptions.Compiled | RegexOptions.IgnoreCase);
         private static readonly Regex UrlOrEmailRegex = new Regex(
-            @"(?:https?://[^\s]+|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})",
+            @"(?:https?://[^\s<>""'()]+|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})",
             RegexOptions.Compiled | RegexOptions.IgnoreCase);
         private static readonly Regex InsideParenthesesOpenRegex = new Regex(@"\(\s+", RegexOptions.Compiled);
         private static readonly Regex InsideParenthesesCloseRegex = new Regex(@"\s+\)", RegexOptions.Compiled);
@@ -56,6 +55,25 @@ namespace ChuanHoa.Client.Core.Text
             // Thay ký tự non-breaking space (U+00A0) thành space thông thường
             core = core.Replace('\u00A0', ' ');
 
+            // Bảo tồn URL và Email trước khi xử lý khoảng trắng và dấu câu
+            var urlPlaceholders = new System.Collections.Generic.List<string>();
+            core = UrlOrEmailRegex.Replace(core, match =>
+            {
+                var val = match.Value;
+                var trailing = string.Empty;
+                while (val.Length > 0 && (val[val.Length - 1] == '.' || val[val.Length - 1] == ',' ||
+                                          val[val.Length - 1] == ';' || val[val.Length - 1] == ':' ||
+                                          val[val.Length - 1] == '!' || val[val.Length - 1] == '?'))
+                {
+                    trailing = val[val.Length - 1] + trailing;
+                    val = val.Substring(0, val.Length - 1);
+                }
+                if (val.Length == 0) return match.Value;
+                var placeholder = "\uE000__URL_EMAIL_" + urlPlaceholders.Count + "__\uE001";
+                urlPlaceholders.Add(val);
+                return placeholder + trailing;
+            });
+
             // 1. Gộp 2+ dấu cách liên tiếp thành 1 dấu cách
             core = MultipleSpacesRegex.Replace(core, " ");
 
@@ -72,7 +90,16 @@ namespace ChuanHoa.Client.Core.Text
             core = InsideBracketsOpenRegex.Replace(core, "[");
             core = InsideBracketsCloseRegex.Replace(core, "]");
 
-            // 5. Cắt khoảng trắng thừa ở đầu và cuối dòng
+            // 5. Khôi phục URL và Email đã bảo vệ
+            if (urlPlaceholders.Count > 0)
+            {
+                for (var i = 0; i < urlPlaceholders.Count; i++)
+                {
+                    core = core.Replace("\uE000__URL_EMAIL_" + i + "__\uE001", urlPlaceholders[i]);
+                }
+            }
+
+            // 6. Cắt khoảng trắng thừa ở đầu và cuối dòng
             core = core.Trim();
 
             return core + suffix;

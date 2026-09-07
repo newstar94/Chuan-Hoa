@@ -85,6 +85,8 @@ public sealed class VietnameseTextConversionTests
     [InlineData("Số: 123/QĐ-UBND", "Số: 123/QĐ-UBND")]
     [InlineData("Tỷ lệ 1,5% hoặc 10.000 đồng", "Tỷ lệ 1,5% hoặc 10.000 đồng")]
     [InlineData("Nội dung ( trong ngoặc ) và [ ghi chú ]", "Nội dung (trong ngoặc) và [ghi chú]")]
+    [InlineData("Liên hệ:info@chuanhoa.gov.vn hoặc truy cập https://chuanhoa.gov.vn/huong-dan?v=1,2.", "Liên hệ: info@chuanhoa.gov.vn hoặc truy cập https://chuanhoa.gov.vn/huong-dan?v=1,2.")]
+    [InlineData("Kính gửi PGS.TS.Nguyễn Văn A và ThS.Trần Thị B.", "Kính gửi PGS.TS. Nguyễn Văn A và ThS. Trần Thị B.")]
     public void CleanWhitespaceAndPunctuationNormalizesProperly(string source, string expected)
     {
         Assert.Equal(expected, VietnameseTypographyCleaner.CleanWhitespaceAndPunctuation(source));
