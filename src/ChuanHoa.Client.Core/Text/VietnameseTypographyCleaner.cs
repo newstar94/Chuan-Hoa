@@ -12,8 +12,18 @@ namespace ChuanHoa.Client.Core.Text
     {
         private static readonly Regex MultipleSpacesRegex = new Regex(@"[ ]{2,}", RegexOptions.Compiled);
         private static readonly Regex SpaceBeforePunctuationRegex = new Regex(@"[ ]+([,.:;!?])", RegexOptions.Compiled);
-        private static readonly Regex SpaceAfterPunctuationRegex = new Regex(@"([,;!?]|:(?!\/\/))([A-Za-zÀ-ỹ])", RegexOptions.Compiled);
-        private static readonly Regex PeriodFollowedByLetterRegex = new Regex(@"(?<!\b(?:v\.v|tp|gs|ts|pgs|th\b)\.)\.([A-Za-zÀ-ỹ])", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        // Exclude space insertion when a digit follows a comma (decimal: 1,5)
+        // or a digit follows a colon (time: 14:30).
+        private static readonly Regex SpaceAfterPunctuationRegex = new Regex(@"([,](?!\d)|[;!?]|:(?!//|\d))([A-Za-zÀ-ỹ])", RegexOptions.Compiled);
+        // Comprehensive list of Vietnamese administrative abbreviations that should
+        // NOT trigger space insertion after the period. Ordered longest-first so that
+        // e.g. "PGS." matches before "P.".
+        private static readonly Regex PeriodFollowedByLetterRegex = new Regex(
+            @"(?<!\b(?:v\.v|PGS|ThS|Ths|TUQ|PGĐ|Th\.?S|TS|GS|tp|gs|ts|pgs|ths|TM|KT|TL|Tr|Th|Ph|Q|P)\.)\.([A-Za-zÀ-ỹ])",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private static readonly Regex UrlOrEmailRegex = new Regex(
+            @"(?:https?://[^\s]+|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase);
         private static readonly Regex InsideParenthesesOpenRegex = new Regex(@"\(\s+", RegexOptions.Compiled);
         private static readonly Regex InsideParenthesesCloseRegex = new Regex(@"\s+\)", RegexOptions.Compiled);
         private static readonly Regex InsideBracketsOpenRegex = new Regex(@"\[\s+", RegexOptions.Compiled);

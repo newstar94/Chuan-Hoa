@@ -96,6 +96,13 @@ namespace ChuanHoa.Client.Core.Lexicon
                 { "kĩ lăng", "kĩ năng" },
                 { "chức lăng", "chức năng" },
                 { "tiềm lăng", "tiềm năng" },
+                { "lguồn lực", "nguồn lực" },
+                { "lghiên cứu", "nghiên cứu" },
+                { "lghiêm túc", "nghiêm túc" },
+                { "nguyên lhân", "nguyên nhân" },
+                { "lền tảng", "nền tảng" },
+                { "hợp ný", "hợp lý" },
+                { "hiệu nực", "hiệu lực" },
 
                 // S / X confusion
                 { "sử lý", "xử lý" },
@@ -115,6 +122,15 @@ namespace ChuanHoa.Client.Core.Lexicon
                 { "giám xát", "giám sát" },
                 { "cơ xở", "cơ sở" },
                 { "phát xinh", "phát sinh" },
+                { "xoay xở", "xoay sở" },
+                { "súc phạm", "xúc phạm" },
+                { "xử xự", "xử sự" },
+                { "sác nhận", "xác nhận" },
+                { "sác minh", "xác minh" },
+                { "sác định", "xác định" },
+                { "thẩm xét", "thẩm sát" },
+                { "xuy nghĩ", "suy nghĩ" },
+                { "xuy xét", "suy xét" },
 
                 // TR / CH confusion
                 { "chân trọng", "trân trọng" },
@@ -132,6 +148,16 @@ namespace ChuanHoa.Client.Core.Lexicon
                 { "triển giao", "chuyển giao" },
                 { "chiển khai", "triển khai" },
                 { "chọng tâm", "trọng tâm" },
+                { "chình bày", "trình bày" },
+                { "chong đợi", "trông đợi" },
+                { "chang bị", "trang bị" },
+                { "chiếu tập", "triệu tập" },
+                { "chiệu tập", "triệu tập" },
+                { "chuyền thống", "truyền thống" },
+                { "trấp hành", "chấp hành" },
+                { "trấp thuận", "chấp thuận" },
+                { "trỉ đạo", "chỉ đạo" },
+                { "trấm dứt", "chấm dứt" },
 
                 // D / GI / R confusion
                 { "bàn dao", "bàn giao" },
@@ -146,6 +172,19 @@ namespace ChuanHoa.Client.Core.Lexicon
                 { "dõ dàng", "rõ ràng" },
                 { "dám đốc", "giám đốc" },
                 { "da hạn", "gia hạn" },
+                { "da tăng", "gia tăng" },
+                { "da đình", "gia đình" },
+                { "dải quyết", "giải quyết" },
+                { "dải pháp", "giải pháp" },
+                { "dải trình", "giải trình" },
+                { "dải thích", "giải thích" },
+                { "dải thể", "giải thể" },
+                { "dải ngân", "giải ngân" },
+                { "dám sát", "giám sát" },
+                { "dao thông", "giao thông" },
+                { "dao ban", "giao ban" },
+                { "dảm bảo", "đảm bảo" },
+                { "gia dục", "giáo dục" },
 
                 // Hỏi / Ngã & Vần
                 { "điều khoảng", "điều khoản" },
@@ -155,7 +194,24 @@ namespace ChuanHoa.Client.Core.Lexicon
                 { "diển biến", "diễn biến" },
                 { "tiến triễn", "tiến triển" },
                 { "kiễm điểm", "kiểm điểm" },
-                { "kết qủa", "kết quả" }
+                { "kết qủa", "kết quả" },
+                { "sữa đổi", "sửa đổi" },
+                { "sữa chữa", "sửa chữa" },
+                { "giử gìn", "giữ gìn" },
+                { "kỉ niệm", "kỷ niệm" },
+                { "phỗ biến", "phổ biến" },
+                { "tỗ chức", "tổ chức" },
+                { "mỗi quan hệ", "mối quan hệ" },
+                { "nghành nghề", "ngành nghề" },
+                { "nghành", "ngành" },
+                { "thậm trí", "thậm chí" },
+                { "khoảng các", "khoảng cách" },
+                { "qui hoạch", "quy hoạch" },
+                { "qui mô", "quy mô" },
+                { "qui chế", "quy chế" },
+                { "qui phạm", "quy phạm" },
+                { "công chứng", "công chứng" },
+                { "thủ tựa", "thủ tục" }
             };
 
         /// <summary>

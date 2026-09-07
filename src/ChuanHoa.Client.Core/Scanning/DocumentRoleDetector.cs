@@ -164,6 +164,7 @@ namespace ChuanHoa.Client.Core.Scanning
             var result = new Dictionary<int, string>();
             var legalBasisWindowOpen = false;
             var legalBasisSequenceStarted = false;
+            var legalBasisGapCount = 0;
             var typeNameAssigned = false;
 
             for (var i = 0; i < main.Length; i++)
@@ -175,7 +176,7 @@ namespace ChuanHoa.Client.Core.Scanning
                     if (string.Equals(paragraph.Role, "typeName", StringComparison.Ordinal))
                         typeNameAssigned = true;
                     UpdateLegalBasisWindow(paragraph, paragraph.Role, ref legalBasisWindowOpen,
-                        ref legalBasisSequenceStarted);
+                        ref legalBasisSequenceStarted, ref legalBasisGapCount);
                     continue;
                 }
 
@@ -225,7 +226,7 @@ namespace ChuanHoa.Client.Core.Scanning
 
                 if (assignedRole != null) result[paragraph.Index] = assignedRole;
                 UpdateLegalBasisWindow(paragraph, assignedRole, ref legalBasisWindowOpen,
-                    ref legalBasisSequenceStarted);
+                    ref legalBasisSequenceStarted, ref legalBasisGapCount);
             }
 
             AssignAppendixRoles(main, result);
@@ -505,23 +506,35 @@ namespace ChuanHoa.Client.Core.Scanning
         }
 
         private static void UpdateLegalBasisWindow(LocalParagraphSnapshot paragraph, string? assignedRole,
-            ref bool windowOpen, ref bool sequenceStarted)
+            ref bool windowOpen, ref bool sequenceStarted, ref int gapCount)
         {
             if (string.Equals(assignedRole, "typeName", StringComparison.Ordinal))
             {
                 windowOpen = true;
                 sequenceStarted = false;
+                gapCount = 0;
                 return;
             }
             if (!windowOpen) return;
             if (string.Equals(assignedRole, "legalBasis", StringComparison.Ordinal))
             {
                 sequenceStarted = true;
+                gapCount = 0;
                 return;
             }
             if (!sequenceStarted && IsPreambleBridge(paragraph, assignedRole)) return;
+            // After the legal-basis sequence has started, allow up to 2 gap
+            // paragraphs that look like continuations of a previous basis entry
+            // (e.g., a line that doesn't start with "Căn cứ" but continues
+            // a citation, or a short blank/formatting paragraph between entries).
+            if (sequenceStarted && IsLegalBasisContinuationBridge(paragraph, assignedRole))
+            {
+                gapCount++;
+                if (gapCount <= 2) return;
+            }
             windowOpen = false;
             sequenceStarted = false;
+            gapCount = 0;
         }
 
         private static bool IsPreambleBridge(LocalParagraphSnapshot paragraph, string? assignedRole)
@@ -533,6 +546,30 @@ namespace ChuanHoa.Client.Core.Scanning
                 return true;
             var text = Collapse(paragraph.Text);
             return text.Length <= 220 && !IsStructuralBodyStart(text) && IsMostlyUppercase(text);
+        }
+
+        /// <summary>
+        /// After a legal-basis sequence has started, short continuation
+        /// paragraphs may appear between "Căn cứ..." entries.  These are
+        /// typically: (1) the tail of a long citation that wrapped onto a
+        /// new Word paragraph, (2) a blank paragraph used for spacing, or
+        /// (3) a short structural formula such as "QUYẾT ĐỊNH:" that
+        /// immediately follows the last basis before the operative part.
+        /// Only up to 2 such gaps are tolerated before the window closes.
+        /// </summary>
+        private static bool IsLegalBasisContinuationBridge(LocalParagraphSnapshot paragraph, string? assignedRole)
+        {
+            if (paragraph.IsInTable) return false;
+            // A structural body start (Điều, Khoản, …) definitively ends the preamble.
+            var text = Collapse(paragraph.Text);
+            if (IsStructuralBodyStart(text)) return false;
+            // A type-name repetition (e.g., "QUYẾT ĐỊNH:" before Điều 1) is a
+            // legitimate bridge between the last basis and the operative section.
+            if (string.Equals(assignedRole, "structuralTitle", StringComparison.Ordinal)) return true;
+            // Short paragraphs (≤300 chars) that continue a citation or are
+            // blank formatting paragraphs are acceptable bridges.
+            if (text.Length <= 300) return true;
+            return false;
         }
 
         private static bool IsFormalLegalBasisParagraph(string text)

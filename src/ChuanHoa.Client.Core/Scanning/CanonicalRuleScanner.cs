@@ -102,7 +102,7 @@ namespace ChuanHoa.Client.Core.Scanning
             CheckRequiredLineShapes(findings, snapshot, rules, roles);
             cancellationToken.ThrowIfCancellationRequested();
             CheckCodeNumber(findings, snapshot, rules, blocks);
-            CheckPlaceDate(findings, snapshot, rules, roles);
+            CheckPlaceDate(findings, snapshot, rules, roles, blocks);
             CheckTypeAndSubject(findings, snapshot, rules, roles);
             cancellationToken.ThrowIfCancellationRequested();
             CheckLegalBasisAndCitations(findings, snapshot, rules, roles);
@@ -683,10 +683,9 @@ namespace ChuanHoa.Client.Core.Scanning
         }
 
         private static void CheckPlaceDate(ICollection<AnnotationFinding> findings, LocalScanSnapshot snapshot,
-            LocalRulePack rules, IDictionary<int, string> roles)
+            LocalRulePack rules, IDictionary<int, string> roles, IReadOnlyList<LogicalDocumentBlock> blocks)
         {
             var party = IsParty(snapshot);
-            var blocks = new DocumentRoleDetector().DetectBlocks(snapshot);
             foreach (var paragraph in WithRole(snapshot, roles, "placeAndIssuedDate"))
             {
                 CheckStyle(findings, "ND30-PL1-M2-K4-STYLE", paragraph, rules, party ? 14 : 13, 14, false, true,
