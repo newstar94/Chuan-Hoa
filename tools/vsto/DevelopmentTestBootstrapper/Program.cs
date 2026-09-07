@@ -10,6 +10,7 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.Xml;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Threading;
 using System.Windows.Forms;
 using System.Xml;
 using System.Xml.Linq;
@@ -43,6 +44,7 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
             "ChuanHoa_Development_Test_Setup.exe";
         private static readonly Guid WinTrustActionGenericVerifyV2 =
             new Guid("00AAC56B-CD44-11d0-8CC2-00C04FC295EE");
+        private static string[] InvocationArguments = new string[0];
         private const uint ErrorSuccess = 0x00000000;
         private const uint CertEUntrustedRoot = 0x800B0109;
         private const uint CertEChaining = 0x800B010A;
@@ -51,6 +53,7 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
         [STAThread]
         private static int Main(string[] args)
         {
+            InvocationArguments = args ?? new string[0];
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             var quiet = Array.Exists(
@@ -203,6 +206,7 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
             }
             catch (Exception exception)
             {
+                SignalOfficeContextFailure();
                 if (quiet) Console.Error.WriteLine(exception);
                 if (!quiet)
                 {
@@ -213,6 +217,10 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
                         MessageBoxIcon.Error);
                 }
                 return 10;
+            }
+            finally
+            {
+                SignalOfficeContextCompletion();
             }
         }
 
@@ -246,20 +254,42 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
             var executable = Assembly.GetExecutingAssembly().Location;
             if (args.Any(value => value.IndexOf('"') >= 0))
                 throw new ArgumentException("Installer arguments cannot contain quotation marks.");
-            var arguments = "\"" + executable + "\" " +
-                string.Join(" ", args.Select(value => "\"" + value + "\"")) + " /office-context";
-            using (var child = Process.Start(new ProcessStartInfo
+            var forwardedArguments = args.ToList();
+            var completionEventName = "Local\\ChuanHoaInstallerComplete" +
+                Guid.NewGuid().ToString("N");
+            var failureEventName = "Local\\ChuanHoaInstallerFailure" +
+                Guid.NewGuid().ToString("N");
+            using (var completionSignal = new EventWaitHandle(
+                false, EventResetMode.ManualReset, completionEventName))
+            using (var failureSignal = new EventWaitHandle(
+                false, EventResetMode.ManualReset, failureEventName))
             {
-                FileName = launcher,
-                Arguments = arguments,
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                WindowStyle = ProcessWindowStyle.Hidden
-            }))
-            {
-                if (child == null) throw new InvalidOperationException("Cannot start Office installer context.");
-                child.WaitForExit();
-                return child.ExitCode;
+                forwardedArguments.Add("/office-completion-event:" + completionEventName);
+                forwardedArguments.Add("/office-failure-event:" + failureEventName);
+                var arguments = "\"" + executable + "\" " +
+                    string.Join(" ", forwardedArguments.Select(
+                        value => "\"" + value + "\"")) + " /office-context";
+                using (var child = Process.Start(new ProcessStartInfo
+                {
+                    FileName = launcher,
+                    Arguments = arguments,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    WindowStyle = ProcessWindowStyle.Hidden
+                }))
+                {
+                    if (child == null) throw new InvalidOperationException("Cannot start Office installer context.");
+                    child.WaitForExit();
+                    if (!completionSignal.WaitOne(TimeSpan.FromSeconds(30)))
+                        throw new InvalidOperationException(
+                            "Office installer context did not report transaction completion.");
+                    if (failureSignal.WaitOne(0)) return 10;
+                    if (args.Any(value => string.Equals(value, "/test-fault-injection",
+                            StringComparison.OrdinalIgnoreCase)))
+                        throw new InvalidOperationException(
+                            "Office installer context did not report the requested injected fault.");
+                    return child.ExitCode;
+                }
             }
         }
 
@@ -657,16 +687,52 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
 
         private static void InjectFault(string point)
         {
-            if (!string.Equals(
-                    Environment.GetEnvironmentVariable("CHUANHOA_INSTALLER_ENABLE_FAULT_INJECTION"),
-                    "1",
-                    StringComparison.Ordinal) ||
-                !string.Equals(
-                    Environment.GetEnvironmentVariable("CHUANHOA_INSTALLER_FAULT_POINT"),
-                    point,
+            var commandLineEnabled = InvocationArguments.Any(value => string.Equals(
+                value, "/test-fault-injection", StringComparison.OrdinalIgnoreCase));
+            var requestedPoint = Environment.GetEnvironmentVariable(
+                "CHUANHOA_INSTALLER_FAULT_POINT");
+            if (string.IsNullOrWhiteSpace(requestedPoint))
+            {
+                const string prefix = "/test-fault-point:";
+                var pointArgument = InvocationArguments.FirstOrDefault(value =>
+                    value.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
+                if (pointArgument != null) requestedPoint = pointArgument.Substring(prefix.Length);
+            }
+            var enabled = string.Equals(
+                Environment.GetEnvironmentVariable("CHUANHOA_INSTALLER_ENABLE_FAULT_INJECTION"),
+                "1", StringComparison.Ordinal) || commandLineEnabled;
+            if (!enabled || !string.Equals(requestedPoint, point,
                     StringComparison.OrdinalIgnoreCase))
                 return;
-            throw new InvalidOperationException("Injected installer fault: " + point);
+            throw new InjectedInstallerFaultException(point);
+        }
+
+        private static void SignalOfficeContextFailure()
+        {
+            const string eventPrefix = "/office-failure-event:";
+            var eventArgument = InvocationArguments.FirstOrDefault(value =>
+                value.StartsWith(eventPrefix, StringComparison.OrdinalIgnoreCase));
+            if (eventArgument == null) return;
+            using (var signal = EventWaitHandle.OpenExisting(
+                eventArgument.Substring(eventPrefix.Length)))
+                signal.Set();
+        }
+
+        private static void SignalOfficeContextCompletion()
+        {
+            const string eventPrefix = "/office-completion-event:";
+            var eventArgument = InvocationArguments.FirstOrDefault(value =>
+                value.StartsWith(eventPrefix, StringComparison.OrdinalIgnoreCase));
+            if (eventArgument == null) return;
+            using (var signal = EventWaitHandle.OpenExisting(
+                eventArgument.Substring(eventPrefix.Length)))
+                signal.Set();
+        }
+
+        private sealed class InjectedInstallerFaultException : InvalidOperationException
+        {
+            internal InjectedInstallerFaultException(string point)
+                : base("Injected installer fault: " + point) { }
         }
 
         private static void PrepareStagingDirectory(string baseDirectory, string stagingDirectory)

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -9,7 +10,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-DOTNET = ROOT / ".tools" / "dotnet" / "dotnet.exe"
+LOCAL_DOTNET = ROOT / ".tools" / "dotnet" / "dotnet.exe"
 NUGET_SOURCE = "https://api.nuget.org/v3/index.json"
 TARGETS = (
     Path("ChuanHoa.slnx"),
@@ -49,9 +50,17 @@ def vulnerability_records(value: object, project: str = "") -> list[dict[str, ob
     return records
 
 
-def audit_target(target: Path) -> tuple[dict[str, object], list[dict[str, object]]]:
+def resolve_dotnet() -> str | None:
+    if LOCAL_DOTNET.is_file():
+        return str(LOCAL_DOTNET)
+    return shutil.which("dotnet")
+
+
+def audit_target(
+    target: Path, dotnet: str
+) -> tuple[dict[str, object], list[dict[str, object]]]:
     command = [
-        str(DOTNET),
+        dotnet,
         "package",
         "list",
         "--project",
@@ -106,14 +115,15 @@ def main() -> int:
     parser.add_argument("--write-evidence", type=Path)
     args = parser.parse_args()
     failures: list[str] = []
-    if not DOTNET.is_file():
-        failures.append("local .NET SDK was not found")
+    dotnet = resolve_dotnet()
+    if dotnet is None:
+        failures.append(".NET SDK was not found in the repository toolset or PATH")
 
     audits: list[dict[str, object]] = []
     vulnerabilities: list[dict[str, object]] = []
-    if not failures:
+    if not failures and dotnet is not None:
         for target in TARGETS:
-            record, found = audit_target(target)
+            record, found = audit_target(target, dotnet)
             audits.append(record)
             vulnerabilities.extend(found)
             if record.get("exitCode") != 0 or record.get("error"):
