@@ -10,6 +10,20 @@ namespace ChuanHoa.Client.Core.Tests;
 public sealed class CanonicalRouteScannerTests
 {
     private static readonly DateTimeOffset Now = DateTimeOffset.Parse("2026-09-02T00:00:00Z");
+    [Theory]
+    [InlineData("nationalTitle", "ND30-PL1-M2-K1-C")]
+    [InlineData("nationalMotto", "ND30-PL1-M2-K1-C")]
+    [InlineData("organName", "ND30-PL1-M2-K2-ORG")]
+    [InlineData("superiorOrganName", "ND30-PL1-M2-K2-SUP")]
+    public void Header_components_require_single_spacing(string role, string code)
+    {
+        var p = new LocalParagraphSnapshot(1, "TÊN THÀNH PHẦN", "wdMainTextStory", 1, 0,
+            "Times New Roman", role: role, lineSpacingRule: 1, lineSpacingPoints: 18);
+        var snapshot = new LocalScanSnapshot("sha256:header-spacing", 1,
+            new[] { ValidSection() }, new[] { p }, Array.Empty<AnnotationProtectedSpan>());
+        Assert.Contains(new LocalDocumentScanner().ScanFormat(snapshot, Rules()).Findings,
+            f => f.RuleCode == code && f.CurrentIssue.Contains("giãn dòng đơn"));
+    }
 
     [Fact]
     public void Registry_contains_product_routes_and_shape_rules_without_removed_tone_or_iy()
@@ -910,7 +924,7 @@ public sealed class CanonicalRouteScannerTests
             P(13, "a) Nội dung điểm", font: "Times New Roman", size: 13, bold: true),
             P(14, "c) Nội dung điểm tiếp theo", font: "Times New Roman", size: 13),
             P(15, "Đây là phần nội dung chính đủ dài nhưng kết thúc chưa có dấu", font: "Arial", size: 11,
-                alignment: 0, indent: 0, after: 0, lineSpacing: 30, color: 255),
+                alignment: 0, indent: 0, after: 0, lineSpacing: 30, color: 255, lineRule: 5),
             P(16, "kt. GIÁM ĐỐC", "signerAuthority", "Arial", 10, false, true, 0),
             P(17, "Kính gửi", "recipientSalutation", "Times New Roman", 13),
             P(18, "Kính gửi: Cơ quan A", "recipientSalutationInline", "Times New Roman", 13),
@@ -1055,12 +1069,12 @@ public sealed class CanonicalRouteScannerTests
     private static LocalParagraphSnapshot P(int index, string text, string role = "Unknown", string font = "Times New Roman",
         double? size = 13, bool? bold = false, bool? italic = false, int? alignment = 3, double? indent = 30,
         double? before = 0, double? after = 6, double? lineSpacing = 12, int? color = 0, int section = 1,
-        int page = 0, double? left = null, double? top = null, double? width = null)
+        int page = 0, double? left = null, double? top = null, double? width = null, int lineRule = 0)
     {
         return new LocalParagraphSnapshot(index, text, "wdMainTextStory", section, index * 100, font,
             fontSizePoints: size, bold: bold, italic: italic, alignment: alignment,
             firstLineIndentPoints: indent, spaceBeforePoints: before, spaceAfterPoints: after,
-            role: role, fontColor: color, lineSpacingPoints: lineSpacing, lineSpacingRule: 0,
+            role: role, fontColor: color, lineSpacingPoints: lineSpacing, lineSpacingRule: lineRule,
             pageNumber: page, pageLeftPoints: left, pageTopPoints: top, textWidthPoints: width);
     }
 

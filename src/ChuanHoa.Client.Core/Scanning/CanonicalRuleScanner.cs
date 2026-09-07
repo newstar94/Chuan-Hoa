@@ -287,6 +287,20 @@ namespace ChuanHoa.Client.Core.Scanning
                     CheckStyle(findings, "ND30-PL1-M2-K2-SUP", paragraph, rules, party ? 14 : 12, party ? 14 : 13, false, false, 1, "Tên cơ quan chủ quản");
                 else if (role == "organName")
                     CheckStyle(findings, "ND30-PL1-M2-K2-ORG", paragraph, rules, party ? 14 : 12, party ? 14 : 13, true, false, 1, "Tên cơ quan ban hành");
+                if (!party && (role == "nationalTitle" || role == "nationalMotto" ||
+                    role == "organName" || role == "superiorOrganName") &&
+                    paragraph.LineSpacingRule.HasValue &&
+                    !(paragraph.LineSpacingRule.Value == 0 ||
+                      (paragraph.LineSpacingRule.Value == 5 && paragraph.LineSpacingPoints.HasValue &&
+                       Math.Abs(paragraph.LineSpacingPoints.Value - 12d) < .1d)))
+                {
+                    var code = role == "nationalTitle" || role == "nationalMotto"
+                        ? "ND30-PL1-M2-K1-C" : role == "organName"
+                        ? "ND30-PL1-M2-K2-ORG" : "ND30-PL1-M2-K2-SUP";
+                    findings.Add(ParagraphQualified(code, paragraph, "line-spacing",
+                        "Thành phần đầu văn bản chưa giãn dòng đơn.",
+                        "Dùng Single (dòng đơn), không áp dụng giãn dòng nội dung cho thành phần này.", rules));
+                }
             }
         }
 
@@ -1382,8 +1396,12 @@ namespace ChuanHoa.Client.Core.Scanning
             // values, validate the effective point range against the current font size.
             var rule = paragraph.LineSpacingRule.GetValueOrDefault();
             var size = paragraph.FontSizePoints.GetValueOrDefault(13d);
-            if (rule == 0 || rule == 1)
-                return paragraph.LineSpacingPoints.GetValueOrDefault(size) <= size * 1.5d + .5d;
+            if (rule == 0 || rule == 1) return true;
+            if (rule == 2) return false; // Double is outside the ND30 range.
+            // Multiple is stored as 12 points per line, independent of font size.
+            if (rule == 5)
+                return paragraph.LineSpacingPoints.GetValueOrDefault() >= 12d - .1d &&
+                    paragraph.LineSpacingPoints.GetValueOrDefault() <= 18d + .1d;
             return paragraph.LineSpacingPoints.GetValueOrDefault() >= size - .1d &&
                 paragraph.LineSpacingPoints.GetValueOrDefault() <= size * 1.5d + .5d;
         }

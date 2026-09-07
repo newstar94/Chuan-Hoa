@@ -283,6 +283,14 @@ namespace ChuanHoa.LocalCommandSmoke
 
         private static void RunBlankSection(bool withStories = false)
         {
+            var compareXml = typeof(WordLocalCommandRuntime).Assembly.GetType(
+                "ChuanHoa.AddIn.Vsto.Runtime.WordTrailingBlankPageCleaner").GetMethod(
+                "SameFormattingXml", BindingFlags.Static | BindingFlags.NonPublic);
+            const string drawing = "<root xmlns:wp14='http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing'><drawing wp14:anchorId='12345678' wp14:editId='11111111' x='42'/></root>";
+            Assert((bool)compareXml.Invoke(null, new object[] { drawing, drawing.Replace("12345678", "87654321").Replace("11111111", "22222222") }),
+                "Drawing session tokens must not invalidate preserved formatting.");
+            Assert(!(bool)compareXml.Invoke(null, new object[] { drawing, drawing.Replace("x='42'", "x='43'") }),
+                "Drawing geometry changes must still be rejected.");
             Word.Application app = null;
             Word.Document doc = null;
             try

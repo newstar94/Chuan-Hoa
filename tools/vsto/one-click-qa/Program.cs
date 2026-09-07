@@ -15,6 +15,7 @@ namespace ChuanHoa.OneClickQa
         [STAThread]
         private static int Main(string[] args)
         {
+            System.Diagnostics.Trace.Listeners.Add(new System.Diagnostics.ConsoleTraceListener());
             if (args.Length != 2 && !(args.Length == 3 && args[2] == "--twice"))
             {
                 Console.Error.WriteLine("Usage: ChuanHoa.OneClickQa <source.doc|docx> <qa-output-directory> [--twice]");
@@ -104,6 +105,47 @@ namespace ChuanHoa.OneClickQa
                 Console.WriteLine("POST_FORMAT_FINDINGS=" + postFormat.Findings.Count);
                 Console.WriteLine("POST_SPELLING_FINDINGS=" + postSpelling.Findings.Count);
                 Console.WriteLine("POST_COMMENTS=" + document.Comments.Count);
+                document.Repaginate();
+                Console.WriteLine("ACTUAL_PAGE_COUNT=" + document.ComputeStatistics(Word.WdStatistic.wdStatisticPages));
+                // Opt-in regression gate for the supplied business-decision fixture.
+                // This is independent of scanner findings, which can miss a rule.
+                if (Environment.GetEnvironmentVariable("CHUANHOA_QA_BUSINESS_DECISION") == "1")
+                {
+                    if (document.ComputeStatistics(Word.WdStatistic.wdStatisticPages) != 1)
+                        throw new InvalidOperationException("Business decision retained its trailing blank page.");
+                    var basisIndex = 0;
+                    var articleCount = 0;
+                    foreach (Word.Paragraph paragraph in document.Paragraphs)
+                    {
+                        try
+                        {
+                            var value = (paragraph.Range.Text ?? string.Empty).TrimEnd('\r', '\a');
+                            var basis = value.StartsWith("Căn cứ", StringComparison.OrdinalIgnoreCase);
+                            var article = value.StartsWith("Điều ", StringComparison.OrdinalIgnoreCase);
+                            if (basis && !value.EndsWith(++basisIndex == 3 ? "." : ";", StringComparison.Ordinal))
+                                throw new InvalidOperationException("Business basis punctuation is incorrect.");
+                            if (article) articleCount++;
+                            if ((basis || article) && (paragraph.Format.SpaceBefore != 0 ||
+                                paragraph.Format.SpaceAfter != 6 || paragraph.Format.LineSpacingRule != Word.WdLineSpacing.wdLineSpaceMultiple ||
+                                Math.Abs(paragraph.Format.LineSpacing - 14.4f) > .05f))
+                                throw new InvalidOperationException("Business paragraph spacing is inconsistent.");
+                        }
+                        finally { Release(paragraph); }
+                    }
+                    if (basisIndex != 3 || articleCount != 4)
+                        throw new InvalidOperationException("Business decision content is missing.");
+                    Console.WriteLine("BUSINESS_DECISION_REGRESSION_PASS");
+                }
+                foreach (Word.Paragraph paragraph in document.Paragraphs)
+                {
+                    var text = (paragraph.Range.Text ?? string.Empty).TrimEnd('\r', '\a');
+                    if (text.StartsWith("Căn cứ", StringComparison.OrdinalIgnoreCase) ||
+                        text.StartsWith("Điều ", StringComparison.OrdinalIgnoreCase))
+                        Console.WriteLine("ACTUAL_PARAGRAPH=" + text + "|before=" +
+                            paragraph.Format.SpaceBefore + "|after=" + paragraph.Format.SpaceAfter +
+                            "|lineRule=" + paragraph.Format.LineSpacingRule + "|line=" + paragraph.Format.LineSpacing);
+                    Release(paragraph);
+                }
                 foreach (var finding in result.RemainingFindingItems)
                     Console.WriteLine("FINDING=" + finding.RuleCode + "|" + finding.CurrentIssue + "|" + finding.Expected);
                 var remainingLine = postFormat.Findings.FirstOrDefault(item =>

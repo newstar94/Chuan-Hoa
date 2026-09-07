@@ -808,6 +808,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     switch (finding.RuleCode)
                     {
                         case "ND30-PL1-M2-K1-C":
+                            range.ParagraphFormat.LineSpacingRule = Word.WdLineSpacing.wdLineSpaceSingle;
                             if (Math.Abs(range.ParagraphFormat.SpaceBefore) > .1f)
                             {
                                 range.ParagraphFormat.SpaceBefore = 0f;
@@ -1072,11 +1073,21 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 {
                     range.Font.Bold = 0;
                     range.Font.Italic = 0;
+                    NormalizeBodySpacing(range, party);
                     return range.Font.Bold == 0 && range.Font.Italic == 0;
                 }
                 if (string.IsNullOrEmpty(role))
                 {
-                    if (paragraph.IsInTable || !IsBodyParagraph(paragraph)) return false;
+                    if (paragraph.IsInTable) return false;
+                    if (Regex.IsMatch(paragraph.Text.Trim(), @"^Điều\s+\d+\s*[.:]",
+                        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
+                    {
+                        // Preserve mixed bold article labels while normalizing the
+                        // paragraph that also contains the operative body text.
+                        NormalizeBodySpacing(range, party);
+                        return true;
+                    }
+                    if (!IsBodyParagraph(paragraph)) return false;
                     range.Font.Name = rules.BodyFontName;
                     range.Font.Color = Word.WdColor.wdColorAutomatic;
                     range.Font.Size = party ? 14f : ValidOr(paragraph.FontSizePoints, 13, 14, 14);
@@ -1091,7 +1102,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                         range.ParagraphFormat.LineSpacingRule = Word.WdLineSpacing.wdLineSpaceExactly;
                         range.ParagraphFormat.LineSpacing = 18f;
                     }
-                    else range.ParagraphFormat.LineSpacingRule = Word.WdLineSpacing.wdLineSpaceSingle;
+                    else NormalizeNd30ContentLineSpacing(range);
                     return true;
                 }
 
@@ -1108,6 +1119,9 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 if (role == "appendixTitle")
                     range.Case = Word.WdCharacterCase.wdUpperCase;
                 range.ParagraphFormat.Alignment = style.Alignment;
+                if (!party && role != "nationalTitle" && role != "nationalMotto" &&
+                    role != "organName" && role != "superiorOrganName")
+                    NormalizeNd30ContentLineSpacing(range);
                 if (role == "recipientLabel" || role == "recipientList")
                 {
                     range.ParagraphFormat.LeftIndent = 0f;
@@ -1123,7 +1137,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 if (role == "placeAndIssuedDate" && !party)
                     range.ParagraphFormat.Alignment = (Word.WdParagraphAlignment)HeaderLayoutPolicy.DateAlignment(
                         new DocumentRoleDetector().DetectBlocks(snapshot), paragraph.Index);
-                if (role == "nationalTitle" || role == "nationalMotto")
+                if (role == "nationalTitle" || role == "nationalMotto" ||
+                    (!party && (role == "organName" || role == "superiorOrganName")))
                 {
                     range.ParagraphFormat.LeftIndent = 0f;
                     range.ParagraphFormat.RightIndent = 0f;
@@ -1140,6 +1155,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     range.ParagraphFormat.SpaceAfterAuto = 0;
                     range.ParagraphFormat.SpaceBefore = 0f;
                     range.ParagraphFormat.LineSpacingRule = Word.WdLineSpacing.wdLineSpaceSingle;
+                    if (!party) NormalizeNd30ContentLineSpacing(range);
                     range.ParagraphFormat.LeftIndent = 0f;
                     range.ParagraphFormat.RightIndent = 0f;
                     range.ParagraphFormat.FirstLineIndent = 10f * PointsPerMillimeter;
@@ -2602,6 +2618,28 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         private static void RemoveTrailingBlankParagraphs(Word.Document document)
         {
             WordTrailingBlankPageCleaner.Remove(document);
+        }
+
+        private static void NormalizeBodySpacing(Word.Range range, bool party)
+        {
+            range.ParagraphFormat.SpaceBeforeAuto = 0;
+            range.ParagraphFormat.SpaceAfterAuto = 0;
+            range.ParagraphFormat.SpaceBefore = 0f;
+            range.ParagraphFormat.SpaceAfter = 6f;
+            if (party)
+            {
+                range.ParagraphFormat.LineSpacingRule = Word.WdLineSpacing.wdLineSpaceExactly;
+                range.ParagraphFormat.LineSpacing = 18f;
+            }
+            else NormalizeNd30ContentLineSpacing(range);
+        }
+
+        private static void NormalizeNd30ContentLineSpacing(Word.Range range)
+        {
+            // Normalization preference, not a stricter legal validation bound.
+            // Word represents Multiple 1.2 as 12 * 1.2 points, not font size * 1.2.
+            range.ParagraphFormat.LineSpacingRule = Word.WdLineSpacing.wdLineSpaceMultiple;
+            range.ParagraphFormat.LineSpacing = 14.4f;
         }
 
         private static bool IsBodyParagraph(LocalParagraphSnapshot paragraph)

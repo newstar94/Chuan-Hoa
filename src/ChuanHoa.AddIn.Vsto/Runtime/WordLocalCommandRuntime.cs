@@ -1425,8 +1425,9 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 tail.ParagraphFormat.KeepWithNext = 0;
                 document.Repaginate();
                 var after = document.ComputeStatistics(Word.WdStatistic.wdStatisticPages);
-                accepted = after < pages && SameFormattingXml(previousXml, prior.WordOpenXML) &&
-                    previousStories.Zip(CaptureHeaderFooterXml(previous), SameFormattingXml).All(equal => equal) &&
+                var sameBody = SameFormattingXml(previousXml, prior.WordOpenXML);
+                var sameStories = previousStories.Zip(CaptureHeaderFooterXml(previous), SameFormattingXml).All(equal => equal);
+                accepted = after < pages && sameBody && sameStories &&
                     previousEndPage == priorContentEnd.get_Information(Word.WdInformation.wdActiveEndPageNumber);
                 return accepted ? pages - after : 0;
             }
@@ -1507,6 +1508,13 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             System.Xml.Linq.XDocument Normalize(string xml)
             {
                 var parsed = System.Xml.Linq.XDocument.Parse(xml);
+                // Word regenerates these drawing identity/edit tokens during
+                // repagination. Geometry, anchor placement and drawing content
+                // remain in the comparison; these tokens are not layout values.
+                foreach (var attribute in parsed.Descendants().Attributes().Where(a =>
+                    (a.Name.NamespaceName == "http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing" ||
+                     a.Name.NamespaceName == "http://schemas.microsoft.com/office/word/2010/wordml") &&
+                    (a.Name.LocalName == "anchorId" || a.Name.LocalName == "editId")).ToArray()) attribute.Remove();
                 // rsid values track editing sessions, not text or formatting.
                 foreach (var attribute in parsed.Descendants().Attributes().Where(a =>
                     a.Name.NamespaceName == "http://schemas.openxmlformats.org/wordprocessingml/2006/main" &&
