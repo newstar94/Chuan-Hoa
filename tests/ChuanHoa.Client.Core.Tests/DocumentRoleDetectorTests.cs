@@ -5,6 +5,25 @@ namespace ChuanHoa.Client.Core.Tests;
 
 public sealed class DocumentRoleDetectorTests
 {
+    [Fact]
+    public void Business_basis_continues_formal_preamble_but_not_operative_body()
+    {
+        var texts = new[] { "QUYẾT ĐỊNH", "Về việc cử nhân viên đi công tác",
+            "Căn cứ điều lệ tổ chức và hoạt động của Công ty.",
+            "Căn cứ nhu cầu hoạt động kinh doanh;", "Căn cứ nhu cầu và năng lực cán bộ,",
+            "QUYẾT ĐỊNH", "Điều 1. Cử nhân viên đi công tác.",
+            "Căn cứ nhu cầu thực tế, bố trí công việc." };
+        var snapshot = new LocalScanSnapshot("sha256:business-basis", 1,
+            Array.Empty<LocalSectionSnapshot>(),
+            texts.Select((text, i) => Paragraph(i + 1, text)).ToArray(),
+            Array.Empty<AnnotationProtectedSpan>());
+        var roles = new DocumentRoleDetector().Detect(snapshot);
+        Assert.Equal("legalBasis", roles[3]);
+        Assert.Equal("legalBasis", roles[4]);
+        Assert.Equal("legalBasis", roles[5]);
+        Assert.False(roles.TryGetValue(8, out var role) && role == "legalBasis");
+    }
+
     [Theory]
     [InlineData("NGHỊ QUYẾT", LocalDocumentTypeCodes.Resolution)]
     [InlineData("QUYẾT ĐỊNH", LocalDocumentTypeCodes.Decision)]

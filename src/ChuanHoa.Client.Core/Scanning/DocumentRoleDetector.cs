@@ -189,7 +189,8 @@ namespace ChuanHoa.Client.Core.Scanning
                 else if (Contains(text, "Độc lập") && Contains(text, "Hạnh phúc")) assignedRole = "nationalMotto";
                 else if (Eq(text, "ĐẢNG CỘNG SẢN VIỆT NAM")) assignedRole = "partyTitle";
                 else if (Rx(@"^Số\s*:?\s*(?:\d|[.…]+\s*/)").IsMatch(text)) assignedRole = "codeNumber";
-                else if (legalBasisWindowOpen && IsFormalLegalBasisParagraph(text))
+                else if (legalBasisWindowOpen && (IsFormalLegalBasisParagraph(text) ||
+                    (legalBasisSequenceStarted && LegalBasis.IsMatch(text))))
                     assignedRole = "legalBasis";
                 else if (IsPlaceDate(text)) assignedRole = "placeAndIssuedDate";
                 else if (IsTypeHeading(text))

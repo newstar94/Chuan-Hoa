@@ -15,9 +15,9 @@ namespace ChuanHoa.OneClickQa
         [STAThread]
         private static int Main(string[] args)
         {
-            if (args.Length != 2)
+            if (args.Length != 2 && !(args.Length == 3 && args[2] == "--twice"))
             {
-                Console.Error.WriteLine("Usage: ChuanHoa.OneClickQa <source.doc|docx> <qa-output-directory>");
+                Console.Error.WriteLine("Usage: ChuanHoa.OneClickQa <source.doc|docx> <qa-output-directory> [--twice]");
                 return 2;
             }
 
@@ -67,6 +67,21 @@ namespace ChuanHoa.OneClickQa
                     WriteSnapshotDiagnostics(context.LastLocalSnapshot);
                     result = new WordOneClickRuntime(application, access).Execute(context, document);
                     reader.Prepare(context, DocumentAnalysisScope.Full, document, false);
+                    VerifyOwnedLineAnchors(context.LastLocalSnapshot);
+                    if (args.Length == 3)
+                    {
+                        var firstNames = context.LastLocalSnapshot.LineShapes.Where(l => LineShapeOwnership.IsOwned(l.Name))
+                            .Select(l => l.Name).OrderBy(n => n, StringComparer.Ordinal).ToArray();
+                        reader.PrepareForOneClick(context, document);
+                        result = new WordOneClickRuntime(application, access).Execute(context, document);
+                        reader.Prepare(context, DocumentAnalysisScope.Full, document, false);
+                        VerifyOwnedLineAnchors(context.LastLocalSnapshot);
+                        var secondNames = context.LastLocalSnapshot.LineShapes.Where(l => LineShapeOwnership.IsOwned(l.Name))
+                            .Select(l => l.Name).OrderBy(n => n, StringComparer.Ordinal).ToArray();
+                        if (!firstNames.SequenceEqual(secondNames))
+                            throw new InvalidOperationException("Repeated normalization changed component-line ownership or count.");
+                        Console.WriteLine("REPEATED_LINE_OWNERSHIP_PASS COUNT=" + secondNames.Length);
+                    }
                     postFormat = scanner.ScanAndAnnotate(context, false, document);
                     postSpelling = scanner.ScanAndAnnotate(context, true, document);
                 }
@@ -79,7 +94,6 @@ namespace ChuanHoa.OneClickQa
                     DocStructureTags: true, BitmapMissingFonts: true, UseISO19005_1: false);
                 if (!string.Equals(sourceHash, Hash(source), StringComparison.Ordinal))
                     throw new InvalidOperationException("The original source document changed during QA.");
-                Console.WriteLine("ONE_CLICK_QA_PASS");
                 Console.WriteLine("QA_DOCUMENT=" + qaDocument);
                 Console.WriteLine("QA_PDF=" + qaPdf);
                 Console.WriteLine("CHANGED_PARAGRAPHS=" + result.ChangedParagraphs);
@@ -98,6 +112,7 @@ namespace ChuanHoa.OneClickQa
                     throw new InvalidOperationException(
                         "1-Click left a required Line Shape missing or offset: " +
                         remainingLine.RuleCode + ".");
+                Console.WriteLine("ONE_CLICK_QA_PASS");
                 return 0;
             }
             catch (Exception exception)
@@ -120,6 +135,28 @@ namespace ChuanHoa.OneClickQa
             using (var stream = File.OpenRead(path))
             using (var sha = SHA256.Create())
                 return BitConverter.ToString(sha.ComputeHash(stream)).Replace("-", string.Empty);
+        }
+
+        private static void VerifyOwnedLineAnchors(LocalScanSnapshot snapshot)
+        {
+            var blocks = new DocumentRoleDetector().DetectBlocks(snapshot);
+            var owned = snapshot.LineShapes.Where(l => LineShapeOwnership.IsOwned(l.Name)).ToArray();
+            if (owned.GroupBy(l => l.Name).Any(g => g.Count() > 1))
+                throw new InvalidOperationException("Duplicate generated component lines.");
+            foreach (var line in owned)
+            {
+                var owner = snapshot.Paragraphs.FirstOrDefault(p => p.StoryType == line.AnchorStoryType &&
+                    LineShapeOwnership.IsOwnedForParagraph(line.Name, p.Index));
+                var block = owner == null ? null : blocks.FirstOrDefault(b => b.ContainsParagraph(owner.Index));
+                var anchor = snapshot.Paragraphs.FirstOrDefault(p => p.Index == line.AnchorParagraphIndex &&
+                    p.StoryType == line.AnchorStoryType);
+                if (owner == null || anchor == null || block == null ||
+                    !ComponentLineAnchorPolicy.CanAnchor(owner.PageNumber, line.AnchorPageNumber,
+                        owner.SectionIndex, line.AnchorSectionIndex, anchor.Index,
+                        block.StartParagraphIndex, block.EndParagraphIndex))
+                    throw new InvalidOperationException("Generated line escaped its physical page/section/document: " + line.Name);
+            }
+            Console.WriteLine("OWNED_LINE_ANCHORS_PASS BLOCKS=" + blocks.Count + " LINES=" + owned.Length);
         }
 
         private static void WriteSnapshotDiagnostics(LocalScanSnapshot snapshot)

@@ -1337,11 +1337,36 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
             foreach (var block in blocks)
             {
+                if (IsParty(snapshot))
+                {
+                    AddRequiredRoleLines(work, snapshot, block, "partyTitle", "HD05-M1-TITLE-LINE", false);
+                    continue;
+                }
                 AddRequiredRoleLines(work, snapshot, block, "nationalMotto", "ND30-PL1-M2-K1-TN-LINE", false);
                 AddRequiredRoleLines(work, snapshot, block, "organName", "ND30-PL1-M2-K2-ORG-LINE", false);
                 AddRequiredRoleLines(work, snapshot, block, "subject", "ND30-PL1-M2-K5A-SUBJ-LINE", true);
             }
+            var targets = new List<Tuple<string, int>>();
             foreach (var item in work)
+            {
+                if (IsParty(snapshot) != item.Item1.StartsWith("HD05-", StringComparison.Ordinal)) continue;
+                var index = item.Item2;
+                if (item.Item1 == "ND30-PL1-M2-K5A-SUBJ-LINE")
+                {
+                    var block = blocks.FirstOrDefault(b => b.ContainsParagraph(index));
+                    if (block == null) continue;
+                    while (block.ContainsParagraph(index + 1) && block.Roles.TryGetValue(index + 1, out var nextRole) &&
+                        nextRole == "subjectContinuation") index++;
+                    if (index != item.Item2)
+                        foreach (var line in snapshot.LineShapes.Where(l =>
+                            LineShapeOwnership.IsOwnedForParagraph(l.Name, item.Item2) &&
+                            l.Name.IndexOf("_SUBJ_", StringComparison.Ordinal) >= 0))
+                            DeleteOwnedShapeByName(document, line.Name);
+                }
+                if (!targets.Any(t => t.Item1 == item.Item1 && t.Item2 == index))
+                    targets.Add(Tuple.Create(item.Item1, index));
+            }
+            foreach (var item in targets)
             {
                 var paragraphIndex = item.Item2;
                 var paragraph = snapshot.Paragraphs.FirstOrDefault(p => p.Index == paragraphIndex);
@@ -1450,9 +1475,14 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 // second owned line beside it. Match page and tight rendered
                 // geometry, not a nearby paragraph anchor alone.
                 var page = WordTextMeasurement.SafeInformation(range,
-                    Word.WdInformation.wdActiveEndAdjustedPageNumber).GetValueOrDefault();
+                    Word.WdInformation.wdActiveEndPageNumber).GetValueOrDefault();
+                var ownerBlock = new DocumentRoleDetector().DetectBlocks(snapshot)
+                    .FirstOrDefault(b => b.ContainsParagraph(paragraph.Index));
                 var originals = snapshot.LineShapes.Where(l => !LineShapeOwnership.IsOwned(l.Name) &&
                     l.ShapeType == 9 && l.AnchorStoryType == paragraph.StoryType &&
+                    l.AnchorSectionIndex == paragraph.SectionIndex && ownerBlock != null &&
+                    l.AnchorParagraphIndex.HasValue && (ownerBlock.ContainsParagraph(l.AnchorParagraphIndex.Value) ||
+                        IsAdjacentBlankHeaderAnchor(snapshot, ownerBlock, l)) &&
                     page > 0 && l.AnchorPageNumber == page && l.PageLeftPoints.HasValue && l.PageTopPoints.HasValue &&
                     (Math.Abs(l.PageTopPoints.Value - y) <= 18d &&
                      Math.Abs(l.PageLeftPoints.Value + l.WidthPoints / 2d - center.Value) <= 18d ||
@@ -1466,11 +1496,11 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     foreach (var duplicate in originals)
                         DeleteVerifiedLine(document, duplicate.Name);
                 }
-                if (originals.Length == 0 && TryNormalizeExistingComponentLine(document, snapshot, paragraph, ruleCode,
-                        beginX, y, width))
-                    return true;
+                // Page-relative coordinates do not relocate an existing shape's
+                // anchor. Recreate only generated separators with a verified local
+                // anchor so a stale name can never drag a later header onto a cover.
                 RemoveObsoleteComponentLines(document, snapshot, paragraph, ruleCode);
-                lineAnchor = inTable ? ResolveNonTableLineAnchor(document, range) : range.Duplicate;
+                lineAnchor = inTable ? ResolveNonTableLineAnchor(document, range, snapshot, paragraph) : range.Duplicate;
                 object anchor = lineAnchor;
                 shape = document.Shapes.AddLine(beginX, y, beginX + width, y, ref anchor);
                 shape.Name = OwnedLineName(ruleCode, paragraph.Index);
@@ -1563,16 +1593,31 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 (ruleCode != "ND30-PL1-M2-K1-TN-LINE" && ruleCode != "ND30-PL1-M2-K2-ORG-LINE")) return false;
             var anchor = snapshot.Paragraphs.FirstOrDefault(p => p.Index == line.AnchorParagraphIndex &&
                 p.StoryType == paragraph.StoryType);
-            if (anchor == null || anchor.TableIndex != paragraph.TableIndex ||
-                anchor.CellIndex != paragraph.CellIndex || !anchor.RowIndex.HasValue || !paragraph.RowIndex.HasValue ||
-                anchor.RowIndex.Value < paragraph.RowIndex.Value ||
-                anchor.RowIndex.Value > paragraph.RowIndex.Value + 1) return false;
+            if (anchor == null) return false;
+            var sameColumn = anchor.TableIndex == paragraph.TableIndex && anchor.CellIndex == paragraph.CellIndex &&
+                anchor.RowIndex.HasValue && paragraph.RowIndex.HasValue &&
+                anchor.RowIndex.Value >= paragraph.RowIndex.Value && anchor.RowIndex.Value <= paragraph.RowIndex.Value + 1;
+            // Word can move a legacy floating-line anchor onto the blank paragraph
+            // immediately preceding the header table. Require both this structural
+            // adjacency and containment inside the owner's measured column.
+            var adjacentBlank = !anchor.IsInTable && string.IsNullOrWhiteSpace(anchor.Text) &&
+                anchor.Index < paragraph.Index && paragraph.Index - anchor.Index <= 2 && paragraph.RowIndex == 1;
+            if (!sameColumn && !adjacentBlank) return false;
             var distance = line.PageTopPoints.GetValueOrDefault(double.MinValue) - textTop;
             var lineCenter = line.PageLeftPoints.GetValueOrDefault(double.MinValue) + line.WidthPoints / 2d;
             return distance >= 0 && distance <= 60 &&
                 Math.Abs(lineCenter - center) + line.WidthPoints / 2d <= containerWidth / 2d + 1d &&
                 line.WidthPoints >= textWidth * .25 && line.WidthPoints <= textWidth * 1.2 &&
                 line.BeginArrowheadStyle == 1 && line.EndArrowheadStyle == 1;
+        }
+
+        private static bool IsAdjacentBlankHeaderAnchor(LocalScanSnapshot snapshot,
+            LogicalDocumentBlock block, LocalLineShapeSnapshot line)
+        {
+            var anchor = snapshot.Paragraphs.FirstOrDefault(p => p.Index == line.AnchorParagraphIndex &&
+                p.StoryType == line.AnchorStoryType);
+            return anchor != null && !anchor.IsInTable && string.IsNullOrWhiteSpace(anchor.Text) &&
+                anchor.Index < block.StartParagraphIndex && block.StartParagraphIndex - anchor.Index <= 2;
         }
 
         private static bool TryNormalizeExistingComponentLine(Word.Document document,
@@ -1622,6 +1667,11 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     candidate = document.Shapes[index];
                     if ((int)candidate.Type != 9) continue;
                     var name = candidate.Name ?? string.Empty;
+                    if (normalized && deleteDuplicateCurrentOwned && string.Equals(name, ownedName, StringComparison.Ordinal))
+                    {
+                        candidate.Delete();
+                        continue;
+                    }
                     if (!string.Equals(name, selectedName, StringComparison.Ordinal))
                     {
                         if (deleteDuplicateCurrentOwned &&
@@ -1672,16 +1722,20 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             }
         }
 
-        private static Word.Range ResolveNonTableLineAnchor(Word.Document document, Word.Range source)
+        private static Word.Range ResolveNonTableLineAnchor(Word.Document document, Word.Range source,
+            LocalScanSnapshot snapshot, LocalParagraphSnapshot owner)
         {
             var sourcePage = WordTextMeasurement.SafeInformation(source,
-                Word.WdInformation.wdActiveEndAdjustedPageNumber).GetValueOrDefault();
+                Word.WdInformation.wdActiveEndPageNumber).GetValueOrDefault();
+            if (sourcePage <= 0) return source.Duplicate;
+            var block = new DocumentRoleDetector().DetectBlocks(snapshot).FirstOrDefault(b => b.ContainsParagraph(owner.Index));
+            if (block == null) return source.Duplicate;
             Word.Paragraphs? paragraphs = null;
             try
             {
                 paragraphs = document.Paragraphs;
                 var count = paragraphs.Count;
-                for (var index = 1; index <= count; index++)
+                for (var index = block.StartParagraphIndex; index <= Math.Min(count, block.EndParagraphIndex); index++)
                 {
                     Word.Paragraph? paragraph = null;
                     Word.Range? candidate = null;
@@ -1691,8 +1745,11 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                         candidate = paragraph.Range.Duplicate;
                         if (candidate.get_Information(Word.WdInformation.wdWithInTable)) continue;
                         var page = WordTextMeasurement.SafeInformation(candidate,
-                            Word.WdInformation.wdActiveEndAdjustedPageNumber).GetValueOrDefault();
-                        if (sourcePage > 0d && page > 0d && Math.Abs(page - sourcePage) > .1d) continue;
+                            Word.WdInformation.wdActiveEndPageNumber).GetValueOrDefault();
+                        var candidateSnapshot = snapshot.Paragraphs.FirstOrDefault(p => p.Index == index && p.StoryType == owner.StoryType);
+                        if (candidateSnapshot == null || !ComponentLineAnchorPolicy.CanAnchor((int)sourcePage, (int)page,
+                            owner.SectionIndex, candidateSnapshot.SectionIndex, index,
+                            block.StartParagraphIndex, block.EndParagraphIndex)) continue;
                         return candidate.Duplicate;
                     }
                     catch (COMException)

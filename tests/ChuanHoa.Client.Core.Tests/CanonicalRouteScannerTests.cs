@@ -1036,6 +1036,22 @@ public sealed class CanonicalRouteScannerTests
             f => f.RuleCode == "ND30-PL1-M2-K9B-LUU");
     }
 
+    [Theory]
+    [InlineData(1, true)]
+    [InlineData(12, false)]
+    public void Motto_line_on_cover_cannot_satisfy_later_physical_page(int anchorPhysicalPage, bool missing)
+    {
+        var motto = P(510, "Độc lập - Tự do - Hạnh phúc", "nationalMotto",
+            size:13, bold:true, alignment:1, section:3, page:12, left:300, top:70, width:170);
+        var line = new LocalLineShapeSnapshot(1, "CHUANHOA2_MOTTO_P510", 9, "wdMainTextStory",
+            3, motto.AbsoluteStart, 510, anchorPhysicalPage, 300, 88, 170, 0, 300, 88,
+            1, 1, true, 1, .75, 0, 1, 1);
+        var snapshot = new LocalScanSnapshot("physical-page-match", 1, Array.Empty<LocalSectionSnapshot>(),
+            new[] { motto }, Array.Empty<AnnotationProtectedSpan>(), new[] { line });
+        var findings = new LocalDocumentScanner().ScanFormat(snapshot, Rules()).Findings;
+        Assert.Equal(missing, findings.Any(f => f.RuleCode == "ND30-PL1-M2-K1-TN-LINE"));
+    }
+
     private static LocalParagraphSnapshot P(int index, string text, string role = "Unknown", string font = "Times New Roman",
         double? size = 13, bool? bold = false, bool? italic = false, int? alignment = 3, double? indent = 30,
         double? before = 0, double? after = 6, double? lineSpacing = 12, int? color = 0, int section = 1,

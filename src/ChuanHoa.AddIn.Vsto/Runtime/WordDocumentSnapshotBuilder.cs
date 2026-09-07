@@ -798,7 +798,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                             // Word's UI thread busy indefinitely on table-heavy documents.
                             // Only first-page, centered heading candidates need these
                             // coordinates for Line Shape validation.
-                            pageNumber = SafeInformation(range, Word.WdInformation.wdActiveEndAdjustedPageNumber);
+                            pageNumber = SafeInformation(range, Word.WdInformation.wdActiveEndPageNumber);
                             pageTop = WordTextMeasurement.ReadFirstTextLineTop(range);
                             textWidth = WordTextMeasurement.MeasureParagraphWidth(range, fontName, fontSize,
                                 bold, italic);
@@ -1214,7 +1214,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                         sectionIndex,
                         anchor.Start,
                         FindAnchorParagraph(paragraphs, anchor.StoryType.ToString(), anchor.Start),
-                        SafeInformation(anchor, Word.WdInformation.wdActiveEndAdjustedPageNumber),
+                        SafeInformation(anchor, Word.WdInformation.wdActiveEndPageNumber),
                         shape.Left,
                         shape.Top,
                         shape.Width,
@@ -1751,7 +1751,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                         p.FirstLineIndentPoints, p.SpaceBeforePoints, p.SpaceAfterPoints, p.IsInTable,
                         p.StoryType, p.SectionIndex, p.AbsoluteStart, p.TableIndex, p.RowIndex, p.CellIndex,
                         p.FontColor, p.Underline, p.HasBottomBorder, p.LineSpacingPoints, p.LineSpacingRule,
-                        p.OutlineLevel, SafeInformation(range, Word.WdInformation.wdActiveEndAdjustedPageNumber),
+                        p.OutlineLevel, SafeInformation(range, Word.WdInformation.wdActiveEndPageNumber),
                         center.HasValue ? center.Value - width / 2d : (double?)null, top, width,
                         p.KeepWithNext, p.WidowControl, p.StyleName, p.AbsoluteEnd, p.BuiltInStyleId,
                         p.HasField, p.HasMathObject, p.HasHyperlink, p.HasContentControl, p.CaptionKind,

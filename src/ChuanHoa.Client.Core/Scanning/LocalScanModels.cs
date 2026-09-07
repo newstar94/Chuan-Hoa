@@ -121,6 +121,7 @@ namespace ChuanHoa.Client.Core.Scanning
         public double? LineSpacingPoints { get; }
         public int? LineSpacingRule { get; }
         public int? OutlineLevel { get; }
+        /// <summary>Physical page from the start of the file; zero means unavailable.</summary>
         public int PageNumber { get; }
         public double? PageLeftPoints { get; }
         public double? PageTopPoints { get; }
