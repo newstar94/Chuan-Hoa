@@ -21,4 +21,9 @@
     <ProjectReference Include="..\..\src\ChuanHoa.Client.Core\ChuanHoa.Client.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="..\..\shared\dictionaries\administrative_units.json" Link="ReferenceData\administrative_units.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\shared\dictionaries\historical_administrative_aliases.json" Link="ReferenceData\historical_administrative_aliases.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

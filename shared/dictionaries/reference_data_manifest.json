@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "generatedBy": "tools/data/generate_administrative_reference_data.py",
+  "source": "Quyet dinh 19/2025/QD-TTg",
+  "sourceUrl": "https://congbao.chinhphu.vn/van-ban/quyet-dinh-so-19-2025-qd-ttg-45430/57438.htm",
+  "effectiveFrom": "2025-07-01",
+  "snapshotDate": "2026-09-07",
+  "sourceFiles": [
+    {
+      "name": "QD19-part1.docx",
+      "sha256": "9a470fc93445b801ffce27c45194eb95e1c457bce8870760653d24d923870b6e"
+    },
+    {
+      "name": "QD19-part2.docx",
+      "sha256": "5ce94c2d7644f6798afcb64da8cc2f4eae4cbc8fcc013e7d2f951ae2ff3cd711"
+    }
+  ],
+  "expectedCounts": {
+    "activeProvinces": 34,
+    "activeCommunes": 3321,
+    "activeDistricts": 0,
+    "historicalAliases": 29
+  },
+  "outputs": {
+    "administrativeUnitsSha256": "10d4f37a062b627c675e405ff73bdc7539619b84dcf94f8b82ba1f422411f6e0",
+    "historicalAliasesSha256": "c5359125c0b67721474d58507e063c1eb72370857b4e80c6bc561ef6c181720b",
+    "specialCapitalizationsSha256": "3e892676462663db1713d463c8eed641785100657cd4be8fda76f222cdd325e4"
+  },
+  "specialCapitalizationSources": [
+    "Quyet dinh 19/2025/QD-TTg",
+    "Nghị quyết 202/2025/QH15",
+    "Nghị định 30/2020/NĐ-CP, Phụ lục II",
+    "Hướng dẫn 05-HD/VPTW"
+  ]
+}

@@ -54,12 +54,12 @@ def analyze(
     counts = contract.get("counts", {})
     expected_counts = {
         "tabs": 1,
-        "groups": 6,
-        "buttons": 34,
+        "groups": 7,
+        "buttons": 39,
         "menus": 3,
         "dropDowns": 2,
         "checkBoxes": 0,
-        "interactiveControls": 39,
+        "interactiveControls": 44,
     }
     if counts != expected_counts:
         failures.append(f"Ribbon contract counts changed: {counts}")

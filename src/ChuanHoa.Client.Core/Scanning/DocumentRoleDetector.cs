@@ -102,6 +102,22 @@ namespace ChuanHoa.Client.Core.Scanning
     /// </summary>
     public sealed class DocumentRoleDetector
     {
+        private sealed class RoleAssignment
+        {
+            public RoleAssignment(string role, int confidence, int priority, string evidence)
+            {
+                Role = role;
+                Confidence = confidence;
+                Priority = priority;
+                Evidence = evidence;
+            }
+
+            public string Role { get; }
+            public int Confidence { get; }
+            public int Priority { get; }
+            public string Evidence { get; }
+        }
+
         private static readonly Regex NationalTitle = Rx(@"CỘNG\s+H(?:ÒA|OÀ)\s+XÃ\s+HỘI\s+CHỦ\s+NGHĨA\s+VIỆT\s+NAM", true);
         private static bool IsExtendedReportTitle(string text) =>
             text.Length <= 160 && Regex.IsMatch(text, @"^BÁO CÁO\s+[\p{Lu}\p{M}\d ,/()-]+$");
@@ -114,8 +130,7 @@ namespace ChuanHoa.Client.Core.Scanning
             @"^(?:[-–—]\s*)?(?:" +
             @"(?:Xét|Xét\s+đề\s+nghị|Theo\s+đề\s+nghị)\b|" +
             @"Căn\s+cứ(?:\s+vào)?\s+(?:" +
-            @"Hiến\s+pháp|Bộ\s+luật|Luật|Pháp\s+lệnh|Nghị\s+quyết|Nghị\s+định|Quyết\s+định|" +
-            @"Chỉ\s+thị|Thông\s+tư|Thông\s+cáo|Hướng\s+dẫn|Quy\s+chế|Quy\s+định|Điều\s+lệ|" +
+            VietnameseLegalDocumentVocabulary.RegexAlternation + @"|Thông\s+cáo|Hướng\s+dẫn|Quy\s+chế|Quy\s+định|Điều\s+lệ|" +
             @"Điều\s+\d+|Khoản\s+\d+|Điểm\s+[a-zđ]\)|Văn\s+bản|Công\s+văn|Tờ\s+trình|" +
             @"Kế\s+hoạch|Chương\s+trình|Đề\s+án|Dự\s+án|Hợp\s+đồng|Biên\s+bản|Giấy\s+phép|" +
             @"chức\s+năng|nhiệm\s+vụ|thẩm\s+quyền|đề\s+nghị|yêu\s+cầu|ý\s+kiến\s+chỉ\s+đạo|" +
@@ -123,6 +138,7 @@ namespace ChuanHoa.Client.Core.Scanning
             @")\b)", true);
         private static readonly Regex SignerAuthority = Rx(@"^(?:(?:TM|KT|TL|TUQ|T/M|K/T|T/L|Q)\.?\s+|CHỦ TỊCH|PHÓ CHỦ TỊCH|GIÁM ĐỐC|PHÓ GIÁM ĐỐC|BỘ TRƯỞNG|THỨ TRƯỞNG|BÍ THƯ|PHÓ BÍ THƯ|TRƯỞNG BAN|PHÓ TRƯỞNG BAN|CHÁNH VĂN PHÒNG|PHÓ CHÁNH VĂN PHÒNG)\b", true);
         private static readonly Regex CodeNumberPattern = Rx(@"^Số\s*:?\s*(?:\d|[.…]+\s*/)");
+        private static readonly Regex InlineTableCodeNumberPattern = Rx(@"(?:^|[\r\n\v])\s*Số\s*:?\s*(?:\d|[.…]+\s*/)", true);
         private static readonly Regex CodeNumberSimple = Rx(@"^Số\s*:?\s*\d");
         private static readonly Regex AboutPrefixRegex = Rx(@"^Về\s+việc\b", true);
         private static readonly Regex OfficialLetterSubjectRegex = Rx(@"^(V/v|Về việc)\b", true);
@@ -136,6 +152,11 @@ namespace ChuanHoa.Client.Core.Scanning
         private static readonly Regex SubjectTerminatorRegex = Rx(@"^(Kính\s+(?:gửi|trình)|Nơi\s+nhận)\b", true);
         private static readonly Regex StructuralBodyStartRegex = Rx(@"^(?:Điều\s+\d+|(?:\d+(?:\.\d+)*|[IVXLCDM]+)[.)]\s+\p{L}|[a-zđ]\)\s+\p{L}|Phần\b|Chương\b|Mục\b|Tiểu\s+mục\b)", true);
         private static readonly Regex PlaceDateDraftPattern = Rx(@"^[\p{L}][\p{L}\s.]{0,70},\s*ngày\s+[.…]+\s+tháng\s+(?:\d{1,2}|[.…]+)\s+năm\s+(?:\d{4}|[.…]+)$", true);
+        private static readonly Regex HeaderCodeNumberPattern = Rx(@"^Số\s*:?\s*\d", true);
+        private static readonly Regex AppendixDigitalSignatureLabelPattern = Rx(@"^Số\s*:", true);
+        private static readonly Regex DigitalSignatureUnitPattern = Rx(@"\b(giờ|phút|giây)\b", true);
+        private static readonly Regex DigitalSignatureTimePattern = Rx(@"\b\d{1,2}:\d{2}(?::\d{2})?\b");
+        private static readonly Regex AppendixReferencePattern = Rx(@"^\(\s*Kèm\s+theo\b", true);
 
         public Dictionary<int, string> Detect(LocalScanSnapshot snapshot)
         {
@@ -199,44 +220,10 @@ namespace ChuanHoa.Client.Core.Scanning
                     ? result[main[i - 1].Index]
                     : string.Empty;
 
-                string? assignedRole = null;
-                if (NationalTitle.IsMatch(text)) assignedRole = "nationalTitle";
-                else if (Contains(text, "Độc lập") && Contains(text, "Hạnh phúc")) assignedRole = "nationalMotto";
-                else if (Eq(text, "ĐẢNG CỘNG SẢN VIỆT NAM")) assignedRole = "partyTitle";
-                else if (CodeNumberPattern.IsMatch(text)) assignedRole = "codeNumber";
-                else if (legalBasisWindowOpen && (IsFormalLegalBasisParagraph(text) ||
-                    (legalBasisSequenceStarted && LegalBasis.IsMatch(text))))
-                    assignedRole = "legalBasis";
-                else if (IsPlaceDate(text)) assignedRole = "placeAndIssuedDate";
-                else if (IsTypeHeading(text))
-                {
-                    // A Decision commonly repeats "QUYẾT ĐỊNH" as the operative
-                    // formula immediately before Điều 1. Only the first occurrence is
-                    // the document type whose following paragraph is the subject.
-                    assignedRole = Eq(text, "BẢN CAM KẾT") ? "standaloneTitle" : typeNameAssigned
-                        ? "structuralTitle"
-                        : "typeName";
-                    if (assignedRole == "typeName") typeNameAssigned = true;
-                }
-                else if (previousRole == "typeName" && (text.Length < 300 ||
-                    AboutPrefixRegex.IsMatch(text))) assignedRole = "subject";
-                else if ((previousRole == "subject" || previousRole == "subjectContinuation") &&
-                    IsSubjectContinuation(main[i - 1], paragraph, text))
-                    assignedRole = "subjectContinuation";
-                else if (documentType == LocalDocumentTypeCodes.OfficialLetter && OfficialLetterSubjectRegex.IsMatch(text)) assignedRole = "officialLetterSubject";
-                else if (SignerAuthority.IsMatch(text)) assignedRole = "signerAuthority";
-                else if (RecipientSalutationPrefixRegex.IsMatch(text)) assignedRole = text.EndsWith(":", StringComparison.Ordinal) ? "recipientSalutation" : "recipientSalutationInline";
-                else if ((previousRole == "recipientSalutation" || previousRole == "recipientSalutationList") && text.StartsWith("-", StringComparison.Ordinal)) assignedRole = "recipientSalutationList";
-                else if (RecipientLabelPattern.IsMatch(text)) assignedRole = "recipientLabel";
-                else if ((previousRole == "recipientLabel" || previousRole == "recipientList") &&
-                    i > 0 && main[i - 1].Index + 1 == paragraph.Index &&
-                    main[i - 1].TableIndex == paragraph.TableIndex && main[i - 1].CellIndex == paragraph.CellIndex &&
-                    (text.StartsWith("-", StringComparison.Ordinal) || !string.IsNullOrWhiteSpace(paragraph.ListMarker) ||
-                     RecipientListContinuationRegex.IsMatch(text))) assignedRole = "recipientList";
-                else if (AppendixLabelPattern.IsMatch(text)) assignedRole = "appendixLabel";
-                else if (PartChapterHeadingRegex.IsMatch(text)) assignedRole = "partChapterHeading";
-                else if (SectionHeadingRegex.IsMatch(text)) assignedRole = "sectionHeading";
-                else if (IsStructuralTitle(main, i, text)) assignedRole = "structuralTitle";
+                var assignment = SelectRoleAssignment(main, i, documentType, previousRole,
+                    text, typeNameAssigned, legalBasisWindowOpen, legalBasisSequenceStarted);
+                var assignedRole = assignment?.Role;
+                if (assignedRole == "typeName") typeNameAssigned = true;
 
                 if (assignedRole != null) result[paragraph.Index] = assignedRole;
                 UpdateLegalBasisWindow(paragraph, assignedRole, ref legalBasisWindowOpen,
@@ -246,6 +233,93 @@ namespace ChuanHoa.Client.Core.Scanning
             AssignAppendixRoles(main, result);
             AssignOrganRoles(main, result);
             return result;
+        }
+
+        private static RoleAssignment? SelectRoleAssignment(LocalParagraphSnapshot[] main, int index,
+            string documentType, string previousRole, string text, bool typeNameAssigned,
+            bool legalBasisWindowOpen, bool legalBasisSequenceStarted)
+        {
+            var paragraph = main[index];
+            var candidates = new List<RoleAssignment>();
+            AddCandidate(candidates, NationalTitle.IsMatch(text), "nationalTitle", 100, 100,
+                "exact national-title text");
+            AddCandidate(candidates, Contains(text, "Độc lập") && Contains(text, "Hạnh phúc"),
+                "nationalMotto", 100, 99, "national-motto vocabulary");
+            AddCandidate(candidates, Eq(text, "ĐẢNG CỘNG SẢN VIỆT NAM"), "partyTitle", 100, 100,
+                "exact party title");
+            AddCandidate(candidates, CodeNumberPattern.IsMatch(text) ||
+                (paragraph.IsInTable && InlineTableCodeNumberPattern.IsMatch(paragraph.Text)),
+                "codeNumber", 96, 95, paragraph.IsInTable
+                    ? "code-number text in a table cell" : "code-number prefix");
+            AddCandidate(candidates, legalBasisWindowOpen && (IsFormalLegalBasisParagraph(text) ||
+                (legalBasisSequenceStarted && LegalBasis.IsMatch(text))), "legalBasis", 94, 94,
+                "formal legal vocabulary inside the preamble window");
+            AddCandidate(candidates, IsPlaceDate(text), "placeAndIssuedDate", 92, 92,
+                "place-and-issued-date pattern");
+
+            if (IsTypeHeading(text))
+            {
+                // A Decision commonly repeats its name as the operative formula before
+                // Điều 1. Only the first occurrence is the document type.
+                var role = Eq(text, "BẢN CAM KẾT") ? "standaloneTitle" : typeNameAssigned
+                    ? "structuralTitle"
+                    : "typeName";
+                AddCandidate(candidates, true, role, 98, 98, "document-type heading");
+            }
+
+            if (previousRole == "typeName")
+            {
+                var subjectScore = ScoreSubjectCandidate(main, index, text);
+                AddCandidate(candidates, subjectScore > 0, "subject", subjectScore, 80,
+                    "adjacency, text, formatting and following boundary");
+            }
+            if ((previousRole == "subject" || previousRole == "subjectContinuation") && index > 0)
+            {
+                var continuationScore = ScoreSubjectContinuation(main, index, text);
+                AddCandidate(candidates, continuationScore > 0, "subjectContinuation",
+                    continuationScore, 79, "subject adjacency and style continuity");
+            }
+
+            AddCandidate(candidates, documentType == LocalDocumentTypeCodes.OfficialLetter &&
+                OfficialLetterSubjectRegex.IsMatch(text), "officialLetterSubject", 96, 96,
+                "official-letter subject prefix");
+            AddCandidate(candidates, SignerAuthority.IsMatch(text), "signerAuthority", 91, 91,
+                "signer-authority vocabulary");
+            AddCandidate(candidates, RecipientSalutationPrefixRegex.IsMatch(text),
+                text.EndsWith(":", StringComparison.Ordinal) ? "recipientSalutation" : "recipientSalutationInline",
+                91, 90, "recipient salutation prefix");
+            AddCandidate(candidates, (previousRole == "recipientSalutation" ||
+                previousRole == "recipientSalutationList") && text.StartsWith("-", StringComparison.Ordinal),
+                "recipientSalutationList", 86, 86, "recipient-list adjacency and marker");
+            AddCandidate(candidates, RecipientLabelPattern.IsMatch(text), "recipientLabel", 92, 92,
+                "recipient label");
+            AddCandidate(candidates, (previousRole == "recipientLabel" || previousRole == "recipientList") &&
+                index > 0 && main[index - 1].Index + 1 == paragraph.Index &&
+                main[index - 1].TableIndex == paragraph.TableIndex &&
+                main[index - 1].CellIndex == paragraph.CellIndex &&
+                (text.StartsWith("-", StringComparison.Ordinal) ||
+                 !string.IsNullOrWhiteSpace(paragraph.ListMarker) ||
+                 RecipientListContinuationRegex.IsMatch(text)), "recipientList", 87, 87,
+                "recipient-list marker and structural adjacency");
+            AddCandidate(candidates, AppendixLabelPattern.IsMatch(text), "appendixLabel", 95, 95,
+                "appendix label");
+            AddCandidate(candidates, PartChapterHeadingRegex.IsMatch(text), "partChapterHeading", 93, 93,
+                "part/chapter heading");
+            AddCandidate(candidates, SectionHeadingRegex.IsMatch(text), "sectionHeading", 93, 93,
+                "section heading");
+            AddCandidate(candidates, IsStructuralTitle(main, index, text), "structuralTitle", 75, 70,
+                "uppercase title following a structural label");
+
+            return candidates.OrderByDescending(candidate => candidate.Confidence)
+                .ThenByDescending(candidate => candidate.Priority)
+                .FirstOrDefault();
+        }
+
+        private static void AddCandidate(ICollection<RoleAssignment> candidates, bool condition,
+            string role, int confidence, int priority, string evidence)
+        {
+            if (condition)
+                candidates.Add(new RoleAssignment(role, confidence, priority, evidence));
         }
 
         private static LocalParagraphSnapshot[] MainParagraphs(LocalScanSnapshot snapshot) =>
@@ -264,6 +338,18 @@ namespace ChuanHoa.Client.Core.Scanning
             for (var position = 0; position < main.Length; position++)
             {
                 var text = Collapse(main[position].Text);
+                var explicitTypeName = string.Equals(main[position].Role, "typeName",
+                    StringComparison.Ordinal);
+                if (explicitTypeName)
+                {
+                    if (currentHasDocumentIdentity && position > currentStart)
+                    {
+                        starts.Add(position);
+                        currentStart = position;
+                    }
+                    currentHasDocumentIdentity = true;
+                    continue;
+                }
                 var isNationalOrPartyTitle = NationalTitle.IsMatch(text) ||
                     Eq(text, "ĐẢNG CỘNG SẢN VIỆT NAM");
 
@@ -348,7 +434,7 @@ namespace ChuanHoa.Client.Core.Scanning
                 var text = Collapse(main[position].Text);
                 if (NationalTitle.IsMatch(text) ||
                     (Contains(text, "Độc lập") && Contains(text, "Hạnh phúc")) ||
-                    Rx(@"^Số\s*:?\s*\d").IsMatch(text) || IsPlaceDate(text))
+                    HeaderCodeNumberPattern.IsMatch(text) || IsPlaceDate(text))
                 {
                     earliestSignal = position;
                     signalCount++;
@@ -376,9 +462,9 @@ namespace ChuanHoa.Client.Core.Scanning
                 for (var previous = Math.Max(0, i - 3); previous < i; previous++)
                 {
                     var text = Collapse(main[previous].Text);
-                    if (Rx(@"^Số\s*:", true).IsMatch(text) &&
-                        (Rx(@"\b(giờ|phút|giây)\b", true).IsMatch(text) ||
-                         Rx(@"\b\d{1,2}:\d{2}(?::\d{2})?\b").IsMatch(text)))
+                    if (AppendixDigitalSignatureLabelPattern.IsMatch(text) &&
+                        (DigitalSignatureUnitPattern.IsMatch(text) ||
+                         DigitalSignatureTimePattern.IsMatch(text)))
                         roles[main[previous].Index] = "appendixDigitalSignatureInfo";
                 }
 
@@ -387,7 +473,7 @@ namespace ChuanHoa.Client.Core.Scanning
                     .Take(5)
                     .ToArray();
                 var reference = candidates.FirstOrDefault(item =>
-                    Rx(@"^\(\s*Kèm\s+theo\b", true).IsMatch(Collapse(item.Text)));
+                    AppendixReferencePattern.IsMatch(Collapse(item.Text)));
                 if (reference != null)
                 {
                     foreach (var title in candidates.TakeWhile(item => item.Index < reference.Index))
@@ -503,20 +589,68 @@ namespace ChuanHoa.Client.Core.Scanning
             return StructuralTitlePrevRegex.IsMatch(previous);
         }
 
-        private static bool IsSubjectContinuation(LocalParagraphSnapshot previous,
-            LocalParagraphSnapshot current, string text)
+        private static int ScoreSubjectContinuation(LocalParagraphSnapshot[] main,
+            int index, string text)
         {
+            var previous = main[index - 1];
+            var current = main[index];
             // Multi-line subjects are frequently stored as consecutive Word
             // paragraphs. A blank paragraph (visible through the source index gap)
             // terminates the component, as do normal body/legal/operative starts.
             if (current.Index != previous.Index + 1 || text.Length == 0)
-                return false;
+                return 0;
             if (LegalBasis.IsMatch(text) || IsTypeHeading(text) ||
                 IsStructuralBodyStart(text) ||
                 SubjectTerminatorRegex.IsMatch(text))
-                return false;
-            if (IsMostlyUppercase(text)) return false;
-            return current.Alignment == 1 || current.Bold.GetValueOrDefault();
+                return 0;
+            if (IsMostlyUppercase(text)) return 0;
+
+            var score = 25; // consecutive paragraph in the same logical block
+            if (current.Alignment == 1) score += 15;
+            if (current.Bold.GetValueOrDefault()) score += 15;
+            if (current.FontSizePoints >= 12.5d && current.FontSizePoints <= 14.5d) score += 8;
+            if (previous.Alignment.HasValue && current.Alignment == previous.Alignment) score += 12;
+            if (previous.Bold.HasValue && current.Bold == previous.Bold) score += 12;
+            if (text.Length <= 240) score += 5;
+            if (HasSubjectBoundaryAhead(main, index)) score += 8;
+            if (text.EndsWith(".", StringComparison.Ordinal) ||
+                text.EndsWith(";", StringComparison.Ordinal)) score -= 20;
+            return score >= 50 ? score : 0;
+        }
+
+        private static int ScoreSubjectCandidate(LocalParagraphSnapshot[] main, int index, string text)
+        {
+            var paragraph = main[index];
+            if (string.IsNullOrWhiteSpace(text) || LegalBasis.IsMatch(text) ||
+                IsStructuralBodyStart(text) || SubjectTerminatorRegex.IsMatch(text))
+                return 0;
+
+            var score = 30; // immediately follows the document type
+            if (AboutPrefixRegex.IsMatch(text)) score += 40;
+            if (paragraph.Alignment == 1) score += 18;
+            if (paragraph.Bold.GetValueOrDefault()) score += 18;
+            if (paragraph.FontSizePoints >= 12.5d && paragraph.FontSizePoints <= 14.5d) score += 8;
+            if (HasSubjectBoundaryAhead(main, index)) score += 18;
+            if (text.Length <= 240) score += 6;
+            else if (text.Length <= 600) score += 2;
+            else score -= 30;
+            if (text.EndsWith(".", StringComparison.Ordinal) ||
+                text.EndsWith(";", StringComparison.Ordinal)) score -= 15;
+            return score >= 55 ? score : 0;
+        }
+
+        private static bool HasSubjectBoundaryAhead(LocalParagraphSnapshot[] main, int index)
+        {
+            var end = Math.Min(main.Length - 1, index + 6);
+            for (var candidateIndex = index + 1; candidateIndex <= end; candidateIndex++)
+            {
+                var candidate = Collapse(main[candidateIndex].Text);
+                if (IsFormalLegalBasisParagraph(candidate) || IsStructuralBodyStart(candidate) ||
+                    SignerAuthority.IsMatch(candidate) || RecipientSalutationPrefixRegex.IsMatch(candidate))
+                    return true;
+                if (IsTypeHeading(candidate) && candidateIndex > index + 1) return true;
+            }
+            return false;
         }
 
         private static void UpdateLegalBasisWindow(LocalParagraphSnapshot paragraph, string? assignedRole,
@@ -628,7 +762,7 @@ namespace ChuanHoa.Client.Core.Scanning
         }
 
         private static Regex Rx(string pattern, bool ignoreCase = false) => new Regex(pattern,
-            RegexOptions.CultureInvariant | (ignoreCase ? RegexOptions.IgnoreCase : RegexOptions.None),
+            RegexOptions.CultureInvariant | RegexOptions.Compiled | (ignoreCase ? RegexOptions.IgnoreCase : RegexOptions.None),
             TimeSpan.FromMilliseconds(200));
     }
 }

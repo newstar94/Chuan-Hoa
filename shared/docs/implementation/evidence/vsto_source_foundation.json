@@ -4,16 +4,16 @@
   "targetFramework": "net48",
   "minimumOfficeVersion": "14.0",
   "counts": {
-    "buttons": 34,
+    "buttons": 39,
     "menus": 3,
     "dropDowns": 2,
     "checkBoxes": 0,
-    "interactiveControls": 39
+    "interactiveControls": 44
   },
-  "scannerFindingCodes": 92,
+  "scannerFindingCodes": 91,
   "latexFindingCodes": 7,
-  "oneClickPolicyFindingCodes": 92,
-  "callbackMethods": 51,
+  "oneClickPolicyFindingCodes": 91,
+  "callbackMethods": 56,
   "invariants": {
     "exactlyOneRibbonTab": true,
     "autoFixDedicatedCallback": true,
@@ -50,13 +50,13 @@
     "findingAnnotationCommandFailClosed": true
   },
   "hashes": {
-    "ribbonXmlSha256": "211FD5C95404780E5434EF7742FBF1533CF8983A4CBCD00F5657806BFBB18FF4",
-    "generatedCallbacksSha256": "7F49CB35C9D9CE293165A41A828401C9F8045505F36FDCA8B4903004EAA63EA0",
-    "projectSha256": "EFE0EAEF98D63538A56F2C8D3A01EB945310AFBB940E07BE388593D32BDE0B8B",
+    "ribbonXmlSha256": "976E273D5CE52145FFC29E49222255504C6F60A04A4E08C49DDEF486835A0D69",
+    "generatedCallbacksSha256": "CF22642B13474A87B31DB49A83D27C1D157AFBA2A3C4182298C7D0E2B453B6DF",
+    "projectSha256": "D162977536FBE29958FD9561865FDE26FE34A3B4398AFD24F86E684485608DBA",
     "wordAdapterSha256": "8546553DBB0F85C6FCBAD46D41D4B797B4D4AAC4475D06B993D5F98F62748F03",
     "wordMutationRuntimeSha256": "45DAF1EFE5D6E047C3BF09D14F76B00B61118AA605E8EF0BFF96AA36DBCB99B5",
     "wordFindingAnnotationAdapterSha256": "1D432F2ECB02C476F24234C2AA8923840E42FD207B85B97A455CAEEDB14E6238",
-    "wordSnapshotBuilderSha256": "F77E47755B1A8D7CE0AE60B70A2F591DC80FE7C4391EE353D87B61008ED5AFD3"
+    "wordSnapshotBuilderSha256": "A1DB960A1CBB8A257B07901B75D25621D21CEC7C1EF1AC9EF8CDDC72ADA92929"
   },
   "buildGate": "NOT_RUN",
   "loadGate": "NOT_RUN",

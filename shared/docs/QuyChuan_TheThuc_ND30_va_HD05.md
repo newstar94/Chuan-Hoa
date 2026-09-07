@@ -103,7 +103,8 @@ Toàn bộ các quy tắc và từ điển trên đã được trích xuất ho�
   - [rules_viettel.json](file:///d:/chuan-hoa-the-thuc-workspace/shared/rules/rules_viettel.json) (Quy chế Viettel QĐ 11095)
   - [rules_compliance_checks.json](file:///d:/chuan-hoa-the-thuc-workspace/shared/rules/rules_compliance_checks.json) (82 mã kiểm tra & phân loại)
 - **Từ điển tra cứu**:
-  - [administrative_units.json](file:///d:/chuan-hoa-the-thuc-workspace/shared/dictionaries/administrative_units.json) (1.520 đơn vị hành chính)
+  - [administrative_units.json](../dictionaries/administrative_units.json) (danh mục hiện hành từ 01/07/2025: 34 đơn vị cấp tỉnh và 3.321 đơn vị cấp xã; không có tầng cấp huyện hiện hành)
+  - [historical_administrative_aliases.json](../dictionaries/historical_administrative_aliases.json) (tên địa giới lịch sử, tách biệt với danh mục hiện hành)
   - [typo_dictionary.json](file:///d:/chuan-hoa-the-thuc-workspace/shared/dictionaries/typo_dictionary.json) (Từ điển sửa lỗi chính tả hành chính)
   - [iy_dictionary.json](file:///d:/chuan-hoa-the-thuc-workspace/shared/dictionaries/iy_dictionary.json) (Từ điển chuẩn hóa i/y)
   - [non_sentence_ending_abbreviations.json](file:///d:/chuan-hoa-the-thuc-workspace/shared/dictionaries/non_sentence_ending_abbreviations.json) (55 từ viết tắt không kết thúc câu)

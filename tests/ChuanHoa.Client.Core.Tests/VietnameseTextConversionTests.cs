@@ -86,6 +86,7 @@ public sealed class VietnameseTextConversionTests
     [InlineData("Tỷ lệ 1,5% hoặc 10.000 đồng", "Tỷ lệ 1,5% hoặc 10.000 đồng")]
     [InlineData("Nội dung ( trong ngoặc ) và [ ghi chú ]", "Nội dung (trong ngoặc) và [ghi chú]")]
     [InlineData("Liên hệ:info@chuanhoa.gov.vn hoặc truy cập https://chuanhoa.gov.vn/huong-dan?v=1,2.", "Liên hệ: info@chuanhoa.gov.vn hoặc truy cập https://chuanhoa.gov.vn/huong-dan?v=1,2.")]
+    [InlineData("Xem www.example.com/a?x=1 và example.com/tai-lieu.", "Xem www.example.com/a?x=1 và example.com/tai-lieu.")]
     [InlineData("Kính gửi PGS.TS.Nguyễn Văn A và ThS.Trần Thị B.", "Kính gửi PGS.TS. Nguyễn Văn A và ThS. Trần Thị B.")]
     public void CleanWhitespaceAndPunctuationNormalizesProperly(string source, string expected)
     {
@@ -95,6 +96,7 @@ public sealed class VietnameseTextConversionTests
     [Theory]
     [InlineData("\"Nội dung văn bản\"", "“Nội dung văn bản”")]
     [InlineData("Báo cáo \" kết quả thực hiện \" năm 2026", "Báo cáo “kết quả thực hiện” năm 2026")]
+    [InlineData("\"Cụm từ có quote thiếu", "\"Cụm từ có quote thiếu")]
     public void NormalizeQuotationMarksConvertsToVietnameseCurlyQuotes(string source, string expected)
     {
         Assert.Equal(expected, VietnameseTypographyCleaner.NormalizeQuotationMarks(source));

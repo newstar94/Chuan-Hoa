@@ -73,6 +73,22 @@ namespace ChuanHoa.Client.Core.Scanning
             return bestCount == 1 ? ApplyCase(word, best!) : null;
         }
 
+        /// <summary>
+        /// Vietnamese-aware ranking used only for suggestions. A suggestion is
+        /// returned when the best candidate is below the conservative threshold and
+        /// separated from the runner-up; it never performs an automatic replacement.
+        /// </summary>
+        public string? FindPhoneticSuggestion(string word)
+        {
+            if (string.IsNullOrWhiteSpace(word) || IsKnown(word)) return null;
+            var normalized = Normalize(word);
+            var candidates = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var alternate in ChuanHoa.Client.Core.Lexicon.VietnameseConfusionSets.GeneratePhoneticAlternates(normalized))
+                if (_words.Contains(alternate)) candidates.Add(alternate);
+            if (candidates.Count != 1) return null;
+            return ApplyCase(word, candidates.Single());
+        }
+
         private static string Normalize(string value) =>
             value.Normalize(NormalizationForm.FormC).ToLower(Vietnamese);
 

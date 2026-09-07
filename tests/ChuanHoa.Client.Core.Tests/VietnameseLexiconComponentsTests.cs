@@ -83,6 +83,30 @@ namespace ChuanHoa.Client.Core.Tests
             Assert.Equal(7, words[0].ParagraphIndex);
         }
 
+        [Theory]
+        [InlineData("http://example.com/a?x=1", "http://example.com/a?x=1")]
+        [InlineData("Xem www.example.com.", "www.example.com")]
+        [InlineData("Xem example.gov.vn/tai-lieu.", "example.gov.vn/tai-lieu")]
+        [InlineData("Gửi user@example.com!", "user@example.com")]
+        public void Tokenizer_protects_web_spans_without_consuming_sentence_punctuation(
+            string text, string expected)
+        {
+            var tokens = VietnameseWordTokenizer.TokenizeParagraph(text, 3);
+            var token = Assert.Single(tokens, item => item.Kind == VietnameseTokenKind.UrlOrEmail);
+            Assert.Equal(expected, token.Text);
+            Assert.Equal(expected, text.Substring(token.StartOffset, token.Length));
+            Assert.Equal(string.Concat(tokens.Select(item => item.Text)), text);
+        }
+
+        [Fact]
+        public void Phonetic_suggestion_is_conservative_and_does_not_guess_when_ambiguous()
+        {
+            var checker = new VietnameseLexiconSpellChecker(new[] { "xử", "sứ" });
+            Assert.Equal("xử", checker.FindPhoneticSuggestion("sử"));
+            Assert.Null(new VietnameseLexiconSpellChecker(new[] { "xử", "sử" })
+                .FindPhoneticSuggestion("sử"));
+        }
+
         [Fact]
         public void Nfc_offset_map_returns_the_exact_decomposed_source_span()
         {
@@ -94,6 +118,20 @@ namespace ChuanHoa.Client.Core.Tests
 
             Assert.Equal(source.IndexOf("Ho\u0300a", StringComparison.Ordinal), sourceSpan.Item1);
             Assert.Equal("Ho\u0300a bi\u0300nh", source.Substring(sourceSpan.Item1, sourceSpan.Item2));
+        }
+
+        [Fact]
+        public void Nfc_offset_map_preserves_utf16_offsets_around_emoji_and_word_terminator()
+        {
+            const string source = "🙂 Ho\u0300a\r";
+            var mapped = NormalizedTextOffsetMap.Create(source);
+            var normalizedStart = mapped.Normalized.IndexOf("Hòa", StringComparison.Ordinal);
+
+            var sourceSpan = mapped.MapSpan(normalizedStart, "Hòa".Length);
+
+            Assert.Equal(source.IndexOf("Ho\u0300a", StringComparison.Ordinal), sourceSpan.Item1);
+            Assert.Equal("Ho\u0300a", source.Substring(sourceSpan.Item1, sourceSpan.Item2));
+            Assert.EndsWith("\r", mapped.Source, StringComparison.Ordinal);
         }
 
         [Fact]

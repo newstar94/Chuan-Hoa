@@ -30,12 +30,12 @@ namespace ChuanHoa.Client.Core.Scanning
         private const double PointsPerMillimeter = 72d / 25.4d;
         private const double TolerancePoints = 1.1d;
         private static readonly CultureInfo Vietnamese = CultureInfo.GetCultureInfo("vi-VN");
-        private static readonly Regex CodeNumber = Rx(@"^\s*Số\s*(?<colon>:?)\s*(?<number>\d+)(?<separator>[^\p{L}\d]?)(?<notation>[^\r\n]*)$");
+        private static readonly Regex CodeNumber = Rx(@"(?:^|[\r\n\v])\s*Số\s*(?<colon>:?)\s*(?<number>\d+)(?<separator>[^\p{L}\d]?)(?<notation>[^\r\n\v]*)$", true);
         private static readonly Regex PlaceDate = Rx(@"^\s*(?<place>[\p{L}][\p{L}\s.]{0,70}?)(?<comma>,?)\s+ngày\s+(?<day>\d{1,2})\s+tháng\s+(?<month>\d{1,2})\s+năm\s+(?<year>\d{4})\s*$", true);
         private static readonly Regex Article = Rx(@"^\s*Điều\s+(?<number>\d+)\s*\.?(?<title>.*)$", true);
         private static readonly Regex Clause = Rx(@"^\s*(?<number>\d+)\.\s+", false);
         private static readonly Regex Point = Rx(@"^\s*(?<letter>[a-zđ])\)\s+", true);
-        private static readonly Regex Citation = Rx(@"(?<type>nghị\s+quyết\s+liên\s+tịch|nghị\s+quyết|nghị\s+định|quyết\s+định|chỉ\s+thị|thông\s+tư\s+liên\s+tịch|thông\s+tư|bộ\s+luật|luật|pháp\s+lệnh|lệnh|công\s+văn|tờ\s+trình)(?<so>\s+số)?\s+(?<code>\d+[\wĐđ/-]+)", true);
+        private static readonly Regex Citation = Rx(@"(?<type>" + VietnameseLegalDocumentVocabulary.RegexAlternation + @")(?<so>\s+số)?\s+(?<code>\d+[\wĐđ/-]+)", true);
         private static readonly Regex AbbreviatedDate = Rx(@"ngày\s+(?<day>\d{1,2})[/.-](?<month>\d{1,2})[/.-](?<year>\d{4})", true);
         private static readonly Regex LegalBasisShortDate = Rx(@"\b(?<day>\d{1,2})[/.-](?<month>\d{1,2})[/.-](?<year>\d{4})\b", true);
         private static readonly Regex LeadingListMarkers = Rx(
@@ -61,6 +61,13 @@ namespace ChuanHoa.Client.Core.Scanning
         private static readonly Regex StructureLevelHeadingRegex = Rx(@"\b(?<keyword>chương|phần|mục|tiểu\s+mục|phụ\s+lục)\s+(?:[IVXLCDM]+|\d+)", false);
         private static readonly Regex ArticleHeadingCheckRegex = Rx(@"Điều\s+\d+", true);
         private static readonly Regex ClauseOrPointRefRegex = Rx(@"\b(?<keyword>Khoản|Điểm)\s+(?:\d+|[a-zđ]\))", false);
+        private static readonly Regex ParenthesizedShortDateRegex = Rx(@"\([^()]*\b\d{1,2}[/.-]\d{1,2}[/.-]\d{4}\b[^()]*\)");
+        private static readonly Regex OfficialLetterSubjectPartyRegex = Rx(@"^\s*(?:về việc|V/v)\s+", false);
+        private static readonly Regex OfficialLetterSubjectStateRegex = Rx(@"^\s*(?:V/v|Về việc)\s+", true);
+        private static readonly object DynamicRegexCacheLock = new object();
+        private static readonly Dictionary<string, Regex> DynamicRegexCache =
+            new Dictionary<string, Regex>(StringComparer.Ordinal);
+        private const int DynamicRegexCacheLimit = 512;
         private static readonly HashSet<string> AllowedForeignWords = new HashSet<string>(
             new[] { "email", "e-mail", "website", "online", "internet", "software", "hardware", "file", "link", "wifi" },
             StringComparer.OrdinalIgnoreCase);
@@ -154,7 +161,7 @@ namespace ChuanHoa.Client.Core.Scanning
                 CheckDictionary(findings, paragraph, rules, snapshot.DictionaryScopeId, _personalDictionary);
                 CheckLexicon(findings, paragraph, rules, lexicon, snapshot.DictionaryScopeId, _personalDictionary);
                 CheckTelex(findings, paragraph, rules);
-                CheckBareShortDates(findings, paragraph, rules);
+                CheckBareShortDates(findings, paragraph, rules, roles);
                 CheckSentenceCapitalization(findings, paragraph, rules, roles);
                 CheckPersonNames(findings, paragraph, rules);
                 CheckArticleClauseCapitalization(findings, paragraph, rules);
@@ -740,8 +747,8 @@ namespace ChuanHoa.Client.Core.Scanning
             foreach (var paragraph in WithRole(snapshot, roles, "officialLetterSubject"))
             {
                 CheckStyle(findings, "ND30-PL1-M2-K5B-STYLE", paragraph, rules, 12, party ? 12 : 13, false, party, party ? 1 : 1, "Trích yếu công văn");
-                var prefix = party ? @"^\s*(?:về việc|V/v)\s+" : @"^\s*(?:V/v|Về việc)\s+";
-                if (!Rx(prefix, !party).IsMatch(paragraph.Text))
+                var prefix = party ? OfficialLetterSubjectPartyRegex : OfficialLetterSubjectStateRegex;
+                if (!prefix.IsMatch(paragraph.Text))
                     findings.Add(Paragraph("ND30-PL1-M2-K5B-SPACE", paragraph, "Trích yếu công văn sai tiền tố hoặc khoảng cách.",
                         party ? "Trình bày trích yếu công văn bằng chữ thường, cỡ 12, nghiêng." : "Bắt đầu bằng V/v hoặc Về việc và một khoảng trắng.", rules));
             }
@@ -1066,21 +1073,24 @@ namespace ChuanHoa.Client.Core.Scanning
             PersonalDictionaryManager personalDictionary)
         {
             if (lexicon.Count == 0) return;
+            var mapped = NormalizedTextOffsetMap.Create(paragraph.Text);
             var protectedDictionaryPhrases = FindPersonalDictionaryPhraseSpans(
-                paragraph.Text, personalDictionary.GetUserWords());
+                mapped, personalDictionary.GetUserWords());
             var leadingMarker = LeadingListMarkers.Match(paragraph.Text);
             var contentStart = leadingMarker.Success ? leadingMarker.Groups["letter"].Index : -1;
-            foreach (var token in VietnameseWordTokenizer.TokenizeParagraph(paragraph.Text, paragraph.Index))
+            var tokens = VietnameseWordTokenizer.TokenizeParagraph(paragraph.Text, paragraph.Index);
+            foreach (var token in tokens)
             {
                 var normalizedToken = token.Text.Normalize(NormalizationForm.FormC);
                 if (token.Kind != VietnameseTokenKind.Word || token.Length == 0 ||
                     (contentStart >= 0 && token.StartOffset + token.Length <= contentStart) ||
                     IsCoveredBySpan(token.StartOffset, token.Length, protectedDictionaryPhrases) ||
-                    ShouldIgnoreLexiconToken(normalizedToken) || lexicon.IsKnown(normalizedToken) ||
+                    ShouldIgnoreLexiconToken(token, tokens) || lexicon.IsKnown(normalizedToken) ||
                     personalDictionary.IsKnownOrIgnored(normalizedToken, documentId) ||
                     OverlapsExistingTextFinding(findings, paragraph, token.StartOffset, token.Length))
                     continue;
-                var suggestion = lexicon.FindDeterministicCorrection(normalizedToken);
+                var suggestion = lexicon.FindDeterministicCorrection(normalizedToken) ??
+                    lexicon.FindPhoneticSuggestion(normalizedToken);
                 findings.Add(Span("LOCAL-TYPO-LEXICON", paragraph, token.StartOffset, token.Length,
                     "Từ “" + token.Text + "” không có trong từ điển tiếng Việt.",
                     suggestion == null
@@ -1091,11 +1101,11 @@ namespace ChuanHoa.Client.Core.Scanning
         }
 
         private static IReadOnlyList<Tuple<int, int>> FindPersonalDictionaryPhraseSpans(
-            string text, IEnumerable<string> entries)
+            NormalizedTextOffsetMap mapped, IEnumerable<string> entries)
         {
             var spans = new List<Tuple<int, int>>();
             foreach (var entry in entries.Where(item => item.Any(char.IsWhiteSpace)))
-            foreach (var occurrence in WholePhraseMatches(text, entry))
+            foreach (var occurrence in WholePhraseMatches(mapped, entry))
                 spans.Add(occurrence);
             return spans;
         }
@@ -1107,19 +1117,40 @@ namespace ChuanHoa.Client.Core.Scanning
             return spans.Any(span => start >= span.Item1 && end <= span.Item1 + span.Item2);
         }
 
-        private static bool ShouldIgnoreLexiconToken(string value)
+        private static bool ShouldIgnoreLexiconToken(VietnameseTokenSpan token,
+            IReadOnlyList<VietnameseTokenSpan> tokens)
         {
+            var value = token.Text;
             var letters = value.Where(char.IsLetter).ToArray();
             if (letters.Length == 0) return true;
             if (letters.Length > 1 && letters.All(char.IsUpper)) return true;
-            // Unknown title-case tokens are normally personal names, place names or
-            // organisation names. The contextual correction list still checks known
-            // mistakes inside those phrases before this exemption is applied.
-            if (char.IsUpper(letters[0])) return true;
+            if (char.IsUpper(letters[0]) && !IsSentenceStart(token, tokens)) return true;
             if (AllowedForeignWords.Contains(value)) return true;
             if (letters.Length == 1)
                 return "aàạảãáeèẹẻẽéêềệểễếiìịỉĩíoòọỏõóôồộổỗốơờợởỡớuùụủũúưừừữứyỳỵỷỹý".IndexOf(char.ToLower(letters[0], Vietnamese)) >= 0;
             return false;
+        }
+
+        private static bool IsSentenceStart(VietnameseTokenSpan token,
+            IReadOnlyList<VietnameseTokenSpan> tokens)
+        {
+            var position = -1;
+            for (var tokenIndex = 0; tokenIndex < tokens.Count; tokenIndex++)
+            {
+                if (ReferenceEquals(tokens[tokenIndex], token))
+                {
+                    position = tokenIndex;
+                    break;
+                }
+            }
+            for (var index = position - 1; index >= 0; index--)
+            {
+                var previous = tokens[index];
+                if (previous.Kind == VietnameseTokenKind.Whitespace) continue;
+                return previous.Kind == VietnameseTokenKind.Punctuation &&
+                    (previous.Text == "." || previous.Text == "!" || previous.Text == "?");
+            }
+            return true;
         }
 
         private static bool OverlapsExistingTextFinding(IEnumerable<AnnotationFinding> findings,
@@ -1138,19 +1169,25 @@ namespace ChuanHoa.Client.Core.Scanning
             foreach (var rule in rules.TelexRules)
             {
                 Regex regex;
-                try { regex = new Regex(rule.Pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, TimeSpan.FromMilliseconds(100)); }
+                try { regex = GetDynamicRegex(rule.Pattern); }
                 catch (ArgumentException) { continue; }
                 AddMatches(findings, paragraph, regex, "LOCAL-TYPO-TELEX", "Có dấu hiệu Telex chưa chuyển xong.", "Kiểm tra và đổi thành “" + rule.Replacement + "”.", rules);
             }
         }
 
         private static void CheckBareShortDates(ICollection<AnnotationFinding> findings, LocalParagraphSnapshot paragraph,
-            LocalRulePack rules)
+            LocalRulePack rules, IDictionary<int, string> roles)
         {
+            if (paragraph.IsInTable || paragraph.StoryType != "wdMainTextStory") return;
+            string role;
+            if (!roles.TryGetValue(paragraph.Index, out role) || role != "legalBasis") return;
             foreach (Match match in LegalBasisShortDate.Matches(paragraph.Text))
             {
                 var prefix = paragraph.Text.Substring(0, match.Index);
                 if (DateTrailingWordRegex.IsMatch(prefix)) continue;
+                if (ParenthesizedShortDateRegex.Matches(paragraph.Text).Cast<Match>()
+                    .Any(group => match.Index >= group.Index &&
+                        match.Index + match.Length <= group.Index + group.Length)) continue;
                 findings.Add(Span("ND30-PL1-M2-K6B-DATE", paragraph, match.Index, match.Length,
                     "Ngày viết dạng số nhưng thiếu từ “ngày” phía trước.",
                     "Thêm từ “ngày” trước ngày tháng, ví dụ: ngày " + match.Value + ".", rules));
@@ -1494,7 +1531,21 @@ namespace ChuanHoa.Client.Core.Scanning
 
         private static string CitationText(LocalRulePack rules) => "Gói quy tắc ký " + rules.PackId + ", phiên bản " + rules.Version;
         private static Regex Rx(string pattern, bool ignoreCase = false) => new Regex(pattern,
-            RegexOptions.CultureInvariant | (ignoreCase ? RegexOptions.IgnoreCase : RegexOptions.None), TimeSpan.FromMilliseconds(200));
+            RegexOptions.CultureInvariant | RegexOptions.Compiled | (ignoreCase ? RegexOptions.IgnoreCase : RegexOptions.None), TimeSpan.FromMilliseconds(200));
+        private static Regex GetDynamicRegex(string pattern)
+        {
+            lock (DynamicRegexCacheLock)
+            {
+                Regex cached;
+                if (DynamicRegexCache.TryGetValue(pattern, out cached)) return cached;
+                var regex = new Regex(pattern,
+                    RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled,
+                    TimeSpan.FromMilliseconds(100));
+                if (DynamicRegexCache.Count < DynamicRegexCacheLimit)
+                    DynamicRegexCache[pattern] = regex;
+                return regex;
+            }
+        }
         private static bool Eq(string left, string right) => string.Equals(Collapse(left), Collapse(right), StringComparison.OrdinalIgnoreCase);
         private static string Collapse(string value) => Regex.Replace(value ?? string.Empty, @"\s+", " ").Trim();
         private static bool Near(double left, double right, double tolerance) => Math.Abs(left - right) <= tolerance;
@@ -1513,14 +1564,6 @@ namespace ChuanHoa.Client.Core.Scanning
             var letters = value.Where(char.IsLetter).ToArray();
             return letters.Length >= 4 && letters.Count(char.IsUpper) >= Math.Ceiling(letters.Length * .8d);
         }
-        private static IEnumerable<Tuple<int, int>> WholePhraseMatches(string text, string phrase)
-        {
-            if (string.IsNullOrWhiteSpace(text) || string.IsNullOrWhiteSpace(phrase)) yield break;
-            var mapped = NormalizedTextOffsetMap.Create(text);
-            foreach (var match in WholePhraseMatches(mapped, phrase))
-                yield return match;
-        }
-
         private static IEnumerable<Tuple<int, int>> WholePhraseMatches(NormalizedTextOffsetMap mapped, string phrase)
         {
             if (mapped == null || string.IsNullOrWhiteSpace(phrase)) yield break;

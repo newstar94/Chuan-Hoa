@@ -284,6 +284,26 @@ public sealed class LocalDocumentScannerTests
         Assert.True(checker.IsKnown("Dự"));
     }
 
+    [Fact]
+    public void Lexicon_checks_unknown_title_case_at_sentence_start_but_keeps_mid_sentence_name_exemption()
+    {
+        var paragraph = new LocalParagraphSnapshot(1,
+            "Nhậnn hồ sơ. Ông Nguyễn Minh An đã ký.", "wdMainTextStory", 1, 0,
+            "Times New Roman");
+        var rules = new LocalRulePack("TEST", "1.0.0", Now.AddDays(-1), Now.AddDays(30), "1.0.0.0",
+            210, 297, 20, 25, 20, 25, 30, 35, 15, 20, "Times New Roman",
+            Array.Empty<TextCorrectionRule>(), Array.Empty<TelexRule>(), Array.Empty<char>(),
+            lexicon: new[] { "nhận", "hồ", "sơ", "ông", "đã", "ký" });
+
+        var result = new LocalDocumentScanner().ScanSpelling(Snapshot(ValidSection(), paragraph), rules);
+
+        Assert.Contains(result.Findings, item => item.RuleCode == "LOCAL-TYPO-LEXICON" &&
+            item.Anchor.ExpectedText == "Nhậnn");
+        Assert.DoesNotContain(result.Findings, item => item.RuleCode == "LOCAL-TYPO-LEXICON" &&
+            (item.Anchor.ExpectedText == "Nguyễn" || item.Anchor.ExpectedText == "Minh" ||
+             item.Anchor.ExpectedText == "An"));
+    }
+
     [Theory]
     [InlineData("a. Quy mô đầu tư:")]
     [InlineData("b. Giải pháp thiết kế:")]

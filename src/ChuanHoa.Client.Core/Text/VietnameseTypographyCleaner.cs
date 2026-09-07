@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -21,7 +22,7 @@ namespace ChuanHoa.Client.Core.Text
             @"(?<!\b(?:v|PGS|GS|BS|Th|TP))\.(?!(?:v\b|TS\b|S\b|CKI\b|CKII\b|HCM\b))([A-Za-zÀ-ỹ]|\uE000)",
             RegexOptions.Compiled | RegexOptions.IgnoreCase);
         private static readonly Regex UrlOrEmailRegex = new Regex(
-            @"(?:https?://[^\s<>""'()]+|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})",
+            @"(?:https?://[^\s<>""'()]+|www\.[^\s<>""'()]+|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}|(?<![@\w.-])(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+(?:vn|com|org|net|gov|edu)(?:\.vn)?(?:/[^\s<>""'()]*)?)",
             RegexOptions.Compiled | RegexOptions.IgnoreCase);
         private static readonly Regex InsideParenthesesOpenRegex = new Regex(@"\(\s+", RegexOptions.Compiled);
         private static readonly Regex InsideParenthesesCloseRegex = new Regex(@"\s+\)", RegexOptions.Compiled);
@@ -127,6 +128,13 @@ namespace ChuanHoa.Client.Core.Text
             {
                 suffix = core.Substring(core.Length - 1);
                 core = core.Substring(0, core.Length - 1);
+            }
+
+            // An unmatched ASCII quote is ambiguous. Keep the input intact rather
+            // than let one missing quote invert all remaining open/close marks.
+            if (core.Count(character => character == '"') % 2 != 0)
+            {
+                return core + suffix;
             }
 
             var sb = new StringBuilder(core.Length);

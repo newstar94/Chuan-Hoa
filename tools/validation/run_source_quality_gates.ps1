@@ -52,7 +52,9 @@ try {
         tools/validation/validate_dotnet_supply_chain.py `
         tools/validation/audit_nuget_vulnerabilities.py `
         tools/validation/validate_repository_secrets.py `
-        tools/validation/validate_product_decision_consistency.py
+        tools/validation/validate_product_decision_consistency.py `
+        tools/validation/validate_reference_data.py `
+        tools/data/generate_administrative_reference_data.py
     Assert-LastExitCode -Label 'Python validator compile' -ExitCode $LASTEXITCODE
 
     & $python tools/validation/validate_solution_projects.py
@@ -61,6 +63,10 @@ try {
     Assert-LastExitCode -Label 'Rule-only product validator' -ExitCode $LASTEXITCODE
     & $python tools/validation/validate_development_packaging.py
     Assert-LastExitCode -Label 'Development packaging validator' -ExitCode $LASTEXITCODE
+    & $python tools/data/generate_administrative_reference_data.py --check
+    Assert-LastExitCode -Label 'Administrative data deterministic generation' -ExitCode $LASTEXITCODE
+    & $python tools/validation/validate_reference_data.py --self-test
+    Assert-LastExitCode -Label 'Reference data validator' -ExitCode $LASTEXITCODE
     & $python tools/vsto/validate_vsto_source.py
     Assert-LastExitCode -Label 'VSTO source validator' -ExitCode $LASTEXITCODE
     & $python tools/validation/validate_product_decision_consistency.py --self-test `
