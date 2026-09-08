@@ -1092,7 +1092,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     range.Font.Color = Word.WdColor.wdColorAutomatic;
                     range.Font.Size = party ? 14f : ValidOr(paragraph.FontSizePoints, 13, 14, 14);
                     range.ParagraphFormat.Alignment = Word.WdParagraphAlignment.wdAlignParagraphJustify;
-                    ApplyBodyParagraphIndent(range, paragraph.Text);
+                    ApplyBodyParagraphIndent(range);
                     range.ParagraphFormat.SpaceBeforeAuto = 0;
                     range.ParagraphFormat.SpaceAfterAuto = 0;
                     range.ParagraphFormat.SpaceBefore = 0f;
@@ -1239,58 +1239,22 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             return count;
         }
 
-        private static void ApplyBodyParagraphIndent(Word.Range range, string text)
+        private static void ApplyBodyParagraphIndent(Word.Range range)
         {
             Word.ParagraphFormat? format = null;
-            Word.TabStops? tabStops = null;
-            Word.TabStop? insertedTab = null;
             try
             {
                 format = range.ParagraphFormat;
                 format.RightIndent = 0f;
-                if (ParagraphIndentPolicy.IsDashListParagraph(text))
-                {
-                    var markerPosition = (float)(ParagraphIndentPolicy.ListMarkerMillimeters * PointsPerMillimeter);
-                    var textPosition = (float)(ParagraphIndentPolicy.ListTextMillimeters * PointsPerMillimeter);
-                    format.LeftIndent = textPosition;
-                    format.FirstLineIndent = markerPosition - textPosition;
-                    tabStops = format.TabStops;
-                    if (!HasEquivalentTabStop(tabStops, textPosition))
-                        insertedTab = tabStops.Add(textPosition,
-                            Word.WdTabAlignment.wdAlignTabLeft,
-                            Word.WdTabLeader.wdTabLeaderSpaces);
-                }
-                else
-                {
-                    format.LeftIndent = 0f;
-                    format.FirstLineIndent = (float)(ParagraphIndentPolicy.BodyFirstLineMillimeters * PointsPerMillimeter);
-                }
+                // A literal dash is text, not a Word list. Use the same geometry
+                // as the scanner and preserve existing tab stops without adding any.
+                format.LeftIndent = (float)(ParagraphIndentPolicy.BodyLeftMillimeters * PointsPerMillimeter);
+                format.FirstLineIndent = (float)(ParagraphIndentPolicy.BodyFirstLineMillimeters * PointsPerMillimeter);
             }
             finally
             {
-                Release(insertedTab);
-                Release(tabStops);
                 Release(format);
             }
-        }
-
-
-        private static bool HasEquivalentTabStop(Word.TabStops tabStops, float position)
-        {
-            var count = tabStops.Count;
-            for (var index = 1; index <= count; index++)
-            {
-                Word.TabStop? existing = null;
-                try
-                {
-                    existing = tabStops[index];
-                    if (Math.Abs(existing.Position - position) <= .5f &&
-                        existing.Alignment == Word.WdTabAlignment.wdAlignTabLeft) return true;
-                }
-                catch (COMException) { }
-                finally { Release(existing); }
-            }
-            return false;
         }
 
         private static ParagraphStyle? StyleFor(string role, bool party, LocalParagraphSnapshot paragraph,

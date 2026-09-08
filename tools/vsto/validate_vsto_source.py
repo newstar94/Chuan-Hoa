@@ -833,17 +833,18 @@ def validate() -> dict:
             "Local and 1-Click trailing blank-page cleanup must use the shared bounded implementation."
         )
     for paragraph_indent_contract in (
-        "ApplyBodyParagraphIndent(range, paragraph.Text);",
-        "ParagraphIndentPolicy.IsDashListParagraph(text)",
-        "HasEquivalentTabStop(tabStops, textPosition)",
-        "format.LeftIndent = textPosition;",
-        "format.FirstLineIndent = markerPosition - textPosition;",
+        "ApplyBodyParagraphIndent(range);",
+        "format.LeftIndent = (float)(ParagraphIndentPolicy.BodyLeftMillimeters * PointsPerMillimeter);",
+        "format.FirstLineIndent = (float)(ParagraphIndentPolicy.BodyFirstLineMillimeters * PointsPerMillimeter);",
     ):
         if paragraph_indent_contract not in word_one_click_source:
             raise RuntimeError(
-                "Body/list paragraph tab-stop normalization is missing: "
+                "Scanner-compatible body paragraph indentation is missing: "
                 + paragraph_indent_contract
             )
+    indent_method = word_one_click_source.split("private static void ApplyBodyParagraphIndent(", 1)[1].split("private static ParagraphStyle?", 1)[0]
+    if "TabStops" in indent_method or "tabStops.Add" in indent_method:
+        raise RuntimeError("Body indentation must not add or remove user tab stops.")
     if "TabStops.ClearAll()" in all_vsto_source:
         raise RuntimeError(
             "VSTO source must preserve intentional custom TabStops instead of clearing them globally."

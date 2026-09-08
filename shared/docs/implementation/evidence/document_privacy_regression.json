@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "testId": "DOCUMENT-PRIVACY-REGRESSION-001",
   "status": "PASS",
-  "verifiedOn": "2026-09-07",
+  "verifiedOn": "2026-09-08",
   "scope": "src/ChuanHoa.AddIn.Vsto source; no Word document was opened or uploaded",
   "vstoSourceFilesReviewed": 29,
   "networkSourceAllowlist": [

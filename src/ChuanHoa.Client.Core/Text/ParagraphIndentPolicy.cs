@@ -9,8 +9,7 @@ namespace ChuanHoa.Client.Core.Text
     public static class ParagraphIndentPolicy
     {
         public const double BodyFirstLineMillimeters = 10d;
-        public const double ListMarkerMillimeters = 10d;
-        public const double ListTextMillimeters = 15d;
+        public const double BodyLeftMillimeters = 0d;
 
         public static bool IsValidIndent(string text, double firstLineMm, double? leftMm,
             double minimumMm, double maximumMm)

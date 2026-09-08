@@ -27,12 +27,19 @@ public sealed class ParagraphIndentPolicyTests
         Assert.False(ParagraphIndentPolicy.IsDashListParagraph(text));
     }
 
-    [Fact]
-    public void Uses_stable_hanging_indent_geometry()
+    [Theory]
+    [InlineData("Nội dung")]
+    [InlineData("- Giá trị tối thiểu: 4.888.734.300 VND")]
+    [InlineData("- Thời gian có hiệu lực của cam kết cung cấp tín dụng")]
+    [InlineData("-\tNội dung có tab")]
+    [InlineData("• Nội dung")]
+    public void Formatter_geometry_is_accepted_by_scanner(string text)
     {
-        Assert.Equal(10d, ParagraphIndentPolicy.ListMarkerMillimeters);
-        Assert.Equal(15d, ParagraphIndentPolicy.ListTextMillimeters);
+        Assert.Equal(0d, ParagraphIndentPolicy.BodyLeftMillimeters);
         Assert.Equal(10d, ParagraphIndentPolicy.BodyFirstLineMillimeters);
+        Assert.True(ParagraphIndentPolicy.IsValidIndent(text,
+            ParagraphIndentPolicy.BodyFirstLineMillimeters,
+            ParagraphIndentPolicy.BodyLeftMillimeters, 10, 12.7));
     }
 
     [Theory]
