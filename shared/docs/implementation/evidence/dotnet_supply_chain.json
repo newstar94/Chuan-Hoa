@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "testId": "DOTNET-SUPPLY-CHAIN-001",
   "status": "PASS",
-  "verifiedOn": "2026-09-08",
+  "verifiedOn": "2026-09-11",
   "lockedMode": "CI=true",
   "managedCiWorkflow": ".github/workflows/source-quality.yml",
   "managedCiConfigured": true,
@@ -59,7 +59,7 @@
     "specVersion": "1.6",
     "componentCount": 34,
     "lockFileCount": 14,
-    "sha256": "3E3AA4B4F7C3168AAAFECC4CB6E26E5C0FCBAF29847192E38C5EFD31934E4BD8",
+    "sha256": "861A8594630B3187433CC6DD73DB0E6E5AD06341D2F42B7F6066A3C7253AFAA5",
     "deterministic": true
   },
   "limitations": [

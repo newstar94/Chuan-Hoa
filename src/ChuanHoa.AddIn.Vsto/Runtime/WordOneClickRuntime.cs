@@ -103,6 +103,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             var normalizedSections = 0;
             var normalizedTables = 0;
             var correctedSpellingItems = 0;
+            var originalLegacyLineRules = FindLegacyHeaderSeparatorRules(local, roles);
 
             try
             {
@@ -195,7 +196,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 blocks = context.LastLogicalBlocks;
                 roles = context.LastRolesByParagraphIndex;
                 insertedLines = InsertMissingRequiredLines(document, local, formatFindings,
-                    blocks, roles);
+                    blocks, roles, originalLegacyLineRules);
 
                 if (undoStarted)
                 {
@@ -1301,7 +1302,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         private static int InsertMissingRequiredLines(Word.Document document, LocalScanSnapshot snapshot,
             IReadOnlyList<AnnotationFinding> findings,
             IReadOnlyList<LogicalDocumentBlock> blocks,
-            IReadOnlyDictionary<int, string> roles)
+            IReadOnlyDictionary<int, string> roles,
+            IReadOnlyDictionary<string, string> originalLegacyLineRules)
         {
             var count = 0;
             var work = findings.Where(f => f.RuleCode.EndsWith("-LINE", StringComparison.Ordinal) &&
@@ -1372,7 +1374,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 if (paragraph == null || !string.Equals(paragraph.StoryType, "wdMainTextStory", StringComparison.Ordinal)) continue;
                 var ratio = item.Item1 == "ND30-PL1-M2-K2-ORG-LINE" ||
                     item.Item1 == "ND30-PL1-M2-K5A-SUBJ-LINE" ? .4d : 1d;
-                if (NormalizeRequiredLine(document, snapshot, paragraph, ratio, item.Item1)) count++;
+                if (NormalizeRequiredLine(document, snapshot, paragraph, ratio, item.Item1,
+                        originalLegacyLineRules)) count++;
             }
             return count;
         }
@@ -1409,7 +1412,14 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         }
 
         private static bool NormalizeRequiredLine(Word.Document document, LocalScanSnapshot snapshot,
-            LocalParagraphSnapshot paragraph, double ratio, string ruleCode)
+            LocalParagraphSnapshot paragraph, double ratio, string ruleCode) =>
+            NormalizeRequiredLine(document, snapshot, paragraph, ratio, ruleCode,
+                FindLegacyHeaderSeparatorRules(snapshot,
+                    new DocumentRoleDetector().Detect(snapshot)));
+
+        private static bool NormalizeRequiredLine(Word.Document document, LocalScanSnapshot snapshot,
+            LocalParagraphSnapshot paragraph, double ratio, string ruleCode,
+            IReadOnlyDictionary<string, string> originalLegacyLineRules)
         {
             Word.Range? range = null;
             Word.Range? lineAnchor = null;
@@ -1477,6 +1487,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     Word.WdInformation.wdActiveEndPageNumber).GetValueOrDefault();
                 var ownerBlock = new DocumentRoleDetector().DetectBlocks(snapshot)
                     .FirstOrDefault(b => b.ContainsParagraph(paragraph.Index));
+                var availableWidth = WordTextMeasurement.ReadAvailableWidth(range)
+                    .GetValueOrDefault(textWidth);
                 var originals = snapshot.LineShapes.Where(l => !LineShapeOwnership.IsOwned(l.Name) &&
                     l.ShapeType == 9 && l.AnchorStoryType == paragraph.StoryType &&
                     l.AnchorSectionIndex == paragraph.SectionIndex && ownerBlock != null &&
@@ -1485,16 +1497,24 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     page > 0 && l.AnchorPageNumber == page && l.PageLeftPoints.HasValue && l.PageTopPoints.HasValue &&
                     (Math.Abs(l.PageTopPoints.Value - y) <= 18d &&
                      Math.Abs(l.PageLeftPoints.Value + l.WidthPoints / 2d - center.Value) <= 18d ||
-                     IsLegacyHeaderSeparator(snapshot, paragraph, l, ruleCode, top, center.Value, textWidth,
-                         WordTextMeasurement.ReadAvailableWidth(range).GetValueOrDefault(textWidth))) &&
+                    IsLegacyHeaderSeparator(snapshot, paragraph, l, ruleCode, top, center.Value, textWidth,
+                         availableWidth)) &&
                     Math.Abs(l.HeightPoints) <= 3d &&
-                    l.WidthPoints >= 10d && l.WidthPoints <= WordTextMeasurement.ReadAvailableWidth(range).GetValueOrDefault(600d)).ToArray();
+                    l.WidthPoints >= 10d && l.WidthPoints <= availableWidth).ToArray();
+                var preparedLegacyNames = originalLegacyLineRules.Where(item =>
+                        string.Equals(item.Value, ruleCode, StringComparison.Ordinal))
+                    .Select(item => item.Key).ToArray();
+                var currentNames = new HashSet<string>(
+                    snapshot.LineShapes.Select(item => item.Name), StringComparer.Ordinal);
+                var preparedOriginals = preparedLegacyNames.Where(currentNames.Contains).ToArray();
                 if (originals.Length >= 1)
                 {
                     RemoveObsoleteComponentLines(document, snapshot, paragraph, ruleCode);
                     foreach (var duplicate in originals)
                         DeleteVerifiedLine(document, duplicate.Name);
                 }
+                foreach (var duplicateName in preparedOriginals)
+                    DeleteVerifiedLine(document, duplicateName);
                 // Page-relative coordinates do not relocate an existing shape's
                 // anchor. Recreate only generated separators with a verified local
                 // anchor so a stale name can never drag a later header onto a cover.
@@ -1596,18 +1616,100 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             var sameColumn = anchor.TableIndex == paragraph.TableIndex && anchor.CellIndex == paragraph.CellIndex &&
                 anchor.RowIndex.HasValue && paragraph.RowIndex.HasValue &&
                 anchor.RowIndex.Value >= paragraph.RowIndex.Value && anchor.RowIndex.Value <= paragraph.RowIndex.Value + 1;
+            // Legacy Word files can serialize an organ separator physically in
+            // the left header cell while moving its anchor to the national-header
+            // cell on the right. Accept only that immediate sibling on the same
+            // row; the geometry checks below still require the line to be fully
+            // contained inside the organ column.
+            var siblingNationalHeaderAnchor = ruleCode == "ND30-PL1-M2-K2-ORG-LINE" &&
+                anchor.TableIndex == paragraph.TableIndex && anchor.RowIndex == paragraph.RowIndex &&
+                anchor.CellIndex.HasValue && paragraph.CellIndex.HasValue &&
+                anchor.CellIndex.Value == paragraph.CellIndex.Value + 1;
             // Word can move a legacy floating-line anchor onto the blank paragraph
             // immediately preceding the header table. Require both this structural
             // adjacency and containment inside the owner's measured column.
             var adjacentBlank = !anchor.IsInTable && string.IsNullOrWhiteSpace(anchor.Text) &&
                 anchor.Index < paragraph.Index && paragraph.Index - anchor.Index <= 2 && paragraph.RowIndex == 1;
-            if (!sameColumn && !adjacentBlank) return false;
-            var distance = line.PageTopPoints.GetValueOrDefault(double.MinValue) - textTop;
+            if (!sameColumn && !siblingNationalHeaderAnchor && !adjacentBlank) return false;
             var lineCenter = line.PageLeftPoints.GetValueOrDefault(double.MinValue) + line.WidthPoints / 2d;
+            if (siblingNationalHeaderAnchor)
+            {
+                if (!paragraph.PageLeftPoints.HasValue || !paragraph.PageTopPoints.HasValue ||
+                    !paragraph.TextWidthPoints.HasValue || paragraph.TextWidthPoints.Value <= 0) return false;
+                var originalTextWidth = paragraph.TextWidthPoints.Value;
+                var originalCenter = paragraph.PageLeftPoints.Value + originalTextWidth / 2d;
+                var originalDistance = line.PageTopPoints.GetValueOrDefault(double.MinValue) -
+                    paragraph.PageTopPoints.Value;
+                return originalDistance >= 0 && originalDistance <= 60 &&
+                    Math.Abs(lineCenter - originalCenter) + line.WidthPoints / 2d <= originalTextWidth / 2d + 1d &&
+                    line.WidthPoints >= originalTextWidth * .25 && line.WidthPoints <= originalTextWidth * 1.2 &&
+                    line.BeginArrowheadStyle == 1 && line.EndArrowheadStyle == 1;
+            }
+            var distance = line.PageTopPoints.GetValueOrDefault(double.MinValue) - textTop;
             return distance >= 0 && distance <= 60 &&
                 Math.Abs(lineCenter - center) + line.WidthPoints / 2d <= containerWidth / 2d + 1d &&
                 line.WidthPoints >= textWidth * .25 && line.WidthPoints <= textWidth * 1.2 &&
                 line.BeginArrowheadStyle == 1 && line.EndArrowheadStyle == 1;
+        }
+
+        private static bool IsLegacyHeaderSeparatorFromPreparedLayout(
+            IReadOnlyDictionary<int, LocalParagraphSnapshot> preparedParagraphs,
+            LocalParagraphSnapshot paragraph, LocalLineShapeSnapshot line, string ruleCode)
+        {
+            if (!paragraph.IsInTable || !paragraph.TableIndex.HasValue ||
+                (ruleCode != "ND30-PL1-M2-K1-TN-LINE" &&
+                 ruleCode != "ND30-PL1-M2-K2-ORG-LINE")) return false;
+            if (!line.AnchorParagraphIndex.HasValue ||
+                !preparedParagraphs.TryGetValue(line.AnchorParagraphIndex.Value, out var anchor) ||
+                !string.Equals(anchor.StoryType, paragraph.StoryType, StringComparison.Ordinal)) return false;
+            var sameColumn = anchor.TableIndex == paragraph.TableIndex &&
+                anchor.CellIndex == paragraph.CellIndex && anchor.RowIndex.HasValue &&
+                paragraph.RowIndex.HasValue && anchor.RowIndex.Value >= paragraph.RowIndex.Value &&
+                anchor.RowIndex.Value <= paragraph.RowIndex.Value + 1;
+            var siblingNationalHeaderAnchor = ruleCode == "ND30-PL1-M2-K2-ORG-LINE" &&
+                anchor.TableIndex == paragraph.TableIndex && anchor.RowIndex == paragraph.RowIndex &&
+                anchor.CellIndex.HasValue && paragraph.CellIndex.HasValue &&
+                anchor.CellIndex.Value == paragraph.CellIndex.Value + 1;
+            if (!sameColumn && !siblingNationalHeaderAnchor) return false;
+            if (!line.PageLeftPoints.HasValue || !line.PageTopPoints.HasValue ||
+                !paragraph.PageLeftPoints.HasValue || !paragraph.PageTopPoints.HasValue ||
+                !paragraph.TextWidthPoints.HasValue || paragraph.TextWidthPoints.Value <= 0 ||
+                line.AnchorSectionIndex != paragraph.SectionIndex ||
+                line.AnchorPageNumber != paragraph.PageNumber || line.BeginArrowheadStyle != 1 ||
+                line.EndArrowheadStyle != 1) return false;
+            var textWidth = paragraph.TextWidthPoints.Value;
+            var center = paragraph.PageLeftPoints.Value + textWidth / 2d;
+            var lineCenter = line.PageLeftPoints.Value + line.WidthPoints / 2d;
+            var distance = line.PageTopPoints.Value - paragraph.PageTopPoints.Value;
+            return distance >= 0d && distance <= 60d &&
+                Math.Abs(lineCenter - center) + line.WidthPoints / 2d <= textWidth / 2d + 1d &&
+                line.WidthPoints >= textWidth * .25d && line.WidthPoints <= textWidth * 1.2d;
+        }
+
+        private static IReadOnlyDictionary<string, string> FindLegacyHeaderSeparatorRules(
+            LocalScanSnapshot snapshot, IReadOnlyDictionary<int, string> roles)
+        {
+            var result = new Dictionary<string, string>(StringComparer.Ordinal);
+            var paragraphs = snapshot.Paragraphs.ToDictionary(item => item.Index);
+            foreach (var paragraph in snapshot.Paragraphs)
+            {
+                if (!roles.TryGetValue(paragraph.Index, out var role)) continue;
+                var ruleCode = string.Equals(role, "organName", StringComparison.Ordinal)
+                    ? "ND30-PL1-M2-K2-ORG-LINE"
+                    : string.Equals(role, "nationalMotto", StringComparison.Ordinal)
+                        ? "ND30-PL1-M2-K1-TN-LINE" : string.Empty;
+                if (ruleCode.Length == 0) continue;
+                foreach (var line in snapshot.LineShapes.Where(item =>
+                    !LineShapeOwnership.IsOwned(item.Name) && item.ShapeType == 9 &&
+                    item.PageLeftPoints.HasValue && item.PageTopPoints.HasValue &&
+                    Math.Abs(item.HeightPoints) <= 3d && item.WidthPoints >= 10d &&
+                    IsLegacyHeaderSeparatorFromPreparedLayout(paragraphs, paragraph,
+                        item, ruleCode)))
+                {
+                    if (!result.ContainsKey(line.Name)) result.Add(line.Name, ruleCode);
+                }
+            }
+            return result;
         }
 
         private static bool IsAdjacentBlankHeaderAnchor(LocalScanSnapshot snapshot,

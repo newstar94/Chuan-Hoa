@@ -344,7 +344,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         public void OnDocumentBeforeSave(Word.Document document)
         {
             if (_disposed || document == null) return;
-            _contextStore.GetOrCreate(document).ClearReadAnalysis();
+            _contextStore.GetOrCreate(document).InvalidateReadAnalysisForSave();
         }
 
         public void Dispose()
@@ -598,16 +598,25 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 // Resolve the context again after the confirmation dialog so this
                 // command cannot carry state from a previously active document.
                 context = _contextStore.GetOrCreate(activeDocument);
-                _documentReadRuntime.PrepareForOneClick(context, activeDocument, _currentDocumentOperation);
-                var result = _oneClickRuntime.Execute(context, activeDocument, _currentDocumentOperation);
-                // Execute has already captured and rescanned the mutated document.
-                // Reuse that exact post-fix evidence for annotation instead of doing a
-                // second full COM capture/scan on large or table-heavy documents.
-                var remainingFormat = _localScanRuntime.ScanAndAnnotate(context, false, activeDocument,
-                    _currentDocumentOperation);
-                var remainingSpelling = _localScanRuntime.ScanAndAnnotate(context, true, activeDocument,
-                    _currentDocumentOperation);
-                var remainingFindingCount = remainingFormat.Findings.Count + remainingSpelling.Findings.Count;
+                OneClickResult result;
+                int remainingFindingCount;
+                // AutoSave can raise DocumentBeforeSave after the full snapshot is
+                // committed but before Execute checks it. Preserve that command-owned
+                // snapshot across save-only invalidations. Explicit clears after a
+                // mutation still take effect immediately and rebuild fresh evidence.
+                using (context.DeferSaveInvalidation())
+                {
+                    _documentReadRuntime.PrepareForOneClick(context, activeDocument, _currentDocumentOperation);
+                    result = _oneClickRuntime.Execute(context, activeDocument, _currentDocumentOperation);
+                    // Execute has already captured and rescanned the mutated document.
+                    // Reuse that exact post-fix evidence for annotation instead of doing a
+                    // second full COM capture/scan on large or table-heavy documents.
+                    var remainingFormat = _localScanRuntime.ScanAndAnnotate(context, false, activeDocument,
+                        _currentDocumentOperation);
+                    var remainingSpelling = _localScanRuntime.ScanAndAnnotate(context, true, activeDocument,
+                        _currentDocumentOperation);
+                    remainingFindingCount = remainingFormat.Findings.Count + remainingSpelling.Findings.Count;
+                }
                 SynchronizeDocumentTypeSelection(context);
                 MessageBox.Show(
                     "Đã chuẩn hóa toàn bộ tại máy.\n\n" +

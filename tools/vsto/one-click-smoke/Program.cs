@@ -34,11 +34,24 @@ namespace ChuanHoa.OneClickSmoke
                         Console.WriteLine("ONE_CLICK_DASHED_MOTTO_LINE_PASS");
                         return 0;
                     }
+                    if (string.Equals(args[0], "--legacy-sibling-line", StringComparison.OrdinalIgnoreCase))
+                    {
+                        RunLegacySiblingOrganLine(Path.Combine(directory, "legacy-sibling-organ-line.docx"));
+                        Console.WriteLine("ONE_CLICK_LEGACY_SIBLING_ORGAN_LINE_PASS");
+                        return 0;
+                    }
                     if (string.Equals(args[0], "--quick-spelling", StringComparison.OrdinalIgnoreCase))
                     {
                         RunQuickSpellingTypography(Path.Combine(directory, "quick-spelling.docx"),
                             Word.WdSaveFormat.wdFormatXMLDocument);
                         Console.WriteLine("QUICK_SPELLING_TYPOGRAPHY_PASS");
+                        return 0;
+                    }
+                    if (string.Equals(args[0], "--autosave-regression", StringComparison.OrdinalIgnoreCase))
+                    {
+                        RunAutoSaveBetweenPrepareAndExecute(
+                            Path.Combine(directory, "autosave-regression.docx"));
+                        Console.WriteLine("ONE_CLICK_AUTOSAVE_REGRESSION_PASS");
                         return 0;
                     }
                     RunExistingDocument(args[0], directory);
@@ -49,12 +62,13 @@ namespace ChuanHoa.OneClickSmoke
                 Run(Path.Combine(directory, "decision.doc"), Word.WdSaveFormat.wdFormatDocument97);
                 RunMultipleEmbeddedDocuments(Path.Combine(directory, "multiple-documents.docx"));
                 RunDashedMottoLineDetection(Path.Combine(directory, "dashed-motto-line.docx"));
+                RunLegacySiblingOrganLine(Path.Combine(directory, "legacy-sibling-organ-line.docx"));
                 RunQuickSpellingTypography(Path.Combine(directory, "quick-spelling.docx"),
                     Word.WdSaveFormat.wdFormatXMLDocument);
                 RunQuickSpellingTypography(Path.Combine(directory, "quick-spelling.doc"),
                     Word.WdSaveFormat.wdFormatDocument97);
                 RunUnsavedDocument();
-                Console.WriteLine("ONE_CLICK_WORD_SMOKE_PASS DOC DOCX UNSAVED MULTIPLE_DOCUMENTS DASHED_MOTTO_LINE QUICK_SPELLING_TYPOGRAPHY");
+                Console.WriteLine("ONE_CLICK_WORD_SMOKE_PASS DOC DOCX UNSAVED MULTIPLE_DOCUMENTS DASHED_MOTTO_LINE LEGACY_SIBLING_ORGAN_LINE QUICK_SPELLING_TYPOGRAPHY");
                 return 0;
             }
             catch (Exception exception)
@@ -139,6 +153,95 @@ namespace ChuanHoa.OneClickSmoke
                     Assert(string.IsNullOrWhiteSpace(document.Path),
                         "A scan forced the unsaved document to disk.");
                 }
+            }
+            finally
+            {
+                if (!string.IsNullOrWhiteSpace(backupPath))
+                    try { if (File.Exists(backupPath)) File.Delete(backupPath); } catch { }
+                if (document != null)
+                {
+                    object save = Word.WdSaveOptions.wdDoNotSaveChanges;
+                    document.Close(ref save);
+                }
+                if (application != null)
+                {
+                    object save = Word.WdSaveOptions.wdDoNotSaveChanges;
+                    application.Quit(ref save);
+                }
+                Release(document);
+                Release(application);
+            }
+        }
+
+        private static void RunAutoSaveBetweenPrepareAndExecute(string path)
+        {
+            Word.Application application = null;
+            Word.Document document = null;
+            string backupPath = null;
+            try
+            {
+                application = new Word.Application
+                {
+                    Visible = false,
+                    DisplayAlerts = Word.WdAlertLevel.wdAlertsNone
+                };
+                document = application.Documents.Add();
+                document.Content.Text =
+                    "CƠ QUAN BAN HÀNH\r" +
+                    "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\r" +
+                    "Độc lập - Tự do - Hạnh phúc\r" +
+                    "Số: 01/QĐ-CQ\r" +
+                    "Hà Nội, ngày 10 tháng 9 năm 2026\r" +
+                    "QUYẾT ĐỊNH\r" +
+                    "Về việc kiểm tra lưu tự động\r" +
+                    "Điều 1. Tổ chức thực hiện.\r";
+                object fileName = path;
+                object saveFormat = Word.WdSaveFormat.wdFormatXMLDocument;
+                document.SaveAs(ref fileName, ref saveFormat);
+
+                var context = new DocumentContext(document.GetHashCode())
+                {
+                    RegimeCode = "ND30",
+                    DocumentTypeCode = LocalDocumentTypeCodes.Unknown,
+                    RegimeWasSelectedManually = true,
+                    DocumentTypeWasSelectedManually = false
+                };
+                using (var access = new LocalAccessManager(
+                    typeof(LocalAccessManager).Assembly.GetName().Version.ToString()))
+                {
+                    var saveInvalidations = 0;
+                    Word.ApplicationEvents4_DocumentBeforeSaveEventHandler beforeSave =
+                        delegate(Word.Document savingDocument, ref bool saveAsUi, ref bool cancel)
+                        {
+                            if (!SameComObject(savingDocument, document)) return;
+                            saveInvalidations++;
+                            context.InvalidateReadAnalysisForSave();
+                        };
+                    application.DocumentBeforeSave += beforeSave;
+                    try
+                    {
+                        using (context.DeferSaveInvalidation())
+                        {
+                            var reader = new WordDocumentReadRuntime(application, access);
+                            reader.PrepareForOneClick(context, document);
+                            document.Saved = false;
+                            document.Save();
+                            Assert(saveInvalidations == 1,
+                                "The focused regression did not raise an intervening save event.");
+                            context.RequireFullAnalysis();
+                            var result = new WordOneClickRuntime(application, access)
+                                .Execute(context, document);
+                            backupPath = result.BackupPath;
+                        }
+                    }
+                    finally
+                    {
+                        application.DocumentBeforeSave -= beforeSave;
+                    }
+                }
+
+                Assert(!string.IsNullOrWhiteSpace(backupPath) && File.Exists(backupPath),
+                    "1-Click did not execute after the intervening save event.");
             }
             finally
             {
@@ -316,6 +419,165 @@ namespace ChuanHoa.OneClickSmoke
                 Release(dashedLine);
                 Release(mottoRange);
                 Release(mottoParagraph);
+                if (document != null) { object save = Word.WdSaveOptions.wdDoNotSaveChanges; document.Close(ref save); }
+                if (application != null) { object save = Word.WdSaveOptions.wdDoNotSaveChanges; application.Quit(ref save); }
+                Release(document);
+                Release(application);
+            }
+        }
+
+        private static void RunLegacySiblingOrganLine(string path)
+        {
+            Word.Application application = null;
+            Word.Document document = null;
+            Word.Table identityTable = null;
+            Word.Range insertion = null;
+            Word.Range nationalAnchor = null;
+            Word.Shape legacyLine = null;
+            string firstBackup = null;
+            string secondBackup = null;
+            try
+            {
+                application = new Word.Application { Visible = false, DisplayAlerts = Word.WdAlertLevel.wdAlertsNone };
+                document = application.Documents.Add();
+                document.Content.Text = string.Empty;
+                identityTable = document.Tables.Add(document.Range(0, 0), 1, 2);
+                identityTable.Borders.Enable = 0;
+                identityTable.Cell(1, 1).Range.Text =
+                    "SỞ TƯ PHÁP TỈNH QUẢNG NINH\r" +
+                    "TRUNG TÂM TRỢ GIÚP PHÁP LÝ NHÀ NƯỚC TỈNH QUẢNG NINH";
+                identityTable.Cell(1, 2).Range.Text =
+                    "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\rĐộc lập - Tự do - Hạnh phúc";
+                identityTable.Range.InsertParagraphAfter();
+                insertion = document.Range(identityTable.Range.End, identityTable.Range.End);
+                insertion.InsertAfter("Hà Nội, ngày 10 tháng 09 năm 2026\r" +
+                    "QUYẾT ĐỊNH\rVề việc kiểm tra đường kẻ neo nhầm ô\r" +
+                    "Căn cứ Luật Ban hành văn bản quy phạm pháp luật;\r" +
+                    "Điều 1. Tổ chức thực hiện.\r");
+                Release(insertion); insertion = null;
+                document.Content.Font.Name = "Times New Roman";
+                document.Content.Font.Size = 13f;
+                object fileName = path;
+                object format = Word.WdSaveFormat.wdFormatXMLDocument;
+                document.SaveAs(ref fileName, ref format);
+
+                var context = new DocumentContext(document.GetHashCode())
+                {
+                    RegimeCode = "ND30",
+                    DocumentTypeCode = LocalDocumentTypeCodes.Unknown,
+                    RegimeWasSelectedManually = true,
+                    DocumentTypeWasSelectedManually = false
+                };
+                using (var access = new LocalAccessManager(
+                    typeof(LocalAccessManager).Assembly.GetName().Version.ToString()))
+                {
+                    var reader = new WordDocumentReadRuntime(application, access);
+                    reader.PrepareForOneClick(context, document);
+                    var roles = new DocumentRoleDetector().Detect(context.LastLocalSnapshot);
+                    var organ = context.LastLocalSnapshot.Paragraphs.Single(item =>
+                        roles.TryGetValue(item.Index, out var role) && role == "organName");
+                    var national = context.LastLocalSnapshot.Paragraphs.Single(item =>
+                        roles.TryGetValue(item.Index, out var role) && role == "nationalTitle");
+                    Assert(!roles.Any(item => item.Value == "codeNumber"),
+                        "The no-number header fixture unexpectedly acquired a code-number role.");
+                    Assert(organ.TableIndex == national.TableIndex && organ.RowIndex == national.RowIndex &&
+                           organ.CellIndex.HasValue && national.CellIndex == organ.CellIndex + 1,
+                        "The smoke fixture does not place the organ and national title in sibling header cells.");
+                    Assert(organ.PageLeftPoints.HasValue && organ.PageTopPoints.HasValue &&
+                           organ.TextWidthPoints.HasValue && organ.TextWidthPoints.Value > 0,
+                        "The organ heading did not expose rendered geometry.");
+
+                    nationalAnchor = document.Range(national.AbsoluteStart,
+                        Math.Max(national.AbsoluteStart + 1, national.AbsoluteEnd));
+                    var width = (float)Math.Max(28d, organ.TextWidthPoints.Value / 3d);
+                    var left = (float)(organ.PageLeftPoints.Value +
+                        (organ.TextWidthPoints.Value - width) / 2d);
+                    // This legacy line sits just below the first rendered line. The
+                    // standard header-column pass narrows the organ cell and wraps
+                    // the long name, so post-layout geometry alone moves the last
+                    // rendered text line below this otherwise valid old separator.
+                    var top = (float)(organ.PageTopPoints.Value + 2.5d);
+                    object anchor = nationalAnchor;
+                    legacyLine = document.Shapes.AddLine(left, top, left + width, top, ref anchor);
+                    legacyLine.Name = "_x0000_s2052";
+                    legacyLine.RelativeHorizontalPosition =
+                        Word.WdRelativeHorizontalPosition.wdRelativeHorizontalPositionPage;
+                    legacyLine.RelativeVerticalPosition =
+                        Word.WdRelativeVerticalPosition.wdRelativeVerticalPositionPage;
+                    legacyLine.Left = left;
+                    legacyLine.Top = top;
+                    legacyLine.Line.Visible = Office.MsoTriState.msoTrue;
+                    legacyLine.Line.DashStyle = Office.MsoLineDashStyle.msoLineSolid;
+                    legacyLine.Line.BeginArrowheadStyle = Office.MsoArrowheadStyle.msoArrowheadNone;
+                    legacyLine.Line.EndArrowheadStyle = Office.MsoArrowheadStyle.msoArrowheadNone;
+                    legacyLine.WrapFormat.Type = Word.WdWrapType.wdWrapNone;
+                    document.Save();
+
+                    context.ClearReadAnalysis();
+                    reader.PrepareForOneClick(context, document);
+                    var captured = context.LastLocalSnapshot.LineShapes.Single(item =>
+                        item.Name == "_x0000_s2052");
+                    var capturedAnchor = context.LastLocalSnapshot.Paragraphs.Single(item =>
+                        item.Index == captured.AnchorParagraphIndex &&
+                        item.StoryType == captured.AnchorStoryType);
+                    Console.WriteLine("LEGACY_SIBLING_INPUT organ=P" + organ.Index + "@page" + organ.PageNumber +
+                        "/table" + organ.TableIndex + "/row" + organ.RowIndex + "/cell" + organ.CellIndex +
+                        "/left" + organ.PageLeftPoints + "/top" + organ.PageTopPoints +
+                        "/width" + organ.TextWidthPoints + " anchor=P" + capturedAnchor.Index +
+                        "/table" + capturedAnchor.TableIndex + "/row" + capturedAnchor.RowIndex +
+                        "/cell" + capturedAnchor.CellIndex + " lineLeft=" + captured.PageLeftPoints +
+                        "/top" + captured.PageTopPoints + "/width" + captured.WidthPoints +
+                        "/arrows" + captured.BeginArrowheadStyle + "/" + captured.EndArrowheadStyle);
+                    Assert(capturedAnchor.CellIndex == national.CellIndex &&
+                           captured.PageLeftPoints.HasValue &&
+                           captured.PageLeftPoints.Value < national.PageLeftPoints.GetValueOrDefault(double.MaxValue),
+                        "The legacy line was not physically left while anchored in the national-header cell.");
+
+                    var runtime = new WordOneClickRuntime(application, access);
+                    var first = runtime.Execute(context, document);
+                    firstBackup = first.BackupPath;
+                    reader.Prepare(context, DocumentAnalysisScope.Full, document, false);
+                    var firstOwnedNames = context.LastLocalSnapshot.LineShapes
+                        .Where(item => LineShapeOwnership.IsOwned(item.Name))
+                        .Select(item => item.Name).OrderBy(item => item, StringComparer.Ordinal).ToArray();
+                    Console.WriteLine("LEGACY_SIBLING_POST_LINES=" + string.Join(";",
+                        context.LastLocalSnapshot.LineShapes.Select(item => item.Name + "@P" +
+                            item.AnchorParagraphIndex + "/page" + item.AnchorPageNumber +
+                            "/left" + item.PageLeftPoints + "/top" + item.PageTopPoints +
+                            "/width" + item.WidthPoints)));
+                    Assert(firstOwnedNames.Length == 3 &&
+                           firstOwnedNames.Count(item => item.StartsWith("CHUANHOA2_ORG_", StringComparison.Ordinal)) == 1 &&
+                           firstOwnedNames.Count(item => item.StartsWith("CHUANHOA2_MOTTO_", StringComparison.Ordinal)) == 1 &&
+                           firstOwnedNames.Count(item => item.StartsWith("CHUANHOA2_SUBJ_", StringComparison.Ordinal)) == 1,
+                        "1-Click did not create exactly the three required header/subject lines: " +
+                        string.Join(",", firstOwnedNames));
+                    Assert(!context.LastLocalSnapshot.LineShapes.Any(item =>
+                            item.Name.StartsWith("_x0000_s", StringComparison.OrdinalIgnoreCase) ||
+                            !LineShapeOwnership.IsOwned(item.Name)),
+                        "The sibling-anchored legacy Line Shape remained after normalization.");
+                    Assert(!context.LastFormatScan.Findings.Any(item =>
+                            item.RuleCode.EndsWith("-LINE", StringComparison.Ordinal)),
+                        "A required component line finding remained after sibling-anchor repair.");
+
+                    reader.PrepareForOneClick(context, document);
+                    var second = runtime.Execute(context, document);
+                    secondBackup = second.BackupPath;
+                    reader.Prepare(context, DocumentAnalysisScope.Full, document, false);
+                    var secondOwnedNames = context.LastLocalSnapshot.LineShapes
+                        .Where(item => LineShapeOwnership.IsOwned(item.Name))
+                        .Select(item => item.Name).OrderBy(item => item, StringComparer.Ordinal).ToArray();
+                    Assert(firstOwnedNames.SequenceEqual(secondOwnedNames),
+                        "A repeated 1-Click changed sibling-anchor line ownership or count.");
+                }
+            }
+            finally
+            {
+                foreach (var backup in new[] { firstBackup, secondBackup })
+                    if (!string.IsNullOrWhiteSpace(backup)) try { if (File.Exists(backup)) File.Delete(backup); } catch { }
+                Release(legacyLine);
+                Release(nationalAnchor);
+                Release(insertion);
+                Release(identityTable);
                 if (document != null) { object save = Word.WdSaveOptions.wdDoNotSaveChanges; document.Close(ref save); }
                 if (application != null) { object save = Word.WdSaveOptions.wdDoNotSaveChanges; application.Quit(ref save); }
                 Release(document);
@@ -694,7 +956,7 @@ namespace ChuanHoa.OneClickSmoke
                         {
                             if (!SameComObject(savingDocument, document)) return;
                             sourceSaveInvalidations++;
-                            context.ClearReadAnalysis();
+                            context.InvalidateReadAnalysisForSave();
                         };
                     application.DocumentBeforeSave += beforeSave;
                     OneClickResult result;
@@ -703,11 +965,23 @@ namespace ChuanHoa.OneClickSmoke
                         // Regression: the Ribbon receives an unsaved document after a
                         // scan/selected fix. The save event clears analysis, so 1-Click
                         // must persist first and only then build its full snapshot.
-                        readRuntime.PrepareForOneClick(context, document);
-                        Assert(sourceSaveInvalidations == 1,
-                            "The regression setup did not invalidate analysis at the source save boundary.");
-                        context.RequireFullAnalysis();
-                        result = runtime.Execute(context, document);
+                        using (context.DeferSaveInvalidation())
+                        {
+                            readRuntime.PrepareForOneClick(context, document);
+                            Assert(sourceSaveInvalidations == 1,
+                                "The regression setup did not invalidate analysis at the source save boundary.");
+                            context.RequireFullAnalysis();
+
+                            // Regression: AutoSave can start after PrepareForOneClick has
+                            // committed the full snapshot but before Execute checks it.
+                            // Force that exact save-only event without changing content.
+                            document.Saved = false;
+                            document.Save();
+                            Assert(sourceSaveInvalidations == 2,
+                                "The regression setup did not raise a save event between prepare and execute.");
+                            context.RequireFullAnalysis();
+                            result = runtime.Execute(context, document);
+                        }
                         readRuntime.Prepare(context, DocumentAnalysisScope.Full, document, false);
                         Assert(!context.LastFormatScan.Findings.Any(item =>
                                 item.RuleCode.EndsWith("-LINE", StringComparison.Ordinal)),

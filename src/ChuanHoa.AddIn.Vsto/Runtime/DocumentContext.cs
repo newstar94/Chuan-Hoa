@@ -8,6 +8,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
     {
         private readonly Dictionary<string, int> _dropDownSelections =
             new Dictionary<string, int>(StringComparer.Ordinal);
+        private int _saveInvalidationDeferralDepth;
+        private bool _saveInvalidationPending;
 
         public DocumentContext(long documentIdentity)
         {
@@ -140,6 +142,9 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
         public void ClearReadAnalysis()
         {
+            // An explicit clear acknowledges every earlier save invalidation. The
+            // caller is about to rebuild the analysis or deliberately discard it.
+            _saveInvalidationPending = false;
             LastSnapshot = null;
             LastLocalSnapshot = null;
             LastFormatScan = null;
@@ -148,6 +153,51 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             LastRolesByParagraphIndex = new Dictionary<int, string>();
             LastSnapshotAtUtc = null;
             SnapshotCapturedFromSavedDocument = false;
+        }
+
+        public void InvalidateReadAnalysisForSave()
+        {
+            if (_saveInvalidationDeferralDepth > 0)
+            {
+                _saveInvalidationPending = true;
+                return;
+            }
+
+            ClearReadAnalysis();
+        }
+
+        public IDisposable DeferSaveInvalidation()
+        {
+            checked { _saveInvalidationDeferralDepth++; }
+            return new SaveInvalidationDeferral(this);
+        }
+
+        private void EndSaveInvalidationDeferral()
+        {
+            if (_saveInvalidationDeferralDepth <= 0)
+                throw new InvalidOperationException("Save invalidation deferral is not active.");
+
+            _saveInvalidationDeferralDepth--;
+            if (_saveInvalidationDeferralDepth == 0 && _saveInvalidationPending)
+                ClearReadAnalysis();
+        }
+
+        private sealed class SaveInvalidationDeferral : IDisposable
+        {
+            private DocumentContext? _context;
+
+            public SaveInvalidationDeferral(DocumentContext context)
+            {
+                _context = context;
+            }
+
+            public void Dispose()
+            {
+                var context = _context;
+                if (context == null) return;
+                _context = null;
+                context.EndSaveInvalidationDeferral();
+            }
         }
 
         public void RequireSnapshotAnalysis()

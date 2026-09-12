@@ -102,7 +102,8 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
                 if (uninstall)
                 {
                     UninstallDevelopmentChannel(baseDirectory);
-                    ScheduleInstallerCacheCleanup(ReadVersionResource(), signingCertificatePin);
+                    ScheduleInstallerCacheCleanup(ReadVersionResource(), signingCertificatePin,
+                        ReadCleanupOwnerProcessId(InvocationArguments));
                     if (!quiet)
                         MessageBox.Show(
                             "Đã gỡ add-in Chuẩn hóa Development Test. Từ điển cá nhân và tài liệu của bạn được giữ nguyên.",
@@ -255,6 +256,11 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
             if (args.Any(value => value.IndexOf('"') >= 0))
                 throw new ArgumentException("Installer arguments cannot contain quotation marks.");
             var forwardedArguments = args.ToList();
+            if (forwardedArguments.Any(value => value.StartsWith(
+                    "/cleanup-owner-pid=", StringComparison.OrdinalIgnoreCase)))
+                throw new ArgumentException("Installer cleanup owner PID is reserved for internal use.");
+            forwardedArguments.Add("/cleanup-owner-pid=" +
+                Process.GetCurrentProcess().Id);
             var completionEventName = "Local\\ChuanHoaInstallerComplete" +
                 Guid.NewGuid().ToString("N");
             var failureEventName = "Local\\ChuanHoaInstallerFailure" +
@@ -361,6 +367,22 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
             throw new InvalidOperationException("Cleanup parent PID is missing.");
         }
 
+        private static int ReadCleanupOwnerProcessId(IEnumerable<string> args)
+        {
+            const string prefix = "/cleanup-owner-pid=";
+            foreach (var argument in args)
+            {
+                if (!argument.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) continue;
+                int value;
+                if (int.TryParse(argument.Substring(prefix.Length), out value) && value > 0)
+                    return value;
+                throw new InvalidOperationException("Installer cleanup owner PID is invalid.");
+            }
+            // MSI Office does not require AppVLP, so the uninstall process itself
+            // is the only executable that can still hold the cached installer.
+            return Process.GetCurrentProcess().Id;
+        }
+
         private static int CleanupInstallerCache(string version, int parentProcessId)
         {
             try
@@ -386,7 +408,7 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
         }
 
         private static void ScheduleInstallerCacheCleanup(string version,
-            string signingCertificateSha256)
+            string signingCertificateSha256, int cleanupOwnerProcessId)
         {
             var source = Assembly.GetExecutingAssembly().Location;
             var helper = Path.Combine(Path.GetTempPath(),
@@ -400,7 +422,7 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
             {
                 FileName = helper,
                 Arguments = "/cleanup-cache /parent-pid=" +
-                    Process.GetCurrentProcess().Id + " /quiet",
+                    cleanupOwnerProcessId + " /quiet",
                 UseShellExecute = false,
                 CreateNoWindow = true,
                 WindowStyle = ProcessWindowStyle.Hidden
@@ -490,10 +512,25 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
             string expectedSha256)
         {
             if (!HasPinnedCertificate(storeName, thumbprint, expectedSha256)) return;
-            RunCertificateUtility("-f -user -delstore " + storeName + " " + thumbprint);
+            using (var certificates = Registry.CurrentUser.OpenSubKey(
+                    GetCertificateRegistryPath(storeName), true))
+            {
+                if (certificates == null)
+                    throw new InvalidOperationException(
+                        "Kho certificate CurrentUser không tồn tại: " + storeName + ".");
+                certificates.DeleteSubKeyTree(thumbprint, false);
+            }
             if (HasPinnedCertificate(storeName, thumbprint, expectedSha256))
                 throw new InvalidOperationException(
-                    "KhÃ´ng xÃ³a Ä‘Æ°á»£c certificate Development Ä‘Ã£ pin khá»i " + storeName + ".");
+                    "Không xóa được certificate Development đã pin khỏi " + storeName + ".");
+        }
+
+        private static string GetCertificateRegistryPath(StoreName storeName)
+        {
+            if (storeName != StoreName.Root && storeName != StoreName.TrustedPublisher)
+                throw new InvalidOperationException(
+                    "Kho certificate Development không được phép: " + storeName + ".");
+            return @"Software\Microsoft\SystemCertificates\" + storeName + @"\Certificates";
         }
 
         private static bool HasPinnedCertificate(StoreName storeName, string thumbprint,
@@ -521,29 +558,40 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
             }
         }
 
-        private static void RunCertificateUtility(string arguments)
+        private static byte[] ReadCertificateBlobFromStagingStore(
+            X509Certificate2 certificate)
         {
-            var executable = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.System), "certutil.exe");
-            if (!File.Exists(executable))
-                throw new FileNotFoundException("KhÃ´ng tÃ¬m tháº¥y certutil.exe cá»§a Windows.", executable);
-            var startInfo = new ProcessStartInfo
+            var stagingStoreName = "ChuanHoaDevelopmentStaging" +
+                Guid.NewGuid().ToString("N");
+            var systemCertificatesPath = @"Software\Microsoft\SystemCertificates";
+            try
             {
-                FileName = executable,
-                Arguments = arguments,
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                WindowStyle = ProcessWindowStyle.Hidden,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true
-            };
-            var result = RunCapturedProcess(startInfo, 15000, "certutil.exe");
-            if (result.ExitCode != 0)
-                throw new InvalidOperationException(
-                    "certutil.exe tháº¥t báº¡i vá»›i mÃ£ " + result.ExitCode + ".\n" +
-                    (string.IsNullOrWhiteSpace(result.StandardError)
-                        ? result.StandardOutput
-                        : result.StandardError));
+                using (var stagingStore = new X509Store(
+                        stagingStoreName, StoreLocation.CurrentUser))
+                {
+                    stagingStore.Open(OpenFlags.ReadWrite);
+                    stagingStore.Add(certificate);
+                }
+                using (var certificateKey = Registry.CurrentUser.OpenSubKey(
+                        systemCertificatesPath + @"\" + stagingStoreName +
+                        @"\Certificates\" + certificate.Thumbprint, false))
+                {
+                    var blob = certificateKey == null ? null :
+                        certificateKey.GetValue("Blob", null,
+                            RegistryValueOptions.DoNotExpandEnvironmentNames) as byte[];
+                    if (blob == null || blob.Length < certificate.RawData.Length)
+                        throw new InvalidOperationException(
+                            "Không tạo được bản ghi certificate Development cục bộ.");
+                    return blob;
+                }
+            }
+            finally
+            {
+                using (var systemCertificates = Registry.CurrentUser.OpenSubKey(
+                        systemCertificatesPath, true))
+                    if (systemCertificates != null)
+                        systemCertificates.DeleteSubKeyTree(stagingStoreName, false);
+            }
         }
 
         private static ProcessResult RunCapturedProcess(ProcessStartInfo startInfo,
@@ -1967,11 +2015,19 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
             X509Certificate2 certificate, string expectedSha256)
         {
             if (HasPinnedCertificate(storeName, certificate.Thumbprint, expectedSha256)) return false;
-            RunCertificateUtility("-f -user -addstore " + storeName + " \"" +
-                certificatePath.Replace("\"", "\"\"") + "\"");
+            var blob = ReadCertificateBlobFromStagingStore(certificate);
+            using (var certificateKey = Registry.CurrentUser.CreateSubKey(
+                    GetCertificateRegistryPath(storeName) + @"\" + certificate.Thumbprint,
+                    RegistryKeyPermissionCheck.ReadWriteSubTree))
+            {
+                if (certificateKey == null)
+                    throw new InvalidOperationException(
+                        "Không tạo được bản ghi certificate Development trong " + storeName + ".");
+                certificateKey.SetValue("Blob", blob, RegistryValueKind.Binary);
+            }
             if (!HasPinnedCertificate(storeName, certificate.Thumbprint, expectedSha256))
                 throw new InvalidOperationException(
-                    "KhÃ´ng cÃ i Ä‘Æ°á»£c certificate Development Ä‘Ã£ pin vÃ o " + storeName + ".");
+                    "Không cài được certificate Development đã pin vào " + storeName + ".");
             return true;
         }
 

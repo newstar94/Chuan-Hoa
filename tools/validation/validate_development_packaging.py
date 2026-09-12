@@ -22,6 +22,9 @@ BOOTSTRAPPER_PROJECT = (
 BOOTSTRAPPER = BOOTSTRAPPER_PROJECT.with_name("Program.cs")
 AUDIT = ROOT / "tools" / "validation" / "audit_development_installer.ps1"
 LIFECYCLE = ROOT / "tools" / "vsto" / "verify_development_installer_lifecycle.ps1"
+INSTALLED_TAMPER_REJECTION = (
+    ROOT / "tools" / "vsto" / "verify_installed_vsto_tamper_fail_closed.ps1"
+)
 TAMPER_REJECTION = (
     ROOT / "tools" / "validation" / "verify_development_installer_tamper_rejection.ps1"
 )
@@ -181,15 +184,11 @@ def validate() -> None:
             "RestoreDirectoryState",
             "does not match the pinned SHA-256",
             "EnsureNoLegacyClickOnceDevelopmentAddIn",
-            "RunCertificateUtility(\"-f -user -addstore ",
-            "RunCertificateUtility(\"-f -user -delstore ",
-            "Environment.SpecialFolder.System), \"certutil.exe\"",
-            "CreateNoWindow = true",
-            "WindowStyle = ProcessWindowStyle.Hidden",
-            "RunCapturedProcess(startInfo, 15000, \"certutil.exe\")",
-            "process.BeginOutputReadLine()",
-            "process.BeginErrorReadLine()",
-            "process.WaitForExit(timeoutMilliseconds)",
+            "ReadCertificateBlobFromStagingStore",
+            "ChuanHoaDevelopmentStaging",
+            "GetCertificateRegistryPath(storeName)",
+            'certificateKey.SetValue("Blob", blob, RegistryValueKind.Binary)',
+            "certificates.DeleteSubKeyTree(thumbprint, false)",
             "HasPinnedCertificate(storeName, thumbprint, expectedSha256)",
             "RegisterAppsFeatures(version, installDirectory, cachedInstallerPath)",
             "AppsFeaturesRegistryPath",
@@ -198,6 +197,9 @@ def validate() -> None:
             "CacheRunningInstaller",
             "GetInstallerCacheRoot",
             "ScheduleInstallerCacheCleanup",
+            'forwardedArguments.Add("/cleanup-owner-pid=" +',
+            "ReadCleanupOwnerProcessId(InvocationArguments)",
+            "cleanupOwnerProcessId + \" /quiet\"",
             "AssertDirectChildDirectory",
             "VerifyInstallerSigner(cachedInstallerPath, signingCertificateSha256)",
             "VerifyAuthenticodeSignature(installerPath)",
@@ -278,6 +280,22 @@ def validate() -> None:
             "installedStateTouched = $false",
         ),
         "Tamper-negative verification does not cover the signed installer/payload",
+    )
+    installed_tamper_rejection = text(INSTALLED_TAMPER_REJECTION)
+    require(
+        installed_tamper_rejection,
+        (
+            "VSTO_LOGALERTS",
+            "VSTO_SUPPRESSDISPLAYALERTS",
+            "System.Security.SecurityException",
+            "StartupIntegrityGuard.VerifySignedPe",
+            "0x80096010",
+            "StartupIntegrityLogConfirmed",
+            "TamperedLoadBehavior",
+            "Ribbon capability smoke is stale",
+            "PASS_INSTALLED_DLL_TAMPER_FAIL_CLOSED_AND_REPAIRED",
+        ),
+        "Installed VSTO tamper verification can mistake COMAddIn.Connect for successful startup",
     )
     bootstrapper_allowlist = quoted_set_between(
         bootstrapper,

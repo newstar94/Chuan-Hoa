@@ -24,6 +24,10 @@ LOCAL_ACCESS_MANAGER_PATH = VSTO_ROOT / "Runtime" / "LocalAccessManager.cs"
 WORD_SNAPSHOT_BUILDER_PATH = VSTO_ROOT / "Runtime" / "WordDocumentSnapshotBuilder.cs"
 WORD_LOCAL_COMMAND_PATH = VSTO_ROOT / "Runtime" / "WordLocalCommandRuntime.cs"
 WORD_ONE_CLICK_PATH = VSTO_ROOT / "Runtime" / "WordOneClickRuntime.cs"
+DOCUMENT_ROLE_DETECTOR_PATH = (
+    ROOT / "src" / "ChuanHoa.Client.Core" / "Scanning" / "DocumentRoleDetector.cs"
+)
+ONE_CLICK_SMOKE_PATH = ROOT / "tools" / "vsto" / "one-click-smoke" / "Program.cs"
 WORD_APPENDIX_PAGINATION_PATH = VSTO_ROOT / "Runtime" / "WordAppendixPaginationNormalizer.cs"
 DOCUMENT_OPERATION_SESSION_PATH = VSTO_ROOT / "Runtime" / "DocumentOperationSession.cs"
 CUSTOM_DICTIONARY_DIALOG_PATH = VSTO_ROOT / "Runtime" / "CustomDictionaryDialog.cs"
@@ -78,6 +82,8 @@ def validate() -> dict:
     ribbon_runtime_interface = RIBBON_RUNTIME_INTERFACE_PATH.read_text(encoding="utf-8")
     word_local_command_source = WORD_LOCAL_COMMAND_PATH.read_text(encoding="utf-8")
     word_one_click_source = WORD_ONE_CLICK_PATH.read_text(encoding="utf-8")
+    document_role_detector_source = DOCUMENT_ROLE_DETECTOR_PATH.read_text(encoding="utf-8")
+    one_click_smoke_source = ONE_CLICK_SMOKE_PATH.read_text(encoding="utf-8")
     word_appendix_pagination_source = WORD_APPENDIX_PAGINATION_PATH.read_text(encoding="utf-8")
     document_operation_source = DOCUMENT_OPERATION_SESSION_PATH.read_text(encoding="utf-8")
     custom_dictionary_dialog_source = CUSTOM_DICTIONARY_DIALOG_PATH.read_text(encoding="utf-8")
@@ -90,6 +96,41 @@ def validate() -> dict:
     annotation_contracts_source = ANNOTATION_CONTRACTS_PATH.read_text(encoding="utf-8")
     annotation_planner_source = ANNOTATION_PLANNER_PATH.read_text(encoding="utf-8")
     all_client_core_source = annotation_contracts_source + "\n" + annotation_planner_source
+
+    for source_contract, source, message in (
+        (
+            "OrganCandidatesInSiblingHeaderCells",
+            document_role_detector_source,
+            "The no-number table-header organ-role fallback is missing.",
+        ),
+        (
+            "header.CellIndex == p.CellIndex + 1",
+            document_role_detector_source,
+            "The organ-role fallback is not restricted to the immediate left sibling cell.",
+        ),
+        (
+            "siblingNationalHeaderAnchor",
+            word_one_click_source,
+            "Legacy organ separators anchored in the national-header sibling cell are not handled.",
+        ),
+        (
+            "anchor.CellIndex.Value == paragraph.CellIndex.Value + 1",
+            word_one_click_source,
+            "Sibling-anchor cleanup is not restricted to the immediate right header cell.",
+        ),
+        (
+            "--legacy-sibling-line",
+            one_click_smoke_source,
+            "The dedicated sibling-anchored legacy Line Shape smoke entry point is missing.",
+        ),
+        (
+            "ONE_CLICK_LEGACY_SIBLING_ORGAN_LINE_PASS",
+            one_click_smoke_source,
+            "The sibling-anchored legacy Line Shape smoke success contract is missing.",
+        ),
+    ):
+        if source_contract not in source:
+            raise RuntimeError(message)
 
     # Every concrete finding code emitted by a scanner must be acknowledged by
     # the one-click runtime. This does not force unsafe content synthesis: a
@@ -572,6 +613,20 @@ def validate() -> dict:
     if ribbon_runtime_source.count("_documentReadRuntime.Prepare(") != 4 or \
             ribbon_runtime_source.count("_documentReadRuntime.PrepareForOneClick(") != 1:
         raise RuntimeError("Unexpected command-scoped analysis call count in RibbonRuntime.")
+    one_click_method = re.search(
+        r"private void RunOneClick\(\)(.*?)(?=\n        private void )",
+        ribbon_runtime_source,
+        re.DOTALL,
+    )
+    if one_click_method is None or \
+            "using (context.DeferSaveInvalidation())" not in one_click_method.group(1):
+        raise RuntimeError(
+            "RunOneClick must preserve its prepared analysis across an intervening AutoSave event."
+        )
+    if ".InvalidateReadAnalysisForSave();" not in ribbon_runtime_source:
+        raise RuntimeError(
+            "DocumentBeforeSave must use the command-aware save invalidation boundary."
+        )
     selected_fix_method = re.search(
         r"private void RunSelectedFindingFix\(\)(.*?)(?=\n        private void )",
         ribbon_runtime_source,

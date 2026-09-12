@@ -82,6 +82,16 @@ namespace ChuanHoa.OneClickQa
                         if (!firstNames.SequenceEqual(secondNames))
                             throw new InvalidOperationException("Repeated normalization changed component-line ownership or count.");
                         Console.WriteLine("REPEATED_LINE_OWNERSHIP_PASS COUNT=" + secondNames.Length);
+                        if (Environment.GetEnvironmentVariable("CHUANHOA_QA_ONLY_OWNED_LINES") == "1")
+                        {
+                            var unmanaged = context.LastLocalSnapshot.LineShapes
+                                .Where(item => !LineShapeOwnership.IsOwned(item.Name))
+                                .Select(item => item.Name).OrderBy(item => item, StringComparer.Ordinal).ToArray();
+                            if (unmanaged.Length != 0)
+                                throw new InvalidOperationException("Unmanaged legacy Line Shapes remained: " +
+                                    string.Join(",", unmanaged));
+                            Console.WriteLine("ONLY_OWNED_LINES_PASS COUNT=" + secondNames.Length);
+                        }
                     }
                     postFormat = scanner.ScanAndAnnotate(context, false, document);
                     postSpelling = scanner.ScanAndAnnotate(context, true, document);

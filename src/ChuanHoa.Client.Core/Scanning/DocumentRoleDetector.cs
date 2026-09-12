@@ -573,13 +573,34 @@ namespace ChuanHoa.Client.Core.Scanning
         private static void AssignOrganRoles(LocalParagraphSnapshot[] main, IDictionary<int, string> roles)
         {
             var firstCode = main.FirstOrDefault(p => roles.ContainsKey(p.Index) && roles[p.Index] == "codeNumber");
-            if (firstCode == null) return;
-            var candidates = main.Where(p => p.Index < firstCode.Index && !roles.ContainsKey(p.Index) &&
-                Collapse(p.Text).Length < 220 && IsMostlyUppercase(p.Text) &&
-                !Eq(Collapse(p.Text), "QUỐC HỘI")).ToArray();
+            var candidates = firstCode != null
+                ? main.Where(p => p.Index < firstCode.Index && !roles.ContainsKey(p.Index) &&
+                    Collapse(p.Text).Length < 220 && IsMostlyUppercase(p.Text) &&
+                    !Eq(Collapse(p.Text), "QUỐC HỘI")).ToArray()
+                : OrganCandidatesInSiblingHeaderCells(main, roles);
             var preceding = candidates.Skip(Math.Max(0, candidates.Length - 2)).ToArray();
             if (preceding.Length == 2) roles[preceding[0].Index] = "superiorOrganName";
             if (preceding.Length > 0) roles[preceding[preceding.Length - 1].Index] = "organName";
+        }
+
+        private static LocalParagraphSnapshot[] OrganCandidatesInSiblingHeaderCells(
+            LocalParagraphSnapshot[] main, IDictionary<int, string> roles)
+        {
+            var nationalHeaderCells = main.Where(p => p.IsInTable && p.TableIndex.HasValue &&
+                p.RowIndex.HasValue && p.CellIndex.HasValue && roles.TryGetValue(p.Index, out var role) &&
+                (role == "nationalTitle" || role == "nationalMotto")).ToArray();
+            if (nationalHeaderCells.Length == 0) return Array.Empty<LocalParagraphSnapshot>();
+
+            // Some valid identity layouts omit the document-number row and put the
+            // two organ headings in the cell immediately left of the national header.
+            // Restrict the fallback to that exact table row/cell relationship so an
+            // unrelated uppercase paragraph elsewhere in the document is never used.
+            return main.Where(p => p.IsInTable && p.TableIndex.HasValue && p.RowIndex.HasValue &&
+                p.CellIndex.HasValue && !roles.ContainsKey(p.Index) &&
+                Collapse(p.Text).Length < 220 && IsMostlyUppercase(p.Text) &&
+                !Eq(Collapse(p.Text), "QUỐC HỘI") && nationalHeaderCells.Any(header =>
+                    header.TableIndex == p.TableIndex && header.RowIndex == p.RowIndex &&
+                    header.CellIndex == p.CellIndex + 1)).ToArray();
         }
 
         private static bool IsStructuralTitle(LocalParagraphSnapshot[] main, int index, string text)

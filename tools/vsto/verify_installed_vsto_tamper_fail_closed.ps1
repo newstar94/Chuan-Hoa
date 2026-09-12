@@ -23,19 +23,29 @@ $installer = (Resolve-Path -LiteralPath $InstallerPath).Path
 $currentDirectory = Join-Path $env:LOCALAPPDATA `
     'ChuanHoa\DevelopmentInstaller\Current'
 $addInPath = Join-Path $currentDirectory 'ChuanHoa.AddIn.Vsto.dll'
+$vstoStartupLogPath = Join-Path $currentDirectory `
+    'ChuanHoa.AddIn.Vsto.vsto.log'
 $registryPath = 'HKCU:\Software\Microsoft\Office\Word\Addins\ChuanHoa.AddIn.Vsto'
 $passiveSmoke = Join-Path $root `
     'tools\vsto\passive-startup-smoke\bin\Development\ChuanHoa.PassiveStartupSmoke.exe'
 $ribbonSmoke = Join-Path $root `
     'tools\vsto\ribbon-capability-smoke\bin\Development\ChuanHoa.RibbonCapabilitySmoke.exe'
+$ribbonRuntimeCopy = Join-Path (Split-Path -Parent $ribbonSmoke) `
+    'ChuanHoa.AddIn.Vsto.dll'
 
 if ((Get-Process WINWORD -ErrorAction SilentlyContinue).Count -ne 0) {
     throw 'Microsoft Word must be closed before installed tamper verification.'
 }
-foreach ($path in @($installer, $addInPath, $passiveSmoke, $ribbonSmoke)) {
+foreach ($path in @(
+    $installer, $addInPath, $passiveSmoke, $ribbonSmoke, $ribbonRuntimeCopy)) {
     if (!(Test-Path -LiteralPath $path -PathType Leaf)) {
         throw "Required file is missing: $path"
     }
+}
+if (![string]::Equals(
+        (Get-Item -LiteralPath $ribbonRuntimeCopy).VersionInfo.FileVersion,
+        $version, [StringComparison]::Ordinal)) {
+    throw 'Ribbon capability smoke is stale. Rebuild its Development output before tamper verification.'
 }
 $installed = Get-ItemProperty -LiteralPath $registryPath
 if ([int]$installed.LoadBehavior -ne 3 -or
@@ -62,7 +72,8 @@ function Invoke-ProcessWithTimeout {
     param(
         [Parameter(Mandatory = $true)][string]$Path,
         [Parameter(Mandatory = $false)][string]$Arguments = '',
-        [Parameter(Mandatory = $true)][int]$TimeoutMilliseconds
+        [Parameter(Mandatory = $true)][int]$TimeoutMilliseconds,
+        [Parameter(Mandatory = $false)][hashtable]$EnvironmentVariables = @{}
     )
     $start = [Diagnostics.ProcessStartInfo]::new()
     $start.FileName = $Path
@@ -70,6 +81,10 @@ function Invoke-ProcessWithTimeout {
     $start.UseShellExecute = $false
     $start.CreateNoWindow = $true
     $start.WindowStyle = [Diagnostics.ProcessWindowStyle]::Hidden
+    foreach ($name in $EnvironmentVariables.Keys) {
+        $start.EnvironmentVariables[[string]$name] =
+            [string]$EnvironmentVariables[$name]
+    }
     $process = [Diagnostics.Process]::new()
     $process.StartInfo = $start
     try {
@@ -81,6 +96,15 @@ function Invoke-ProcessWithTimeout {
         return $process.ExitCode
     }
     finally { $process.Dispose() }
+}
+
+function Read-VstoStartupLog([string]$path) {
+    if (!(Test-Path -LiteralPath $path -PathType Leaf)) { return '' }
+    $bytes = [IO.File]::ReadAllBytes($path)
+    if ($bytes.Length -eq 0) { return '' }
+    # VSTO writes this log as UTF-16LE without a reliable BOM on some Office
+    # builds, so Get-Content can expose interleaved NUL characters.
+    return [Text.Encoding]::Unicode.GetString($bytes).TrimStart([char]0xFEFF)
 }
 
 function Stop-TestWordProcesses {
@@ -99,6 +123,10 @@ $baselineManifest = [string]$installed.Manifest
 $baselineLoadBehavior = [int]$installed.LoadBehavior
 $tamperedSignatureStatus = $null
 $rejectionExitCode = $null
+$tamperedLoadBehavior = $null
+$startupIntegrityLogSha256 = $null
+$startupIntegrityLogConfirmed = $false
+$rejectionMode = $null
 $repairExitCode = $null
 $postRepairPassiveExitCode = $null
 $postRepairRibbonExitCode = $null
@@ -108,6 +136,13 @@ try {
     New-Item -ItemType Directory -Path $temporaryRoot | Out-Null
     Copy-Item -LiteralPath $currentDirectory -Destination $backupDirectory `
         -Recurse -Force
+
+    # Ask the VSTO runtime for a deterministic startup-error record. Word can
+    # transiently leave COMAddIn.Connect=true even though add-in initialization
+    # failed, so Connect alone is not authoritative tamper-rejection evidence.
+    if (Test-Path -LiteralPath $vstoStartupLogPath -PathType Leaf) {
+        [IO.File]::Delete($vstoStartupLogPath)
+    }
 
     $bytes = [IO.File]::ReadAllBytes($addInPath)
     if ($bytes.Length -lt 8192) { throw 'Installed add-in DLL is unexpectedly small.' }
@@ -120,11 +155,29 @@ try {
     }
 
     $rejectionExitCode = Invoke-ProcessWithTimeout `
-        -Path $passiveSmoke -TimeoutMilliseconds 45000
+        -Path $passiveSmoke -TimeoutMilliseconds 45000 `
+        -EnvironmentVariables @{
+            VSTO_LOGALERTS = '1'
+            VSTO_SUPPRESSDISPLAYALERTS = '1'
+        }
     Stop-TestWordProcesses
-    if ($rejectionExitCode -eq 0) {
-        throw 'Word still connected the add-in after its signed DLL was modified.'
+    $tamperedLoadBehavior = [int](
+        Get-ItemProperty -LiteralPath $registryPath).LoadBehavior
+    $startupLog = Read-VstoStartupLog $vstoStartupLogPath
+    if (![string]::IsNullOrWhiteSpace($startupLog)) {
+        $startupIntegrityLogSha256 = (
+            Get-FileHash -LiteralPath $vstoStartupLogPath -Algorithm SHA256).Hash
+        $startupIntegrityLogConfirmed =
+            $startupLog.Contains('System.Security.SecurityException') -and
+            $startupLog.Contains('StartupIntegrityGuard.VerifySignedPe') -and
+            $startupLog.Contains('0x80096010')
     }
+    if (!$startupIntegrityLogConfirmed -or $tamperedLoadBehavior -eq 3) {
+        throw 'Word did not record a fail-closed VSTO startup rejection for the modified signed DLL.'
+    }
+    $rejectionMode = if ($rejectionExitCode -eq 0) {
+        'VstoStartupIntegrityLog'
+    } else { 'PassiveSmokeAndVstoStartupIntegrityLog' }
 }
 finally {
     Stop-TestWordProcesses
@@ -149,6 +202,12 @@ finally {
                 New-Item -ItemType Directory -Path $parent -Force | Out-Null
                 Copy-Item -LiteralPath $_.FullName -Destination $target -Force
             }
+        $backupStartupLog = Join-Path $backupDirectory `
+            'ChuanHoa.AddIn.Vsto.vsto.log'
+        if (!(Test-Path -LiteralPath $backupStartupLog -PathType Leaf) -and
+            (Test-Path -LiteralPath $vstoStartupLogPath -PathType Leaf)) {
+            [IO.File]::Delete($vstoStartupLogPath)
+        }
         Set-ItemProperty -LiteralPath $registryPath -Name Manifest `
             -Value $baselineManifest
         Set-ItemProperty -LiteralPath $registryPath -Name LoadBehavior `
@@ -180,7 +239,7 @@ if ($postRepairRibbonExitCode -ne 0) {
 }
 
 $evidence = [ordered]@{
-    SchemaVersion = 1
+    SchemaVersion = 2
     Status = 'PASS_INSTALLED_DLL_TAMPER_FAIL_CLOSED_AND_REPAIRED'
     ProductVersion = $version
     InstallerFile = [IO.Path]::GetFileName($installer)
@@ -190,6 +249,10 @@ $evidence = [ordered]@{
     TamperedAuthenticodeStatus = $tamperedSignatureStatus
     WordRejectedTamperedAddIn = $true
     RejectionSmokeExitCode = $rejectionExitCode
+    RejectionMode = $rejectionMode
+    TamperedLoadBehavior = $tamperedLoadBehavior
+    StartupIntegrityLogConfirmed = $startupIntegrityLogConfirmed
+    StartupIntegrityLogSha256 = $startupIntegrityLogSha256
     RepairExitCode = $repairExitCode
     ExactPayloadHashRestored = $true
     LoadBehavior = [int]$postRegistration.LoadBehavior

@@ -466,4 +466,36 @@ public sealed class DocumentRoleDetectorTests
 
         Assert.Equal("codeNumber", new DocumentRoleDetector().Detect(snapshot)[1]);
     }
+
+    [Fact]
+    public void Detects_two_organ_headings_in_left_header_cell_when_code_number_is_absent()
+    {
+        var paragraphs = new[]
+        {
+            TableParagraph(1, "BỘ CHỦ QUẢN", 1),
+            TableParagraph(2, "CƠ QUAN BAN HÀNH", 1),
+            TableParagraph(3, "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM", 2),
+            TableParagraph(4, "Độc lập - Tự do - Hạnh phúc", 2),
+            Paragraph(5, "QUYẾT ĐỊNH"),
+            Paragraph(6, "Về việc phê duyệt kế hoạch"),
+            Paragraph(7, "Căn cứ Luật Đấu thầu số 22/2023/QH15;")
+        };
+        var snapshot = new LocalScanSnapshot("sha256:header-without-code-number", 1,
+            Array.Empty<LocalSectionSnapshot>(), paragraphs,
+            Array.Empty<AnnotationProtectedSpan>());
+
+        var roles = new DocumentRoleDetector().Detect(snapshot);
+
+        Assert.Equal("superiorOrganName", roles[1]);
+        Assert.Equal("organName", roles[2]);
+        Assert.Equal("nationalTitle", roles[3]);
+        Assert.Equal("nationalMotto", roles[4]);
+        Assert.DoesNotContain(roles, item => item.Value == "codeNumber");
+    }
+
+    private static LocalParagraphSnapshot TableParagraph(int index, string text, int column) =>
+        new(index, text, "wdMainTextStory", 1, index * 100,
+            "Times New Roman", tableIndex: 1, rowIndex: 1, cellIndex: column,
+            fontSizePoints: 13, bold: true, alignment: 1, isInTable: true,
+            pageNumber: 1);
 }
