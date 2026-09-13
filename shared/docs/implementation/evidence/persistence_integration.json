@@ -1,17 +1,20 @@
 {
-    "testId":  "DB-PERSISTENCE-001",
-    "status":  "PASS",
-    "postgresVersion":  "17.11",
-    "startedAtUtc":  "2026-09-05T11:15:58.3059468+00:00",
-    "completedAtUtc":  "2026-09-05T11:16:06.5645187+00:00",
-    "durationMilliseconds":  8259,
-    "testCount":  4,
-    "assertions":  [
-                       "same key and same request reports in progress while owned",
-                       "same key and different request hash reports conflict",
-                       "completed response replays status, content type, headers, and bytes",
-                       "retryable failure can be reacquired only with a new owner token",
-                       "outbox insert rolls back with a failed transaction",
-                       "outbox insert commits with a successful transaction"
-                   ]
+  "testId": "DB-PERSISTENCE-001",
+  "status": "PASS",
+  "postgresVersion": "17.11",
+  "startedAtUtc": "2026-09-13T02:21:03.8380790+00:00",
+  "completedAtUtc": "2026-09-13T02:21:09.8894229+00:00",
+  "durationMilliseconds": 6051,
+  "testCount": 7,
+  "assertions": [
+    "same key and same request reports in progress while owned",
+    "same key and different request hash reports conflict",
+    "completed response replays status, content type, headers, and bytes",
+    "retryable failure can be reacquired only with a new owner token",
+    "outbox insert rolls back with a failed transaction",
+    "outbox insert commits with a successful transaction",
+    "same admin extension key concurrently creates one grant and replays the same result",
+    "admin extension key conflict rejects a different payload",
+    "failed admin extension attempt is recorded in target audit"
+  ]
 }

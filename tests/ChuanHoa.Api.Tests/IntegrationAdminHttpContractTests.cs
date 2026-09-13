@@ -1,0 +1,135 @@
+#pragma warning disable ASPDEPR004, ASPDEPR008
+using System.Net;
+using System.Net.Http.Json;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+using ChuanHoa.Api.Controllers;
+using ChuanHoa.Api.Security;
+using ChuanHoa.Infrastructure.Admin;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace ChuanHoa.Api.Tests;
+
+public sealed class IntegrationAdminHttpContractTests
+{
+    private const string ClientId = "bidding-admin";
+    private static readonly string Secret = new('s', 32);
+
+    [Fact]
+    public async Task Signed_capabilities_request_reaches_controller_over_http()
+    {
+        using var server = CreateServer();
+        using var client = server.CreateClient();
+        using var request = SignedRequest(HttpMethod.Get, "/v1/admin/integration/capabilities", "nonce-http-cap-001", ReadOnlySpan<byte>.Empty);
+
+        using var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("chuanhoa.admin.integration.v1", payload.GetProperty("schema").GetString());
+        Assert.Equal("chuan-hoa", payload.GetProperty("application").GetString());
+    }
+
+    [Fact]
+    public async Task Signed_mutation_body_is_verified_and_dispatched_once()
+    {
+        using var server = CreateServer();
+        using var client = server.CreateClient();
+        var correlation = Guid.NewGuid();
+        var body = JsonSerializer.SerializeToUtf8Bytes(new
+        {
+            userId = Guid.NewGuid(), productId = Guid.NewGuid(), featureCodes = new[] { "feature.a" },
+            durationDays = 30, reason = "contract-test", actorId = "actor-1", correlationId = correlation
+        });
+        using var request = SignedRequest(HttpMethod.Post, "/v1/admin/integration/entitlements/extend", "nonce-http-mut-001", body);
+        request.Headers.Add("Idempotency-Key", "http-contract-key-0001");
+        request.Content = new ByteArrayContent(body);
+        request.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+
+        using var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(1, server.Services.GetRequiredService<FakeStore>().MutationCalls);
+    }
+
+    [Fact]
+    public async Task Signed_collection_request_returns_stable_application_envelope()
+    {
+        using var server = CreateServer();
+        using var client = server.CreateClient();
+        using var request = SignedRequest(HttpMethod.Get, "/v1/admin/integration/accounts", "nonce-http-page-001", ReadOnlySpan<byte>.Empty);
+
+        using var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("chuanhoa.admin.integration.v1", payload.GetProperty("schema").GetString());
+        Assert.Equal("chuan-hoa", payload.GetProperty("application").GetString());
+        Assert.Equal(0, payload.GetProperty("data").GetProperty("total").GetInt64());
+    }
+
+    private static TestServer CreateServer()
+    {
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["ChuanHoa:AdminIntegration:Enabled"] = "true",
+            ["ChuanHoa:AdminIntegration:ClientId"] = ClientId,
+            ["ChuanHoa:AdminIntegration:SharedSecret"] = Secret,
+            ["ConnectionStrings:ChuanHoa"] = "Host=contract-test"
+        }).Build();
+        return new TestServer(new WebHostBuilder()
+            .ConfigureServices(services =>
+            {
+                services.AddSingleton<IConfiguration>(configuration);
+                services.AddSingleton<TimeProvider>(new FixedTimeProvider(DateTimeOffset.FromUnixTimeSeconds(1_700_000_000)));
+                services.AddSingleton<IntegrationRequestAuthenticator>();
+                services.AddSingleton<FakeStore>();
+                services.AddSingleton<IIntegrationAdminStore>(provider => provider.GetRequiredService<FakeStore>());
+                services.AddControllers().AddApplicationPart(typeof(IntegrationAdminController).Assembly);
+            })
+            .Configure(app => app.UseRouting().UseEndpoints(endpoints => endpoints.MapControllers())));
+    }
+
+    private static HttpRequestMessage SignedRequest(HttpMethod method, string path, string nonce, ReadOnlySpan<byte> body)
+    {
+        const string timestamp = "1700000000";
+        var bodyHash = Convert.ToHexString(SHA256.HashData(body)).ToLowerInvariant();
+        var canonical = string.Join('\n', method.Method.ToUpperInvariant(), path, timestamp, nonce, bodyHash);
+        var signature = Convert.ToHexString(HMACSHA256.HashData(Encoding.UTF8.GetBytes(Secret), Encoding.UTF8.GetBytes(canonical))).ToLowerInvariant();
+        var request = new HttpRequestMessage(method, path);
+        request.Headers.Add("X-Integration-Client", ClientId);
+        request.Headers.Add("X-Integration-Timestamp", timestamp);
+        request.Headers.Add("X-Integration-Nonce", nonce);
+        request.Headers.Add("X-Integration-Signature", signature);
+        return request;
+    }
+
+    private sealed class FixedTimeProvider(DateTimeOffset now) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => now;
+    }
+
+    private sealed class FakeStore : IIntegrationAdminStore
+    {
+        public int MutationCalls { get; private set; }
+        public Task<AdminPage<AdminAccount>> AccountsAsync(string? search, int page, int pageSize, CancellationToken cancellationToken) => Task.FromResult(new AdminPage<AdminAccount>([], page, pageSize, 0));
+        public Task<AdminPage<AdminOffer>> OffersAsync(string? search, int page, int pageSize, CancellationToken cancellationToken) => Task.FromResult(new AdminPage<AdminOffer>([], page, pageSize, 0));
+        public Task<AdminPage<AdminOrder>> OrdersAsync(string? search, int page, int pageSize, CancellationToken cancellationToken) => Task.FromResult(new AdminPage<AdminOrder>([], page, pageSize, 0));
+        public Task<AdminPage<AdminSubscription>> SubscriptionsAsync(string? search, int page, int pageSize, CancellationToken cancellationToken) => Task.FromResult(new AdminPage<AdminSubscription>([], page, pageSize, 0));
+        public Task<AdminPage<AdminPayment>> PaymentsAsync(string? search, int page, int pageSize, CancellationToken cancellationToken) => Task.FromResult(new AdminPage<AdminPayment>([], page, pageSize, 0));
+        public Task<AdminPage<AdminAudit>> AuditAsync(string? search, int page, int pageSize, CancellationToken cancellationToken) => Task.FromResult(new AdminPage<AdminAudit>([], page, pageSize, 0));
+        public Task RecordFailedEntitlementAsync(Guid userId, Guid productId, string clientId, string actorId, Guid correlationId, string resultCode, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task<AdminMutation> ExtendEntitlementAsync(Guid userId, Guid productId, IReadOnlyList<string> featureCodes, TimeSpan duration, string reason, string clientId, string idempotencyKey, string actorId, Guid correlationId, CancellationToken cancellationToken)
+        {
+            MutationCalls++;
+            var now = DateTimeOffset.UtcNow;
+            return Task.FromResult(new AdminMutation(Guid.NewGuid(), userId, productId, "ACTIVE", now, now.Add(duration), featureCodes));
+        }
+    }
+}
+#pragma warning restore ASPDEPR004, ASPDEPR008
