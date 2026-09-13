@@ -25,7 +25,10 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<DevelopmentArtifactIssuer>();
 builder.Services.AddSingleton<DevelopmentAdminStore>();
 builder.Services.AddSingleton<IntegrationRequestAuthenticator>();
-builder.Services.AddSingleton<IIntegrationReplayStore, DisabledIntegrationReplayStore>();
+builder.Services.AddSingleton<IIntegrationReplayStore>(sp =>
+    builder.Environment.IsDevelopment()
+        ? new InMemoryIntegrationReplayStore()
+        : new DisabledIntegrationReplayStore());
 builder.Services.AddSingleton<ChuanHoa.Api.Billing.PayOsGateway>();
 builder.Services
     .AddAuthentication(FailClosedAuthenticationDefaults.Scheme)
@@ -111,6 +114,11 @@ app.MapGet("/development/admin", (HttpContext context, DevelopmentArtifactIssuer
     using var reader = new StreamReader(stream, System.Text.Encoding.UTF8);
     return Results.Content(reader.ReadToEnd(), "text/html; charset=utf-8", System.Text.Encoding.UTF8);
 }).ExcludeFromDescription();
+
+app.MapGet("/admin", (IConfiguration configuration) =>
+    Results.Redirect(configuration["ChuanHoa:AdminDashboardUrl"] ?? "https://hosodauthau.online/admin/chuan-hoa"));
+app.MapGet("/admin/{**path}", (IConfiguration configuration) =>
+    Results.Redirect(configuration["ChuanHoa:AdminDashboardUrl"] ?? "https://hosodauthau.online/admin/chuan-hoa"));
 
 static HealthResponse CreateHealthResponse() => new(
     ApiContractVersions.HealthV1,

@@ -11,9 +11,13 @@ $adminUrl = 'http://127.0.0.1:5206/development/admin'
 
 if (-not (Get-NetTCPConnection -LocalPort 5206 -State Listen -ErrorAction SilentlyContinue)) {
     Write-Host 'Đang khởi động Chuẩn Hóa API tại http://127.0.0.1:5206 ...'
-    Start-Process powershell.exe -ArgumentList @(
-        '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $start, '-ApiOnly'
-    ) -WorkingDirectory $root
+    # Invoke the startup script in this PowerShell process so build/startup
+    # errors are visible immediately instead of leaving this wrapper polling
+    # a child process that may already have exited.
+    & $start -ApiOnly
+    if ($LASTEXITCODE -ne 0) {
+        throw "Không thể khởi động Chuẩn Hóa API (exit code $LASTEXITCODE)."
+    }
 }
 
 $ready = $false
