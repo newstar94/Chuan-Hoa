@@ -1,4 +1,4 @@
-param(
+﻿param(
     [Parameter(Mandatory = $false)]
     [ValidatePattern('^$|^\d+\.\d+\.\d+\.\d+$')]
     [string]$ApplicationVersion = '',
