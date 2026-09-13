@@ -10,12 +10,16 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 {
     internal sealed class AccountAccessApiClient : IDisposable
     {
+        // Production uses the Bidding domain as the single public ingress. An
+        // environment override remains available for staging and local QA.
+        private const string DefaultBaseUrl = "https://hosodauthau.online/chuan-hoa";
         private readonly HttpClient _http = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
         private readonly string _baseUrl;
 
         public AccountAccessApiClient()
         {
-            _baseUrl = (Environment.GetEnvironmentVariable("CHUANHOA_API_URL") ?? string.Empty).TrimEnd('/');
+            var configuredUrl = Environment.GetEnvironmentVariable("CHUANHOA_API_URL");
+            _baseUrl = (string.IsNullOrWhiteSpace(configuredUrl) ? DefaultBaseUrl : configuredUrl).TrimEnd('/');
         }
 
         public bool IsConfigured { get { return Uri.TryCreate(_baseUrl, UriKind.Absolute, out var uri) && uri.Scheme == Uri.UriSchemeHttps; } }
