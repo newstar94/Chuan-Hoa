@@ -115,7 +115,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         private void LoadPersistedAccessMode()
         {
             var value = _sessionStore.Load();
-            if (string.IsNullOrWhiteSpace(value)) return;
+            if (value == null || string.IsNullOrWhiteSpace(value)) return;
             var parts = value.Split(new[] { '|' }, 4);
             if (parts.Length != 4 || !Enum.TryParse(parts[0], out AccessMode mode) || mode == AccessMode.None) return;
             if (!DateTimeOffset.TryParse(parts[1], CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var issued) ||

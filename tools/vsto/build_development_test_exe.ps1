@@ -35,7 +35,7 @@ $SigningRootCertificateSha256 = Normalize-ChuanHoaSha256 `
 $rootCertificate = Get-ChuanHoaSigningCertificate `
     -ExpectedSha256 $SigningRootCertificateSha256
 if (![string]::Equals($rootCertificate.Subject,
-        'CN=Chuan Hoa Local Development',
+        'CN=Chuan Hoa Local Development Root',
         [System.StringComparison]::Ordinal) -or
     ![string]::Equals($certificate.Issuer, $rootCertificate.Subject,
         [System.StringComparison]::Ordinal)) {

@@ -1478,7 +1478,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     // paragraph containing only a manual page break (\f), on the
                     // other hand, is the common source of one redundant blank
                     // page; remove only that break and preserve the paragraph.
-                    var withoutPageBreak = raw.Replace("\f", string.Empty, StringComparison.Ordinal);
+                    var withoutPageBreak = raw.Replace("\f", string.Empty);
                     if (raw.IndexOf('\a') >= 0 || raw.IndexOf('\v') >= 0 ||
                         withoutPageBreak.Trim('\r', ' ', '\t', '\u00A0', '\u200B').Length != 0)
                         break;

@@ -31,7 +31,7 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
             "ChuanHoa.DevelopmentInstaller.SigningRootCertificate.sha256";
         private const string ExpectedCertificateSubject = "CN=Chuan Hoa Local Development";
         private const string ExpectedRootCertificateSubject =
-            "CN=Chuan Hoa Local Development";
+            "CN=Chuan Hoa Local Development Root";
         private const string WordRibbonValidationValueName =
             "ChuanHoa.AddIn.Vsto.Microsoft.Word.Document";
         private const string AppsFeaturesRegistryPath =
