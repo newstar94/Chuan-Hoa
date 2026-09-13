@@ -149,7 +149,15 @@ namespace ChuanHoa.AddIn.Vsto.Ribbon
             {
             }
 
-            public bool IsEnabled(string controlId) => !_disposed;
+            public bool IsEnabled(string controlId)
+            {
+                if (_disposed) return false;
+                // Settings remains available before authentication; all other
+                // controls are evaluated by the real runtime's access gate.
+                if (string.Equals(controlId, "btnThietLap", StringComparison.Ordinal)) return true;
+                try { return _owner.GetOrCreateRuntimeForUserAction().IsEnabled(controlId); }
+                catch { return false; }
+            }
 
             public int GetSelectedItemIndex(string controlId) => 0;
 

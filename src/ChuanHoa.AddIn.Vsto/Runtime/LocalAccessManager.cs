@@ -27,6 +27,11 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         {
             var feature = ProductFeaturePolicy.RequiredFeature(commandId);
             if (feature.Length == 0) return true;
+            // Protected commands require an explicit server-authorized account or
+            // activation-key mode. A cached lease alone must never unlock the UI.
+            AccessModeState? mode;
+            lock (_validatedCacheGate) mode = _accessMode;
+            if (mode == null) return false;
             return HasCachedFeature(feature) || (feature == TableImageToolsFeature &&
                 HasCachedFeature(DocumentToolsFeature));
         }
