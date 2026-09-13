@@ -31,7 +31,9 @@ $logPath = Join-Path $executionRoot '.tools\postgresql-persistence.log'
 $databaseName = 'chuanhoa_persistence_test'
 $migrationPath = Join-Path $executionRoot 'database\migrations\V001__identity_trial_commercial_foundation.sql'
 $adminMigrationPath = Join-Path $executionRoot 'database\migrations\V002__admin_integration_commands.sql'
+$replayMigrationPath = Join-Path $executionRoot 'database\migrations\V003__admin_integration_replay_nonces.sql'
 $adminAssertionPath = Join-Path $executionRoot 'tools\database\verify_v002_assertions.sql'
+$replayAssertionPath = Join-Path $executionRoot 'tools\database\verify_v003_assertions.sql'
 $testProject = Join-Path $executionRoot 'tests\ChuanHoa.Infrastructure.IntegrationTests\ChuanHoa.Infrastructure.IntegrationTests.csproj'
 $dotnet = Join-Path $executionRoot '.tools\dotnet\dotnet.exe'
 $evidencePath = Join-Path $executionRoot 'shared\docs\implementation\evidence\persistence_integration.json'
@@ -61,7 +63,7 @@ function Invoke-Checked {
 }
 
 try {
-    foreach ($requiredPath in @($initdb, $pgCtl, $createdb, $dropdb, $psql, $migrationPath, $adminMigrationPath, $adminAssertionPath, $testProject, $dotnet)) {
+    foreach ($requiredPath in @($initdb, $pgCtl, $createdb, $dropdb, $psql, $migrationPath, $adminMigrationPath, $replayMigrationPath, $adminAssertionPath, $replayAssertionPath, $testProject, $dotnet)) {
         if (-not (Test-Path -LiteralPath $requiredPath)) {
             throw "Required file not found: $requiredPath"
         }
@@ -134,6 +136,14 @@ try {
         '-X', '-v', 'ON_ERROR_STOP=1', '-h', '127.0.0.1', '-p', $Port,
         '-U', 'postgres', '-d', $databaseName, '-f', $adminAssertionPath
     ) 'verify V002 admin integration migration'
+    Invoke-Checked $psql @(
+        '-X', '-v', 'ON_ERROR_STOP=1', '-h', '127.0.0.1', '-p', $Port,
+        '-U', 'postgres', '-d', $databaseName, '-f', $replayMigrationPath
+    ) 'apply V003 replay nonce migration'
+    Invoke-Checked $psql @(
+        '-X', '-v', 'ON_ERROR_STOP=1', '-h', '127.0.0.1', '-p', $Port,
+        '-U', 'postgres', '-d', $databaseName, '-f', $replayAssertionPath
+    ) 'verify V003 replay nonce migration'
 
     $previousConnectionString = $env:CHUANHOA_TEST_CONNECTION_STRING
     try {

@@ -1,4 +1,5 @@
 using ChuanHoa.Application.Persistence;
+using ChuanHoa.Contracts.Integration;
 using ChuanHoa.Infrastructure.Persistence;
 using ChuanHoa.Infrastructure.Admin;
 using Microsoft.Extensions.Configuration;
@@ -29,6 +30,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<PostgresOutboxWriter>();
         services.AddSingleton<IIdempotencyStore, PostgresIdempotencyStore>();
         services.AddSingleton<IIntegrationAdminStore, PostgresIntegrationAdminStore>();
+        services.AddSingleton<IIntegrationReplayStore, PostgresIntegrationReplayStore>();
         return services;
     }
 }

@@ -1,14 +1,18 @@
-using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text;
+using ChuanHoa.Contracts.Integration;
 
 namespace ChuanHoa.Api.Security;
 
-public sealed class IntegrationRequestAuthenticator(TimeProvider timeProvider)
+public sealed class DisabledIntegrationReplayStore : IIntegrationReplayStore
 {
-    private readonly ConcurrentDictionary<string, long> _seenNonces = new(StringComparer.Ordinal);
+    public Task<bool> TryClaimAsync(string clientId, string nonce, DateTimeOffset expiresAtUtc, CancellationToken cancellationToken)
+        => Task.FromResult(false);
+}
 
-    public bool TryAuthenticate(HttpRequest request, ReadOnlySpan<byte> body, IConfiguration configuration)
+public sealed class IntegrationRequestAuthenticator(TimeProvider timeProvider, IIntegrationReplayStore replayStore)
+{
+    public async Task<bool> TryAuthenticateAsync(HttpRequest request, ReadOnlyMemory<byte> body, IConfiguration configuration, CancellationToken cancellationToken = default)
     {
         if (!bool.TryParse(configuration["ChuanHoa:AdminIntegration:Enabled"], out var enabled) || !enabled)
             return false;
@@ -30,17 +34,13 @@ public sealed class IntegrationRequestAuthenticator(TimeProvider timeProvider)
             ? Math.Clamp(configuredSkew, 30, 900)
             : 300;
         if (Math.Abs(now - timestamp) > skew) return false;
-        var bodyHash = Convert.ToHexString(SHA256.HashData(body)).ToLowerInvariant();
-        var canonical = string.Join('\n', request.Method.ToUpperInvariant(), request.Path, timestampText, nonce, bodyHash);
+        var bodyHash = Convert.ToHexString(SHA256.HashData(body.Span)).ToLowerInvariant();
+        var canonical = string.Join('\n', request.Method.ToUpperInvariant(), request.PathBase + request.Path + request.QueryString, timestampText, nonce, bodyHash);
         var expected = Convert.ToHexString(HMACSHA256.HashData(Encoding.UTF8.GetBytes(secret), Encoding.UTF8.GetBytes(canonical))).ToLowerInvariant();
         var validSignature = CryptographicOperations.FixedTimeEquals(
             Encoding.UTF8.GetBytes(expected),
             Encoding.UTF8.GetBytes(signature.Trim().ToLowerInvariant()));
         if (!validSignature) return false;
-        var nonceKey = $"{client}:{nonce}";
-        if (!_seenNonces.TryAdd(nonceKey, now + skew)) return false;
-        foreach (var item in _seenNonces.Where(item => item.Value < now).ToArray())
-            _seenNonces.TryRemove(item.Key, out _);
-        return true;
+        return await replayStore.TryClaimAsync(client, nonce, DateTimeOffset.FromUnixTimeSeconds(timestamp + skew), cancellationToken);
     }
 }

@@ -2,9 +2,9 @@
   "testId": "DB-PERSISTENCE-001",
   "status": "PASS",
   "postgresVersion": "17.11",
-  "startedAtUtc": "2026-09-13T02:21:03.8380790+00:00",
-  "completedAtUtc": "2026-09-13T02:21:09.8894229+00:00",
-  "durationMilliseconds": 6051,
+  "startedAtUtc": "2026-09-13T05:35:38.2770447+00:00",
+  "completedAtUtc": "2026-09-13T05:35:44.5995785+00:00",
+  "durationMilliseconds": 6323,
   "testCount": 7,
   "assertions": [
     "same key and same request reports in progress while owned",

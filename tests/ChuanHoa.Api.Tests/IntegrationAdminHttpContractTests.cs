@@ -7,6 +7,7 @@ using System.Text.Json;
 using ChuanHoa.Api.Controllers;
 using ChuanHoa.Api.Security;
 using ChuanHoa.Infrastructure.Admin;
+using ChuanHoa.Contracts.Integration;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
@@ -58,6 +59,38 @@ public sealed class IntegrationAdminHttpContractTests
     }
 
     [Fact]
+    public async Task Signed_mutation_preserves_exact_unicode_body_bytes()
+    {
+        using var server = CreateServer();
+        using var client = server.CreateClient();
+        var body = Encoding.UTF8.GetBytes($"{{\"userId\":\"{Guid.NewGuid():D}\",\"productId\":\"{Guid.NewGuid():D}\",\"featureCodes\":[\"tính.năng\"],\"durationDays\":30,\"reason\":\"Gia hạn hỗ trợ Đà Nẵng\",\"actorId\":\"actor-1\",\"correlationId\":\"{Guid.NewGuid():D}\"}}");
+        using var request = SignedRequest(HttpMethod.Post, "/v1/admin/integration/entitlements/extend", "nonce-http-unicode-001", body);
+        request.Headers.Add("Idempotency-Key", "http-unicode-key-0001");
+        request.Content = new ByteArrayContent(body);
+        request.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+
+        using var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(1, server.Services.GetRequiredService<FakeStore>().MutationCalls);
+    }
+
+    [Fact]
+    public async Task Signed_query_is_accepted_and_tampered_query_is_rejected()
+    {
+        using var server = CreateServer();
+        using var client = server.CreateClient();
+        using var valid = SignedRequest(HttpMethod.Get, "/v1/admin/integration/accounts?search=%C4%90%C3%A0%20N%E1%BA%B5ng&page=2&pageSize=25", "nonce-http-query-001", ReadOnlySpan<byte>.Empty);
+        using var accepted = await client.SendAsync(valid);
+        Assert.Equal(HttpStatusCode.OK, accepted.StatusCode);
+
+        using var tampered = SignedRequest(HttpMethod.Get, "/v1/admin/integration/accounts?page=2", "nonce-http-query-002", ReadOnlySpan<byte>.Empty);
+        tampered.RequestUri = new Uri("/v1/admin/integration/accounts?page=3", UriKind.Relative);
+        using var rejected = await client.SendAsync(tampered);
+        Assert.Equal(HttpStatusCode.Unauthorized, rejected.StatusCode);
+    }
+
+    [Fact]
     public async Task Signed_collection_request_returns_stable_application_envelope()
     {
         using var server = CreateServer();
@@ -88,6 +121,7 @@ public sealed class IntegrationAdminHttpContractTests
                 services.AddSingleton<IConfiguration>(configuration);
                 services.AddSingleton<TimeProvider>(new FixedTimeProvider(DateTimeOffset.FromUnixTimeSeconds(1_700_000_000)));
                 services.AddSingleton<IntegrationRequestAuthenticator>();
+                services.AddSingleton<IIntegrationReplayStore, MemoryReplayStore>();
                 services.AddSingleton<FakeStore>();
                 services.AddSingleton<IIntegrationAdminStore>(provider => provider.GetRequiredService<FakeStore>());
                 services.AddControllers().AddApplicationPart(typeof(IntegrationAdminController).Assembly);
@@ -99,7 +133,9 @@ public sealed class IntegrationAdminHttpContractTests
     {
         const string timestamp = "1700000000";
         var bodyHash = Convert.ToHexString(SHA256.HashData(body)).ToLowerInvariant();
-        var canonical = string.Join('\n', method.Method.ToUpperInvariant(), path, timestamp, nonce, bodyHash);
+        var uri = new Uri(path, UriKind.RelativeOrAbsolute);
+        var signedPath = uri.IsAbsoluteUri ? uri.PathAndQuery : path;
+        var canonical = string.Join('\n', method.Method.ToUpperInvariant(), signedPath, timestamp, nonce, bodyHash);
         var signature = Convert.ToHexString(HMACSHA256.HashData(Encoding.UTF8.GetBytes(Secret), Encoding.UTF8.GetBytes(canonical))).ToLowerInvariant();
         var request = new HttpRequestMessage(method, path);
         request.Headers.Add("X-Integration-Client", ClientId);
@@ -112,6 +148,13 @@ public sealed class IntegrationAdminHttpContractTests
     private sealed class FixedTimeProvider(DateTimeOffset now) : TimeProvider
     {
         public override DateTimeOffset GetUtcNow() => now;
+    }
+
+    private sealed class MemoryReplayStore : IIntegrationReplayStore
+    {
+        private readonly HashSet<string> _seen = new(StringComparer.Ordinal);
+        public Task<bool> TryClaimAsync(string clientId, string nonce, DateTimeOffset expiresAtUtc, CancellationToken cancellationToken)
+            => Task.FromResult(_seen.Add($"{clientId}:{nonce}"));
     }
 
     private sealed class FakeStore : IIntegrationAdminStore

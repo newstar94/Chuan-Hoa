@@ -14,9 +14,9 @@ public sealed class IntegrationAdminController(
     private const string IntegrationSchema = "chuanhoa.admin.integration.v1";
     public sealed record ExtendEntitlementRequest(Guid UserId, Guid ProductId, string[] FeatureCodes, int DurationDays, string Reason, string ActorId, Guid CorrelationId);
     [HttpGet("capabilities")]
-    public IActionResult Capabilities()
+    public async Task<IActionResult> Capabilities()
     {
-        if (!authenticator.TryAuthenticate(Request, ReadOnlySpan<byte>.Empty, configuration))
+        if (!await authenticator.TryAuthenticateAsync(Request, ReadOnlyMemory<byte>.Empty, configuration, HttpContext.RequestAborted))
             return Unauthorized(new { code = "INTEGRATION_AUTH_INVALID", message = "Server-to-server authentication failed." });
 
         var configured = !string.IsNullOrWhiteSpace(configuration["ConnectionStrings:ChuanHoa"]);
@@ -55,11 +55,27 @@ public sealed class IntegrationAdminController(
         => await Read(async store => await store.AuditAsync(search, page, pageSize, cancellationToken));
 
     [HttpPost("entitlements/extend")]
-    public async Task<IActionResult> ExtendEntitlement([FromBody] JsonElement document, CancellationToken cancellationToken)
+    public async Task<IActionResult> ExtendEntitlement(CancellationToken cancellationToken)
     {
-        var bytes = JsonSerializer.SerializeToUtf8Bytes(document);
-        if (!authenticator.TryAuthenticate(Request, bytes, configuration))
+        Request.EnableBuffering();
+        if (Request.ContentLength is > 1_048_576)
+            return StatusCode(StatusCodes.Status413PayloadTooLarge, new { code = "INTEGRATION_BODY_TOO_LARGE" });
+        await using var buffer = new MemoryStream();
+        await Request.Body.CopyToAsync(buffer, cancellationToken);
+        var bytes = buffer.ToArray();
+        Request.Body.Position = 0;
+        if (!await authenticator.TryAuthenticateAsync(Request, bytes, configuration, cancellationToken))
             return Unauthorized(new { code = "INTEGRATION_AUTH_INVALID", message = "Server-to-server authentication failed." });
+        JsonElement document;
+        try
+        {
+            using var parsed = JsonDocument.Parse(bytes);
+            document = parsed.RootElement.Clone();
+        }
+        catch (JsonException)
+        {
+            return BadRequest(new { code = "ADMIN_ENTITLEMENT_REQUEST_INVALID" });
+        }
         var body = document.Deserialize<ExtendEntitlementRequest>(new JsonSerializerOptions(JsonSerializerDefaults.Web));
         if (body is null) return BadRequest(new { code = "ADMIN_ENTITLEMENT_REQUEST_INVALID" });
         var key = Request.Headers["Idempotency-Key"].ToString().Trim();
@@ -91,7 +107,7 @@ public sealed class IntegrationAdminController(
 
     private async Task<IActionResult> Read<T>(Func<IIntegrationAdminStore, Task<AdminPage<T>>> query)
     {
-        if (!authenticator.TryAuthenticate(Request, ReadOnlySpan<byte>.Empty, configuration))
+        if (!await authenticator.TryAuthenticateAsync(Request, ReadOnlyMemory<byte>.Empty, configuration, HttpContext.RequestAborted))
             return Unauthorized(new { code = "INTEGRATION_AUTH_INVALID", message = "Server-to-server authentication failed." });
         var store = HttpContext.RequestServices.GetService<IIntegrationAdminStore>();
         if (store is null) return StatusCode(StatusCodes.Status503ServiceUnavailable, new { code = "CHUAN_HOA_ADMIN_NOT_CONFIGURED" });

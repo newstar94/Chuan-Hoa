@@ -4,6 +4,7 @@ using ChuanHoa.Api.Security;
 using ChuanHoa.Api.Development;
 using ChuanHoa.Application;
 using ChuanHoa.Contracts;
+using ChuanHoa.Contracts.Integration;
 using ChuanHoa.Infrastructure;
 using Npgsql;
 
@@ -15,6 +16,7 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<DevelopmentArtifactIssuer>();
 builder.Services.AddSingleton<DevelopmentAdminStore>();
 builder.Services.AddSingleton<IntegrationRequestAuthenticator>();
+builder.Services.AddSingleton<IIntegrationReplayStore, DisabledIntegrationReplayStore>();
 builder.Services.AddSingleton<ChuanHoa.Api.Billing.PayOsGateway>();
 builder.Services
     .AddAuthentication(FailClosedAuthenticationDefaults.Scheme)
