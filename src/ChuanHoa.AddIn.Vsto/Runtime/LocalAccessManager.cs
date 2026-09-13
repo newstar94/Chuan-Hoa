@@ -50,14 +50,48 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         private readonly string _clientReleaseId;
         private readonly string _cacheDirectory;
         private readonly string _deviceThumbprint;
+        private readonly ProtectedSessionStore _sessionStore;
         private readonly HttpClient _httpClient;
         private readonly object _validatedCacheGate = new object();
+        private AccessModeState? _accessMode;
         private ValidatedCache? _validatedCache;
         private Exception? _cacheLoadError;
         private int _refreshInProgress;
         private Exception? _lastRefreshError;
 
         public event EventHandler? CacheStateChanged;
+
+        /// <summary>Current server-authorized mode. It is intentionally volatile in-memory state;
+        /// callers must restore it from a protected session/activation response after restart.</summary>
+        public AccessModeState? AccessModeState
+        {
+            get { lock (_validatedCacheGate) return _accessMode; }
+        }
+
+        public string DeviceThumbprint { get { return _deviceThumbprint; } }
+
+        public void SaveSessionToken(string token)
+        {
+            new ProtectedSessionStore(_cacheDirectory, "account-token.dat").Save(token);
+        }
+
+        public string? LoadSessionToken()
+        {
+            return new ProtectedSessionStore(_cacheDirectory, "account-token.dat").Load();
+        }
+
+        public void ClearSessionToken()
+        {
+            new ProtectedSessionStore(_cacheDirectory, "account-token.dat").Clear();
+        }
+
+        public void SetAccessMode(AccessModeState? state)
+        {
+            lock (_validatedCacheGate) _accessMode = state;
+            if (state == null) _sessionStore.Clear();
+            else _sessionStore.Save(string.Join("|", state.Mode, state.IssuedAtUtc.ToString("O", CultureInfo.InvariantCulture), state.ExpiresAtUtc.ToString("O", CultureInfo.InvariantCulture), state.DeviceThumbprint));
+            CacheStateChanged?.Invoke(this, EventArgs.Empty);
+        }
 
         public bool IsRefreshInProgress => Volatile.Read(ref _refreshInProgress) != 0;
 
@@ -67,8 +101,22 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             _cacheDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ChuanHoa", "Cache");
             Directory.CreateDirectory(_cacheDirectory);
             _deviceThumbprint = LoadOrCreateDeviceThumbprint();
+            _sessionStore = new ProtectedSessionStore(_cacheDirectory);
             _httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
+            LoadPersistedAccessMode();
             LoadValidatedCacheFromDisk();
+        }
+
+        private void LoadPersistedAccessMode()
+        {
+            var value = _sessionStore.Load();
+            if (string.IsNullOrWhiteSpace(value)) return;
+            var parts = value.Split(new[] { '|' }, 4);
+            if (parts.Length != 4 || !Enum.TryParse(parts[0], out AccessMode mode) || mode == AccessMode.None) return;
+            if (!DateTimeOffset.TryParse(parts[1], CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var issued) ||
+                !DateTimeOffset.TryParse(parts[2], CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var expires)) return;
+            try { _accessMode = new AccessModeState(mode, issued, expires, parts[3]); }
+            catch (ArgumentException) { _sessionStore.Clear(); }
         }
 
         public LocalRulePack GetRulePack(string requiredFeature)
@@ -147,8 +195,10 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 }
 
                 var now = DateTimeOffset.UtcNow;
+                AccessModeState? mode;
+                lock (_validatedCacheGate) mode = _accessMode;
                 new OfflineLeaseValidator().Validate(cache.Lease, _deviceThumbprint, _clientReleaseId,
-                    requiredFeature, now, cache.TrustedServerTimeUtc);
+                    requiredFeature, now, cache.TrustedServerTimeUtc, mode);
                 if (now < cache.RulePack.NotBeforeUtc)
                     throw new InvalidOperationException("RULE_PACK_NOT_ACTIVE");
                 if (now >= cache.RulePack.ExpiresAtUtc)

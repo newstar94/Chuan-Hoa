@@ -32,8 +32,10 @@ $databaseName = 'chuanhoa_persistence_test'
 $migrationPath = Join-Path $executionRoot 'database\migrations\V001__identity_trial_commercial_foundation.sql'
 $adminMigrationPath = Join-Path $executionRoot 'database\migrations\V002__admin_integration_commands.sql'
 $replayMigrationPath = Join-Path $executionRoot 'database\migrations\V003__admin_integration_replay_nonces.sql'
+$accessMigrationPath = Join-Path $executionRoot 'database\migrations\V004__account_sessions_and_activation_keys.sql'
 $adminAssertionPath = Join-Path $executionRoot 'tools\database\verify_v002_assertions.sql'
 $replayAssertionPath = Join-Path $executionRoot 'tools\database\verify_v003_assertions.sql'
+$accessAssertionPath = Join-Path $executionRoot 'tools\database\verify_v004_assertions.sql'
 $testProject = Join-Path $executionRoot 'tests\ChuanHoa.Infrastructure.IntegrationTests\ChuanHoa.Infrastructure.IntegrationTests.csproj'
 $dotnet = Join-Path $executionRoot '.tools\dotnet\dotnet.exe'
 $evidencePath = Join-Path $executionRoot 'shared\docs\implementation\evidence\persistence_integration.json'
@@ -63,7 +65,7 @@ function Invoke-Checked {
 }
 
 try {
-    foreach ($requiredPath in @($initdb, $pgCtl, $createdb, $dropdb, $psql, $migrationPath, $adminMigrationPath, $replayMigrationPath, $adminAssertionPath, $replayAssertionPath, $testProject, $dotnet)) {
+    foreach ($requiredPath in @($initdb, $pgCtl, $createdb, $dropdb, $psql, $migrationPath, $adminMigrationPath, $replayMigrationPath, $accessMigrationPath, $adminAssertionPath, $replayAssertionPath, $accessAssertionPath, $testProject, $dotnet)) {
         if (-not (Test-Path -LiteralPath $requiredPath)) {
             throw "Required file not found: $requiredPath"
         }
@@ -144,6 +146,14 @@ try {
         '-X', '-v', 'ON_ERROR_STOP=1', '-h', '127.0.0.1', '-p', $Port,
         '-U', 'postgres', '-d', $databaseName, '-f', $replayAssertionPath
     ) 'verify V003 replay nonce migration'
+    Invoke-Checked $psql @(
+        '-X', '-v', 'ON_ERROR_STOP=1', '-h', '127.0.0.1', '-p', $Port,
+        '-U', 'postgres', '-d', $databaseName, '-f', $accessMigrationPath
+    ) 'apply V004 account and activation migration'
+    Invoke-Checked $psql @(
+        '-X', '-v', 'ON_ERROR_STOP=1', '-h', '127.0.0.1', '-p', $Port,
+        '-U', 'postgres', '-d', $databaseName, '-f', $accessAssertionPath
+    ) 'verify V004 account and activation migration'
 
     $previousConnectionString = $env:CHUANHOA_TEST_CONNECTION_STRING
     try {
@@ -166,7 +176,7 @@ try {
         startedAtUtc = $startedAt.ToString('O')
         completedAtUtc = $completedAt.ToString('O')
         durationMilliseconds = [int64]($completedAt - $startedAt).TotalMilliseconds
-        testCount = 7
+        testCount = 13
         assertions = @(
             'same key and same request reports in progress while owned',
             'same key and different request hash reports conflict',
@@ -176,7 +186,13 @@ try {
             'outbox insert commits with a successful transaction',
             'same admin extension key concurrently creates one grant and replays the same result',
             'admin extension key conflict rejects a different payload',
-            'failed admin extension attempt is recorded in target audit'
+            'failed admin extension attempt is recorded in target audit',
+            'registration issues an absolute 72-hour session without plaintext password',
+            'second device cannot take an active account binding',
+            'same-device activation is idempotent and does not consume a second slot',
+            'concurrent final-slot activation allows only one device',
+            'logout releases binding so another device can login',
+            'expired session does not lock an account to its old device forever'
         )
     }
     [System.IO.File]::WriteAllText(

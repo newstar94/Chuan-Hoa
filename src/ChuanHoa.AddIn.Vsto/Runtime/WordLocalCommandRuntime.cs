@@ -1473,11 +1473,16 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     paragraph = paragraphs[index];
                     paragraphRange = paragraph.Range.Duplicate;
                     var raw = paragraphRange.Text ?? string.Empty;
-                    // A table-cell marker (\a), manual page break (\f) or manual line
-                    // break (\v) is structural content and must never be deleted here.
-                    if (raw.IndexOf('\a') >= 0 || raw.IndexOf('\f') >= 0 || raw.IndexOf('\v') >= 0 ||
-                        raw.Trim('\r', ' ', '\t').Length != 0)
+                    // A table-cell marker (\a) or manual line break (\v) is
+                    // structural content and must never be deleted. A trailing
+                    // paragraph containing only a manual page break (\f), on the
+                    // other hand, is the common source of one redundant blank
+                    // page; remove only that break and preserve the paragraph.
+                    var withoutPageBreak = raw.Replace("\f", string.Empty, StringComparison.Ordinal);
+                    if (raw.IndexOf('\a') >= 0 || raw.IndexOf('\v') >= 0 ||
+                        withoutPageBreak.Trim('\r', ' ', '\t', '\u00A0', '\u200B').Length != 0)
                         break;
+                    if (raw.IndexOf('\f') >= 0) paragraphRange.Text = withoutPageBreak;
                     deleteStart = paragraphRange.Start;
                 }
 

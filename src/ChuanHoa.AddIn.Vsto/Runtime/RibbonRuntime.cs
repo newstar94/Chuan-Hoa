@@ -567,13 +567,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 MessageBox.Show("Hãy mở một tài liệu Word.", "Chuẩn hóa", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
-            var regime = string.Equals(context.RegimeCode, "PARTY_HD05", StringComparison.OrdinalIgnoreCase)
-                ? "Hướng dẫn 05 (văn bản Đảng)"
-                : "Nghị định 30 (văn bản hành chính)";
             var answer = MessageBox.Show(
-                "Chuẩn hóa toàn bộ tài liệu theo " + regime + "?\n\n" +
-                "Ứng dụng sẽ tự đọc trạng thái hiện tại và nhận diện loại văn bản.\n\n" +
-                "Chương trình sẽ tạo bản sao khôi phục, sửa định dạng, bổ sung Line Shape và tự sửa các lỗi chính tả có phương án xác định. Lỗi cần cân nhắc vẫn được comment và tô đỏ.",
+                "Chuẩn hóa toàn bộ tài liệu? Ứng dụng sẽ tự động Chuẩn hóa lại tài liệu của bạn",
                 "Chuẩn hóa toàn bộ", MessageBoxButtons.OKCancel, MessageBoxIcon.Question);
             if (answer != DialogResult.OK) return;
 
@@ -618,17 +613,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     remainingFindingCount = remainingFormat.Findings.Count + remainingSpelling.Findings.Count;
                 }
                 SynchronizeDocumentTypeSelection(context);
-                MessageBox.Show(
-                    "Đã chuẩn hóa toàn bộ tại máy.\n\n" +
-                    "Loại văn bản: " + LocalDocumentTypeCodes.GetDisplayName(context.DocumentTypeCode) +
-                    ".\nĐoạn đã định dạng: " + result.ChangedParagraphs +
-                    "\nĐường kẻ đã xử lý: " + result.InsertedLines +
-                    "\nSection đã chuẩn hóa: " + result.NormalizedSections +
-                    "\nBảng đã xử lý: " + result.NormalizedTables +
-                    "\nLỗi chính tả đã tự sửa: " + result.CorrectedSpellingItems +
-                    "\nVấn đề còn lại sau khi sửa: " + remainingFindingCount +
-                    "\n\nCác lỗi còn lại đã được comment và tô đỏ theo kết quả kiểm tra mới." +
-                    "\n\nBản sao khôi phục:\n" + result.BackupPath,
+                MessageBox.Show("Chuẩn hóa toàn bộ hoàn tất.",
                     "Chuẩn hóa", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (OperationCanceledException)
@@ -693,10 +678,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     _currentDocumentOperation);
 
                 MessageBox.Show(
-                    "Đã sửa nhanh chính tả tại máy.\n\n" +
-                    "Số lỗi đã tự động sửa thành công: " + fixedCount + "\n" +
-                    "Số lỗi còn lại cần người dùng cân nhắc: " + remainingScan.Findings.Count + "\n\n" +
-                    "Bạn có thể hoàn tác toàn bộ bằng Ctrl+Z nếu cần.",
+                    "Sửa nhanh chính tả hoàn tất.",
                     "Sửa nhanh chính tả",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Information);
@@ -900,10 +882,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                           ? "Chưa thể đánh giá: " + string.Join(", ", result.NotEvaluatedRuleCodes) + ".\n"
                           : string.Empty);
                 MessageBox.Show(
-                    "Đã kiểm tra " + (spelling ? "chính tả" : "thể thức") + " hoàn toàn tại máy.\n" +
-                    "Loại văn bản tự nhận diện: " + LocalDocumentTypeCodes.GetDisplayName(context.DocumentTypeCode) + ".\n" +
-                    details +
-                    "Gói quy tắc: " + result.RulePackId + ".\n\nNội dung tài liệu không được gửi lên máy chủ.",
+                    spelling ? "Kiểm tra chính tả hoàn tất." : "Kiểm tra thể thức hoàn tất.",
                     "Chuẩn hóa",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Information);
@@ -962,9 +941,14 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     var backupMessage = string.IsNullOrWhiteSpace(backup)
                         ? "Có thể hoàn tác bằng Ctrl+Z."
                         : "Có thể hoàn tác bằng Ctrl+Z. Bản sao khôi phục đã được tạo tại:\n" + backup;
+                    var successMessage = title switch
+                    {
+                        "Chuyển đổi Unicode" => "Chuyển đổi Unicode hoàn tất.",
+                        "Xóa trang thừa" => "Xóa trang thừa hoàn tất.",
+                        _ => title + " hoàn tất."
+                    };
                     MessageBox.Show(
-                        "Đã thực hiện “" + title + "” hoàn toàn tại máy.\n\n" +
-                        backupMessage,
+                        successMessage,
                         "Chuẩn hóa",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Information);

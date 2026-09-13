@@ -1,4 +1,5 @@
 using ChuanHoa.Api.Security;
+using ChuanHoa.Contracts;
 using ChuanHoa.Infrastructure.Admin;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
@@ -9,10 +10,12 @@ namespace ChuanHoa.Api.Controllers;
 [Route("v1/admin/integration")]
 public sealed class IntegrationAdminController(
     IntegrationRequestAuthenticator authenticator,
-    IConfiguration configuration) : ControllerBase
+    IConfiguration configuration,
+    IActivationKeyAdminStore activationKeyStore) : ControllerBase
 {
     private const string IntegrationSchema = "chuanhoa.admin.integration.v1";
     public sealed record ExtendEntitlementRequest(Guid UserId, Guid ProductId, string[] FeatureCodes, int DurationDays, string Reason, string ActorId, Guid CorrelationId);
+    public sealed record CreateActivationKeyRequest(Guid ProductId, string[] FeatureCodes, int MaxDevices, DateTimeOffset? ExpiresAtUtc, string Note, string ActorId, Guid CorrelationId);
     [HttpGet("capabilities")]
     public async Task<IActionResult> Capabilities()
     {
@@ -53,6 +56,15 @@ public sealed class IntegrationAdminController(
     [HttpGet("audit")]
     public async Task<IActionResult> Audit([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 25, CancellationToken cancellationToken = default)
         => await Read(async store => await store.AuditAsync(search, page, pageSize, cancellationToken));
+
+    [HttpGet("activation-keys")]
+    public async Task<IActionResult> ActivationKeys([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 25, CancellationToken cancellationToken = default)
+    {
+        if (!await authenticator.TryAuthenticateAsync(Request, ReadOnlyMemory<byte>.Empty, configuration, HttpContext.RequestAborted)) return Unauthorized(new { code = "INTEGRATION_AUTH_INVALID" });
+        pageSize = Math.Clamp(pageSize, 1, 100);
+        var data = await activationKeyStore.ListAsync(search, page, pageSize, cancellationToken);
+        return Ok(new { schema = IntegrationSchema, application = "chuan-hoa", status = "available", data });
+    }
 
     [HttpPost("entitlements/extend")]
     public async Task<IActionResult> ExtendEntitlement(CancellationToken cancellationToken)
@@ -103,6 +115,68 @@ public sealed class IntegrationAdminController(
         catch (ArgumentException error) { await RecordFailure(error.Message); return BadRequest(new { code = error.Message }); }
         catch (InvalidOperationException error) when (error.Message == "IDEMPOTENCY_KEY_CONFLICT") { await RecordFailure(error.Message); return Conflict(new { code = error.Message }); }
         catch (InvalidOperationException error) when (error.Message == "ADMIN_ENTITLEMENT_TARGET_INVALID") { await RecordFailure(error.Message); return NotFound(new { code = error.Message }); }
+    }
+
+    [HttpPost("activation-keys")]
+    public async Task<IActionResult> CreateActivationKey(CancellationToken cancellationToken)
+    {
+        Request.EnableBuffering();
+        if (Request.ContentLength is > 1_048_576) return StatusCode(StatusCodes.Status413PayloadTooLarge, new { code = "INTEGRATION_BODY_TOO_LARGE" });
+        await using var buffer = new MemoryStream(); await Request.Body.CopyToAsync(buffer, cancellationToken); var bytes = buffer.ToArray(); Request.Body.Position = 0;
+        if (!await authenticator.TryAuthenticateAsync(Request, bytes, configuration, cancellationToken)) return Unauthorized(new { code = "INTEGRATION_AUTH_INVALID" });
+        CreateActivationKeyRequest? body;
+        try { body = JsonSerializer.Deserialize<CreateActivationKeyRequest>(bytes, new JsonSerializerOptions(JsonSerializerDefaults.Web)); }
+        catch (JsonException) { return BadRequest(new { code = "ADMIN_ACTIVATION_KEY_REQUEST_INVALID" }); }
+        var idempotencyKey = Request.Headers["Idempotency-Key"].ToString().Trim();
+        if (body is null || body.ProductId == Guid.Empty || body.CorrelationId == Guid.Empty || body.ActorId.Length is < 1 or > 128 || idempotencyKey.Length is < 16 or > 128)
+            return BadRequest(new { code = "ADMIN_ACTIVATION_KEY_REQUEST_INVALID" });
+        try
+        {
+            var externalActor = Request.Headers["X-Integration-Client"].ToString();
+            var created = await activationKeyStore.CreateVipKeyAsync(new ChuanHoa.Contracts.CreateVipKeyRequest(body.ProductId, body.FeatureCodes, body.MaxDevices, body.ExpiresAtUtc, body.Note, externalActor, body.CorrelationId), cancellationToken);
+            return Ok(new { schema = IntegrationSchema, application = "chuan-hoa", status = "available", data = created });
+        }
+        catch (ArgumentException error) { return BadRequest(new { code = error.Message }); }
+        catch (Npgsql.PostgresException error) when (error.SqlState == "23503") { return NotFound(new { code = "ADMIN_ACTIVATION_KEY_PRODUCT_INVALID" }); }
+    }
+
+    [HttpPost("activation-keys/revoke")]
+    public async Task<IActionResult> RevokeActivationKey(CancellationToken cancellationToken)
+    {
+        Request.EnableBuffering();
+        if (Request.ContentLength is > 1_048_576) return StatusCode(StatusCodes.Status413PayloadTooLarge, new { code = "INTEGRATION_BODY_TOO_LARGE" });
+        await using var buffer = new MemoryStream(); await Request.Body.CopyToAsync(buffer, cancellationToken); var bytes = buffer.ToArray();
+        if (!await authenticator.TryAuthenticateAsync(Request, bytes, configuration, cancellationToken)) return Unauthorized(new { code = "INTEGRATION_AUTH_INVALID" });
+        AdminKeyMutationRequest? body;
+        try { body = JsonSerializer.Deserialize<AdminKeyMutationRequest>(bytes, new JsonSerializerOptions(JsonSerializerDefaults.Web)); } catch (JsonException) { return BadRequest(new { code = "ADMIN_KEY_MUTATION_INVALID" }); }
+        if (body is null || body.KeyId == Guid.Empty || body.CorrelationId == Guid.Empty || string.IsNullOrWhiteSpace(body.ActorId)) return BadRequest(new { code = "ADMIN_KEY_MUTATION_INVALID" });
+        try { await activationKeyStore.RevokeKeyAsync(body with { ActorId = Request.Headers["X-Integration-Client"].ToString() }, cancellationToken); return Ok(new { schema = IntegrationSchema, application = "chuan-hoa", status = "available", data = new { revoked = true, body.KeyId } }); }
+        catch (Npgsql.PostgresException) { return StatusCode(503, new { code = "CHUAN_HOA_ADMIN_NOT_CONFIGURED" }); }
+    }
+
+    [HttpPost("activation-keys/release-device")]
+    public async Task<IActionResult> ReleaseActivationDevice(CancellationToken cancellationToken)
+        => await ExecuteDeviceMutationAsync((body, token) => activationKeyStore.ReleaseKeyDeviceAsync(body, token), cancellationToken, "ADMIN_DEVICE_MUTATION_INVALID");
+
+    [HttpPost("accounts/reset-device")]
+    public async Task<IActionResult> ResetAccountDevice(CancellationToken cancellationToken)
+        => await ExecuteDeviceMutationAsync((body, token) => activationKeyStore.ResetAccountDeviceAsync(body, token), cancellationToken, "ADMIN_DEVICE_MUTATION_INVALID");
+
+    private async Task<IActionResult> ExecuteDeviceMutationAsync(Func<AdminDeviceMutationRequest, CancellationToken, Task> mutation, CancellationToken cancellationToken, string invalidCode)
+    {
+        Request.EnableBuffering();
+        if (Request.ContentLength is > 1_048_576) return StatusCode(StatusCodes.Status413PayloadTooLarge, new { code = "INTEGRATION_BODY_TOO_LARGE" });
+        await using var buffer = new MemoryStream(); await Request.Body.CopyToAsync(buffer, cancellationToken); var bytes = buffer.ToArray();
+        if (!await authenticator.TryAuthenticateAsync(Request, bytes, configuration, cancellationToken)) return Unauthorized(new { code = "INTEGRATION_AUTH_INVALID" });
+        AdminDeviceMutationRequest? body;
+        try { body = JsonSerializer.Deserialize<AdminDeviceMutationRequest>(bytes, new JsonSerializerOptions(JsonSerializerDefaults.Web)); } catch (JsonException) { return BadRequest(new { code = invalidCode }); }
+        if (body is null || body.TargetId == Guid.Empty || string.IsNullOrWhiteSpace(body.DeviceThumbprint) || body.CorrelationId == Guid.Empty) return BadRequest(new { code = invalidCode });
+        try
+        {
+            await mutation(body with { ActorId = Request.Headers["X-Integration-Client"].ToString() }, cancellationToken);
+            return Ok(new { schema = IntegrationSchema, application = "chuan-hoa", status = "available", data = new { updated = true } });
+        }
+        catch (Npgsql.PostgresException) { return StatusCode(503, new { code = "CHUAN_HOA_ADMIN_NOT_CONFIGURED" }); }
     }
 
     private async Task<IActionResult> Read<T>(Func<IIntegrationAdminStore, Task<AdminPage<T>>> query)

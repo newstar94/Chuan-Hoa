@@ -150,6 +150,8 @@
     <Compile Include="Runtime\WordOneClickRuntime.cs" />
     <Compile Include="Runtime\CustomDictionaryDialog.cs" />
     <Compile Include="Runtime\AccountSettingsWindow.cs" />
+    <Compile Include="Runtime\AccountAccessApiClient.cs" />
+    <Compile Include="Runtime\ProtectedSessionStore.cs" />
     <Compile Include="Runtime\WordRecoveryCopyManager.cs" />
     <Compile Include="Runtime\WordTextMeasurement.cs" />
     <Compile Include="Runtime\WordMutationRuntime.cs" />

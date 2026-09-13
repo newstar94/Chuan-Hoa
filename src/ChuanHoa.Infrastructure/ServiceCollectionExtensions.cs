@@ -1,4 +1,5 @@
 using ChuanHoa.Application.Persistence;
+using ChuanHoa.Contracts;
 using ChuanHoa.Contracts.Integration;
 using ChuanHoa.Infrastructure.Persistence;
 using ChuanHoa.Infrastructure.Admin;
@@ -31,6 +32,8 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IIdempotencyStore, PostgresIdempotencyStore>();
         services.AddSingleton<IIntegrationAdminStore, PostgresIntegrationAdminStore>();
         services.AddSingleton<IIntegrationReplayStore, PostgresIntegrationReplayStore>();
+        services.AddSingleton<IAccountAccessStore, PostgresAccountAccessStore>();
+        services.AddSingleton<IActivationKeyAdminStore, PostgresAccountAccessStore>();
         return services;
     }
 }

@@ -8,6 +8,7 @@ using ChuanHoa.Api.Controllers;
 using ChuanHoa.Api.Security;
 using ChuanHoa.Infrastructure.Admin;
 using ChuanHoa.Contracts.Integration;
+using ChuanHoa.Contracts;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
@@ -124,6 +125,7 @@ public sealed class IntegrationAdminHttpContractTests
                 services.AddSingleton<IIntegrationReplayStore, MemoryReplayStore>();
                 services.AddSingleton<FakeStore>();
                 services.AddSingleton<IIntegrationAdminStore>(provider => provider.GetRequiredService<FakeStore>());
+                services.AddSingleton<IActivationKeyAdminStore, FakeActivationKeyStore>();
                 services.AddControllers().AddApplicationPart(typeof(IntegrationAdminController).Assembly);
             })
             .Configure(app => app.UseRouting().UseEndpoints(endpoints => endpoints.MapControllers())));
@@ -173,6 +175,16 @@ public sealed class IntegrationAdminHttpContractTests
             var now = DateTimeOffset.UtcNow;
             return Task.FromResult(new AdminMutation(Guid.NewGuid(), userId, productId, "ACTIVE", now, now.Add(duration), featureCodes));
         }
+    }
+
+    private sealed class FakeActivationKeyStore : IActivationKeyAdminStore
+    {
+        public Task<CreatedVipKeyResponse> CreateVipKeyAsync(CreateVipKeyRequest request, CancellationToken cancellationToken)
+            => Task.FromResult(new CreatedVipKeyResponse(Guid.NewGuid(), "CHV-TEST", "CHV-TEST", request.MaxDevices, request.ExpiresAtUtc));
+        public Task ReleaseKeyDeviceAsync(AdminDeviceMutationRequest request, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task RevokeKeyAsync(AdminKeyMutationRequest request, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task ResetAccountDeviceAsync(AdminDeviceMutationRequest request, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task<ActivationKeyAdminPage> ListAsync(string? search, int page, int pageSize, CancellationToken cancellationToken) => Task.FromResult(new ActivationKeyAdminPage([], page, pageSize, 0));
     }
 }
 #pragma warning restore ASPDEPR004, ASPDEPR008

@@ -2730,10 +2730,13 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         private static bool IsBodyParagraph(LocalParagraphSnapshot paragraph)
         {
             var text = paragraph.Text.Trim();
-            if (text.Length < 20 || text.Length > 5000) return false;
+            // Length and list-marker heuristics used to skip legitimate short
+            // body paragraphs ("Điều 1.", "1. ...", "a) ..."). Structural
+            // roles are resolved before this fallback; every remaining
+            // non-empty main-text paragraph must receive the canonical body
+            // spacing instead of inheriting arbitrary direct/style formatting.
+            if (text.Length == 0 || text.Length > 5000) return false;
             if (text.Where(char.IsLetter).Any() && text.Where(char.IsLetter).All(char.IsUpper)) return false;
-            if (Regex.IsMatch(text, @"^(Điều\s+\d+|\d+\.\s|[a-zđ]\)\s)\b",
-                RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)) return false;
             return true;
         }
 

@@ -2,10 +2,10 @@
   "testId": "DB-PERSISTENCE-001",
   "status": "PASS",
   "postgresVersion": "17.11",
-  "startedAtUtc": "2026-09-13T05:35:38.2770447+00:00",
-  "completedAtUtc": "2026-09-13T05:35:44.5995785+00:00",
-  "durationMilliseconds": 6323,
-  "testCount": 7,
+  "startedAtUtc": "2026-09-13T12:18:41.9890643+00:00",
+  "completedAtUtc": "2026-09-13T12:18:51.1107300+00:00",
+  "durationMilliseconds": 9122,
+  "testCount": 13,
   "assertions": [
     "same key and same request reports in progress while owned",
     "same key and different request hash reports conflict",
@@ -15,6 +15,12 @@
     "outbox insert commits with a successful transaction",
     "same admin extension key concurrently creates one grant and replays the same result",
     "admin extension key conflict rejects a different payload",
-    "failed admin extension attempt is recorded in target audit"
+    "failed admin extension attempt is recorded in target audit",
+    "registration issues an absolute 72-hour session without plaintext password",
+    "second device cannot take an active account binding",
+    "same-device activation is idempotent and does not consume a second slot",
+    "concurrent final-slot activation allows only one device",
+    "logout releases binding so another device can login",
+    "expired session does not lock an account to its old device forever"
   ]
 }

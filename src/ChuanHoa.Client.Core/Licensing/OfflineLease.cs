@@ -62,11 +62,14 @@ namespace ChuanHoa.Client.Core.Licensing
         public static readonly TimeSpan MaximumOfflinePeriod = TimeSpan.FromDays(7);
 
         public void Validate(OfflineLease lease, string expectedDeviceThumbprint, string expectedClientReleaseId,
-            string requiredFeature, DateTimeOffset nowUtc, DateTimeOffset? lastTrustedServerTimeUtc = null)
+            string requiredFeature, DateTimeOffset nowUtc, DateTimeOffset? lastTrustedServerTimeUtc = null,
+            AccessModeState? accessMode = null)
         {
             if (lease == null) throw new ArgumentNullException(nameof(lease));
             Ensure(lease.ExpiresAtUtc > lease.IssuedAtUtc, "LEASE_TIME_RANGE_INVALID");
             Ensure(lease.ExpiresAtUtc - lease.IssuedAtUtc <= MaximumOfflinePeriod, "LEASE_OFFLINE_PERIOD_EXCEEDED");
+            if (accessMode != null)
+                AccessModePolicy.Validate(accessMode, expectedDeviceThumbprint, lease.ExpiresAtUtc, nowUtc);
             Ensure(nowUtc >= lease.NotBeforeUtc, "LEASE_NOT_ACTIVE");
             Ensure(nowUtc < lease.ExpiresAtUtc, "LEASE_EXPIRED");
             Ensure(string.Equals(lease.DeviceThumbprint, expectedDeviceThumbprint, StringComparison.Ordinal), "LEASE_DEVICE_MISMATCH");
