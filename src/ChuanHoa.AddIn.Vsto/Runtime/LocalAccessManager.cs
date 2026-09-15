@@ -22,11 +22,16 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         public const string DocumentToolsFeature = "DOCUMENT_TOOLS";
         public const string AutoFixFeature = "AUTOFIX";
         public const string TableImageToolsFeature = "TABLE_IMAGE_TOOLS";
+        public const string FullAccessFeature = "FULL_ACCESS";
 
         public bool CanUseCommand(string commandId)
         {
             var feature = ProductFeaturePolicy.RequiredFeature(commandId);
             if (feature.Length == 0) return true;
+#if CHUANHOA_DEVELOPMENT
+            if (HasCachedFeature(FullAccessFeature))
+                return HasCachedFeature(feature) || (feature == TableImageToolsFeature && HasCachedFeature(DocumentToolsFeature));
+#endif
             // Protected commands require an explicit server-authorized account or
             // activation-key mode. A cached lease alone must never unlock the UI.
             AccessModeState? mode;

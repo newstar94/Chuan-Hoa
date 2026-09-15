@@ -915,7 +915,9 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             }
         }
 
-        private void RunLocalCommand(string title, Func<string> command, bool showSuccessNotification = true)
+        // Individual Ribbon commands complete quietly. Whole-document scans and
+        // normalization report completion in their dedicated handlers.
+        private void RunLocalCommand(string title, Func<string> command, bool showSuccessNotification = false)
         {
             if (Interlocked.CompareExchange(ref _documentOperationInProgress, 1, 0) != 0)
             {

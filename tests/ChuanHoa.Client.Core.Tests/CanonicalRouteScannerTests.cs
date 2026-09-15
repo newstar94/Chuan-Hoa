@@ -45,6 +45,9 @@ public sealed class CanonicalRouteScannerTests
         {
             scanner.ScanFormat(BadFormatSnapshot(), rules),
             scanner.ScanFormat(LayoutOnlySnapshot(), rules),
+            scanner.ScanFormat(new LocalScanSnapshot("single-salutation", 1, new[] { ValidSection() },
+                new[] { P(1, "Kính gửi: Ban giám đốc", "recipientSalutationInline") },
+                Array.Empty<AnnotationProtectedSpan>()), rules),
             scanner.ScanSpelling(BadSpellingSnapshot(), rules),
             scanner.ScanSpelling(
                 new LocalScanSnapshot("sha256:bad-lexicon", 1, new[] { ValidSection() },

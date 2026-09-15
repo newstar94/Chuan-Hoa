@@ -123,6 +123,9 @@ namespace ChuanHoa.Client.Core.Scanning
             text.Length <= 160 && Regex.IsMatch(text, @"^BÁO CÁO\s+[\p{Lu}\p{M}\d ,/()-]+$");
         private static bool IsTypeHeading(string text) => TypeName.IsMatch(text) ||
             IsExtendedReportTitle(text) || Eq(text, "BẢN CAM KẾT");
+
+        private static bool IsFormHeading(string text) => text.Length <= 180 && IsMostlyUppercase(text) &&
+            Rx(@"^(ĐƠN\s+(?:XIN|ĐỀ\s+NGHỊ|ĐĂNG\s+KÝ|CAM\s+KẾT)|(?:BẢN|GIẤY)\s+(?:CAM\s+KẾT|ĐỀ\s+NGHỊ|ĐĂNG\s+KÝ|XÁC\s+NHẬN))\b", true).IsMatch(text);
         private static readonly Regex PlaceDate = Rx(@"^\s*(?<place>[\p{L}][\p{L}\s.]{0,70}?)(?<comma>,?)\s+ngày\s+(?<day>\d{1,2})\s+tháng\s+(?<month>\d{1,2})\s+năm\s+(?<year>\d{4})\s*$", true);
         private static readonly Regex TypeName = Rx(@"^(?<type>NGHỊ QUYẾT|QUYẾT ĐỊNH|CHỈ THỊ|THÔNG TƯ|THÔNG CÁO|THÔNG BÁO|HƯỚNG DẪN|CHƯƠNG TRÌNH|KẾ HOẠCH|PHƯƠNG ÁN|ĐỀ ÁN|DỰ ÁN|BÁO CÁO|TỜ TRÌNH|QUY CHẾ|QUY ĐỊNH|GIẤY MỜI|CÔNG ĐIỆN|GIẤY GIỚI THIỆU|BIÊN BẢN|GIẤY NGHỈ PHÉP|GIẤY ỦY QUYỀN|PHIẾU GỬI|PHIẾU CHUYỂN|PHIẾU BÁO|KẾT LUẬN)(?:\s*[.:]?\s*\d{1,2})?$", true);
         private static readonly Regex LegalBasis = Rx(@"^(?:[-–—]\s*)?(Căn cứ|Xét|Xét đề nghị|Theo đề nghị)\b", true);
@@ -241,6 +244,9 @@ namespace ChuanHoa.Client.Core.Scanning
         {
             var paragraph = main[index];
             var candidates = new List<RoleAssignment>();
+            AddCandidate(candidates, IsFormHeading(text) && index <= 16 &&
+                main.Take(index).All(p => !IsStructuralBodyStart(Collapse(p.Text))),
+                "standaloneTitle", 98, 98, "bounded form-title vocabulary and header context");
             AddCandidate(candidates, NationalTitle.IsMatch(text), "nationalTitle", 100, 100,
                 "exact national-title text");
             AddCandidate(candidates, Contains(text, "Độc lập") && Contains(text, "Hạnh phúc"),
@@ -288,8 +294,11 @@ namespace ChuanHoa.Client.Core.Scanning
             AddCandidate(candidates, RecipientSalutationPrefixRegex.IsMatch(text),
                 text.EndsWith(":", StringComparison.Ordinal) ? "recipientSalutation" : "recipientSalutationInline",
                 91, 90, "recipient salutation prefix");
-            AddCandidate(candidates, (previousRole == "recipientSalutation" ||
-                previousRole == "recipientSalutationList") && text.StartsWith("-", StringComparison.Ordinal),
+            AddCandidate(candidates, (previousRole == "recipientSalutation" || previousRole == "recipientSalutationInline" ||
+                previousRole == "recipientSalutationList") && index > 0 &&
+                main[index - 1].Index + 1 == paragraph.Index &&
+                main[index - 1].TableIndex == paragraph.TableIndex && main[index - 1].CellIndex == paragraph.CellIndex &&
+                (text.StartsWith("-", StringComparison.Ordinal) || !string.IsNullOrWhiteSpace(paragraph.ListMarker)),
                 "recipientSalutationList", 86, 86, "recipient-list adjacency and marker");
             AddCandidate(candidates, RecipientLabelPattern.IsMatch(text), "recipientLabel", 92, 92,
                 "recipient label");

@@ -80,7 +80,9 @@ public sealed class DevelopmentArtifactIssuer
                 new XElement("feature", new XAttribute("code", "FORMAT_SCAN")),
                 new XElement("feature", new XAttribute("code", "SPELLING_SCAN")),
                 new XElement("feature", new XAttribute("code", "DOCUMENT_TOOLS")),
-                new XElement("feature", new XAttribute("code", "AUTOFIX"))));
+                new XElement("feature", new XAttribute("code", "AUTOFIX")),
+                new XElement("feature", new XAttribute("code", "TABLE_IMAGE_TOOLS")),
+                new XElement("feature", new XAttribute("code", "FULL_ACCESS"))));
         var rulePack = BuildRulePack(now, packExpires, request.ClientReleaseId);
         return new DevelopmentBootstrapResponse(
             now,

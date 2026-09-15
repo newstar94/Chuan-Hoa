@@ -866,6 +866,18 @@ def validate() -> dict:
             raise RuntimeError(
                 operation_method_name + " must dispose its document operation from finally."
             )
+    if "bool showSuccessNotification = false" not in ribbon_runtime_source:
+        raise RuntimeError("Individual Ribbon commands must default to silent success.")
+    if "showSuccessNotification: true" in ribbon_runtime_source:
+        raise RuntimeError("Individual Ribbon commands must not opt into completion dialogs.")
+    for completion_message in (
+        "Chuẩn hóa toàn bộ hoàn tất.",
+        "Sửa nhanh chính tả hoàn tất.",
+        "Kiểm tra chính tả hoàn tất.",
+        "Kiểm tra thể thức hoàn tất.",
+    ):
+        if completion_message not in ribbon_runtime_source:
+            raise RuntimeError("Whole-document completion notification is missing: " + completion_message)
     if (
         'RunLocalCommand("Co chữ", () => _localCommandRuntime.SetCharacterSpacing(-0.1f, false), '
         "showSuccessNotification: false)"

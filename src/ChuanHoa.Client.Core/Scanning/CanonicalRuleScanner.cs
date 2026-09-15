@@ -904,16 +904,24 @@ namespace ChuanHoa.Client.Core.Scanning
                     findings.Add(ParagraphQualified("ND30-PL1-M2-K9A-LAYOUT", paragraph,
                         "structure", "Kính gửi tách dòng nhưng không có danh sách bên dưới.",
                         "Một nơi thì viết cùng dòng; nhiều nơi thì xuống dòng có gạch đầu dòng.", rules));
-                if (role == "recipientSalutationInline" && !paragraph.Text.Trim().EndsWith(".", StringComparison.Ordinal))
+                if (role == "recipientSalutationInline" && !Regex.IsMatch(paragraph.Text, @"[._…]{3,}") &&
+                    !(roles.TryGetValue(paragraph.Index + 1, out var followingRole) && followingRole == "recipientSalutationList") &&
+                    !paragraph.Text.Trim().EndsWith(".", StringComparison.Ordinal))
                     findings.Add(Paragraph("ND30-PL1-M2-K9A-INLINE-END", paragraph, "Kính gửi viết cùng dòng chưa kết thúc bằng dấu chấm.", "Thêm dấu chấm cuối dòng.", rules));
             }
-            var salutationItems = WithRole(snapshot, roles, "recipientSalutationList").OrderBy(p => p.Index).ToArray();
+            foreach (var salutationBlock in ConsecutiveRoleBlocks(Scannable(snapshot).OrderBy(p => p.Index), roles, "recipientSalutationList"))
+            {
+            var salutationItems = salutationBlock.ToArray();
             for (var i = 0; i < salutationItems.Length; i++)
             {
-                var text = salutationItems[i].Text.Trim();
+                var text = (string.IsNullOrWhiteSpace(salutationItems[i].ListMarker) ? "" : salutationItems[i].ListMarker + " ") + salutationItems[i].Text.Trim();
+                // Dotted/underscore fill-in areas are authored form fields, not
+                // punctuation to append or replace automatically.
+                if (Regex.IsMatch(text, @"[._…]{3,}")) continue;
                 var expectedEnd = i == salutationItems.Length - 1 ? "." : ";";
                 if (!text.StartsWith("-", StringComparison.Ordinal) || !text.EndsWith(expectedEnd, StringComparison.Ordinal))
                     findings.Add(Paragraph("ND30-PL1-M2-K9A-PUNCT", salutationItems[i], "Danh sách Kính gửi sai gạch đầu dòng hoặc dấu kết thúc.", "Dùng gạch đầu dòng; chấm phẩy giữa các mục và chấm ở mục cuối.", rules));
+            }
             }
             foreach (var paragraph in WithRole(snapshot, roles, "recipientLabel"))
             {

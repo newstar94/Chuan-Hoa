@@ -43,6 +43,13 @@ namespace ChuanHoa.DevelopmentAccessSmoke
                     var format = access.GetRulePack(LocalAccessManager.FormatFeature);
                     var spelling = access.GetRulePack(LocalAccessManager.SpellingFeature);
                     var autoFix = access.GetRulePack(LocalAccessManager.AutoFixFeature);
+                    if (args.Contains("--full-access"))
+                    {
+                        access.GetRulePack(LocalAccessManager.FullAccessFeature);
+                        foreach (var command in new[] { "btnKiemTra", "btnKiemTraChinhTa", "btnAutoFixAll2026", "btnScaleTang", "btnChuanHoaBang" })
+                            if (!access.CanUseCommand(command)) throw new InvalidOperationException("FULL_ACCESS_COMMAND_DENIED:" + command);
+                        Console.WriteLine("DEVELOPMENT_FULL_ACCESS_PASS");
+                    }
                     if (!string.Equals(format.PackId, spelling.PackId, StringComparison.Ordinal))
                         throw new InvalidOperationException("Feature lanes resolved to different rule packs.");
                     if (!string.Equals(format.PackId, autoFix.PackId, StringComparison.Ordinal))
