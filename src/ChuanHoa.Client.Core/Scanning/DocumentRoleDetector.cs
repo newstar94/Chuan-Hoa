@@ -416,6 +416,23 @@ namespace ChuanHoa.Client.Core.Scanning
             int currentStart)
         {
             var start = titlePosition;
+            var title = main[titlePosition];
+            // Word enumerates every paragraph of the left cell before the right
+            // cell. A subject in the left cell does not start a separate document
+            // when the national header follows in the same layout-table row.
+            if (title.IsInTable && title.TableIndex.HasValue && title.RowIndex.HasValue &&
+                title.CellIndex.HasValue)
+            {
+                while (start > currentStart)
+                {
+                    var previous = main[start - 1];
+                    if (!previous.IsInTable || previous.TableIndex != title.TableIndex ||
+                        previous.RowIndex != title.RowIndex || !previous.CellIndex.HasValue ||
+                        previous.CellIndex.Value >= title.CellIndex.Value) break;
+                    start--;
+                }
+                if (start < titlePosition) return start;
+            }
             var titlePage = main[titlePosition].PageNumber;
             for (var position = titlePosition - 1;
                 position >= currentStart && titlePosition - position <= 3;

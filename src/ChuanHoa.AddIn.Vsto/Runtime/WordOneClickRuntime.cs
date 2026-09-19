@@ -1136,8 +1136,15 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     range.ParagraphFormat.FirstLineIndent = 0f;
                 }
                 if (role == "placeAndIssuedDate" && !party)
+                {
                     range.ParagraphFormat.Alignment = (Word.WdParagraphAlignment)HeaderLayoutPolicy.DateAlignment(
                         new DocumentRoleDetector().DetectBlocks(snapshot), paragraph.Index);
+                    // Center against the full header cell, not an inherited body
+                    // indent that visually shifts the date to the right.
+                    range.ParagraphFormat.LeftIndent = 0f;
+                    range.ParagraphFormat.RightIndent = 0f;
+                    range.ParagraphFormat.FirstLineIndent = 0f;
+                }
                 if (role == "nationalTitle" || role == "nationalMotto" ||
                     (!party && (role == "organName" || role == "superiorOrganName")))
                 {

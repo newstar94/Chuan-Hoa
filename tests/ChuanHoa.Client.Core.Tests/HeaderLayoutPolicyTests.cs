@@ -6,6 +6,28 @@ namespace ChuanHoa.Client.Core.Tests;
 public sealed class HeaderLayoutPolicyTests
 {
     [Fact]
+    public void Official_letter_in_two_cells_keeps_both_header_columns_in_one_block()
+    {
+        var texts = new[] { "CÔNG TY TNHH TƯ VẤN VÀ ĐẦU TƯ THƯƠNG MẠI HCP",
+            "Số: 132/2026-LR-E-HSDT", "V/v: Đề nghị làm rõ E-HSDT Gói thầu MS",
+            "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM", "Độc lập - Tự do - Hạnh phúc",
+            "Hà Nội, ngày 16 tháng 9 năm 2026" };
+        var paragraphs = texts.Select((text, i) => new LocalParagraphSnapshot(i + 1, text,
+            "wdMainTextStory", 1, i * 100, "Times New Roman", tableIndex: 1,
+            rowIndex: 1, cellIndex: i < 3 ? 1 : 2, fontSizePoints: i == 3 ? 13 : 14,
+            isInTable: true)).ToArray();
+        var snapshot = new LocalScanSnapshot("two-cell-letter", 1,
+            Array.Empty<LocalSectionSnapshot>(), paragraphs, Array.Empty<AnnotationProtectedSpan>());
+        var blocks = new DocumentRoleDetector().DetectBlocks(snapshot);
+        var block = Assert.Single(blocks);
+        Assert.Equal("organName", block.Roles[1]);
+        Assert.Equal("nationalTitle", block.Roles[4]);
+        Assert.Equal("nationalMotto", block.Roles[5]);
+        Assert.Equal("placeAndIssuedDate", block.Roles[6]);
+        Assert.Equal(1, HeaderLayoutPolicy.DateAlignment(blocks, 6));
+    }
+
+    [Fact]
     public void Draft_number_and_date_keep_organization_header_centered()
     {
         var texts = new[] { "SỞ Y TẾ TÂY NINH", "TRUNG TÂM Y TẾ KHU VỰC TÂN CHÂU",

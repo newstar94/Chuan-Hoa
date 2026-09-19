@@ -247,7 +247,7 @@ try {
     $actualRootCertificatePin = Get-ChuanHoaCertificateSha256 `
         -Certificate $payloadRootCertificate
     if (![string]::Equals($payloadRootCertificate.Subject,
-            'CN=Chuan Hoa Local Development',
+            'CN=Chuan Hoa Local Development Root',
             [System.StringComparison]::Ordinal) -or
         ![string]::Equals($payloadRootCertificate.Subject,
             $payloadRootCertificate.Issuer,

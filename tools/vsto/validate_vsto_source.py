@@ -548,10 +548,14 @@ def validate() -> dict:
             raise RuntimeError(
                 "Passive deferred Ribbon callback must not initialize runtime: " + passive_name
             )
+    if "#if CHUANHOA_DEVELOPMENT\n                return _owner._runtimeFactory != null;" not in deferred_enabled.group(1):
+        raise RuntimeError("Development commands must accept a first click without opening Settings.")
     word_adapter_source = WORD_ADAPTER_PATH.read_text(encoding="utf-8")
     mutation_runtime_source = WORD_MUTATION_RUNTIME_PATH.read_text(encoding="utf-8")
     annotation_adapter_source = WORD_ANNOTATION_ADAPTER_PATH.read_text(encoding="utf-8")
     ribbon_runtime_source = RIBBON_RUNTIME_PATH.read_text(encoding="utf-8")
+    if '_localAccessManager.RequireCommand(controlId);' not in ribbon_runtime_source:
+        raise RuntimeError("First-click availability must preserve command authorization.")
     local_access_source = LOCAL_ACCESS_MANAGER_PATH.read_text(encoding="utf-8")
     snapshot_builder_source = WORD_SNAPSHOT_BUILDER_PATH.read_text(encoding="utf-8")
     for forbidden_automatic_document_activity in (
