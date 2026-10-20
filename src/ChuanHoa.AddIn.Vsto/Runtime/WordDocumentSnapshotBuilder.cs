@@ -618,6 +618,10 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             var snapshots = new List<WordParagraphSnapshot>();
             var paragraphIndex = 0;
             var application = document.Application;
+            // Cell coordinates are read once per table (one pass over its cells)
+            // instead of calling Range.Information(row/column) for every cell
+            // paragraph, which forces Word to lay out the table each time.
+            var cellIndex = new TableCellCoordinateIndex(document);
             try
             {
                 foreach (var storyType in SupportedStoryTypes())
@@ -638,7 +642,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                         try
                         {
                             CaptureStoryParagraphs(story, storyType, snapshots, ref paragraphIndex,
-                                tables, sectionBoundaries, builtInStyles, allowPageLayout, application, operation);
+                                tables, sectionBoundaries, builtInStyles, allowPageLayout, application,
+                                cellIndex, operation);
                             nextStory = story.NextStoryRange;
                         }
                         finally
@@ -670,6 +675,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             IReadOnlyDictionary<string, int> builtInStyles,
             bool allowPageLayout,
             Word.Application application,
+            TableCellCoordinateIndex cellIndex,
             DocumentOperationSession? operation)
         {
             var paragraphs = story.Paragraphs;
@@ -691,7 +697,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 if (largeStory)
                 {
                     CaptureLargeStoryParagraphs(story, storyType, snapshots, ref paragraphIndex,
-                        tables, sectionBoundaries, builtInStyles, application, paragraphCount, operation);
+                        tables, sectionBoundaries, builtInStyles, application, paragraphCount,
+                        cellIndex, operation);
                     return;
                 }
                 var currentSectionIndex = ReadSectionIndex(story);
@@ -718,7 +725,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                         phaseStarted = BeginTiming();
                         var tableAtRange = FindTableAt(tables, storyType, absoluteStart);
                         var withInTable = tableAtRange != null;
-                        var tableCoordinates = ReadTableCoordinates(tableAtRange, range);
+                        var tableCoordinates = ReadTableCoordinates(tableAtRange, range, absoluteStart, cellIndex);
                         AddElapsed(ref tableTicks, phaseStarted);
                         var captureFormatting = !string.IsNullOrWhiteSpace(text) &&
                             (!largeStory || !withInTable || paragraphIndex <= 150);
@@ -779,6 +786,15 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                                     out hasHyperlink, out hasContentControl, out captionKind);
                                 AddElapsed(ref semanticTicks, phaseStarted);
                             }
+                        }
+                        if (format != null && storyType == Word.WdStoryType.wdMainTextStory &&
+                            storyParagraphIndex <= 80 && text.Length <= 250)
+                        {
+                            phaseStarted = BeginTiming();
+                            // Header-component candidates only: a solid bottom paragraph
+                            // border is an accepted NĐ30 separator (D6).
+                            hasBottomBorder = ReadBottomBorder(format);
+                            AddElapsed(ref borderTicks, phaseStarted);
                         }
                         phaseStarted = BeginTiming();
                         if (storyType == Word.WdStoryType.wdMainTextStory)
@@ -881,24 +897,30 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             IReadOnlyList<SectionBoundary> sectionBoundaries,
             IReadOnlyDictionary<string, int> builtInStyles,
             Word.Application application, int expectedParagraphCount,
+            TableCellCoordinateIndex cellIndex,
             DocumentOperationSession? operation)
         {
             var storyParagraphIndex = 0;
             var currentSectionIndex = ReadSectionIndex(story);
             Word.Paragraphs? paragraphs = null;
+            Word.Paragraph? current = null;
             try
             {
                 paragraphs = story.Paragraphs;
                 var paragraphCount = paragraphs.Count;
-                for (var itemIndex = 1; itemIndex <= paragraphCount; itemIndex++)
+                // Walk the story sequentially. Paragraphs[i] makes Word count from
+                // the start of the story for every item (O(n²) for long documents);
+                // Paragraph.Next continues from the current position.
+                current = paragraphCount > 0 ? paragraphs.First : null;
+                for (var itemIndex = 1; itemIndex <= paragraphCount && current != null; itemIndex++)
                 {
-                    Word.Paragraph? paragraph = null;
+                    Word.Paragraph? paragraph = current;
+                    current = null;
                     Word.Range? range = null;
                     Word.Font? font = null;
                     Word.ParagraphFormat? format = null;
                     try
                     {
-                        paragraph = paragraphs[itemIndex];
                         storyParagraphIndex++;
                         paragraphIndex++;
                         if (storyParagraphIndex == 1 || storyParagraphIndex % 25 == 0)
@@ -915,7 +937,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                         var absoluteEnd = range.End;
                         var text = NormalizeParagraphText(range.Text);
                         var tableAtRange = FindTableAt(tables, storyType, absoluteStart);
-                        var tableCoordinates = ReadTableCoordinates(tableAtRange, range);
+                        var tableCoordinates = ReadTableCoordinates(tableAtRange, range, absoluteStart, cellIndex);
                         var isInTable = tableCoordinates.Item1.HasValue;
                         var captureFormatting = !string.IsNullOrWhiteSpace(text) &&
                             (!isInTable || storyParagraphIndex <= 150);
@@ -967,6 +989,9 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                                 ReadRangeSemanticFacts(range, out hasField, out hasMathObject,
                                     out hasHyperlink, out hasContentControl, out captionKind);
                         }
+                        if (format != null && storyType == Word.WdStoryType.wdMainTextStory &&
+                            storyParagraphIndex <= 80 && text.Length <= 250)
+                            hasBottomBorder = ReadBottomBorder(format);
                         if (storyType == Word.WdStoryType.wdMainTextStory)
                             currentSectionIndex = ResolveSectionIndex(sectionBoundaries, absoluteStart,
                                 currentSectionIndex);
@@ -986,12 +1011,18 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                         Release(format);
                         Release(font);
                         Release(range);
+                        if (paragraph != null && itemIndex < paragraphCount)
+                        {
+                            try { current = paragraph.Next(); }
+                            catch (COMException) { current = null; }
+                        }
                         Release(paragraph);
                     }
                 }
             }
             finally
             {
+                Release(current);
                 Release(paragraphs);
             }
 
@@ -1176,7 +1207,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 try
                 {
                     shape = shapes[index];
-                    if ((int)shape.Type != 9) continue;
+                    if (!WordLineShapeKind.IsLineLike(shape)) continue;
                     anchor = shape.Anchor.Duplicate;
                     var key = anchor.StoryType + ":" + anchor.Start + ":" + shape.Name;
                     if (!seen.Add(key)) continue;
@@ -1209,7 +1240,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     snapshots.Add(new WordLineShapeSnapshot(
                         snapshots.Count + 1,
                         shape.Name ?? string.Empty,
-                        (int)shape.Type,
+                        // A straight AutoShape/connector rule is recorded as a line.
+                        WordLineShapeKind.MsoLine,
                         anchor.StoryType.ToString(),
                         sectionIndex,
                         anchor.Start,
@@ -1554,7 +1586,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     try
                     {
                         shape = shapes[index];
-                        if ((int)shape.Type == 9) continue;
+                        if (WordLineShapeKind.IsLineLike(shape)) continue;
                         anchor = shape.Anchor.Duplicate;
                         result.Add(new WordGraphicObjectSnapshot(result.Count + 1,
                             "Shape:" + shape.Type, false, anchor.StoryType.ToString(),
@@ -1837,10 +1869,17 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         }
 
         private static Tuple<int?, int?, int?, int> ReadTableCoordinates(
-            WordTableSnapshot? table, Word.Range range)
+            WordTableSnapshot? table, Word.Range range, int absoluteStart,
+            TableCellCoordinateIndex cellIndex)
         {
             if (table == null)
                 return Tuple.Create<int?, int?, int?, int>(null, null, null, 0);
+
+            int indexedRow;
+            int indexedColumn;
+            if (cellIndex.TryResolve(table, absoluteStart, out indexedRow, out indexedColumn))
+                return Tuple.Create<int?, int?, int?, int>(table.Index, indexedRow, indexedColumn,
+                    table.NestingDepth);
 
             int? row = null;
             int? cell = null;
@@ -2013,7 +2052,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             {
                 borders = format.Borders;
                 border = borders[Word.WdBorderType.wdBorderBottom];
-                return border.LineStyle != Word.WdLineStyle.wdLineStyleNone;
+                // Only a solid single rule counts as an NĐ30 separator line.
+                return border.LineStyle == Word.WdLineStyle.wdLineStyleSingle;
             }
             catch (COMException)
             {
@@ -2257,6 +2297,139 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             {
                 Marshal.ReleaseComObject(value);
             }
+        }
+    }
+
+    /// <summary>
+    /// Row/column of every main-story table cell, read once per table by walking
+    /// its cells with Cell.Next. Lookups are a binary search on the cell start.
+    /// Cells that contain a nested table fall back to Range.Information.
+    /// </summary>
+    internal sealed class TableCellCoordinateIndex
+    {
+        private const int MaximumCellsPerTable = 50000;
+        private readonly Word.Document _document;
+        private readonly Dictionary<int, CellSpan[]?> _tables = new Dictionary<int, CellSpan[]?>();
+
+        public TableCellCoordinateIndex(Word.Document document)
+        {
+            _document = document ?? throw new ArgumentNullException(nameof(document));
+        }
+
+        public bool TryResolve(WordTableSnapshot table, int start, out int row, out int column)
+        {
+            row = 0;
+            column = 0;
+            if (table == null ||
+                !string.Equals(table.StoryType, Word.WdStoryType.wdMainTextStory.ToString(), StringComparison.Ordinal) ||
+                table.NestingDepth > 1)
+                return false;
+            CellSpan[]? cells;
+            if (!_tables.TryGetValue(table.Index, out cells))
+            {
+                cells = Build(table.Index, table.AbsoluteStart);
+                _tables[table.Index] = cells;
+            }
+            if (cells == null || cells.Length == 0) return false;
+
+            var low = 0;
+            var high = cells.Length - 1;
+            var found = -1;
+            while (low <= high)
+            {
+                var middle = low + (high - low) / 2;
+                if (cells[middle].Start <= start)
+                {
+                    found = middle;
+                    low = middle + 1;
+                }
+                else high = middle - 1;
+            }
+            if (found < 0) return false;
+            var cell = cells[found];
+            if (cell.HasNestedTable || start >= cell.End) return false;
+            row = cell.Row;
+            column = cell.Column;
+            return true;
+        }
+
+        private CellSpan[]? Build(int tableIndex, int expectedStart)
+        {
+            Word.Tables? tables = null;
+            Word.Table? table = null;
+            Word.Range? tableRange = null;
+            Word.Cell? cell = null;
+            try
+            {
+                tables = _document.Tables;
+                if (tableIndex < 1 || tableIndex > tables.Count) return null;
+                table = tables[tableIndex];
+                tableRange = table.Range;
+                // The snapshot table and the COM table must be the same object.
+                if (tableRange.Start != expectedStart) return null;
+                var result = new List<CellSpan>();
+                cell = table.Cell(1, 1);
+                while (cell != null && result.Count < MaximumCellsPerTable)
+                {
+                    Word.Range? cellRange = null;
+                    Word.Tables? nested = null;
+                    Word.Cell? next = null;
+                    try
+                    {
+                        cellRange = cell.Range;
+                        // Cell.Tables holds only tables nested inside this cell.
+                        nested = cell.Tables;
+                        result.Add(new CellSpan(cellRange.Start, cellRange.End, cell.RowIndex,
+                            cell.ColumnIndex, nested.Count > 0));
+                        next = cell.Next;
+                    }
+                    finally
+                    {
+                        Release(nested);
+                        Release(cellRange);
+                        Release(cell);
+                        cell = null;
+                    }
+                    cell = next;
+                }
+                if (cell != null) return null; // Too many cells: keep the old path.
+                result.Sort((left, right) => left.Start.CompareTo(right.Start));
+                return result.ToArray();
+            }
+            catch (COMException)
+            {
+                return null;
+            }
+            finally
+            {
+                Release(cell);
+                Release(tableRange);
+                Release(table);
+                Release(tables);
+            }
+        }
+
+        private static void Release(object? value)
+        {
+            if (value != null && Marshal.IsComObject(value)) Marshal.ReleaseComObject(value);
+        }
+
+        private sealed class CellSpan
+        {
+            public CellSpan(int start, int end, int row, int column, bool hasNestedTable)
+            {
+                Start = start;
+                End = end;
+                Row = row;
+                Column = column;
+                HasNestedTable = hasNestedTable;
+            }
+
+            public int Start { get; }
+            public int End { get; }
+            public int Row { get; }
+            public int Column { get; }
+            public bool HasNestedTable { get; }
         }
     }
 }

@@ -45,19 +45,21 @@
             <button id="btnKeepWithNext" label="Keep with next" size="normal" imageMso="FootnoteNextWord" screentip="Keep with next" supertip="Giữ đoạn hiện tại cùng trang với đoạn kế tiếp" getEnabled="GetEnabledHasDocument" onAction="OnKeepWithNext" />
             <button id="btnXoaTabKhongLeader" label="Xóa tab" size="normal" imageMso="ClearFormatting" screentip="Xóa tab stop không có leader" supertip="Xóa mọi tab stop có Leader=None trong tài liệu, kể cả bảng, đầu trang và chân trang. Giữ ký tự tab và các tab stop có leader khác. Có thể hoàn tác bằng Undo." getEnabled="GetEnabledHasDocument" onAction="OnXoaTabKhongLeader" />
           </box>
-          <box id="boxCharacterTools" boxStyle="horizontal">
-            <box id="boxCharacterDecrease" boxStyle="vertical">
-              <button id="btnScaleGiam" label="A−" size="normal" screentip="Giảm độ rộng chữ 1 điểm phần trăm" supertip="Giảm độ rộng chữ 1 điểm phần trăm cho vùng chọn; áp dụng ngay." getEnabled="GetEnabledHasDocument" onAction="OnScaleGiam" showLabel="true" showImage="false" />
-              <button id="btnCoChu" label="◀" size="normal" screentip="Co chữ lại" supertip="Co chữ đang chọn -0,1pt" getEnabled="GetEnabledHasDocument" onAction="OnCoChu" showLabel="true" showImage="false" />
-            </box>
-            <box id="boxCharacterReset" boxStyle="vertical">
-              <button id="btnScale100" size="normal" screentip="Khôi phục độ rộng chữ 100%" supertip="Khôi phục độ rộng chữ 100% cho vùng chọn; áp dụng ngay." getEnabled="GetEnabledHasDocument" onAction="OnScale100" showLabel="true" showImage="false" getLabel="GetResetLabel" />
-              <button id="btnGianChuNormal" size="normal" screentip="Về Normal" supertip="Bỏ co giãn chữ" getEnabled="GetEnabledHasDocument" onAction="OnGianChuNormal" showLabel="true" showImage="false" getLabel="GetResetLabel" />
-            </box>
-            <box id="boxCharacterIncrease" boxStyle="vertical">
-              <button id="btnScaleTang" label="A+" size="normal" screentip="Tăng độ rộng chữ 1 điểm phần trăm" supertip="Tăng độ rộng chữ 1 điểm phần trăm cho vùng chọn; áp dụng ngay." getEnabled="GetEnabledHasDocument" onAction="OnScaleTang" showLabel="true" showImage="false" />
-              <button id="btnGianChuRa" label="▶" size="normal" screentip="Giãn chữ ra" supertip="Giãn chữ đang chọn +0,1pt" getEnabled="GetEnabledHasDocument" onAction="OnGianChuRa" showLabel="true" showImage="false" />
-            </box>
+          <box id="boxCharacterTools" boxStyle="vertical">
+            <buttonGroup id="bgScaleTools">
+              <button id="btnScaleGiam" screentip="Giảm độ rộng chữ 1 điểm phần trăm" supertip="Giảm độ rộng chữ 1 điểm phần trăm cho vùng chọn; áp dụng ngay." getEnabled="GetEnabledHasDocument" onAction="OnScaleGiam" showLabel="true" showImage="false" getLabel="GetResetLabel" />
+              <button id="btnScale100" screentip="Khôi phục độ rộng chữ 100%" supertip="Khôi phục độ rộng chữ 100% cho vùng chọn; áp dụng ngay." getEnabled="GetEnabledHasDocument" onAction="OnScale100" showLabel="true" showImage="false" getLabel="GetResetLabel" />
+              <button id="btnScaleTang" screentip="Tăng độ rộng chữ 1 điểm phần trăm" supertip="Tăng độ rộng chữ 1 điểm phần trăm cho vùng chọn; áp dụng ngay." getEnabled="GetEnabledHasDocument" onAction="OnScaleTang" showLabel="true" showImage="false" getLabel="GetResetLabel" />
+            </buttonGroup>
+            <buttonGroup id="bgSpacingTools">
+              <button id="btnCoChu" screentip="Co chữ lại" supertip="Co chữ đang chọn -0,1pt" getEnabled="GetEnabledHasDocument" onAction="OnCoChu" showLabel="true" showImage="false" getLabel="GetResetLabel" />
+              <button id="btnGianChuNormal" screentip="Về Normal" supertip="Bỏ co giãn chữ" getEnabled="GetEnabledHasDocument" onAction="OnGianChuNormal" showLabel="true" showImage="false" getLabel="GetResetLabel" />
+              <button id="btnGianChuRa" screentip="Giãn chữ ra" supertip="Giãn chữ đang chọn +0,1pt" getEnabled="GetEnabledHasDocument" onAction="OnGianChuRa" showLabel="true" showImage="false" getLabel="GetResetLabel" />
+            </buttonGroup>
+            <buttonGroup id="bgCharacterColors">
+              <control idMso="TextHighlightColorPicker" showLabel="false" />
+              <control idMso="FontColorPicker" showLabel="false" />
+            </buttonGroup>
           </box>
           <box id="boxPageTools" boxStyle="vertical">
             <button id="btnChenTrangNgang" label="Chèn trang ngang" size="normal" imageMso="PageOrientationLandscape" screentip="Chèn trang ngang" supertip="Chèn trang mới theo chiều ngang" getEnabled="GetEnabledHasDocument" onAction="OnChenTrangNgang" />
@@ -77,15 +79,13 @@
             <button id="btnXoaKyTuThuaBangExcel" label="Xóa ký tự thừa (Excel)" size="normal" imageMso="CellsDelete" screentip="Xóa ký tự thừa (Excel)" supertip="Xóa ký tự thừa khi dán bảng từ Excel" getEnabled="GetEnabledHasDocument" onAction="OnXoaKyTuThuaBangExcel" />
           </box>
         </group>
-        <group id="grpChinhTaSo" label="Chính tả và số">
-          <box id="boxLanguageActions" boxStyle="vertical">
-            <menu id="mnuBoDau" label="Đặt dấu thanh" size="normal" imageMso="SyntexEsign" screentip="Đặt dấu thanh" supertip="Đồng nhất cách đặt dấu theo kiểu oà, uý hoặc òa, úy; không thay đổi quy tắc i/y." getEnabled="GetEnabledHasDocument">
-              <button id="btnKieuOaUy" label="Kiểu oà, uý" screentip="Kiểu oà, uý" supertip="Chuyển toàn bộ dấu thanh sang dạng đặt trên âm chính (theo quy định chính tả của Bộ Giáo dục và Đào tạo)." onAction="OnKieuOaUy" />
-              <button id="btnKieuOaUy2" label="Kiểu òa, úy" screentip="Kiểu òa, úy" supertip="Chuyển toàn bộ dấu thanh sang dạng đặt trên nguyên âm đầu (theo thông lệ)." onAction="OnKieuOaUy2" />
-            </menu>
-            <button id="btnDoiDauThapPhan" label="Dấu phẩy thập phân" size="normal" imageMso="CommaStyle" screentip="Dấu phẩy thập phân" supertip="Chuyển kiểu viết số về chuẩn Việt Nam 1,234,567.89 → 1.234.567,89" getEnabled="GetEnabledHasDocument" onAction="OnDoiDauThapPhan" />
-            <button id="btnTuDienCaNhan" label="Từ điển cá nhân" size="normal" screentip="Quản lý từ điển cá nhân" supertip="Xem, thêm và xóa thuật ngữ riêng mà bộ kiểm tra chính tả cần bỏ qua." getEnabled="GetEnabledAlways" getImage="GetImageTuDienCaNhan" onAction="OnTuDienCaNhan" />
-          </box>
+        <group id="grpChinhTaSo" label="Chính tả và số" autoScale="false">
+          <menu id="mnuBoDau" label="Đặt dấu thanh" size="normal" imageMso="SyntexEsign" screentip="Đặt dấu thanh" supertip="Đồng nhất cách đặt dấu theo kiểu oà, uý hoặc òa, úy; không thay đổi quy tắc i/y." getEnabled="GetEnabledHasDocument" showLabel="true">
+            <button id="btnKieuOaUy" label="Kiểu oà, uý" screentip="Kiểu oà, uý" supertip="Chuyển toàn bộ dấu thanh sang dạng đặt trên âm chính (theo quy định chính tả của Bộ Giáo dục và Đào tạo)." onAction="OnKieuOaUy" />
+            <button id="btnKieuOaUy2" label="Kiểu òa, úy" screentip="Kiểu òa, úy" supertip="Chuyển toàn bộ dấu thanh sang dạng đặt trên nguyên âm đầu (theo thông lệ)." onAction="OnKieuOaUy2" />
+          </menu>
+          <button id="btnDoiDauThapPhan" label="Dấu phẩy thập phân" size="normal" imageMso="CommaStyle" screentip="Dấu phẩy thập phân" supertip="Chuyển kiểu viết số về chuẩn Việt Nam 1,234,567.89 → 1.234.567,89" getEnabled="GetEnabledHasDocument" onAction="OnDoiDauThapPhan" showLabel="true" />
+          <button id="btnTuDienCaNhan" label="Từ điển cá nhân" size="normal" screentip="Quản lý từ điển cá nhân" supertip="Xem, thêm và xóa thuật ngữ riêng mà bộ kiểm tra chính tả cần bỏ qua." getEnabled="GetEnabledAlways" getImage="GetImageTuDienCaNhan" onAction="OnTuDienCaNhan" showLabel="true" />
         </group>
         <group id="grpAbout" label="Thiết lập">
           <button id="btnThietLap" label="Thiết lập" size="large" imageMso="PropertySheet" screentip="Thiết lập nhận diện" supertip="Chọn thủ công Quy định và Loại văn bản khi cần." getEnabled="GetEnabledHasDocument" onAction="OnThietLap" />

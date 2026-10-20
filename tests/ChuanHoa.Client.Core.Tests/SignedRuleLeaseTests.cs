@@ -2,7 +2,6 @@ using System;
 using System.Security.Cryptography;
 using System.Text;
 using System.Xml.Linq;
-using ChuanHoa.Client.Core.Licensing;
 using ChuanHoa.Client.Core.Rules;
 using ChuanHoa.Client.Core.Security;
 
@@ -403,43 +402,6 @@ public sealed class SignedRuleLeaseTests
 
         Assert.Throws<FormatException>(() => LocalRulePackParser.Parse(
             Encoding.UTF8.GetBytes(root.ToString(SaveOptions.DisableFormatting)), Now, "1.0.0.0"));
-    }
-
-    [Fact]
-    public void Lease_is_device_release_feature_and_seven_day_bound()
-    {
-        var payload = Encoding.UTF8.GetBytes(new XElement("offlineLease",
-            new XAttribute("schema", OfflineLeaseParser.Schema), new XAttribute("leaseId", "lease-1"),
-            new XAttribute("subjectId", "dev-user"), new XAttribute("deviceThumbprint", "device-1"),
-            new XAttribute("clientReleaseId", "1.0.0.0"), new XAttribute("issuedAtUtc", Now.ToString("O")),
-            new XAttribute("notBeforeUtc", Now.AddMinutes(-1).ToString("O")),
-            new XAttribute("expiresAtUtc", Now.AddDays(7).ToString("O")),
-            new XElement("features", new XElement("feature", new XAttribute("code", "FORMAT_SCAN"))))
-            .ToString(SaveOptions.DisableFormatting));
-        var lease = OfflineLeaseParser.Parse(payload);
-        var validator = new OfflineLeaseValidator();
-
-        validator.Validate(lease, "device-1", "1.0.0.0", "FORMAT_SCAN", Now, Now.AddMinutes(-2));
-        Assert.Throws<InvalidOperationException>(() =>
-            validator.Validate(lease, "other-device", "1.0.0.0", "FORMAT_SCAN", Now));
-        Assert.Throws<InvalidOperationException>(() =>
-            validator.Validate(lease, "device-1", "1.0.0.0", "SPELLING_SCAN", Now));
-    }
-
-    [Fact]
-    public void Lease_longer_than_seven_days_is_rejected()
-    {
-        var payload = Encoding.UTF8.GetBytes(new XElement("offlineLease",
-            new XAttribute("schema", OfflineLeaseParser.Schema), new XAttribute("leaseId", "lease-1"),
-            new XAttribute("subjectId", "dev-user"), new XAttribute("deviceThumbprint", "device-1"),
-            new XAttribute("clientReleaseId", "1.0.0.0"), new XAttribute("issuedAtUtc", Now.ToString("O")),
-            new XAttribute("notBeforeUtc", Now.ToString("O")),
-            new XAttribute("expiresAtUtc", Now.AddDays(7).AddSeconds(1).ToString("O")),
-            new XElement("features", new XElement("feature", new XAttribute("code", "FORMAT_SCAN"))))
-            .ToString(SaveOptions.DisableFormatting));
-
-        Assert.Throws<InvalidOperationException>(() => new OfflineLeaseValidator().Validate(
-            OfflineLeaseParser.Parse(payload), "device-1", "1.0.0.0", "FORMAT_SCAN", Now));
     }
 
     internal static byte[] RulePayload(DateTimeOffset notBefore, DateTimeOffset expires,

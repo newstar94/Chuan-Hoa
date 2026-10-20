@@ -1,0 +1,23 @@
+{
+  "productVersion": "1.0.0.188",
+  "scope": "Change request: large documents, national header/motto recognition, LaTeX-style technical profile",
+  "authoredWithoutBuild": true,
+  "note": "Source changes were authored in an environment without .NET SDK or Microsoft Word. Nothing below has been executed; every status is NOT_RUN until verified on the reference machine.",
+  "batches": {
+    "batch0_fixtures": { "status": "IMPLEMENTED", "artifact": "tools/fixtures/generate_large_fixtures.py", "measurementHarness": "NOT_IMPLEMENTED" },
+    "batch1_header_zone_and_data_loss": { "status": "IMPLEMENTED", "tests": ["HeaderZoneDetectionTests"], "testRun": "NOT_RUN" },
+    "batch2_comment_budget": { "status": "IMPLEMENTED", "tests": ["AnnotationBudgetTests"], "testRun": "NOT_RUN", "wordSmoke": "NOT_RUN" },
+    "batch3_linear_one_click": { "status": "PARTIAL", "notImplemented": ["Style-based body formatting (CH_* styles)", "D3 UndoClear confirmation", "modal progress dialog driven by WinForms timer"], "wordSmoke": "NOT_RUN" },
+    "batch4_component_lines": { "status": "PARTIAL", "notImplemented": ["horizontal paragraph/column-relative placement", "border length ratio check (right indent not captured)"], "wordSmoke": "NOT_RUN" },
+    "batch5_technical_profile": { "status": "PARTIAL", "tests": ["VietnameseHeadingHierarchyTests"], "notImplemented": ["micro-typography (non-breaking spaces, en dash)", "booktabs per-cell border reading", "empty-paragraph spacing cleanup"], "testRun": "NOT_RUN" },
+    "batch6_secondary": { "status": "IMPLEMENTED", "wordSmoke": "NOT_RUN" }
+  },
+  "acceptance": {
+    "L1_format_check_seconds": "NOT_RUN",
+    "L2_format_check_seconds": "NOT_RUN",
+    "L1_one_click_seconds": "NOT_RUN",
+    "L2_one_click_seconds": "NOT_RUN",
+    "word_x86": "NOT_RUN",
+    "word_x64": "NOT_RUN"
+  }
+}

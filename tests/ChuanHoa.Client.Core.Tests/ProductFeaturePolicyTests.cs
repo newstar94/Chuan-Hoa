@@ -5,8 +5,9 @@ namespace ChuanHoa.Client.Core.Tests;
 public sealed class ProductFeaturePolicyTests
 {
     [Fact]
-    public void Free_plan_contains_only_the_three_approved_capabilities() =>
-        Assert.Equal(new[] { "FORMAT_SCAN", "SPELLING_SCAN", "TABLE_IMAGE_TOOLS" }, ProductFeaturePolicy.FreeFeatures);
+    public void Free_product_includes_every_shipped_feature_without_a_subscription() =>
+        Assert.Equal(new[] { "FORMAT_SCAN", "SPELLING_SCAN", "TABLE_IMAGE_TOOLS",
+            "AUTOFIX", "DOCUMENT_TOOLS", "FULL_ACCESS" }, ProductFeaturePolicy.FreeFeatures);
 
     [Theory]
     [InlineData("btnLapDongTieuDe")]

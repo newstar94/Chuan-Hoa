@@ -163,12 +163,10 @@ if ($ApiOnly) {
         Api = $apiUrl
         OfflineLeaseDays = 7
         TrustedKey = $trustedKeyPath
-        Admin = "$apiUrl/development/admin"
         AdminLaunched = [bool]$LaunchAdmin
         ProductionReady = $false
     }
     if ($LaunchAdmin) {
-        Start-Process "$apiUrl/development/admin"
     }
     return
 }
@@ -238,7 +236,6 @@ if ($LaunchWord) {
     Start-Process -FilePath $word
 }
 if ($LaunchAdmin) {
-    Start-Process "$apiUrl/development/admin"
 }
 
 [pscustomobject]@{
@@ -248,7 +245,6 @@ if ($LaunchAdmin) {
     OfflineLeaseDays = 7
     TrustedKey = $trustedKeyPath
     WordLaunched = [bool]$LaunchWord
-    Admin = "$apiUrl/development/admin"
     AdminLaunched = [bool]$LaunchAdmin
     ProductionReady = $false
 }

@@ -1,5 +1,4 @@
 ﻿param(
-    [switch]$OpenAdmin,
     [switch]$OpenApi
 )
 
@@ -7,7 +6,6 @@ $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $start = Join-Path $root 'tools\development\Start-ChuanHoaDevelopment.ps1'
 $healthUrl = 'http://127.0.0.1:5206/health'
-$adminUrl = 'http://127.0.0.1:5206/development/admin'
 
 if (-not (Get-NetTCPConnection -LocalPort 5206 -State Listen -ErrorAction SilentlyContinue)) {
     Write-Host 'Đang khởi động Chuẩn Hóa API tại http://127.0.0.1:5206 ...'
@@ -34,5 +32,4 @@ if (-not $ready) {
 }
 
 Write-Host 'Chuẩn Hóa đã sẵn sàng: http://127.0.0.1:5206'
-if ($OpenAdmin) { Start-Process $adminUrl }
 if ($OpenApi) { Start-Process 'http://127.0.0.1:5206/openapi/v1.json' }

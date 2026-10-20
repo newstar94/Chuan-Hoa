@@ -231,8 +231,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             ThrowIfDisposed();
             if (controlId == "btnThietLap")
             {
-                var window = new AccountSettingsWindow(_localAccessManager, ShowRecognitionSettings);
-                window.ShowDialog();
+                ShowRecognitionSettings();
                 return;
             }
             Action command;
@@ -245,8 +244,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             try { _localAccessManager.RequireCommand(controlId); }
             catch (InvalidOperationException)
             {
-                MessageBox.Show("Chức năng này cần quyền sử dụng hợp lệ. Hãy mở Thiết lập để kiểm tra tài khoản và gói sử dụng.",
-                    "Quyền sử dụng", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("Bộ quy tắc cục bộ chưa sẵn sàng. Hãy khởi động lại Word sau khi cài đặt lại ứng dụng.",
+                    "Chuẩn hóa", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
             command();
@@ -595,6 +594,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 context = _contextStore.GetOrCreate(activeDocument);
                 OneClickResult result;
                 int remainingFindingCount;
+                LocalAnnotationSummary? formatSummary = null;
+                LocalAnnotationSummary? spellingSummary = null;
                 // AutoSave can raise DocumentBeforeSave after the full snapshot is
                 // committed but before Execute checks it. Preserve that command-owned
                 // snapshot across save-only invalidations. Explicit clears after a
@@ -608,13 +609,16 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     // second full COM capture/scan on large or table-heavy documents.
                     var remainingFormat = _localScanRuntime.ScanAndAnnotate(context, false, activeDocument,
                         _currentDocumentOperation);
+                    formatSummary = _localScanRuntime.LastAnnotationSummary;
                     var remainingSpelling = _localScanRuntime.ScanAndAnnotate(context, true, activeDocument,
                         _currentDocumentOperation);
+                    spellingSummary = _localScanRuntime.LastAnnotationSummary;
                     remainingFindingCount = remainingFormat.Findings.Count + remainingSpelling.Findings.Count;
                 }
                 SynchronizeDocumentTypeSelection(context);
-                MessageBox.Show("Chuẩn hóa toàn bộ hoàn tất.",
-                    "Chuẩn hóa", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                ShowScanCompletion("Chuẩn hóa toàn bộ hoàn tất.\nĐiểm còn lại sau khi sửa: " +
+                    remainingFindingCount.ToString(System.Globalization.CultureInfo.CurrentCulture) + ".",
+                    formatSummary, spellingSummary);
             }
             catch (OperationCanceledException)
             {
@@ -816,6 +820,33 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             }
         }
 
+        private static void ShowScanCompletion(string title, params LocalAnnotationSummary?[] summaries)
+        {
+            var lines = new List<string> { title };
+            string? reportPath = null;
+            foreach (var summary in summaries)
+            {
+                if (summary == null) continue;
+                lines.Add((string.Equals(summary.Lane, "spelling", StringComparison.OrdinalIgnoreCase)
+                    ? "Chính tả: " : "Thể thức: ") + summary.Describe());
+                if (summary.ReportPath.Length > 0) reportPath = summary.ReportPath;
+            }
+            if (string.IsNullOrEmpty(reportPath))
+            {
+                MessageBox.Show(string.Join("\n", lines), "Chuẩn hóa",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            lines.Add(string.Empty);
+            lines.Add("Mở báo cáo đầy đủ?");
+            if (MessageBox.Show(string.Join("\n", lines), "Chuẩn hóa",
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Information) != DialogResult.Yes)
+                return;
+            try { Process.Start(reportPath); }
+            catch (System.ComponentModel.Win32Exception) { }
+            catch (System.IO.FileNotFoundException) { }
+        }
+
         private void RunLocalScan(bool spelling)
         {
             var document = TryGetCurrentDocument();
@@ -881,11 +912,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                       (result.NotEvaluatedRuleCodes.Count > 0
                           ? "Chưa thể đánh giá: " + string.Join(", ", result.NotEvaluatedRuleCodes) + ".\n"
                           : string.Empty);
-                MessageBox.Show(
-                    spelling ? "Kiểm tra chính tả hoàn tất." : "Kiểm tra thể thức hoàn tất.",
-                    "Chuẩn hóa",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Information);
+                ShowScanCompletion(spelling ? "Kiểm tra chính tả hoàn tất." : "Kiểm tra thể thức hoàn tất.",
+                    _localScanRuntime.LastAnnotationSummary);
             }
             catch (OperationCanceledException)
             {

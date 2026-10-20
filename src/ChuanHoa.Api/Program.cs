@@ -1,10 +1,7 @@
 using ChuanHoa.Api.Errors;
 using ChuanHoa.Api.Middleware;
-using ChuanHoa.Api.Security;
-using ChuanHoa.Api.Development;
 using ChuanHoa.Application;
 using ChuanHoa.Contracts;
-using ChuanHoa.Contracts.Integration;
 using ChuanHoa.Infrastructure;
 using Npgsql;
 using System.Threading.RateLimiting;
@@ -22,27 +19,6 @@ builder.Services.AddRateLimiter(options =>
         _ => new FixedWindowRateLimiterOptions { PermitLimit = 30, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
 });
 builder.Services.AddSingleton(TimeProvider.System);
-builder.Services.AddSingleton<DevelopmentArtifactIssuer>();
-builder.Services.AddSingleton<DevelopmentAdminStore>();
-builder.Services.AddSingleton<IntegrationRequestAuthenticator>();
-builder.Services.AddSingleton<IIntegrationReplayStore>(sp =>
-    builder.Environment.IsDevelopment()
-        ? new InMemoryIntegrationReplayStore()
-        : new DisabledIntegrationReplayStore());
-builder.Services.AddSingleton<ChuanHoa.Api.Billing.PayOsGateway>();
-builder.Services
-    .AddAuthentication(FailClosedAuthenticationDefaults.Scheme)
-    .AddScheme<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions, FailClosedAuthenticationHandler>(
-        FailClosedAuthenticationDefaults.Scheme,
-        _ => { });
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy("DocumentScan", policy =>
-    {
-        policy.RequireAuthenticatedUser();
-        policy.RequireClaim("scope", "document.scan");
-    });
-});
 builder.Services.AddOpenApi("v1", options =>
 {
     options.AddDocumentTransformer((document, _, _) =>
@@ -68,8 +44,6 @@ else if (!builder.Environment.IsDevelopment())
 var app = builder.Build();
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseExceptionHandler();
-app.UseAuthentication();
-app.UseAuthorization();
 app.UseRateLimiter();
 app.UseStatusCodePages(async statusCodeContext =>
 {
@@ -103,22 +77,6 @@ app.UseStatusCodePages(async statusCodeContext =>
 app.UseMiddleware<IdempotencyKeyValidationMiddleware>();
 app.MapControllers();
 app.MapOpenApi("/openapi/{documentName}.json");
-app.MapGet("/development/admin", (HttpContext context, DevelopmentArtifactIssuer issuer) =>
-{
-    if (!issuer.IsEnabled) return Results.NotFound();
-    var remote = context.Connection.RemoteIpAddress;
-    if (remote is not null && !System.Net.IPAddress.IsLoopback(remote)) return Results.Forbid();
-    using var stream = typeof(DevelopmentArtifactIssuer).Assembly.GetManifestResourceStream(
-        "ChuanHoa.Api.DevelopmentAdmin.index.html");
-    if (stream is null) return Results.NotFound();
-    using var reader = new StreamReader(stream, System.Text.Encoding.UTF8);
-    return Results.Content(reader.ReadToEnd(), "text/html; charset=utf-8", System.Text.Encoding.UTF8);
-}).ExcludeFromDescription();
-
-app.MapGet("/admin", (IConfiguration configuration) =>
-    Results.Redirect(configuration["ChuanHoa:AdminDashboardUrl"] ?? "https://hosodauthau.online/admin/chuan-hoa"));
-app.MapGet("/admin/{**path}", (IConfiguration configuration) =>
-    Results.Redirect(configuration["ChuanHoa:AdminDashboardUrl"] ?? "https://hosodauthau.online/admin/chuan-hoa"));
 
 static HealthResponse CreateHealthResponse() => new(
     ApiContractVersions.HealthV1,

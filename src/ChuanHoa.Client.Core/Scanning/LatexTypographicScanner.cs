@@ -33,10 +33,11 @@ namespace ChuanHoa.Client.Core.Scanning
     /// </summary>
     public sealed class LatexTypographicScanner
     {
+        // "Bảng 1", "Bảng số 03:", "Hình 2.1", "Sơ đồ 1", "Biểu đồ số 2".
         private static readonly Regex TableCaptionRegex = Rx(
-            @"^\s*Bảng\s+(?:\d+(?:\.\d+)*|[IVXLCDM]+)(?:[.\-–—/:]\s*|\s+)", true);
+            @"^\s*Bảng\s+(?:số\s+)?(?:\d+(?:\.\d+)*|[IVXLCDM]+)(?:[.\-–—/:]\s*|\s+|$)", true);
         private static readonly Regex FigureCaptionRegex = Rx(
-            @"^\s*Hình\s+(?:\d+(?:\.\d+)*|[IVXLCDM]+)(?:[.\-–—/:]\s*|\s+)", true);
+            @"^\s*(?:Hình|Sơ\s+đồ|Biểu\s+đồ)\s+(?:số\s+)?(?:\d+(?:\.\d+)*|[IVXLCDM]+)(?:[.\-–—/:]\s*|\s+|$)", true);
         private static readonly Regex LeadingListRegex = Rx(
             @"^\s*(?:[-–—+•·▪◦‣⁃]|\(?\d+(?:\.\d+)*[.)]|\(?[a-zđ][.)])\s+", true);
         private static readonly Regex LegalTextRegex = Rx(

@@ -478,22 +478,45 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
         private static bool IsHeaderLayoutTable(Word.Table table)
         {
+            Word.Rows? rows = null;
+            Word.Columns? columns = null;
             Word.Range? range = null;
+            Word.Paragraphs? paragraphs = null;
             try
             {
+                // A data table that merely mentions "Cộng hòa xã hội chủ nghĩa Việt
+                // Nam" is not a header layout table. Require the NĐ30 geometry and a
+                // cell paragraph that is exactly the national or party title.
+                rows = table.Rows;
+                columns = table.Columns;
+                if (rows.Count > 4 || columns.Count > 3) return false;
                 range = table.Range;
-                var text = range.Text ?? string.Empty;
-                return text.IndexOf("CỘNG HÒA", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                    text.IndexOf("CỘNG HOÀ", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                    text.IndexOf("ĐẢNG CỘNG SẢN", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                    (text.IndexOf("Độc lập", StringComparison.OrdinalIgnoreCase) >= 0 &&
-                     text.IndexOf("Hạnh phúc", StringComparison.OrdinalIgnoreCase) >= 0);
+                paragraphs = range.Paragraphs;
+                var count = paragraphs.Count;
+                if (count > 24) return false;
+                for (var index = 1; index <= count; index++)
+                {
+                    Word.Paragraph? paragraph = null;
+                    Word.Range? paragraphRange = null;
+                    try
+                    {
+                        paragraph = paragraphs[index];
+                        paragraphRange = paragraph.Range;
+                        var text = paragraphRange.Text ?? string.Empty;
+                        if (ComponentTextNormalizer.IsNationalTitleOrCombinedHeader(text) ||
+                            string.Equals(ComponentTextNormalizer.Normalize(text), "ĐẢNG CỘNG SẢN VIỆT NAM",
+                                StringComparison.OrdinalIgnoreCase))
+                            return true;
+                    }
+                    finally { Release(paragraphRange); Release(paragraph); }
+                }
+                return false;
             }
             catch (COMException)
             {
                 return false;
             }
-            finally { Release(range); }
+            finally { Release(paragraphs); Release(range); Release(columns); Release(rows); }
         }
 
         private static void NormalizeHeaderTable(Word.Table table)
@@ -902,35 +925,11 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
         private static int ConvertLegacyRuns(Word.Range story)
         {
+            // Find legacy-font runs by bisection on Font.Name (empty when mixed)
+            // instead of reading Characters[i] one by one, which is O(n²) in Word
+            // and never finished on documents of a few hundred thousand characters.
             var runs = new List<LegacyRun>();
-            Word.Range? character = null;
-            try
-            {
-                var count = story.Characters.Count;
-                LegacyRun? current = null;
-                for (var index = 1; index <= count; index++)
-                {
-                    Release(character);
-                    character = story.Characters[index];
-                    var fontName = character.Font.Name ?? string.Empty;
-                    if (!VietnameseLegacyEncodingConverter.IsLegacyFont(fontName))
-                    {
-                        current = null;
-                        continue;
-                    }
-                    if (current != null && current.End == character.Start &&
-                        string.Equals(current.FontName, fontName, StringComparison.OrdinalIgnoreCase))
-                    {
-                        current.End = character.End;
-                    }
-                    else
-                    {
-                        current = new LegacyRun(character.Start, character.End, fontName);
-                        runs.Add(current);
-                    }
-                }
-            }
-            finally { Release(character); }
+            CollectLegacyFontRuns(story, story.Start, story.End, runs, 0);
 
             for (var index = runs.Count - 1; index >= 0; index--)
             {
@@ -965,22 +964,94 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             }
         }
 
+        private static void CollectLegacyFontRuns(Word.Range story, int start, int end,
+            List<LegacyRun> runs, int depth)
+        {
+            if (end <= start) return;
+            Word.Range? probe = null;
+            Word.Font? font = null;
+            string fontName;
+            try
+            {
+                probe = story.Duplicate;
+                probe.SetRange(start, end);
+                font = probe.Font;
+                fontName = font.Name ?? string.Empty;
+            }
+            finally
+            {
+                Release(font);
+                Release(probe);
+            }
+
+            if (fontName.Length > 0)
+            {
+                if (!VietnameseLegacyEncodingConverter.IsLegacyFont(fontName)) return;
+                var previous = runs.Count > 0 ? runs[runs.Count - 1] : null;
+                if (previous != null && previous.End == start &&
+                    string.Equals(previous.FontName, fontName, StringComparison.OrdinalIgnoreCase))
+                    previous.End = end;
+                else
+                    runs.Add(new LegacyRun(start, end, fontName));
+                return;
+            }
+            if (end - start == 1 || depth > 40) return;
+            var middle = start + (end - start) / 2;
+            CollectLegacyFontRuns(story, start, middle, runs, depth + 1);
+            CollectLegacyFontRuns(story, middle, end, runs, depth + 1);
+        }
+
         private static void NormalizeToneInRange(Word.Range range, VietnameseTonePlacementStyle style)
         {
             var source = range.Text ?? string.Empty;
             var normalized = VietnameseTonePlacementNormalizer.Normalize(source, style);
             if (string.Equals(source, normalized, StringComparison.Ordinal)) return;
-            for (var index = source.Length - 1; index >= 0; index--)
+
+            // Range.Text and Range.Characters do not share indexes when the range
+            // holds fields, hidden text or cell markers, so never patch by index.
+            // Replace each differing whole word with Word's own Find/Replace.
+            var pairs = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (Match word in Regex.Matches(source, @"\p{L}[\p{L}\p{M}]*",
+                RegexOptions.CultureInvariant, TimeSpan.FromMilliseconds(500)))
             {
-                if (source[index] == normalized[index]) continue;
-                Word.Range? character = null;
+                if (pairs.ContainsKey(word.Value)) continue;
+                var fixedWord = VietnameseTonePlacementNormalizer.Normalize(word.Value, style);
+                if (!string.Equals(word.Value, fixedWord, StringComparison.Ordinal))
+                    pairs[word.Value] = fixedWord;
+            }
+            foreach (var pair in pairs)
+            {
+                Word.Range? scope = null;
+                Word.Find? find = null;
+                Word.Replacement? replacement = null;
                 try
                 {
-                    if (index + 1 > range.Characters.Count) continue;
-                    character = range.Characters[index + 1];
-                    character.Text = normalized[index].ToString();
+                    scope = range.Duplicate;
+                    find = scope.Find;
+                    find.ClearFormatting();
+                    replacement = find.Replacement;
+                    replacement.ClearFormatting();
+                    find.Text = pair.Key;
+                    replacement.Text = pair.Value;
+                    find.Forward = true;
+                    find.Wrap = Word.WdFindWrap.wdFindStop;
+                    find.Format = false;
+                    find.MatchCase = true;
+                    find.MatchWholeWord = true;
+                    find.MatchWildcards = false;
+                    object replaceAll = Word.WdReplace.wdReplaceAll;
+                    object missing = Type.Missing;
+                    find.Execute(ref missing, ref missing, ref missing, ref missing,
+                        ref missing, ref missing, ref missing, ref missing, ref missing,
+                        ref missing, ref replaceAll, ref missing, ref missing, ref missing, ref missing);
                 }
-                finally { Release(character); }
+                catch (COMException) { }
+                finally
+                {
+                    Release(replacement);
+                    Release(find);
+                    Release(scope);
+                }
             }
         }
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
+using ChuanHoa.Client.Core.Text;
 
 namespace ChuanHoa.Client.Core.Scanning
 {
@@ -79,17 +80,48 @@ namespace ChuanHoa.Client.Core.Scanning
     {
         internal LogicalDocumentBlock(int startParagraphIndex, int endParagraphIndex,
             string documentTypeCode, IReadOnlyDictionary<int, string> roles)
+            : this(startParagraphIndex, endParagraphIndex, documentTypeCode, roles,
+                endParagraphIndex)
+        {
+        }
+
+        internal LogicalDocumentBlock(int startParagraphIndex, int endParagraphIndex,
+            string documentTypeCode, IReadOnlyDictionary<int, string> roles,
+            int headerZoneEndParagraphIndex)
         {
             StartParagraphIndex = startParagraphIndex;
             EndParagraphIndex = endParagraphIndex;
             DocumentTypeCode = documentTypeCode ?? LocalDocumentTypeCodes.Unknown;
             Roles = roles ?? throw new ArgumentNullException(nameof(roles));
+            HeaderZoneEndParagraphIndex = headerZoneEndParagraphIndex;
         }
 
         public int StartParagraphIndex { get; }
         public int EndParagraphIndex { get; }
         public string DocumentTypeCode { get; }
         public IReadOnlyDictionary<int, string> Roles { get; }
+
+        /// <summary>
+        /// Last paragraph index of the block's header zone. National title, motto,
+        /// organ names, number, place/date, type name and subject are only
+        /// recognized inside this zone.
+        /// </summary>
+        public int HeaderZoneEndParagraphIndex { get; }
+
+        /// <summary>
+        /// D4: a block is an administrative document (NĐ30/HD05) only when its
+        /// header zone carries the national/party title or a document type name.
+        /// Other blocks are technical documents (thuyết minh, hồ sơ kỹ thuật):
+        /// component rules and component lines must not run on them.
+        /// </summary>
+        public bool IsAdministrative => Roles.Any(role => IsInHeaderZone(role.Key) &&
+            (string.Equals(role.Value, "nationalTitle", StringComparison.Ordinal) ||
+             string.Equals(role.Value, "partyTitle", StringComparison.Ordinal) ||
+             string.Equals(role.Value, "typeName", StringComparison.Ordinal) ||
+             string.Equals(role.Value, "officialLetterSubject", StringComparison.Ordinal)));
+
+        public bool IsInHeaderZone(int paragraphIndex) =>
+            paragraphIndex >= StartParagraphIndex && paragraphIndex <= HeaderZoneEndParagraphIndex;
 
         public bool ContainsParagraph(int paragraphIndex) =>
             paragraphIndex >= StartParagraphIndex && paragraphIndex <= EndParagraphIndex;
@@ -118,7 +150,31 @@ namespace ChuanHoa.Client.Core.Scanning
             public string Evidence { get; }
         }
 
-        private static readonly Regex NationalTitle = Rx(@"CỘNG\s+H(?:ÒA|OÀ)\s+XÃ\s+HỘI\s+CHỦ\s+NGHĨA\s+VIỆT\s+NAM", true);
+        // Header-zone bounds (D1/section 5.2 of the change request).
+        private const int MaxHeaderZoneParagraphs = 15;
+        private const int MaxHeaderTableParagraphs = 40;
+        private const int HeaderZoneParagraphsAfterType = 3;
+
+        private sealed class HeaderZone
+        {
+            public HeaderZone(int endPosition, int leadTableEndPosition)
+            {
+                EndPosition = endPosition;
+                LeadTableEndPosition = leadTableEndPosition;
+            }
+
+            /// <summary>Inclusive position (in the block's non-empty paragraph array).</summary>
+            public int EndPosition { get; }
+
+            /// <summary>Inclusive position of the header layout table, or -1.</summary>
+            public int LeadTableEndPosition { get; }
+
+            public bool Contains(int position) => position <= EndPosition;
+            public bool InLeadTable(int position) => position <= LeadTableEndPosition;
+        }
+
+        private static readonly Regex OrganExcludedStartRegex = Rx(
+            @"^(?:(?:PHẦN|CHƯƠNG|MỤC|ĐIỀU)\b|[IVXLCDM]+\s*[.):-]|\d|Số\b)", true);
         private static bool IsExtendedReportTitle(string text) =>
             text.Length <= 160 && Regex.IsMatch(text, @"^BÁO CÁO\s+[\p{Lu}\p{M}\d ,/()-]+$");
         private static bool IsTypeHeading(string text) => TypeName.IsMatch(text) ||
@@ -155,6 +211,12 @@ namespace ChuanHoa.Client.Core.Scanning
         private static readonly Regex SubjectTerminatorRegex = Rx(@"^(Kính\s+(?:gửi|trình)|Nơi\s+nhận)\b", true);
         private static readonly Regex StructuralBodyStartRegex = Rx(@"^(?:Điều\s+\d+|(?:\d+(?:\.\d+)*|[IVXLCDM]+)[.)]\s+\p{L}|[a-zđ]\)\s+\p{L}|Phần\b|Chương\b|Mục\b|Tiểu\s+mục\b)", true);
         private static readonly Regex PlaceDateDraftPattern = Rx(@"^[\p{L}][\p{L}\s.]{0,70},\s*ngày\s+[.…]+\s+tháng\s+(?:\d{1,2}|[.…]+)\s+năm\s+(?:\d{4}|[.…]+)$", true);
+        // Word templates and incoming drafts often leave the day blank while
+        // retaining the legal place/date component (for example: "ngày tháng 9
+        // năm 2026"). Keep this recognition narrow: require the comma, month and
+        // year so ordinary body text containing the word "ngày" is not promoted
+        // to the header role.
+        private static readonly Regex PlaceDateMissingDayPattern = Rx(@"^[\p{L}][\p{L}\s.]{0,70},\s*ngày\s+tháng\s+(?:\d{1,2}|[.…]+)\s+năm\s+(?:\d{4}|[.…]+)$", true);
         private static readonly Regex HeaderCodeNumberPattern = Rx(@"^Số\s*:?\s*\d", true);
         private static readonly Regex AppendixDigitalSignatureLabelPattern = Rx(@"^Số\s*:", true);
         private static readonly Regex DigitalSignatureUnitPattern = Rx(@"\b(giờ|phút|giây)\b", true);
@@ -184,20 +246,22 @@ namespace ChuanHoa.Client.Core.Scanning
                 var startPosition = starts[blockIndex];
                 var endPosition = blockIndex + 1 < starts.Count ? starts[blockIndex + 1] - 1 : main.Length - 1;
                 var paragraphs = main.Skip(startPosition).Take(endPosition - startPosition + 1).ToArray();
-                var documentType = ResolveDocumentTypeFromContent(paragraphs);
+                var zone = ComputeHeaderZone(paragraphs);
+                var documentType = ResolveDocumentTypeFromContent(paragraphs, zone);
                 if (Eq(documentType, LocalDocumentTypeCodes.Unknown) && starts.Count == 1 &&
                     snapshot.DocumentTypeWasSelectedManually &&
                     !Eq(snapshot.DocumentTypeCode, LocalDocumentTypeCodes.Unknown))
                     documentType = snapshot.DocumentTypeCode;
-                var roles = DetectBlock(paragraphs, documentType);
+                var roles = DetectBlock(paragraphs, documentType, zone);
                 blocks.Add(new LogicalDocumentBlock(paragraphs[0].Index,
-                    paragraphs[paragraphs.Length - 1].Index, documentType, roles));
+                    paragraphs[paragraphs.Length - 1].Index, documentType, roles,
+                    paragraphs[Math.Max(0, zone.EndPosition)].Index));
             }
             return blocks;
         }
 
         private static Dictionary<int, string> DetectBlock(LocalParagraphSnapshot[] main,
-            string documentType)
+            string documentType, HeaderZone zone)
         {
             var result = new Dictionary<int, string>();
             var legalBasisWindowOpen = false;
@@ -224,7 +288,8 @@ namespace ChuanHoa.Client.Core.Scanning
                     : string.Empty;
 
                 var assignment = SelectRoleAssignment(main, i, documentType, previousRole,
-                    text, typeNameAssigned, legalBasisWindowOpen, legalBasisSequenceStarted);
+                    text, typeNameAssigned, legalBasisWindowOpen, legalBasisSequenceStarted,
+                    zone, result);
                 var assignedRole = assignment?.Role;
                 if (assignedRole == "typeName") typeNameAssigned = true;
 
@@ -234,43 +299,59 @@ namespace ChuanHoa.Client.Core.Scanning
             }
 
             AssignAppendixRoles(main, result);
-            AssignOrganRoles(main, result);
+            AssignOrganRoles(main, result, zone);
+            DropOrganRolesOfTechnicalBlock(main, result, zone);
             return result;
         }
 
         private static RoleAssignment? SelectRoleAssignment(LocalParagraphSnapshot[] main, int index,
             string documentType, string previousRole, string text, bool typeNameAssigned,
-            bool legalBasisWindowOpen, bool legalBasisSequenceStarted)
+            bool legalBasisWindowOpen, bool legalBasisSequenceStarted, HeaderZone zone,
+            IReadOnlyDictionary<int, string> assigned)
         {
             var paragraph = main[index];
             var candidates = new List<RoleAssignment>();
+            // Header components are recognized only inside the block's header
+            // zone. Body sentences such as "Căn cứ Hiến pháp nước Cộng hòa xã hội
+            // chủ nghĩa Việt Nam" or "... vì độc lập dân tộc và hạnh phúc ..." are
+            // therefore never promoted to Quốc hiệu/Tiêu ngữ.
+            var inZone = zone.Contains(index);
+            // A table cell is a header component only inside the header layout
+            // table. Data tables ("Biên bản", "Báo cáo" cells) are never headers.
+            var headerCell = !paragraph.IsInTable || zone.InLeadTable(index);
             AddCandidate(candidates, IsFormHeading(text) && index <= 16 &&
                 main.Take(index).All(p => !IsStructuralBodyStart(Collapse(p.Text))),
                 "standaloneTitle", 98, 98, "bounded form-title vocabulary and header context");
-            AddCandidate(candidates, NationalTitle.IsMatch(text), "nationalTitle", 100, 100,
-                "exact national-title text");
-            AddCandidate(candidates, Contains(text, "Độc lập") && Contains(text, "Hạnh phúc"),
-                "nationalMotto", 100, 99, "national-motto vocabulary");
-            AddCandidate(candidates, Eq(text, "ĐẢNG CỘNG SẢN VIỆT NAM"), "partyTitle", 100, 100,
-                "exact party title");
-            AddCandidate(candidates, CodeNumberPattern.IsMatch(text) ||
-                (paragraph.IsInTable && InlineTableCodeNumberPattern.IsMatch(paragraph.Text)),
+            AddCandidate(candidates, inZone && headerCell &&
+                ComponentTextNormalizer.IsNationalTitleOrCombinedHeader(paragraph.Text),
+                "nationalTitle", 100, 100, "whole-paragraph national title in the header zone");
+            AddCandidate(candidates, inZone && headerCell &&
+                ComponentTextNormalizer.IsNationalMotto(paragraph.Text) &&
+                IsMottoAdjacentToTitle(main, index, assigned),
+                "nationalMotto", 100, 99, "whole-paragraph motto directly below the national title");
+            AddCandidate(candidates, inZone && headerCell &&
+                Eq(ComponentTextNormalizer.Normalize(paragraph.Text), "ĐẢNG CỘNG SẢN VIỆT NAM"),
+                "partyTitle", 100, 100, "exact party title in the header zone");
+            AddCandidate(candidates, inZone && headerCell && (CodeNumberPattern.IsMatch(text) ||
+                (paragraph.IsInTable && InlineTableCodeNumberPattern.IsMatch(paragraph.Text))),
                 "codeNumber", 96, 95, paragraph.IsInTable
                     ? "code-number text in a table cell" : "code-number prefix");
             AddCandidate(candidates, legalBasisWindowOpen && (IsFormalLegalBasisParagraph(text) ||
                 (legalBasisSequenceStarted && LegalBasis.IsMatch(text))), "legalBasis", 94, 94,
                 "formal legal vocabulary inside the preamble window");
-            AddCandidate(candidates, IsPlaceDate(text), "placeAndIssuedDate", 92, 92,
-                "place-and-issued-date pattern");
+            AddCandidate(candidates, inZone && headerCell && IsPlaceDate(text),
+                "placeAndIssuedDate", 92, 92, "place-and-issued-date pattern");
 
             if (IsTypeHeading(text))
             {
                 // A Decision commonly repeats its name as the operative formula before
-                // Điều 1. Only the first occurrence is the document type.
-                var role = Eq(text, "BẢN CAM KẾT") ? "standaloneTitle" : typeNameAssigned
-                    ? "structuralTitle"
-                    : "typeName";
-                AddCandidate(candidates, true, role, 98, 98, "document-type heading");
+                // Điều 1. Only the first occurrence is the document type, and only a
+                // heading inside the header zone can be that first occurrence.
+                string? role = Eq(text, "BẢN CAM KẾT") ? "standaloneTitle" : typeNameAssigned
+                    ? (paragraph.IsInTable ? null : "structuralTitle")
+                    : (inZone && headerCell ? "typeName" : null);
+                AddCandidate(candidates, role != null, role ?? string.Empty, 98, 98,
+                    "document-type heading");
             }
 
             if (previousRole == "typeName")
@@ -324,6 +405,101 @@ namespace ChuanHoa.Client.Core.Scanning
                 .FirstOrDefault();
         }
 
+        private static bool IsMottoAdjacentToTitle(LocalParagraphSnapshot[] main, int index,
+            IReadOnlyDictionary<int, string> assigned)
+        {
+            var motto = main[index];
+            for (var position = index - 1; position >= 0 && index - position <= 6; position--)
+            {
+                var candidate = main[position];
+                string role;
+                var isTitle = assigned.TryGetValue(candidate.Index, out role) &&
+                    string.Equals(role, "nationalTitle", StringComparison.Ordinal);
+                if (!isTitle)
+                {
+                    // Outside a table the motto must be the next non-empty paragraph.
+                    if (!motto.IsInTable) return false;
+                    continue;
+                }
+                if (position == index - 1) return true;
+                // Word lists every cell of a row before the next row, so in a
+                // header table the title can be several paragraphs earlier: accept
+                // the same cell or the cell directly below in the same column.
+                return motto.IsInTable && candidate.IsInTable &&
+                    candidate.TableIndex == motto.TableIndex &&
+                    candidate.CellIndex == motto.CellIndex &&
+                    candidate.RowIndex.HasValue && motto.RowIndex.HasValue &&
+                    (motto.RowIndex.Value == candidate.RowIndex.Value ||
+                     motto.RowIndex.Value == candidate.RowIndex.Value + 1);
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Header zone of one logical block: from its start to the earliest of
+        /// (a) three paragraphs after the type name / "V/v" subject, (b) the first
+        /// body opening (Điều N, "1.", Roman numeral, Căn cứ/Xét, Kính gửi),
+        /// (c) fifteen paragraphs outside the header layout table; and at least
+        /// (d) the end of that header layout table when the header lives in one.
+        /// </summary>
+        private static HeaderZone ComputeHeaderZone(LocalParagraphSnapshot[] main)
+        {
+            if (main.Length == 0) return new HeaderZone(-1, -1);
+            var last = main.Length - 1;
+            var leadTableEnd = FindLeadHeaderTableEnd(main);
+            var outsideTableCount = 0;
+            var typeHardEnd = -1;
+            for (var position = 0; position <= last; position++)
+            {
+                var paragraph = main[position];
+                var text = Collapse(paragraph.Text);
+                var inLeadTable = position <= leadTableEnd;
+                if (!inLeadTable)
+                {
+                    if (typeHardEnd >= 0 && position > typeHardEnd) return new HeaderZone(position - 1, leadTableEnd);
+                    if (position > 0 && IsHeaderZoneTerminator(text))
+                        return new HeaderZone(position - 1, leadTableEnd);
+                    if (++outsideTableCount > MaxHeaderZoneParagraphs)
+                        return new HeaderZone(position - 1, leadTableEnd);
+                }
+                if (typeHardEnd < 0 && (!paragraph.IsInTable || inLeadTable) &&
+                    (IsTypeHeading(text) || OfficialLetterSubjectRegex.IsMatch(text)))
+                    typeHardEnd = Math.Max(position + HeaderZoneParagraphsAfterType, leadTableEnd);
+            }
+            return new HeaderZone(last, leadTableEnd);
+        }
+
+        private static int FindLeadHeaderTableEnd(LocalParagraphSnapshot[] main)
+        {
+            for (var position = 0; position < main.Length && position <= 5; position++)
+            {
+                var candidate = main[position];
+                // A table after a body heading cannot extend the header zone.
+                if (IsHeaderZoneTerminator(Collapse(candidate.Text))) return -1;
+                if (!candidate.IsInTable || !candidate.TableIndex.HasValue) continue;
+                var end = position;
+                var hasHeaderSignal = false;
+                while (true)
+                {
+                    var text = Collapse(main[end].Text);
+                    if (ComponentTextNormalizer.IsNationalTitleOrCombinedHeader(main[end].Text) ||
+                        Eq(ComponentTextNormalizer.Normalize(main[end].Text), "ĐẢNG CỘNG SẢN VIỆT NAM") ||
+                        HeaderCodeNumberPattern.IsMatch(text) ||
+                        InlineTableCodeNumberPattern.IsMatch(main[end].Text) || IsPlaceDate(text))
+                        hasHeaderSignal = true;
+                    if (end + 1 >= main.Length || !main[end + 1].IsInTable ||
+                        main[end + 1].TableIndex != candidate.TableIndex) break;
+                    end++;
+                }
+                return hasHeaderSignal && end - position + 1 <= MaxHeaderTableParagraphs ? end : -1;
+            }
+            return -1;
+        }
+
+        private static bool IsHeaderZoneTerminator(string text) =>
+            IsStructuralBodyStart(text) || LegalBasis.IsMatch(text) ||
+            RecipientSalutationPrefixRegex.IsMatch(text);
+
         private static void AddCandidate(ICollection<RoleAssignment> candidates, bool condition,
             string role, int confidence, int priority, string evidence)
         {
@@ -343,6 +519,7 @@ namespace ChuanHoa.Client.Core.Scanning
             var starts = new List<int> { 0 };
             var currentStart = 0;
             var currentHasDocumentIdentity = false;
+            var headerTables = HeaderTableIndexes(main);
 
             for (var position = 0; position < main.Length; position++)
             {
@@ -359,8 +536,9 @@ namespace ChuanHoa.Client.Core.Scanning
                     currentHasDocumentIdentity = true;
                     continue;
                 }
-                var isNationalOrPartyTitle = NationalTitle.IsMatch(text) ||
-                    Eq(text, "ĐẢNG CỘNG SẢN VIỆT NAM");
+                var isNationalOrPartyTitle =
+                    ComponentTextNormalizer.IsNationalTitleOrCombinedHeader(main[position].Text) ||
+                    Eq(ComponentTextNormalizer.Normalize(main[position].Text), "ĐẢNG CỘNG SẢN VIỆT NAM");
 
                 if (isNationalOrPartyTitle && currentHasDocumentIdentity &&
                     HasHeaderClusterAhead(main, position))
@@ -374,9 +552,10 @@ namespace ChuanHoa.Client.Core.Scanning
                     }
                 }
 
-                if (IsTypeHeading(text) || OfficialLetterSubjectRegex.IsMatch(text))
+                var blockTypeHeading = IsBlockTypeHeadingCandidate(main[position], text, headerTables);
+                if (blockTypeHeading || (!main[position].IsInTable && OfficialLetterSubjectRegex.IsMatch(text)))
                 {
-                    if (currentHasDocumentIdentity && IsTypeHeading(text))
+                    if (currentHasDocumentIdentity && blockTypeHeading)
                     {
                         var headerStart = FindHeaderClusterStartBefore(main, position, currentStart);
                         if (headerStart > currentStart)
@@ -393,15 +572,45 @@ namespace ChuanHoa.Client.Core.Scanning
             return starts.Distinct().OrderBy(value => value).ToList();
         }
 
+        /// <summary>
+        /// Tables that hold a national/party title: only these may contain a
+        /// type heading. A "Biên bản"/"Báo cáo" cell of a data table may not.
+        /// </summary>
+        private static HashSet<int> HeaderTableIndexes(LocalParagraphSnapshot[] main)
+        {
+            var result = new HashSet<int>();
+            foreach (var paragraph in main)
+            {
+                if (!paragraph.IsInTable || !paragraph.TableIndex.HasValue) continue;
+                if (ComponentTextNormalizer.IsNationalTitleOrCombinedHeader(paragraph.Text) ||
+                    Eq(ComponentTextNormalizer.Normalize(paragraph.Text), "ĐẢNG CỘNG SẢN VIỆT NAM"))
+                    result.Add(paragraph.TableIndex.Value);
+            }
+            return result;
+        }
+
+        private static bool IsBlockTypeHeadingCandidate(LocalParagraphSnapshot paragraph, string text,
+            ISet<int> headerTables)
+        {
+            if (!IsTypeHeading(text)) return false;
+            if (paragraph.IsInTable && (!paragraph.TableIndex.HasValue ||
+                !headerTables.Contains(paragraph.TableIndex.Value))) return false;
+            // Outside the header zone a type heading must be written in capitals.
+            return IsMostlyUppercase(text) || Eq(text, "BẢN CAM KẾT");
+        }
+
+        private static bool IsMottoText(LocalParagraphSnapshot paragraph) =>
+            ComponentTextNormalizer.IsNationalMotto(paragraph.Text) ||
+            ComponentTextNormalizer.IsCombinedNationalHeader(paragraph.Text);
+
         private static bool HasHeaderClusterAhead(LocalParagraphSnapshot[] main, int titlePosition)
         {
-            var signals = Contains(main[titlePosition].Text, "Độc lập") &&
-                Contains(main[titlePosition].Text, "Hạnh phúc") ? 1 : 0;
+            var signals = ComponentTextNormalizer.IsCombinedNationalHeader(main[titlePosition].Text) ? 1 : 0;
             var end = Math.Min(main.Length - 1, titlePosition + 12);
             for (var position = titlePosition + 1; position <= end; position++)
             {
                 var text = Collapse(main[position].Text);
-                if (Contains(text, "Độc lập") && Contains(text, "Hạnh phúc")) signals++;
+                if (IsMottoText(main[position])) signals++;
                 else if (CodeNumberSimple.IsMatch(text)) signals++;
                 else if (IsPlaceDate(text)) signals++;
                 else if (IsTypeHeading(text)) signals++;
@@ -458,8 +667,8 @@ namespace ChuanHoa.Client.Core.Scanning
                 position--)
             {
                 var text = Collapse(main[position].Text);
-                if (NationalTitle.IsMatch(text) ||
-                    (Contains(text, "Độc lập") && Contains(text, "Hạnh phúc")) ||
+                if (ComponentTextNormalizer.IsNationalTitleOrCombinedHeader(main[position].Text) ||
+                    IsMottoText(main[position]) ||
                     HeaderCodeNumberPattern.IsMatch(text) || IsPlaceDate(text))
                 {
                     earliestSignal = position;
@@ -526,16 +735,17 @@ namespace ChuanHoa.Client.Core.Scanning
         public string ResolveDocumentTypeFromContent(LocalScanSnapshot snapshot)
         {
             if (snapshot == null) throw new ArgumentNullException(nameof(snapshot));
-            return ResolveDocumentTypeFromContent(snapshot.Paragraphs
+            var main = snapshot.Paragraphs
                 .Where(p => string.Equals(p.StoryType, "wdMainTextStory", StringComparison.Ordinal) &&
                     !string.IsNullOrWhiteSpace(p.Text))
                 .OrderBy(p => p.Index)
-                .ToArray());
+                .ToArray();
+            return ResolveDocumentTypeFromContent(main, ComputeHeaderZone(main));
         }
 
         private static string ResolveDocumentType(LocalScanSnapshot snapshot, LocalParagraphSnapshot[] main)
         {
-            var detected = ResolveDocumentTypeFromContent(main);
+            var detected = ResolveDocumentTypeFromContent(main, ComputeHeaderZone(main));
             if (!Eq(detected, LocalDocumentTypeCodes.Unknown)) return detected;
 
             if (snapshot.DocumentTypeWasSelectedManually &&
@@ -544,9 +754,21 @@ namespace ChuanHoa.Client.Core.Scanning
             return LocalDocumentTypeCodes.Unknown;
         }
 
-        private static string ResolveDocumentTypeFromContent(LocalParagraphSnapshot[] main)
+        private static string ResolveDocumentTypeFromContent(LocalParagraphSnapshot[] main,
+            HeaderZone zone)
         {
-            var typeParagraph = main.FirstOrDefault(p => IsTypeHeading(Collapse(p.Text)));
+            // Only the type heading of the header zone defines the document type.
+            // A "Báo cáo"/"Kế hoạch" heading or table cell deep inside a technical
+            // document must not turn it into an administrative document (D4).
+            LocalParagraphSnapshot? typeParagraph = null;
+            for (var position = 0; position <= zone.EndPosition && position < main.Length; position++)
+            {
+                var candidate = main[position];
+                if (candidate.IsInTable && !zone.InLeadTable(position)) continue;
+                if (!IsTypeHeading(Collapse(candidate.Text))) continue;
+                typeParagraph = candidate;
+                break;
+            }
             if (typeParagraph != null)
             {
                 if (IsExtendedReportTitle(Collapse(typeParagraph.Text))) return LocalDocumentTypeCodes.Report;
@@ -556,9 +778,9 @@ namespace ChuanHoa.Client.Core.Scanning
                 return MapTypeName(type);
             }
 
-            if (main.Any(p => OfficialLetterSubjectRegex.IsMatch(Collapse(p.Text))) &&
-                main.All(p => !IsTypeHeading(Collapse(p.Text))))
-                return LocalDocumentTypeCodes.OfficialLetter;
+            for (var position = 0; position <= zone.EndPosition && position < main.Length; position++)
+                if (OfficialLetterSubjectRegex.IsMatch(Collapse(main[position].Text)))
+                    return LocalDocumentTypeCodes.OfficialLetter;
             return LocalDocumentTypeCodes.Unknown;
         }
 
@@ -596,14 +818,17 @@ namespace ChuanHoa.Client.Core.Scanning
             }
         }
 
-        private static void AssignOrganRoles(LocalParagraphSnapshot[] main, IDictionary<int, string> roles)
+        private static void AssignOrganRoles(LocalParagraphSnapshot[] main, IDictionary<int, string> roles,
+            HeaderZone zone)
         {
-            var firstCode = main.FirstOrDefault(p => roles.ContainsKey(p.Index) && roles[p.Index] == "codeNumber");
-            var candidates = firstCode != null
-                ? main.Where(p => p.Index < firstCode.Index && !roles.ContainsKey(p.Index) &&
-                    Collapse(p.Text).Length < 220 && IsMostlyUppercase(p.Text) &&
-                    !Eq(Collapse(p.Text), "QUỐC HỘI")).ToArray()
-                : OrganCandidatesInSiblingHeaderCells(main, roles);
+            var zoneParagraphs = main.Take(Math.Max(0, zone.EndPosition + 1)).ToArray();
+            var firstCode = zoneParagraphs.FirstOrDefault(p => roles.ContainsKey(p.Index) && roles[p.Index] == "codeNumber");
+            var candidates = (firstCode != null
+                ? zoneParagraphs.Where(p => p.Index < firstCode.Index && !roles.ContainsKey(p.Index) &&
+                    IsOrganCandidate(p)).ToArray()
+                : OrganCandidatesInSiblingHeaderCells(zoneParagraphs, roles))
+                .Where(p => !p.IsInTable || zone.InLeadTable(Array.IndexOf(main, p)))
+                .ToArray();
             var preceding = candidates.Skip(Math.Max(0, candidates.Length - 2)).ToArray();
             if (preceding.Length == 2) roles[preceding[0].Index] = "superiorOrganName";
             if (preceding.Length > 0) roles[preceding[preceding.Length - 1].Index] = "organName";
@@ -623,10 +848,49 @@ namespace ChuanHoa.Client.Core.Scanning
             // unrelated uppercase paragraph elsewhere in the document is never used.
             return main.Where(p => p.IsInTable && p.TableIndex.HasValue && p.RowIndex.HasValue &&
                 p.CellIndex.HasValue && !roles.ContainsKey(p.Index) &&
-                Collapse(p.Text).Length < 220 && IsMostlyUppercase(p.Text) &&
-                !Eq(Collapse(p.Text), "QUỐC HỘI") && nationalHeaderCells.Any(header =>
+                IsOrganCandidate(p) && nationalHeaderCells.Any(header =>
                     header.TableIndex == p.TableIndex && header.RowIndex == p.RowIndex &&
                     header.CellIndex == p.CellIndex + 1)).ToArray();
+        }
+
+        /// <summary>
+        /// D4: without a national/party title, type name or "V/v" subject in the
+        /// header zone the block is a technical document (thuyết minh...). Organ
+        /// headings detected there must not receive NĐ30 organ formatting or the
+        /// organ separator line. Explicit (caller-provided) roles are kept.
+        /// </summary>
+        private static void DropOrganRolesOfTechnicalBlock(LocalParagraphSnapshot[] main,
+            IDictionary<int, string> roles, HeaderZone zone)
+        {
+            var administrative = false;
+            for (var position = 0; position <= zone.EndPosition && position < main.Length; position++)
+            {
+                string role;
+                if (!roles.TryGetValue(main[position].Index, out role)) continue;
+                if (role == "nationalTitle" || role == "partyTitle" || role == "typeName" ||
+                    role == "officialLetterSubject")
+                {
+                    administrative = true;
+                    break;
+                }
+            }
+            if (administrative) return;
+            foreach (var paragraph in main)
+            {
+                if (!Eq(paragraph.Role, "Unknown") && !string.IsNullOrWhiteSpace(paragraph.Role)) continue;
+                string role;
+                if (roles.TryGetValue(paragraph.Index, out role) &&
+                    (role == "organName" || role == "superiorOrganName"))
+                    roles.Remove(paragraph.Index);
+            }
+        }
+
+        private static bool IsOrganCandidate(LocalParagraphSnapshot paragraph)
+        {
+            var text = Collapse(paragraph.Text);
+            return text.Length < 220 && IsMostlyUppercase(paragraph.Text) &&
+                !Eq(text, "QUỐC HỘI") && !OrganExcludedStartRegex.IsMatch(text) &&
+                !IsStructuralBodyStart(text) && !IsTypeHeading(text);
         }
 
         private static bool IsStructuralTitle(LocalParagraphSnapshot[] main, int index, string text)
@@ -788,13 +1052,12 @@ namespace ChuanHoa.Client.Core.Scanning
             var match = PlaceDate.Match(text);
             if (!match.Success && PlaceDateDraftPattern.IsMatch(text))
                 return true;
+            if (!match.Success && PlaceDateMissingDayPattern.IsMatch(text))
+                return true;
             if (!match.Success) return false;
             var place = match.Groups["place"].Value.Trim();
             return place.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries).Length <= 8;
         }
-
-        private static bool Contains(string value, string token) =>
-            value.IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0;
 
         private static bool Eq(string left, string right) =>
             string.Equals(Collapse(left), Collapse(right), StringComparison.OrdinalIgnoreCase);

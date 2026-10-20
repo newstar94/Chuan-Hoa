@@ -1,7 +1,6 @@
 import { DocumentSnapshot } from '../src/types';
 import { AutoFixEngine } from '../src/autofix/AutoFixEngine';
 import { TextNormalizer } from '../src/normalizer/TextNormalizer';
-import { LicenseManager } from '../src/auth/LicenseManager';
 
 console.log('=== TEST 1: TYPOGRAPHY NORMALIZATION ===');
 const messyText = '  UBND   tỉnh    hoà  bình   đã   xử  lí   kĩ  thuật  cho   nhân dân  , ngày  05  tháng 1 năm 2026. ';
@@ -94,10 +93,5 @@ for (const issue of result.issues) {
   console.log(` - [${issue.severity}] [${issue.checkCode}]: ${issue.title}`);
 }
 
-console.log('\n=== TEST 3: LICENSE KEY GENERATION ===');
-const license = LicenseManager.generateLicenseKey('HWID-9876-5432-10', 'UBND Tinh Ha Tinh', 365);
-console.log('Generated License Key:', license);
-const isValid = LicenseManager.verifyLicense(license, 'HWID-9876-5432-10', 'UBND Tinh Ha Tinh', '2027-09-01');
-console.log('License Valid:', isValid);
 
 console.log('\nALL TESTS PASSED SUCCESSFULLY!');

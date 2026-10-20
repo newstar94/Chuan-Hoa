@@ -112,7 +112,6 @@ def arrange_compact_columns(root: ET.Element, elements: dict) -> None:
         ("grpDinhDang", "boxPageTools", ["btnChenTrangNgang", "btnChenTrangDoc", "btnChenSoTrang"]),
         ("grpKhoiDong", "boxFixActions", ["btnXoaTrangThua"]),
         ("grpAbout", "boxSettingsTools", ["btnThietLap", "mnuThongTinTienIch"]),
-        ("grpChinhTaSo", "boxLanguageActions", ["mnuBoDau", "btnDoiDauThapPhan", "btnTuDienCaNhan"]),
     ]
     for control_id in ("ddQuyDinh", "ddLoaiVanBan"):
         elements[control_id].set("visible", "false")
@@ -129,65 +128,58 @@ def arrange_compact_columns(root: ET.Element, elements: dict) -> None:
             control.set("size", "normal")
             control.set("label", control.get("label", "").strip())
             box.append(control)
-    # Two compact horizontal rows: scale and character spacing.
-    scale_row = ET.SubElement(elements["boxCharacterTools"], f"{{{RIBBON_NAMESPACE}}}box",
-                              {"id": "boxScaleIcons", "boxStyle": "horizontal"})
-    for control_id, icon in (("btnScaleGiam", "CharacterSpacingCondensed"),
-                             ("btnScale100", "CharacterSpacingNormal"),
-                             ("btnScaleTang", "CharacterSpacingExpanded")):
-        control = elements[control_id]
-        elements["boxCharacterTools"].remove(control)
-        control.set("showLabel", "true")
-        control.set("showImage", "false")
-        control.set("label", {"btnScaleGiam": "A−", "btnScale100": "100%", "btnScaleTang": "A+"}[control_id])
-        control.attrib.pop("imageMso", None)
-        control.attrib.pop("getImage", None)
-        scale_row.append(control)
-    spacing = elements["boxGianChu"]
-    parent = next(parent for parent in root.iter() if spacing in list(parent))
-    parent.remove(spacing)
-    elements["boxCharacterTools"].append(spacing)
-    # Pair controls by column instead of two independently measured rows.
-    # The wider 100% caption must not shift the increase/decrease positions.
+    # Button groups are regular-height rows. Unlike the old independent vertical
+    # columns, they do not let each native picker widen a character-tool column.
+    # All six captions share only the natural width of the widest caption, 100%.
     character_tools = elements["boxCharacterTools"]
-    character_tools.set("boxStyle", "horizontal")
-    character_tools.remove(scale_row)
-    character_tools.remove(spacing)
-    for column_id, scale_id, spacing_id in (
-        ("boxCharacterDecrease", "btnScaleGiam", "btnCoChu"),
-        ("boxCharacterReset", "btnScale100", "btnGianChuNormal"),
-        ("boxCharacterIncrease", "btnScaleTang", "btnGianChuRa"),
+    character_tools.set("boxStyle", "vertical")
+    for row_id, control_ids in (
+        ("bgScaleTools", ("btnScaleGiam", "btnScale100", "btnScaleTang")),
+        ("bgSpacingTools", ("btnCoChu", "btnGianChuNormal", "btnGianChuRa")),
     ):
-        column = ET.SubElement(character_tools, f"{{{RIBBON_NAMESPACE}}}box",
-                               {"id": column_id, "boxStyle": "vertical"})
-        scale_control = elements[scale_id]
-        spacing_control = elements[spacing_id]
-        scale_row.remove(scale_control)
-        spacing.remove(spacing_control)
-        # Small text-only buttons preserve the two-row layout. Large buttons
-        # consume the Ribbon height and cannot be stacked into these columns.
-        for control in (scale_control, spacing_control):
-            control.set("size", "normal")
+        row = ET.SubElement(character_tools, f"{{{RIBBON_NAMESPACE}}}buttonGroup", {"id": row_id})
+        for control_id in control_ids:
+            control = elements[control_id]
+            parent = next(parent for parent in root.iter() if control in list(parent))
+            parent.remove(control)
+            # CT_ButtonRegular inside buttonGroup must not have a size attribute.
+            control.attrib.pop("size", None)
             control.set("showLabel", "true")
             control.set("showImage", "false")
             control.attrib.pop("imageMso", None)
             control.attrib.pop("getImage", None)
-        spacing_control.set("label", spacing_control.get("label", "").strip())
-        if scale_id == "btnScale100":
-            # Ribbon normal-button icons are square. Keep 100% as native text;
-            # never squeeze a wide text bitmap into that icon slot.
-            scale_control.set("label", "100%")
-            spacing_control.set("label", "⬤")
-            spacing_control.set("showLabel", "true")
-            spacing_control.set("showImage", "false")
-            spacing_control.attrib.pop("getImage", None)
-            for control in (scale_control, spacing_control):
-                control.attrib.pop("label", None)
-                control.set("getLabel", "GetResetLabel")
-        if scale_id in ("btnScaleGiam", "btnScaleTang"):
-            scale_control.set("label", "A−" if scale_id == "btnScaleGiam" else "A+")
-        column.append(scale_control)
-        column.append(spacing_control)
+            control.attrib.pop("label", None)
+            control.set("getLabel", "GetResetLabel")
+            row.append(control)
+    spacing = elements["boxGianChu"]
+    parent = next(parent for parent in root.iter() if spacing in list(parent))
+    parent.remove(spacing)
+    # Align the color pair with the leading edge of the two rows above it.
+    # A direct regular button group needs no spacer or guessed native margins.
+    color_group = ET.SubElement(
+        character_tools, f"{{{RIBBON_NAMESPACE}}}buttonGroup", {"id": "bgCharacterColors"},
+    )
+    for control_id in ("TextHighlightColorPicker", "FontColorPicker"):
+        # Clone the complete Word control, including its default-action face.
+        # Declaring a gallery keeps only the color dropdown behavior.
+        ET.SubElement(
+            color_group, f"{{{RIBBON_NAMESPACE}}}control",
+            {"idMso": control_id, "showLabel": "false"},
+        )
+    # Auto-scaling hid these labels while leaving spare space on the right.
+    # Keep the complete three-row normal layout, with each caption explicit.
+    language_group = elements["grpChinhTaSo"]
+    language_group.set("autoScale", "false")
+    for control_id in ("mnuBoDau", "btnDoiDauThapPhan", "btnTuDienCaNhan"):
+        control = elements[control_id]
+        parent = next(parent for parent in root.iter() if control in list(parent))
+        parent.remove(control)
+        control.set("size", "normal")
+        control.set("showLabel", "true")
+        language_group.append(control)
+    for child in list(language_group):
+        if child.tag == f"{{{RIBBON_NAMESPACE}}}box" and not len(child):
+            language_group.remove(child)
     elements["grpKhoiDong"].set("label", "Kiểm tra và sửa lỗi")
     elements["grpAbout"].set("label", "Thiết lập")
     tab = next(parent for parent in root.iter() if elements["grpAbout"] in list(parent))

@@ -127,6 +127,7 @@ namespace ChuanHoa.Client.Core.Scanning
             CheckComponents(findings, snapshot, rules, roles);
             CheckHeaderFontSizeTier(findings, snapshot, rules, blocks);
             CheckRequiredLineShapes(findings, snapshot, rules, roles);
+            CheckTabSeparatedNationalHeader(findings, snapshot, rules, blocks);
             cancellationToken.ThrowIfCancellationRequested();
             CheckCodeNumber(findings, snapshot, rules, blocks);
             CheckPlaceDate(findings, snapshot, rules, roles, blocks);
@@ -191,10 +192,17 @@ namespace ChuanHoa.Client.Core.Scanning
                         Near(section.BottomMarginPoints, 20d * PointsPerMillimeter, 1.5d) &&
                         Near(section.LeftMarginPoints, 30d * PointsPerMillimeter, 1.5d) &&
                         Near(section.RightMarginPoints, 15d * PointsPerMillimeter, 1.5d)
-                    : Between(section.TopMarginPoints, rules.TopMinMm, rules.TopMaxMm) &&
+                    : (Between(section.TopMarginPoints, rules.TopMinMm, rules.TopMaxMm) &&
                         Between(section.BottomMarginPoints, rules.BottomMinMm, rules.BottomMaxMm) &&
                         Between(section.LeftMarginPoints, rules.LeftMinMm, rules.LeftMaxMm) &&
-                        Between(section.RightMarginPoints, rules.RightMinMm, rules.RightMaxMm);
+                        Between(section.RightMarginPoints, rules.RightMinMm, rules.RightMaxMm)) ||
+                      // A landscape page rotated for reading keeps its binding edge on
+                      // top: its margins are the portrait margins turned by 90°.
+                      (section.IsLandscape &&
+                        Between(section.TopMarginPoints, rules.LeftMinMm, rules.LeftMaxMm) &&
+                        Between(section.BottomMarginPoints, rules.RightMinMm, rules.RightMaxMm) &&
+                        Between(section.LeftMarginPoints, rules.TopMinMm, rules.TopMaxMm) &&
+                        Between(section.RightMarginPoints, rules.BottomMinMm, rules.BottomMaxMm));
                 if (!marginsValid)
                     findings.Add(Section("ND30-PL1-M1-K3", section.Index, "Lề trang nằm ngoài khoảng quy định.",
                         party ? "Lề trên/dưới 20 mm, trái 30 mm, phải 15 mm." : "Lề trên/dưới 20–25 mm, trái 30–35 mm, phải 15–20 mm.", rules));
@@ -299,12 +307,24 @@ namespace ChuanHoa.Client.Core.Scanning
                 if (party && role == "partyTitle")
                     CheckStyle(findings, "ND30-PL1-M2-K1-QH", paragraph, rules, 15, 15, true, false, 1, "Tiêu đề Đảng");
                 else if (!party && role == "nationalTitle")
+                {
                     CheckStyle(findings, "ND30-PL1-M2-K1-QH", paragraph, rules, 12, 13, true, false, 1, "Quốc hiệu");
+                    // Lower-case "Cộng hòa xã hội..." is only accepted as Quốc hiệu in
+                    // the header zone, and is then reported for capitalization.
+                    if (!ComponentTextNormalizer.IsCombinedNationalHeader(paragraph.Text) &&
+                        !ComponentTextNormalizer.IsUppercaseNationalTitle(paragraph.Text))
+                        findings.Add(ParagraphQualified("ND30-PL1-M2-K1-QH", paragraph, "case",
+                            "Quốc hiệu chưa viết hoa toàn bộ.",
+                            "Trình bày: CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM (chữ in hoa).", rules));
+                }
                 else if (!party && role == "nationalMotto")
                 {
                     CheckStyle(findings, "ND30-PL1-M2-K1-TN", paragraph, rules, 13, 14, true, false, 1, "Tiêu ngữ");
                     var expected = "Độc lập - Tự do - Hạnh phúc";
-                    if (!string.Equals(Collapse(paragraph.Text), expected, StringComparison.Ordinal))
+                    // Compare the composed (NFC) text: a motto typed with combining
+                    // marks is visually identical and is not a separator defect.
+                    if (!string.Equals(Collapse(paragraph.Text.Normalize(System.Text.NormalizationForm.FormC)),
+                            expected, StringComparison.Ordinal))
                         findings.Add(Paragraph("ND30-PL1-M2-K1-TN-SEP", paragraph, "Tiêu ngữ sai chữ hoa hoặc dấu nối.", "Trình bày: " + expected + ".", rules));
                     if (paragraph.SpaceBeforePoints.HasValue && paragraph.SpaceBeforePoints.Value > TolerancePoints)
                         findings.Add(Paragraph("ND30-PL1-M2-K1-C", paragraph, "Quốc hiệu và Tiêu ngữ cách nhau quá một dòng đơn.", "Không thêm khoảng cách trước Tiêu ngữ.", rules));
@@ -368,6 +388,26 @@ namespace ChuanHoa.Client.Core.Scanning
                     "dài bằng tiêu đề ĐẢNG CỘNG SẢN VIỆT NAM", rules);
         }
 
+        /// <summary>
+        /// "UBND XÃ A⇥CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM" typed on one line inside
+        /// a header zone. Report only: splitting it automatically could move text
+        /// the user positioned with tabs.
+        /// </summary>
+        private static void CheckTabSeparatedNationalHeader(ICollection<AnnotationFinding> findings,
+            LocalScanSnapshot snapshot, LocalRulePack rules, IReadOnlyList<LogicalDocumentBlock> blocks)
+        {
+            if (IsParty(snapshot)) return;
+            foreach (var paragraph in Scannable(snapshot))
+            {
+                if (!ComponentTextNormalizer.IsTabSeparatedOrganAndNationalTitle(paragraph.Text)) continue;
+                if (!blocks.Any(block => block.IsInHeaderZone(paragraph.Index))) continue;
+                findings.Add(ParagraphQualified("ND30-PL1-M2-K1-QH", paragraph, "tab-layout",
+                    "Tên cơ quan và Quốc hiệu đang chung một dòng (ngăn bằng Tab).",
+                    "Trình bày tên cơ quan và Quốc hiệu ở hai cột của bảng đầu văn bản (không viền) " +
+                    "hoặc hai đoạn riêng; Chuẩn hóa không tự tách dòng này.", rules));
+            }
+        }
+
         private static void CheckHeaderFontSizeTier(ICollection<AnnotationFinding> findings,
             LocalScanSnapshot snapshot, LocalRulePack rules,
             IReadOnlyList<LogicalDocumentBlock> blocks)
@@ -411,6 +451,13 @@ namespace ChuanHoa.Client.Core.Scanning
             double maximumWidthRatio, string ruleCode, string componentName, string expectedLength,
             LocalRulePack rules)
         {
+            // D6: a solid bottom paragraph border is an accepted separator for every
+            // component; a single underline of the whole line is accepted for the
+            // motto only, because that separator must be as long as the text.
+            if (paragraph.HasBottomBorder) return;
+            if (string.Equals(ruleCode, "ND30-PL1-M2-K1-TN-LINE", StringComparison.Ordinal) &&
+                paragraph.Underline.HasValue && paragraph.Underline.Value == 1)
+                return;
             var status = EvaluateRequiredLine(snapshot, paragraph, minimumWidthRatio, maximumWidthRatio);
             if (status == RequiredLineStatus.Valid) return;
 
@@ -439,8 +486,10 @@ namespace ChuanHoa.Client.Core.Scanning
             }
 
             findings.Add(Paragraph(ruleCode, paragraph, issue,
-                "Dùng Line Shape nét liền, không mũi tên, " + expectedLength +
-                " và đặt cân đối bên dưới; underline hoặc viền đoạn không thay thế được.",
+                "Dùng đường kẻ ngang nét liền, không mũi tên, " + expectedLength +
+                " và đặt cân đối bên dưới (Line Shape hoặc viền dưới đoạn nét liền" +
+                (string.Equals(ruleCode, "ND30-PL1-M2-K1-TN-LINE", StringComparison.Ordinal)
+                    ? "; với Tiêu ngữ có thể gạch chân đơn cả dòng" : string.Empty) + ").",
                 rules, "Error"));
         }
 

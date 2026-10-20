@@ -10,7 +10,18 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         public static double MeasureParagraphWidth(Word.Range range, string? fontName,
             double? fontSizePoints, bool? bold, bool? italic)
         {
-            var text = (range.Text ?? string.Empty).Trim('\r', '\a', '\v', ' ', '\t');
+            var raw = (range.Text ?? string.Empty).TrimEnd('\r', '\a');
+            var text = raw.Trim('\r', '\a', '\v', ' ', '\t');
+            if (text.Length == 0) return 0d;
+
+            // Word's own layout is authoritative (character spacing, scaling,
+            // kerning). Measure the line directly above the separator: the last
+            // Shift+Enter segment of a two-line organ name, not both lines added up.
+            var native = MeasureLastSegmentInWord(range, raw);
+            if (native.HasValue) return native.Value;
+
+            var lastBreak = text.LastIndexOfAny(new[] { '\v', '\n' });
+            if (lastBreak >= 0) text = text.Substring(lastBreak + 1).Trim(' ', '\t');
             if (text.Length == 0) return 0d;
             var family = string.IsNullOrWhiteSpace(fontName) ? "Times New Roman" : fontName;
             var size = (float)Math.Max(6d, fontSizePoints.GetValueOrDefault(13d));
@@ -30,6 +41,48 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
             var available = ReadAvailableWidth(range);
             return available.HasValue ? Math.Min(measured, available.Value) : measured;
+        }
+
+        /// <summary>
+        /// Width of the last text segment measured with Range.Information on the
+        /// collapsed positions before its first and after its last character. The
+        /// difference is independent of a stale absolute X after table resizing.
+        /// Returns null when the segment wraps or Word cannot report positions.
+        /// </summary>
+        private static double? MeasureLastSegmentInWord(Word.Range range, string printable)
+        {
+            if (printable.Length == 0 || printable.Length > 250) return null;
+            var segmentStart = printable.LastIndexOfAny(new[] { '\v', '\n' }) + 1;
+            while (segmentStart < printable.Length && IsTrailingOrLeading(printable[segmentStart]))
+                segmentStart++;
+            var segmentEnd = printable.Length;
+            while (segmentEnd > segmentStart && IsTrailingOrLeading(printable[segmentEnd - 1]))
+                segmentEnd--;
+            if (segmentEnd <= segmentStart) return null;
+
+            Word.Range? first = null;
+            Word.Range? last = null;
+            try
+            {
+                first = range.Duplicate;
+                first.SetRange(range.Start + segmentStart, range.Start + segmentStart);
+                last = range.Duplicate;
+                last.SetRange(range.Start + segmentEnd, range.Start + segmentEnd);
+                var firstLine = SafeInformation(first, Word.WdInformation.wdFirstCharacterLineNumber);
+                var lastLine = SafeInformation(last, Word.WdInformation.wdFirstCharacterLineNumber);
+                if (!firstLine.HasValue || !lastLine.HasValue || firstLine.Value != lastLine.Value)
+                    return null;
+                var left = SafeInformation(first, Word.WdInformation.wdHorizontalPositionRelativeToPage);
+                var right = SafeInformation(last, Word.WdInformation.wdHorizontalPositionRelativeToPage);
+                if (!left.HasValue || !right.HasValue) return null;
+                var width = right.Value - left.Value;
+                return width > 1d && width < 2000d ? width : (double?)null;
+            }
+            catch (COMException)
+            {
+                return null;
+            }
+            finally { Release(last); Release(first); }
         }
 
         private static bool IsTrailingOrLeading(char value) =>

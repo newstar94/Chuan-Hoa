@@ -21,6 +21,9 @@
     <WarningLevel>4</WarningLevel>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(SelfSignedRelease)' == 'True'">
+    <DefineConstants>$(DefineConstants);CHUANHOA_SELF_SIGNED_RELEASE</DefineConstants>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />

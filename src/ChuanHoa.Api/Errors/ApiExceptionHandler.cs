@@ -50,30 +50,6 @@ public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : I
 
         return domainException.Code switch
         {
-            "OFFER_NOT_AVAILABLE" => new ErrorMapping(
-                StatusCodes.Status404NotFound,
-                domainException.Code,
-                "No offer is available",
-                domainException.Message,
-                "Refresh the offer catalog or contact support if an offer should be active."),
-            "OFFER_EFFECTIVE_RANGE_OVERLAP" => new ErrorMapping(
-                StatusCodes.Status409Conflict,
-                domainException.Code,
-                "Offer configuration conflicts",
-                domainException.Message,
-                "Do not continue the commercial mutation. Resolve the overlapping published offers first."),
-            "PRODUCT_CODE_REQUIRED" or "PERSONAL_TRIAL_DURATION_INVALID" => new ErrorMapping(
-                StatusCodes.Status400BadRequest,
-                domainException.Code,
-                "The request is invalid",
-                domainException.Message,
-                "Correct the request using the published API contract and retry."),
-            var code when code.StartsWith("GRANT_", StringComparison.Ordinal) => new ErrorMapping(
-                StatusCodes.Status403Forbidden,
-                domainException.Code,
-                "Execution grant was rejected",
-                domainException.Message,
-                "Request a new execution grant for the current user, device, release, command, and document."),
             _ => new ErrorMapping(
                 StatusCodes.Status422UnprocessableEntity,
                 domainException.Code,

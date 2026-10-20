@@ -17,7 +17,8 @@
 
     [Parameter(Mandatory = $true)]
     [ValidatePattern('^[0-9a-fA-F -]{64,95}$')]
-    [string]$SigningRootCertificateSha256
+    [string]$SigningRootCertificateSha256,
+    [switch]$SelfSignedRelease
 )
 
 $ErrorActionPreference = 'Stop'
@@ -51,6 +52,15 @@ $accessSmokeExecutable = Join-Path $root 'tools\vsto\development-access-smoke\bi
 $outputDirectory = Join-Path $root 'artifacts\installers\development'
 $outputName = "ChuanHoa_Development_Test_Setup_$ApplicationVersion.exe"
 $outputPath = Join-Path $outputDirectory $outputName
+$buildConfiguration = 'Development'
+if ($SelfSignedRelease) {
+    $buildConfiguration = 'Release'
+    $publishDirectory = Join-Path $root "artifacts\vsto-self-signed-release\$ApplicationVersion"
+    $runtimeDirectory = Join-Path $root 'src\ChuanHoa.AddIn.Vsto\bin\Release'
+    $accessSmokeExecutable = Join-Path $root 'tools\vsto\development-access-smoke\bin\Release\ChuanHoa.DevelopmentAccessSmoke.exe'
+    $outputDirectory = Join-Path $root 'artifacts\installers\release'
+    $outputPath = Join-Path $outputDirectory "ChuanHoa_Setup_$ApplicationVersion.exe"
+}
 $msbuild = Get-ChuanHoaMsBuild
 
 if (Test-Path -LiteralPath $publishDirectory) {
@@ -63,7 +73,7 @@ if (Test-Path -LiteralPath $publishDirectory) {
     }
     $resolvedPublish = [System.IO.Path]::GetFullPath($publishDirectory)
     $resolvedPublishRoot = [System.IO.Path]::GetFullPath(
-        (Join-Path $root 'artifacts\vsto-development-test')).TrimEnd('\') + '\'
+        (Split-Path -Parent $publishDirectory)).TrimEnd('\') + '\'
     if (!$resolvedPublish.StartsWith($resolvedPublishRoot,
             [System.StringComparison]::OrdinalIgnoreCase)) {
         throw "Refusing to clean an incomplete publish outside the artifact root: $resolvedPublish"
@@ -75,7 +85,7 @@ $previousTrustResource = $env:DevelopmentTrustedPublicKeyPath
 $env:DevelopmentTrustedPublicKeyPath = (Resolve-Path -LiteralPath $TrustedPublicKeyPath).Path
 $env:CHUANHOA_DEVELOPMENT_SIGNING_CERT_SHA256 = $SigningCertificateSha256
 try {
-    & $publishScript
+    & $publishScript -SelfSignedRelease:$SelfSignedRelease
     $publishExitCode = $LASTEXITCODE
 }
 finally {
@@ -147,7 +157,7 @@ try {
         }
         Copy-Item -LiteralPath $runtimePath -Destination $payloadDirectory
     }
-    & $msbuild $accessSmokeProject /t:Build /p:Configuration=Development /m /nologo /v:minimal
+    & $msbuild $accessSmokeProject /t:Build /p:Configuration=$buildConfiguration /m /nologo /v:minimal
     if ($LASTEXITCODE -ne 0 -or !(Test-Path -LiteralPath $accessSmokeExecutable)) {
         throw 'The Development access verifier build failed.'
     }
@@ -226,7 +236,7 @@ try {
     }
 
     & $msbuild $bootstrapperProject /t:Build /p:Configuration=Release /p:Platform=AnyCPU `
-        /p:PayloadZip="$payloadZip" /p:VersionFile="$versionFile" `
+        /p:SelfSignedRelease=$SelfSignedRelease /p:PayloadZip="$payloadZip" /p:VersionFile="$versionFile" `
         /p:TrustedPublicKeySha256="$($trustedKey.Sha256)" `
         /p:SigningCertificateSha256="$SigningCertificateSha256" `
         /p:SigningRootCertificateSha256="$SigningRootCertificateSha256" `
@@ -282,6 +292,9 @@ try {
         SignerSha256 = $outerSignerPin
         TrustedPublicKeySha256 = $trustedKey.Sha256
         AccessSmokeSignature = $accessSmokeSignature
+        ReleaseChannel = if ($SelfSignedRelease) { 'SelfSignedRelease' } else { 'Development' }
+        Configuration = $buildConfiguration
+        PubliclyTrustedPublisher = $false
         ProductionReady = $false
     }
 }

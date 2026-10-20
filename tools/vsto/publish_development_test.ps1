@@ -1,7 +1,8 @@
 param(
     [Parameter(Mandatory = $false)]
     [ValidatePattern('^$|^\d+\.\d+\.\d+\.\d+$')]
-    [string]$ApplicationVersion = ''
+    [string]$ApplicationVersion = '',
+    [switch]$SelfSignedRelease
 )
 
 $ErrorActionPreference = 'Stop'
@@ -11,8 +12,11 @@ $ApplicationVersion = Resolve-ChuanHoaApplicationVersion `
     -RepositoryRoot $root -RequestedVersion $ApplicationVersion
 $project = Join-Path $root 'src\ChuanHoa.AddIn.Vsto\ChuanHoa.AddIn.Vsto.csproj'
 $publishRoot = Join-Path $root 'artifacts\vsto-development-test'
+$buildConfiguration = if ($SelfSignedRelease) { 'Release' } else { 'Development' }
+if ($SelfSignedRelease) { $publishRoot = Join-Path $root 'artifacts\vsto-self-signed-release' }
 $publishDirectory = Join-Path $publishRoot $ApplicationVersion
-$publishAlias = 'D:\ChuanHoaDevelopmentTestPublish'
+$publishAlias = Join-Path ([System.IO.Path]::GetTempPath()) `
+    ('ChuanHoaDevelopmentPublish-' + [Guid]::NewGuid().ToString('N'))
 $msbuild = Get-ChuanHoaMsBuild
 
 if (Get-Process WINWORD -ErrorAction SilentlyContinue) {
@@ -23,21 +27,9 @@ if (Test-Path -LiteralPath $publishDirectory) {
 }
 
 New-Item -ItemType Directory -Path $publishDirectory -Force | Out-Null
-if (Test-Path -LiteralPath $publishAlias) {
-    $aliasItem = Get-Item -LiteralPath $publishAlias -Force
-    if ($aliasItem.LinkType -ne 'Junction') {
-        throw "The publish alias exists and is not a junction: $publishAlias"
-    }
-    $actualTarget = [System.IO.Path]::GetFullPath([string]$aliasItem.Target)
-    $expectedRoot = [System.IO.Path]::GetFullPath($publishRoot).TrimEnd('\') + '\'
-    if (!$actualTarget.StartsWith($expectedRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
-        throw "The publish alias points outside the expected artifact root: $publishAlias"
-    }
-    # Windows PowerShell 5.1 can throw a NullReferenceException when Remove-Item
-    # removes a junction whose target path contains Vietnamese characters.
-    [System.IO.Directory]::Delete($publishAlias)
-}
-New-Item -ItemType Junction -Path $publishAlias -Target $publishDirectory | Out-Null
+# Use a physical ASCII staging directory. Windows can reject traversal through
+# a junction as an untrusted mount point during the Office publish target.
+New-Item -ItemType Directory -Path $publishAlias | Out-Null
 
 $signingCertificatePin = $env:CHUANHOA_DEVELOPMENT_SIGNING_CERT_SHA256
 if ([string]::IsNullOrWhiteSpace($signingCertificatePin)) {
@@ -47,9 +39,10 @@ $certificate = Get-ChuanHoaSigningCertificate -ExpectedSha256 $signingCertificat
 
 $buildArguments = @(
     $project,
-    '/p:Configuration=Development',
+    "/p:Configuration=$buildConfiguration",
     '/p:Platform=AnyCPU',
     '/p:SignManifests=true',
+    "/p:SelfSignedRelease=$SelfSignedRelease",
     "/p:ManifestCertificateThumbprint=$($certificate.Thumbprint)",
     "/p:TrustedSigningCertificateSha256=$signingCertificatePin",
     "/p:PublishDir=$publishAlias\",
@@ -66,7 +59,7 @@ $buildArguments = @(
 # BuildSharedClientAssemblies restores and builds Client.Core through MSBuild's
 # dependency graph. The VSTO project restore itself is still explicit so the
 # publish starts from clean inputs without deleting generated files by hand.
-& $msbuild $project /t:Restore /p:RestoreForce=true /p:Configuration=Development /p:Platform=AnyCPU /m /nologo /v:minimal
+& $msbuild $project /t:Restore /p:RestoreForce=true /p:Configuration=$buildConfiguration /p:Platform=AnyCPU /m /nologo /v:minimal
 if ($LASTEXITCODE -ne 0) {
     throw "VSTO Development restore failed with exit code $LASTEXITCODE."
 }
@@ -81,9 +74,9 @@ if ($LASTEXITCODE -ne 0) {
 # Sign owned PE files before Publish so the VSTO application manifest hashes
 # the final signed bytes. The manifest is then signed by the Office build target.
 $ownedRuntimePeFiles = @(
-    (Join-Path $root 'src\ChuanHoa.AddIn.Vsto\bin\Development\ChuanHoa.AddIn.Vsto.dll'),
-    (Join-Path $root 'src\ChuanHoa.AddIn.Vsto\bin\Development\ChuanHoa.Client.Core.dll'),
-    (Join-Path $root 'src\ChuanHoa.Client.Core\bin\Development\netstandard2.0\ChuanHoa.Client.Core.dll')
+    (Join-Path $root "src\ChuanHoa.AddIn.Vsto\bin\$buildConfiguration\ChuanHoa.AddIn.Vsto.dll"),
+    (Join-Path $root "src\ChuanHoa.AddIn.Vsto\bin\$buildConfiguration\ChuanHoa.Client.Core.dll"),
+    (Join-Path $root "src\ChuanHoa.Client.Core\bin\$buildConfiguration\netstandard2.0\ChuanHoa.Client.Core.dll")
 )
 $ownedRuntimeSignatures = @(
     foreach ($path in $ownedRuntimePeFiles) {
@@ -95,6 +88,16 @@ $ownedRuntimeSignatures = @(
 & $msbuild @buildArguments /t:PublishOnly /p:BuildProjectReferences=false
 if ($LASTEXITCODE -ne 0) {
     throw "VSTO Development publish-only failed with exit code $LASTEXITCODE."
+}
+
+Get-ChildItem -LiteralPath $publishAlias -Force | ForEach-Object {
+    Copy-Item -LiteralPath $_.FullName -Destination $publishDirectory -Recurse -Force
+}
+$normalizedTemp = [System.IO.Path]::GetFullPath([System.IO.Path]::GetTempPath()).TrimEnd('\') + '\'
+$normalizedStage = [System.IO.Path]::GetFullPath($publishAlias).TrimEnd('\') + '\'
+if ($normalizedStage.StartsWith($normalizedTemp, [System.StringComparison]::OrdinalIgnoreCase) -and
+    (Split-Path -Leaf $publishAlias).StartsWith('ChuanHoaDevelopmentPublish-', [System.StringComparison]::Ordinal)) {
+    Remove-Item -LiteralPath $publishAlias -Recurse -Force
 }
 
 $publishedApplicationManifest = Get-ChildItem -LiteralPath $publishDirectory `
@@ -123,19 +126,19 @@ Update-ChuanHoaSignedVstoManifests `
 # from bin\Development. Keep its manifests byte-identical to the finalized
 # published manifests whose hashes cover the signed DLL bytes.
 Copy-Item -LiteralPath $publishedApplicationManifest.FullName -Destination `
-    (Join-Path $root 'src\ChuanHoa.AddIn.Vsto\bin\Development\ChuanHoa.AddIn.Vsto.dll.manifest') -Force
+    (Join-Path $root "src\ChuanHoa.AddIn.Vsto\bin\$buildConfiguration\ChuanHoa.AddIn.Vsto.dll.manifest") -Force
 Copy-Item -LiteralPath $publishedDeploymentManifest -Destination `
-    (Join-Path $root 'src\ChuanHoa.AddIn.Vsto\bin\Development\ChuanHoa.AddIn.Vsto.vsto') -Force
+    (Join-Path $root "src\ChuanHoa.AddIn.Vsto\bin\$buildConfiguration\ChuanHoa.AddIn.Vsto.vsto") -Force
 $runtimeApplicationManifest = Join-Path $root `
-    'src\ChuanHoa.AddIn.Vsto\bin\Development\ChuanHoa.AddIn.Vsto.dll.manifest'
+    "src\ChuanHoa.AddIn.Vsto\bin\$buildConfiguration\ChuanHoa.AddIn.Vsto.dll.manifest"
 $runtimeDeploymentManifest = Join-Path $root `
-    'src\ChuanHoa.AddIn.Vsto\bin\Development\ChuanHoa.AddIn.Vsto.vsto'
+    "src\ChuanHoa.AddIn.Vsto\bin\$buildConfiguration\ChuanHoa.AddIn.Vsto.vsto"
 Update-ChuanHoaSignedVstoManifests `
     -ApplicationManifestPath $runtimeApplicationManifest `
     -DeploymentManifestPath $runtimeDeploymentManifest `
     -ApplicationPayloadPaths @{
-        'ChuanHoa.AddIn.Vsto.dll' = (Join-Path $root 'src\ChuanHoa.AddIn.Vsto\bin\Development\ChuanHoa.AddIn.Vsto.dll')
-        'ChuanHoa.Client.Core.dll' = (Join-Path $root 'src\ChuanHoa.AddIn.Vsto\bin\Development\ChuanHoa.Client.Core.dll')
+        'ChuanHoa.AddIn.Vsto.dll' = (Join-Path $root "src\ChuanHoa.AddIn.Vsto\bin\$buildConfiguration\ChuanHoa.AddIn.Vsto.dll")
+        'ChuanHoa.Client.Core.dll' = (Join-Path $root "src\ChuanHoa.AddIn.Vsto\bin\$buildConfiguration\ChuanHoa.Client.Core.dll")
     } `
     -DeploymentApplicationCodebase 'ChuanHoa.AddIn.Vsto.dll.manifest' `
     -DisableDeploymentFileExtensionMapping `
@@ -171,7 +174,7 @@ Export-Certificate -Cert $certificate -FilePath $certificatePath -Force | Out-Nu
 
 [pscustomobject]@{
     Version = $ApplicationVersion
-    Configuration = 'Development'
+    Configuration = $buildConfiguration
     SetupPath = $setupPath
     SetupSha256 = (Get-FileHash -LiteralPath $setupPath -Algorithm SHA256).Hash
     ManifestPath = $manifestPath

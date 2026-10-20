@@ -1,0 +1,266 @@
+{"kind":"deck","id":"pr/qi3lj5","name":"Deck"}
+{"kind":"layout","layoutId":"3df49e52-a7ea-48c4-a3a2-acf183ec43b9","name":"Master","type":"master"}
+{"kind":"layout","layoutId":"35146402-ccf2-4e5f-8a4a-81cb951bf3fa","name":"Title Slide","type":"title"}
+{"kind":"slide","id":"sl/gtbt50","slide":1,"title":"CHƯƠNG TRÌNH ĐÀO TẠO","textShapes":4}
+{"kind":"shape","id":"sh/25of2hwf","slide":1,"bbox":[0,0,1280,18]}
+{"kind":"shape","id":"sh/psfedcf6","slide":1,"bbox":[930,0,350,720]}
+{"kind":"shape","id":"sh/or6x4rel","slide":1,"bbox":[1010,115,160,490]}
+{"kind":"textbox","id":"sh/buhwfmxw","slide":1,"text":"CHƯƠNG TRÌNH ĐÀO TẠO","textPreview":"CHƯƠNG TRÌNH ĐÀO TẠO","textChars":20,"textLines":1,"bbox":[72,120,820,35]}
+{"kind":"textbox","id":"sh/qt8f6hwb","slide":1,"text":"LUẬT ĐẤU THẦU\nVÀ QUY TRÌNH LỰA CHỌN NHÀ THẦU","textPreview":"LUẬT ĐẤU THẦU | VÀ QUY TRÌNH LỰA CHỌN NHÀ THẦU","textChars":44,"textLines":2,"bbox":[72,180,800,150]}
+{"kind":"textbox","id":"sh/dwzehwf2","slide":1,"text":"Khung pháp lý chung, thực hành hồ sơ và đối chiếu Viettel","textPreview":"Khung pháp lý chung, thực hành hồ sơ và đối chiếu Viettel","textChars":57,"textLines":1,"bbox":[72,365,700,50]}
+{"kind":"textbox","id":"sh/cvqx8reh","slide":1,"text":"Thời lượng: 60 phút  |  Đối tượng: cán bộ mua sắm, nhà thầu","textPreview":"Thời lượng: 60 phút  |  Đối tượng: cán bộ mua sắm, nhà thầu","textChars":59,"textLines":1,"bbox":[72,620,500,28]}
+{"kind":"notes","id":"nt/gtbt50","slide":1,"text":"Tài liệu tham chiếu: Luật Đấu thầu hợp nhất (22-57-90); Nghị định 214/2025/NĐ-CP; Nghị định 349/2026/NĐ-CP; Quy chế lựa chọn nhà thầu Viettel 2026; Quy định lựa chọn nhà thầu qua mạng và đăng tải thông tin Viettel 2026; Hướng dẫn sử dụng Cổng đấu thầu Viettel. Nội dung đào tạo mang tính khái quát, cần đối chiếu văn bản hiện hành và hồ sơ cụ thể trước khi áp dụng."}
+{"kind":"slide","id":"sl/dwqbjm","slide":2,"title":"LUẬT ĐẤU THẦU | 60 PHÚT","textShapes":9}
+{"kind":"shape","id":"sh/ril0j6tw","slide":2,"bbox":[0,0,1280,14]}
+{"kind":"textbox","id":"sh/sjehcbuh","slide":2,"text":"LUẬT ĐẤU THẦU | 60 PHÚT","textPreview":"LUẬT ĐẤU THẦU | 60 PHÚT","textChars":23,"textLines":1,"bbox":[64,30,1150,25]}
+{"kind":"textbox","id":"sh/tknilwb2","slide":2,"text":"Lộ trình 60 phút","textPreview":"Lộ trình 60 phút","textChars":16,"textLines":1,"bbox":[64,62,1150,55]}
+{"kind":"textbox","id":"sh/idcz6hcf","slide":2,"text":"Nguồn: Luật Đấu thầu hợp nhất 22/2023, sửa đổi 57/2024 và 90/2025; NĐ 214/2025; NĐ 349/2026; tài liệu nội bộ Viettel 2026","textPreview":"Nguồn: Luật Đấu thầu hợp nhất 22/2023, sửa đổi 57/2024 và 90/2025; NĐ 214/2025; NĐ 349/2026; tài liệu nội bộ Viettel 2026","textChars":121,"textLines":1,"bbox":[64,684,1100,18]}
+{"kind":"shape","id":"sh/jelgfmd0","slide":2,"bbox":[90,155,10,10]}
+{"kind":"textbox","id":"sh/4fuh8rul","slide":2,"text":"10 phút  |  Khung pháp lý và nguyên tắc","textPreview":"10 phút  |  Khung pháp lý và nguyên tắc","textChars":39,"textLines":1,"bbox":[118,147,1022,54]}
+{"kind":"shape","id":"sh/5g3yhwb6","slide":2,"bbox":[90,222,10,10]}
+{"kind":"textbox","id":"sh/apsz2hcj","slide":2,"text":"12 phút  |  Hình thức và phương thức lựa chọn nhà thầu","textPreview":"12 phút  |  Hình thức và phương thức lựa chọn nhà thầu","textChars":54,"textLines":1,"bbox":[118,214,1022,54]}
+{"kind":"shape","id":"sh/vq1gbmd4","slide":2,"bbox":[90,289,10,10]}
+{"kind":"textbox","id":"sh/naxk3q5k","slide":2,"text":"12 phút  |  So sánh Viettel với Luật Đấu thầu","textPreview":"12 phút  |  So sánh Viettel với Luật Đấu thầu","textChars":45,"textLines":1,"bbox":[118,281,1022,54]}
+{"kind":"shape","id":"sh/29o3aloz","slide":2,"bbox":[90,356,10,10]}
+{"kind":"textbox","id":"sh/pcz250nq","slide":2,"text":"10 phút  |  Các mốc thời gian cần nhớ","textPreview":"10 phút  |  Các mốc thời gian cần nhớ","textChars":37,"textLines":1,"bbox":[118,348,1022,54]}
+{"kind":"shape","id":"sh/obqlcv65","slide":2,"bbox":[90,423,10,10]}
+{"kind":"textbox","id":"sh/behk7a5g","slide":2,"text":"12 phút  |  Đọc một bộ HSMT điển hình","textPreview":"12 phút  |  Đọc một bộ HSMT điển hình","textChars":37,"textLines":1,"bbox":[118,415,1022,54]}
+{"kind":"shape","id":"sh/ad83e5ob","slide":2,"bbox":[90,490,10,10]}
+{"kind":"textbox","id":"sh/xgzm9knm","slide":2,"text":"4 phút   |  Tình huống và chốt việc cần làm","textPreview":"4 phút   |  Tình huống và chốt việc cần làm","textChars":43,"textLines":1,"bbox":[118,482,1022,54]}
+{"kind":"notes","id":"nt/dwqbjm","slide":2,"text":"Tài liệu tham chiếu: Luật Đấu thầu hợp nhất (22-57-90); Nghị định 214/2025/NĐ-CP; Nghị định 349/2026/NĐ-CP; Quy chế lựa chọn nhà thầu Viettel 2026; Quy định lựa chọn nhà thầu qua mạng và đăng tải thông tin Viettel 2026; Hướng dẫn sử dụng Cổng đấu thầu Viettel. Nội dung đào tạo mang tính khái quát, cần đối chiếu văn bản hiện hành và hồ sơ cụ thể trước khi áp dụng."}
+{"kind":"slide","id":"sl/zdw7nt","slide":3,"title":"LUẬT ĐẤU THẦU | 60 PHÚT","textShapes":12}
+{"kind":"shape","id":"sh/sbalk3yh","slide":3,"bbox":[0,0,1280,14]}
+{"kind":"textbox","id":"sh/7a1kryhw","slide":3,"text":"LUẬT ĐẤU THẦU | 60 PHÚT","textPreview":"LUẬT ĐẤU THẦU | 60 PHÚT","textChars":23,"textLines":1,"bbox":[64,30,1150,25]}
+{"kind":"textbox","id":"sh/6983itgr","slide":3,"text":"Luật Đấu thầu điều chỉnh điều gì?","textPreview":"Luật Đấu thầu điều chỉnh điều gì?","textChars":33,"textLines":1,"bbox":[64,62,1150,55]}
+{"kind":"textbox","id":"sh/h0j2x8fe","slide":3,"text":"Nguồn: Luật Đấu thầu hợp nhất 22/2023, sửa đổi 57/2024 và 90/2025; NĐ 214/2025; NĐ 349/2026; tài liệu nội bộ Viettel 2026","textPreview":"Nguồn: Luật Đấu thầu hợp nhất 22/2023, sửa đổi 57/2024 và 90/2025; NĐ 214/2025; NĐ 349/2026; tài liệu nội bộ Viettel 2026","textChars":121,"textLines":1,"bbox":[64,684,1100,18]}
+{"kind":"textbox","id":"sh/gzalonyt","slide":3,"text":"Phạm vi","textPreview":"Phạm vi","textChars":7,"textLines":1,"bbox":[80,160,500,45]}
+{"kind":"shape","id":"sh/fy1kvix8","slide":3,"bbox":[90,220,10,10]}
+{"kind":"textbox","id":"sh/uxs3mdgn","slide":3,"text":"Quản lý nhà nước về đấu thầu","textPreview":"Quản lý nhà nước về đấu thầu","textChars":28,"textLines":1,"bbox":[118,212,442,54]}
+{"kind":"shape","id":"sh/x4z2lozu","slide":3,"bbox":[90,280,10,10]}
+{"kind":"textbox","id":"sh/w3q1cjy9","slide":3,"text":"Thẩm quyền, trách nhiệm của các bên","textPreview":"Thẩm quyền, trách nhiệm của các bên","textChars":35,"textLines":1,"bbox":[118,272,442,54]}
+{"kind":"shape","id":"sh/y1gvup0v","slide":3,"bbox":[90,340,10,10]}
+{"kind":"textbox","id":"sh/z2pcnu1g","slide":3,"text":"Lựa chọn nhà thầu và nhà đầu tư","textPreview":"Lựa chọn nhà thầu và nhà đầu tư","textChars":31,"textLines":1,"bbox":[118,332,442,54]}
+{"kind":"shape","id":"sh/k3ydwzil","slide":3,"bbox":[680,155,470,390]}
+{"kind":"textbox","id":"sh/l47up4j6","slide":3,"text":"4 nguyên tắc phải giữ","textPreview":"4 nguyên tắc phải giữ","textChars":21,"textLines":1,"bbox":[720,190,390,45]}
+{"kind":"shape","id":"sh/m5gvy90r","slide":3,"bbox":[720,270,10,10]}
+{"kind":"textbox","id":"sh/76pcru1c","slide":3,"text":"Cạnh tranh","textPreview":"Cạnh tranh","textChars":10,"textLines":1,"bbox":[748,262,322,54]}
+{"kind":"shape","id":"sh/8ryd0zix","slide":3,"bbox":[720,328,10,10]}
+{"kind":"textbox","id":"sh/9s7ut4ji","slide":3,"text":"Công bằng","textPreview":"Công bằng","textChars":9,"textLines":1,"bbox":[748,320,322,54]}
+{"kind":"shape","id":"sh/ut0v2903","slide":3,"bbox":[720,386,10,10]}
+{"kind":"textbox","id":"sh/vu9wveh8","slide":3,"text":"Minh bạch","textPreview":"Minh bạch","textChars":9,"textLines":1,"bbox":[748,378,322,54]}
+{"kind":"shape","id":"sh/ry9cjexg","slide":3,"bbox":[720,444,10,10]}
+{"kind":"textbox","id":"sh/6x0bq9gv","slide":3,"text":"Hiệu quả kinh tế","textPreview":"Hiệu quả kinh tế","textChars":16,"textLines":1,"bbox":[748,436,322,54]}
+{"kind":"notes","id":"nt/zdw7nt","slide":3,"text":"Tài liệu tham chiếu: Luật Đấu thầu hợp nhất (22-57-90); Nghị định 214/2025/NĐ-CP; Nghị định 349/2026/NĐ-CP; Quy chế lựa chọn nhà thầu Viettel 2026; Quy định lựa chọn nhà thầu qua mạng và đăng tải thông tin Viettel 2026; Hướng dẫn sử dụng Cổng đấu thầu Viettel. Nội dung đào tạo mang tính khái quát, cần đối chiếu văn bản hiện hành và hồ sơ cụ thể trước khi áp dụng."}
+{"kind":"slide","id":"sl/79jde0","slide":4,"title":"LUẬT ĐẤU THẦU | 60 PHÚT","textShapes":9}
+{"kind":"shape","id":"sh/ja5k3up8","slide":4,"bbox":[0,0,1280,14]}
+{"kind":"textbox","id":"sh/4be1cz6t","slide":4,"text":"LUẬT ĐẤU THẦU | 60 PHÚT","textPreview":"LUẬT ĐẤU THẦU | 60 PHÚT","textChars":23,"textLines":1,"bbox":[64,30,1150,25]}
+{"kind":"textbox","id":"sh/5cn2547y","slide":4,"text":"Một gói thầu đi qua những cửa nào?","textPreview":"Một gói thầu đi qua những cửa nào?","textChars":34,"textLines":1,"bbox":[64,62,1150,55]}
+{"kind":"textbox","id":"sh/6dwje9oj","slide":4,"text":"Nguồn: Luật Đấu thầu hợp nhất 22/2023, sửa đổi 57/2024 và 90/2025; NĐ 214/2025; NĐ 349/2026; tài liệu nội bộ Viettel 2026","textPreview":"Nguồn: Luật Đấu thầu hợp nhất 22/2023, sửa đổi 57/2024 và 90/2025; NĐ 214/2025; NĐ 349/2026; tài liệu nội bộ Viettel 2026","textChars":121,"textLines":1,"bbox":[64,684,1100,18]}
+{"kind":"shape","id":"sh/re5k7up4","slide":4,"bbox":[80,245,170,120]}
+{"kind":"textbox","id":"sh/sfy1gz6p","slide":4,"text":"Xác định nhu cầu","textPreview":"Xác định nhu cầu","textChars":16,"textLines":1,"bbox":[95,265,140,70]}
+{"kind":"shape","id":"sh/d072947a","slide":4,"bbox":[252,300,52,8]}
+{"kind":"shape","id":"sh/e1gji9ov","slide":4,"bbox":[310,245,170,120]}
+{"kind":"textbox","id":"sh/f2pkbepg","slide":4,"text":"KHLCNT","textPreview":"KHLCNT","textChars":6,"textLines":1,"bbox":[325,265,140,70]}
+{"kind":"shape","id":"sh/bux8fud0","slide":4,"bbox":[482,300,52,8]}
+{"kind":"shape","id":"sh/qto7m9cf","slide":4,"bbox":[540,245,170,120]}
+{"kind":"textbox","id":"sh/dwzqh4v6","slide":4,"text":"HSMT / HSYC","textPreview":"HSMT / HSYC","textChars":11,"textLines":1,"bbox":[555,265,140,70]}
+{"kind":"shape","id":"sh/cvq9ozul","slide":4,"bbox":[712,300,52,8]}
+{"kind":"shape","id":"sh/36x8budo","slide":4,"bbox":[770,245,170,120]}
+{"kind":"textbox","id":"sh/25o7ipcj","slide":4,"text":"Đánh giá","textPreview":"Đánh giá","textChars":8,"textLines":1,"bbox":[785,265,140,70]}
+{"kind":"shape","id":"sh/p8fqd4vu","slide":4,"bbox":[942,300,52,8]}
+{"kind":"shape","id":"sh/o76pkzu9","slide":4,"bbox":[1000,245,170,120]}
+{"kind":"textbox","id":"sh/n218ned8","slide":4,"text":"Hợp đồng","textPreview":"Hợp đồng","textChars":8,"textLines":1,"bbox":[1015,265,140,70]}
+{"kind":"textbox","id":"sh/m18rutcn","slide":4,"text":"Điểm kiểm soát xuyên suốt: đúng thẩm quyền, đúng tiêu chí, đúng thời hạn, có dấu vết giải trình.","textPreview":"Điểm kiểm soát xuyên suốt: đúng thẩm quyền, đúng tiêu chí, đúng thời hạn, có dấu vết giải trình.","textChars":96,"textLines":1,"bbox":[90,465,1030,70]}
+{"kind":"notes","id":"nt/79jde0","slide":4,"text":"Tài liệu tham chiếu: Luật Đấu thầu hợp nhất (22-57-90); Nghị định 214/2025/NĐ-CP; Nghị định 349/2026/NĐ-CP; Quy chế lựa chọn nhà thầu Viettel 2026; Quy định lựa chọn nhà thầu qua mạng và đăng tải thông tin Viettel 2026; Hướng dẫn sử dụng Cổng đấu thầu Viettel. Nội dung đào tạo mang tính khái quát, cần đối chiếu văn bản hiện hành và hồ sơ cụ thể trước khi áp dụng."}
+{"kind":"slide","id":"sl/maf6l8","slide":5,"title":"LUẬT ĐẤU THẦU | 60 PHÚT","textShapes":13}
+{"kind":"shape","id":"sh/sbq1k72d","slide":5,"bbox":[0,0,1280,14]}
+{"kind":"textbox","id":"sh/rahkbm18","slide":5,"text":"LUẬT ĐẤU THẦU | 60 PHÚT","textPreview":"LUẬT ĐẤU THẦU | 60 PHÚT","textChars":23,"textLines":1,"bbox":[64,30,1150,25]}
+{"kind":"textbox","id":"sh/q98jihkn","slide":5,"text":"Hình thức lựa chọn nhà thầu","textPreview":"Hình thức lựa chọn nhà thầu","textChars":27,"textLines":1,"bbox":[64,62,1150,55]}
+{"kind":"textbox","id":"sh/5oz29c32","slide":5,"text":"Nguồn: Luật Đấu thầu hợp nhất 22/2023, sửa đổi 57/2024 và 90/2025; NĐ 214/2025; NĐ 349/2026; tài liệu nội bộ Viettel 2026","textPreview":"Nguồn: Luật Đấu thầu hợp nhất 22/2023, sửa đổi 57/2024 và 90/2025; NĐ 214/2025; NĐ 349/2026; tài liệu nội bộ Viettel 2026","textChars":121,"textLines":1,"bbox":[64,684,1100,18]}
+{"kind":"shape","id":"sh/4nq1g72h","slide":5,"bbox":[80,150,310,60]}
+{"kind":"textbox","id":"sh/3mh072lw","slide":5,"text":"Đấu thầu rộng rãi","textPreview":"Đấu thầu rộng rãi","textChars":17,"textLines":1,"bbox":[100,160,270,38]}
+{"kind":"textbox","id":"sh/ilojexkb","slide":5,"text":"Mặc định khi có cạnh tranh","textPreview":"Mặc định khi có cạnh tranh","textChars":26,"textLines":1,"bbox":[430,158,690,44]}
+{"kind":"shape","id":"sh/pkj2lwj6","slide":5,"bbox":[80,235,310,60]}
+{"kind":"textbox","id":"sh/oja1sr2l","slide":5,"text":"Đấu thầu hạn chế","textPreview":"Đấu thầu hạn chế","textChars":16,"textLines":1,"bbox":[100,245,270,38]}
+{"kind":"textbox","id":"sh/axkbuho7","slide":5,"text":"Chỉ mời nhà thầu đáp ứng điều kiện đặc thù","textPreview":"Chỉ mời nhà thầu đáp ứng điều kiện đặc thù","textChars":42,"textLines":1,"bbox":[430,243,690,44]}
+{"kind":"shape","id":"sh/bytcnmpc","slide":5,"bbox":[80,320,310,60]}
+{"kind":"textbox","id":"sh/cz2twr6x","slide":5,"text":"Chỉ định thầu","textPreview":"Chỉ định thầu","textChars":13,"textLines":1,"bbox":[100,330,270,38]}
+{"kind":"textbox","id":"sh/x0bupw7i","slide":5,"text":"Trường hợp luật cho phép, phải có căn cứ","textPreview":"Trường hợp luật cho phép, phải có căn cứ","textChars":40,"textLines":1,"bbox":[430,328,690,44]}
+{"kind":"shape","id":"sh/2t0bqh8v","slide":5,"bbox":[80,405,310,60]}
+{"kind":"textbox","id":"sh/nu9sjmpg","slide":5,"text":"Chào hàng cạnh tranh","textPreview":"Chào hàng cạnh tranh","textChars":20,"textLines":1,"bbox":[100,415,270,38]}
+{"kind":"textbox","id":"sh/ovits7q1","slide":5,"text":"Gói thầu hàng hóa, dịch vụ tiêu chuẩn, đơn giản","textPreview":"Gói thầu hàng hóa, dịch vụ tiêu chuẩn, đơn giản","textChars":47,"textLines":1,"bbox":[430,413,690,44]}
+{"kind":"shape","id":"sh/pwrulc7m","slide":5,"bbox":[80,490,310,60]}
+{"kind":"textbox","id":"sh/6p4b21oz","slide":5,"text":"Mua sắm trực tiếp / tự thực hiện / đàm phán giá","textPreview":"Mua sắm trực tiếp / tự thực hiện / đàm phán giá","textChars":47,"textLines":1,"bbox":[100,500,270,38]}
+{"kind":"textbox","id":"sh/7qdcv6pk","slide":5,"text":"Chỉ dùng đúng điều kiện áp dụng","textPreview":"Chỉ dùng đúng điều kiện áp dụng","textChars":31,"textLines":1,"bbox":[430,498,690,44]}
+{"kind":"notes","id":"nt/maf6l8","slide":5,"text":"Tài liệu tham chiếu: Luật Đấu thầu hợp nhất (22-57-90); Nghị định 214/2025/NĐ-CP; Nghị định 349/2026/NĐ-CP; Quy chế lựa chọn nhà thầu Viettel 2026; Quy định lựa chọn nhà thầu qua mạng và đăng tải thông tin Viettel 2026; Hướng dẫn sử dụng Cổng đấu thầu Viettel. Nội dung đào tạo mang tính khái quát, cần đối chiếu văn bản hiện hành và hồ sơ cụ thể trước khi áp dụng."}
+{"kind":"slide","id":"sl/5mvoip","slide":6,"title":"LUẬT ĐẤU THẦU | 60 PHÚT","textShapes":11}
+{"kind":"shape","id":"sh/ydo3ihsf","slide":6,"bbox":[0,0,1280,14]}
+{"kind":"textbox","id":"sh/lgf2dwb6","slide":6,"text":"LUẬT ĐẤU THẦU | 60 PHÚT","textPreview":"LUẬT ĐẤU THẦU | 60 PHÚT","textChars":23,"textLines":1,"bbox":[64,30,1150,25]}
+{"kind":"textbox","id":"sh/0f6lkral","slide":6,"text":"Phương thức lựa chọn nhà thầu","textPreview":"Phương thức lựa chọn nhà thầu","textChars":29,"textLines":1,"bbox":[64,62,1150,55]}
+{"kind":"textbox","id":"sh/badk72to","slide":6,"text":"Nguồn: Luật Đấu thầu hợp nhất 22/2023, sửa đổi 57/2024 và 90/2025; NĐ 214/2025; NĐ 349/2026; tài liệu nội bộ Viettel 2026","textPreview":"Nguồn: Luật Đấu thầu hợp nhất 22/2023, sửa đổi 57/2024 và 90/2025; NĐ 214/2025; NĐ 349/2026; tài liệu nội bộ Viettel 2026","textChars":121,"textLines":1,"bbox":[64,684,1100,18]}
+{"kind":"textbox","id":"sh/qp4jexsj","slide":6,"text":"Một giai đoạn, một túi hồ sơ","textPreview":"Một giai đoạn, một túi hồ sơ","textChars":28,"textLines":1,"bbox":[92,155,420,44]}
+{"kind":"textbox","id":"sh/dcf29cbu","slide":6,"text":"Hồ sơ kỹ thuật và tài chính cùng nộp","textPreview":"Hồ sơ kỹ thuật và tài chính cùng nộp","textChars":36,"textLines":1,"bbox":[540,155,590,55]}
+{"kind":"shape","id":"sh/cbm1g7a9","slide":6,"bbox":[80,227,1050,2]}
+{"kind":"textbox","id":"sh/v6hkj6t8","slide":6,"text":"Một giai đoạn, hai túi hồ sơ","textPreview":"Một giai đoạn, hai túi hồ sơ","textChars":28,"textLines":1,"bbox":[92,260,420,44]}
+{"kind":"textbox","id":"sh/al83q1sn","slide":6,"text":"Đánh giá kỹ thuật trước, tài chính sau","textPreview":"Đánh giá kỹ thuật trước, tài chính sau","textChars":38,"textLines":1,"bbox":[540,260,590,55]}
+{"kind":"shape","id":"sh/ovmtkb6x","slide":6,"bbox":[80,332,1050,2]}
+{"kind":"textbox","id":"sh/pwfutgni","slide":6,"text":"Hai giai đoạn, một túi hồ sơ","textPreview":"Hai giai đoạn, một túi hồ sơ","textChars":28,"textLines":1,"bbox":[92,365,420,44]}
+{"kind":"textbox","id":"sh/294bilor","slide":6,"text":"Khi chưa xác định đầy đủ yêu cầu","textPreview":"Khi chưa xác định đầy đủ yêu cầu","textChars":32,"textLines":1,"bbox":[540,365,590,55]}
+{"kind":"shape","id":"sh/nadsrq5c","slide":6,"bbox":[80,437,1050,2]}
+{"kind":"textbox","id":"sh/07mtgb6l","slide":6,"text":"Hai giai đoạn, hai túi hồ sơ","textPreview":"Hai giai đoạn, hai túi hồ sơ","textChars":28,"textLines":1,"bbox":[92,470,420,44]}
+{"kind":"textbox","id":"sh/18vapgn6","slide":6,"text":"Dự án lớn, phức tạp, cần làm rõ dần","textPreview":"Dự án lớn, phức tạp, cần làm rõ dần","textChars":35,"textLines":1,"bbox":[540,470,590,55]}
+{"kind":"shape","id":"sh/e54be1ov","slide":6,"bbox":[80,542,1050,2]}
+{"kind":"notes","id":"nt/5mvoip","slide":6,"text":"Tài liệu tham chiếu: Luật Đấu thầu hợp nhất (22-57-90); Nghị định 214/2025/NĐ-CP; Nghị định 349/2026/NĐ-CP; Quy chế lựa chọn nhà thầu Viettel 2026; Quy định lựa chọn nhà thầu qua mạng và đăng tải thông tin Viettel 2026; Hướng dẫn sử dụng Cổng đấu thầu Viettel. Nội dung đào tạo mang tính khái quát, cần đối chiếu văn bản hiện hành và hồ sơ cụ thể trước khi áp dụng."}
+{"kind":"slide","id":"sl/6sim75","slide":7,"title":"LUẬT ĐẤU THẦU | 60 PHÚT","textShapes":11}
+{"kind":"shape","id":"sh/1sredwji","slide":7,"bbox":[0,0,1280,14]}
+{"kind":"textbox","id":"sh/ep0vi10r","slide":7,"text":"LUẬT ĐẤU THẦU | 60 PHÚT","textPreview":"LUẬT ĐẤU THẦU | 60 PHÚT","textChars":23,"textLines":1,"bbox":[64,30,1150,25]}
+{"kind":"textbox","id":"sh/fq9wb61c","slide":7,"text":"Viettel và Luật Đấu thầu: phần giao nhau","textPreview":"Viettel và Luật Đấu thầu: phần giao nhau","textChars":40,"textLines":1,"bbox":[64,62,1150,55]}
+{"kind":"textbox","id":"sh/ov2xobit","slide":7,"text":"Nguồn: Luật Đấu thầu hợp nhất 22/2023, sửa đổi 57/2024 và 90/2025; NĐ 214/2025; NĐ 349/2026; tài liệu nội bộ Viettel 2026","textPreview":"Nguồn: Luật Đấu thầu hợp nhất 22/2023, sửa đổi 57/2024 và 90/2025; NĐ 214/2025; NĐ 349/2026; tài liệu nội bộ Viettel 2026","textChars":121,"textLines":1,"bbox":[64,684,1100,18]}
+{"kind":"textbox","id":"sh/pwbehgje","slide":7,"text":"Giống nhau","textPreview":"Giống nhau","textChars":10,"textLines":1,"bbox":[90,145,500,38]}
+{"kind":"shape","id":"sh/2t0vm10n","slide":7,"bbox":[90,205,10,10]}
+{"kind":"textbox","id":"sh/nu9wf618","slide":7,"text":"Đều yêu cầu công khai, minh bạch, cạnh tranh","textPreview":"Đều yêu cầu công khai, minh bạch, cạnh tranh","textChars":44,"textLines":1,"bbox":[118,197,472,54]}
+{"kind":"shape","id":"sh/4zydc7ip","slide":7,"bbox":[90,265,10,10]}
+{"kind":"textbox","id":"sh/507e5cja","slide":7,"text":"Đều quản lý theo kế hoạch, HSMT, đánh giá, hợp đồng","textPreview":"Đều quản lý theo kế hoạch, HSMT, đánh giá, hợp đồng","textChars":51,"textLines":1,"bbox":[118,257,472,54]}
+{"kind":"shape","id":"sh/xsnypgbm","slide":7,"bbox":[90,325,10,10]}
+{"kind":"textbox","id":"sh/crehgbuh","slide":7,"text":"Đều cần phân định thẩm quyền và trách nhiệm","textPreview":"Đều cần phân định thẩm quyền và trách nhiệm","textChars":43,"textLines":1,"bbox":[118,317,472,54]}
+{"kind":"textbox","id":"sh/bq5gn6tw","slide":7,"text":"Cách đọc đúng","textPreview":"Cách đọc đúng","textChars":13,"textLines":1,"bbox":[690,145,500,38]}
+{"kind":"shape","id":"sh/apwze1cb","slide":7,"bbox":[690,205,10,10]}
+{"kind":"textbox","id":"sh/lwnitgby","slide":7,"text":"Luật là nền tảng bắt buộc khi thuộc phạm vi điều chỉnh","textPreview":"Luật là nền tảng bắt buộc khi thuộc phạm vi điều chỉnh","textChars":54,"textLines":1,"bbox":[718,197,472,54]}
+{"kind":"shape","id":"sh/kvehkbud","slide":7,"bbox":[690,265,10,10]}
+{"kind":"textbox","id":"sh/zu5gr6ts","slide":7,"text":"Quy chế Viettel là quy định nội bộ của doanh nghiệp","textPreview":"Quy chế Viettel là quy định nội bộ của doanh nghiệp","textChars":51,"textLines":1,"bbox":[718,257,472,54]}
+{"kind":"shape","id":"sh/ytwzilc7","slide":7,"bbox":[690,325,10,10]}
+{"kind":"textbox","id":"sh/9k7ix0bu","slide":7,"text":"Khi không thuộc phạm vi bắt buộc, Viettel tự quyết định mức áp dụng","textPreview":"Khi không thuộc phạm vi bắt buộc, Viettel tự quyết định mức áp dụng","textChars":67,"textLines":1,"bbox":[718,317,472,54]}
+{"kind":"notes","id":"nt/6sim75","slide":7,"text":"Tài liệu tham chiếu: Luật Đấu thầu hợp nhất (22-57-90); Nghị định 214/2025/NĐ-CP; Nghị định 349/2026/NĐ-CP; Quy chế lựa chọn nhà thầu Viettel 2026; Quy định lựa chọn nhà thầu qua mạng và đăng tải thông tin Viettel 2026; Hướng dẫn sử dụng Cổng đấu thầu Viettel. Nội dung đào tạo mang tính khái quát, cần đối chiếu văn bản hiện hành và hồ sơ cụ thể trước khi áp dụng."}
+{"kind":"slide","id":"sl/izzcz5","slide":8,"title":"LUẬT ĐẤU THẦU | 60 PHÚT","textShapes":13}
+{"kind":"shape","id":"sh/hoj2hsja","slide":8,"bbox":[0,0,1280,14]}
+{"kind":"textbox","id":"sh/u18j6dkj","slide":8,"text":"LUẬT ĐẤU THẦU | 60 PHÚT","textPreview":"LUẬT ĐẤU THẦU | 60 PHÚT","textChars":23,"textLines":1,"bbox":[64,30,1150,25]}
+{"kind":"textbox","id":"sh/v21kfi14","slide":8,"text":"Viettel và Luật Đấu thầu: phần khác nhau","textPreview":"Viettel và Luật Đấu thầu: phần khác nhau","textChars":40,"textLines":1,"bbox":[64,62,1150,55]}
+{"kind":"textbox","id":"sh/8zq1432t","slide":8,"text":"Nguồn: Luật Đấu thầu hợp nhất 22/2023, sửa đổi 57/2024 và 90/2025; NĐ 214/2025; NĐ 349/2026; tài liệu nội bộ Viettel 2026","textPreview":"Nguồn: Luật Đấu thầu hợp nhất 22/2023, sửa đổi 57/2024 và 90/2025; NĐ 214/2025; NĐ 349/2026; tài liệu nội bộ Viettel 2026","textChars":121,"textLines":1,"bbox":[64,684,1100,18]}
+{"kind":"shape","id":"sh/90z2d8jy","slide":8,"bbox":[80,150,500,55]}
+{"kind":"shape","id":"sh/mx8j2dkn","slide":8,"bbox":[600,150,560,55]}
+{"kind":"textbox","id":"sh/7yh0bi18","slide":8,"text":"Luật Đấu thầu","textPreview":"Luật Đấu thầu","textChars":13,"textLines":1,"bbox":[100,160,460,35]}
+{"kind":"textbox","id":"sh/svu1g72x","slide":8,"text":"Quy chế / Quy định Viettel","textPreview":"Quy chế / Quy định Viettel","textChars":26,"textLines":1,"bbox":[620,160,520,35]}
+{"kind":"textbox","id":"sh/tw32pcji","slide":8,"text":"Phạm vi: cơ quan, tổ chức, vốn và trường hợp luật định","textPreview":"Phạm vi: cơ quan, tổ chức, vốn và trường hợp luật định","textChars":54,"textLines":1,"bbox":[90,230,480,58]}
+{"kind":"textbox","id":"sh/tw3218vu","slide":8,"text":"Phạm vi: công ty, đơn vị và quy trình nội bộ","textPreview":"Phạm vi: công ty, đơn vị và quy trình nội bộ","textChars":44,"textLines":1,"bbox":[610,230,540,58]}
+{"kind":"shape","id":"sh/8bu183u9","slide":8,"bbox":[80,302,1080,2]}
+{"kind":"textbox","id":"sh/7alkzido","slide":8,"text":"Hệ thống mạng đấu thầu quốc gia theo quy định","textPreview":"Hệ thống mạng đấu thầu quốc gia theo quy định","textChars":45,"textLines":1,"bbox":[90,325,480,58]}
+{"kind":"textbox","id":"sh/69cj6dc3","slide":8,"text":"Cổng / quy định qua mạng Viettel và phân quyền nội bộ","textPreview":"Cổng / quy định qua mạng Viettel và phân quyền nội bộ","textChars":53,"textLines":1,"bbox":[610,325,540,58]}
+{"kind":"shape","id":"sh/l832x8vi","slide":8,"bbox":[80,397,1080,2]}
+{"kind":"textbox","id":"sh/k7u143ux","slide":8,"text":"Mốc thời gian theo luật và nghị định","textPreview":"Mốc thời gian theo luật và nghị định","textChars":36,"textLines":1,"bbox":[90,420,480,58]}
+{"kind":"textbox","id":"sh/j6lkvydc","slide":8,"text":"Có thể chi tiết hóa luồng phê duyệt, biểu mẫu, đầu mối","textPreview":"Có thể chi tiết hóa luồng phê duyệt, biểu mẫu, đầu mối","textChars":54,"textLines":1,"bbox":[610,420,540,58]}
+{"kind":"shape","id":"sh/y5sj2twr","slide":8,"bbox":[80,492,1080,2]}
+{"kind":"textbox","id":"sh/p4n29svm","slide":8,"text":"Căn cứ pháp lý bên ngoài","textPreview":"Căn cứ pháp lý bên ngoài","textChars":24,"textLines":1,"bbox":[90,515,480,58]}
+{"kind":"textbox","id":"sh/43elgnuh","slide":8,"text":"Căn cứ thêm điều lệ, quy chế Tập đoàn, quyết định công ty","textPreview":"Căn cứ thêm điều lệ, quy chế Tập đoàn, quyết định công ty","textChars":57,"textLines":1,"bbox":[610,515,540,58]}
+{"kind":"shape","id":"sh/o7m5cb2d","slide":8,"bbox":[80,587,1080,2]}
+{"kind":"notes","id":"nt/izzcz5","slide":8,"text":"Tài liệu tham chiếu: Luật Đấu thầu hợp nhất (22-57-90); Nghị định 214/2025/NĐ-CP; Nghị định 349/2026/NĐ-CP; Quy chế lựa chọn nhà thầu Viettel 2026; Quy định lựa chọn nhà thầu qua mạng và đăng tải thông tin Viettel 2026; Hướng dẫn sử dụng Cổng đấu thầu Viettel. Nội dung đào tạo mang tính khái quát, cần đối chiếu văn bản hiện hành và hồ sơ cụ thể trước khi áp dụng."}
+{"kind":"slide","id":"sl/qlvuvo","slide":9,"title":"LUẬT ĐẤU THẦU | 60 PHÚT","textShapes":14}
+{"kind":"shape","id":"sh/radcnm18","slide":9,"bbox":[0,0,1280,14]}
+{"kind":"textbox","id":"sh/sbmdgr2t","slide":9,"text":"LUẬT ĐẤU THẦU | 60 PHÚT","textPreview":"LUẬT ĐẤU THẦU | 60 PHÚT","textChars":23,"textLines":1,"bbox":[64,30,1150,25]}
+{"kind":"textbox","id":"sh/tcvupwje","slide":9,"text":"Các mốc thời gian cần nhớ","textPreview":"Các mốc thời gian cần nhớ","textChars":25,"textLines":1,"bbox":[64,62,1150,55]}
+{"kind":"textbox","id":"sh/i5kvahkr","slide":9,"text":"Nguồn: Luật Đấu thầu hợp nhất 22/2023, sửa đổi 57/2024 và 90/2025; NĐ 214/2025; NĐ 349/2026; tài liệu nội bộ Viettel 2026","textPreview":"Nguồn: Luật Đấu thầu hợp nhất 22/2023, sửa đổi 57/2024 và 90/2025; NĐ 214/2025; NĐ 349/2026; tài liệu nội bộ Viettel 2026","textChars":121,"textLines":1,"bbox":[64,684,1100,18]}
+{"kind":"shape","id":"sh/j6tcj21c","slide":9,"bbox":[75,245,160,18]}
+{"kind":"textbox","id":"sh/472dc72x","slide":9,"text":"Kế hoạch","textPreview":"Kế hoạch","textChars":8,"textLines":1,"bbox":[65,205,180,30]}
+{"kind":"textbox","id":"sh/58vulcj2","slide":9,"text":"Đăng tải KHLCNT và thông tin liên quan đúng thời điểm","textPreview":"Đăng tải KHLCNT và thông tin liên quan đúng thời điểm","textChars":53,"textLines":1,"bbox":[55,290,200,115]}
+{"kind":"shape","id":"sh/21ovm1kv","slide":9,"bbox":[235,250,65,8]}
+{"kind":"shape","id":"sh/n2xwv61g","slide":9,"bbox":[300,245,160,18]}
+{"kind":"textbox","id":"sh/3a10ne54","slide":9,"text":"Chuẩn bị HSMT","textPreview":"Chuẩn bị HSMT","textChars":13,"textLines":1,"bbox":[290,205,180,30]}
+{"kind":"textbox","id":"sh/ipsje9oz","slide":9,"text":"Dành đủ thời gian làm rõ, sửa đổi và phát hành","textPreview":"Dành đủ thời gian làm rõ, sửa đổi và phát hành","textChars":46,"textLines":1,"bbox":[280,290,200,115]}
+{"kind":"shape","id":"sh/5cj2pona","slide":9,"bbox":[460,250,65,8]}
+{"kind":"shape","id":"sh/4ba1gj6p","slide":9,"bbox":[525,245,160,18]}
+{"kind":"textbox","id":"sh/relkry5g","slide":9,"text":"Dự thầu","textPreview":"Dự thầu","textChars":7,"textLines":1,"bbox":[515,205,180,30]}
+{"kind":"textbox","id":"sh/qdcjitov","slide":9,"text":"Theo đúng thời điểm đóng thầu trên hệ thống","textPreview":"Theo đúng thời điểm đóng thầu trên hệ thống","textChars":43,"textLines":1,"bbox":[505,290,200,115]}
+{"kind":"shape","id":"sh/dg32tonm","slide":9,"bbox":[685,250,65,8]}
+{"kind":"shape","id":"sh/sfu1kj61","slide":9,"bbox":[750,245,160,18]}
+{"kind":"textbox","id":"sh/filkvy5c","slide":9,"text":"Đánh giá","textPreview":"Đánh giá","textChars":8,"textLines":1,"bbox":[740,205,180,30]}
+{"kind":"textbox","id":"sh/ehcjmtor","slide":9,"text":"Tuân thủ thời hạn theo phương thức và quy mô gói thầu","textPreview":"Tuân thủ thời hạn theo phương thức và quy mô gói thầu","textChars":53,"textLines":1,"bbox":[730,290,200,115]}
+{"kind":"shape","id":"sh/adg3ex8z","slide":9,"bbox":[910,250,65,8]}
+{"kind":"shape","id":"sh/bep4n2pk","slide":9,"bbox":[975,245,160,18]}
+{"kind":"textbox","id":"sh/czylg7q5","slide":9,"text":"Hợp đồng","textPreview":"Hợp đồng","textChars":8,"textLines":1,"bbox":[965,205,180,30]}
+{"kind":"textbox","id":"sh/x07mpc7q","slide":9,"text":"Cập nhật tiến độ, thay đổi nhà thầu phụ trên hệ thống","textPreview":"Cập nhật tiến độ, thay đổi nhà thầu phụ trên hệ thống","textChars":53,"textLines":1,"bbox":[955,290,200,115]}
+{"kind":"textbox","id":"sh/29w3ax83","slide":9,"text":"Nguyên tắc thực hành: lấy thời điểm trên thông báo / hệ thống làm mốc kiểm soát, không dùng trí nhớ.","textPreview":"Nguyên tắc thực hành: lấy thời điểm trên thông báo / hệ thống làm mốc kiểm soát, không dùng trí nhớ.","textChars":100,"textLines":1,"bbox":[85,500,1050,54]}
+{"kind":"notes","id":"nt/qlvuvo","slide":9,"text":"Tài liệu tham chiếu: Luật Đấu thầu hợp nhất (22-57-90); Nghị định 214/2025/NĐ-CP; Nghị định 349/2026/NĐ-CP; Quy chế lựa chọn nhà thầu Viettel 2026; Quy định lựa chọn nhà thầu qua mạng và đăng tải thông tin Viettel 2026; Hướng dẫn sử dụng Cổng đấu thầu Viettel. Nội dung đào tạo mang tính khái quát, cần đối chiếu văn bản hiện hành và hồ sơ cụ thể trước khi áp dụng."}
+{"kind":"slide","id":"sl/nbdqvg","slide":10,"title":"LUẬT ĐẤU THẦU | 60 PHÚT","textShapes":9}
+{"kind":"shape","id":"sh/ydsbylwb","slide":10,"bbox":[0,0,1280,14]}
+{"kind":"textbox","id":"sh/lgjut0vm","slide":10,"text":"LUẬT ĐẤU THẦU | 60 PHÚT","textPreview":"LUẬT ĐẤU THẦU | 60 PHÚT","textChars":23,"textLines":1,"bbox":[64,30,1150,25]}
+{"kind":"textbox","id":"sh/kfad0ve1","slide":10,"text":"Bộ HSMT điển hình gồm những gì?","textPreview":"Bộ HSMT điển hình gồm những gì?","textChars":31,"textLines":1,"bbox":[64,62,1150,55]}
+{"kind":"textbox","id":"sh/bahcn6dk","slide":10,"text":"Nguồn: Luật Đấu thầu hợp nhất 22/2023, sửa đổi 57/2024 và 90/2025; NĐ 214/2025; NĐ 349/2026; tài liệu nội bộ Viettel 2026","textPreview":"Nguồn: Luật Đấu thầu hợp nhất 22/2023, sửa đổi 57/2024 và 90/2025; NĐ 214/2025; NĐ 349/2026; tài liệu nội bộ Viettel 2026","textChars":121,"textLines":1,"bbox":[64,684,1100,18]}
+{"kind":"shape","id":"sh/a98bulwz","slide":10,"bbox":[85,160,310,105]}
+{"kind":"textbox","id":"sh/xcjupgvq","slide":10,"text":"Chỉ dẫn nhà thầu","textPreview":"Chỉ dẫn nhà thầu","textChars":16,"textLines":1,"bbox":[103,182,275,60]}
+{"kind":"shape","id":"sh/cbatwbe5","slide":10,"bbox":[445,160,310,105]}
+{"kind":"textbox","id":"sh/v6lczado","slide":10,"text":"Bảng dữ liệu đấu thầu","textPreview":"Bảng dữ liệu đấu thầu","textChars":21,"textLines":1,"bbox":[463,182,275,60]}
+{"kind":"shape","id":"sh/u5cv65wj","slide":10,"bbox":[805,160,310,105]}
+{"kind":"textbox","id":"sh/0nq1o3q9","slide":10,"text":"Tiêu chuẩn đánh giá","textPreview":"Tiêu chuẩn đánh giá","textChars":19,"textLines":1,"bbox":[823,182,275,60]}
+{"kind":"shape","id":"sh/1ozix8ru","slide":10,"bbox":[85,320,310,105]}
+{"kind":"textbox","id":"sh/el8jmd83","slide":10,"text":"Yêu cầu kỹ thuật / phạm vi cung cấp","textPreview":"Yêu cầu kỹ thuật / phạm vi cung cấp","textChars":35,"textLines":1,"bbox":[103,342,275,60]}
+{"kind":"shape","id":"sh/zmh0vy9o","slide":10,"bbox":[445,320,310,105]}
+{"kind":"textbox","id":"sh/cjq1k3qd","slide":10,"text":"Điều kiện hợp đồng","textPreview":"Điều kiện hợp đồng","textChars":18,"textLines":1,"bbox":[463,342,275,60]}
+{"kind":"shape","id":"sh/dkzit8ry","slide":10,"bbox":[805,320,310,105]}
+{"kind":"textbox","id":"sh/qhojit87","slide":10,"text":"Biểu mẫu dự thầu và phụ lục","textPreview":"Biểu mẫu dự thầu và phụ lục","textChars":27,"textLines":1,"bbox":[823,342,275,60]}
+{"kind":"notes","id":"nt/nbdqvg","slide":10,"text":"Tài liệu tham chiếu: Luật Đấu thầu hợp nhất (22-57-90); Nghị định 214/2025/NĐ-CP; Nghị định 349/2026/NĐ-CP; Quy chế lựa chọn nhà thầu Viettel 2026; Quy định lựa chọn nhà thầu qua mạng và đăng tải thông tin Viettel 2026; Hướng dẫn sử dụng Cổng đấu thầu Viettel. Nội dung đào tạo mang tính khái quát, cần đối chiếu văn bản hiện hành và hồ sơ cụ thể trước khi áp dụng."}
+{"kind":"slide","id":"sl/2mlfxy","slide":11,"title":"LUẬT ĐẤU THẦU | 60 PHÚT","textShapes":18}
+{"kind":"shape","id":"sh/u9gj6hs3","slide":11,"bbox":[0,0,1280,14]}
+{"kind":"textbox","id":"sh/hcr2hwbu","slide":11,"text":"LUẬT ĐẤU THẦU | 60 PHÚT","textPreview":"LUẬT ĐẤU THẦU | 60 PHÚT","textChars":23,"textLines":1,"bbox":[64,30,1150,25]}
+{"kind":"textbox","id":"sh/gbi18ra9","slide":11,"text":"Đọc HSMT theo 5 câu hỏi","textPreview":"Đọc HSMT theo 5 câu hỏi","textChars":23,"textLines":1,"bbox":[64,62,1150,55]}
+{"kind":"textbox","id":"sh/3e9kj6t0","slide":11,"text":"Nguồn: Luật Đấu thầu hợp nhất 22/2023, sửa đổi 57/2024 và 90/2025; NĐ 214/2025; NĐ 349/2026; tài liệu nội bộ Viettel 2026","textPreview":"Nguồn: Luật Đấu thầu hợp nhất 22/2023, sửa đổi 57/2024 và 90/2025; NĐ 214/2025; NĐ 349/2026; tài liệu nội bộ Viettel 2026","textChars":121,"textLines":1,"bbox":[64,684,1100,18]}
+{"kind":"textbox","id":"sh/id0ja1sf","slide":11,"text":"1","textPreview":"1","textChars":1,"textLines":1,"bbox":[90,142,60,44]}
+{"kind":"textbox","id":"sh/50r2lwbq","slide":11,"text":"Tôi phải cung cấp gì?","textPreview":"Tôi phải cung cấp gì?","textChars":21,"textLines":1,"bbox":[170,142,370,35]}
+{"kind":"textbox","id":"sh/4fi1cral","slide":11,"text":"Phạm vi, khối lượng, thông số kỹ thuật","textPreview":"Phạm vi, khối lượng, thông số kỹ thuật","textChars":38,"textLines":1,"bbox":[560,142,580,38]}
+{"kind":"textbox","id":"sh/ji5072tg","slide":11,"text":"2","textPreview":"2","textChars":1,"textLines":1,"bbox":[90,237,60,44]}
+{"kind":"textbox","id":"sh/yhwjexsb","slide":11,"text":"Tôi phải chứng minh gì?","textPreview":"Tôi phải chứng minh gì?","textChars":23,"textLines":1,"bbox":[170,237,370,35]}
+{"kind":"textbox","id":"sh/03ixkfax","slide":11,"text":"Năng lực, kinh nghiệm, nhân sự, tài chính","textPreview":"Năng lực, kinh nghiệm, nhân sự, tài chính","textChars":41,"textLines":1,"bbox":[560,237,580,38]}
+{"kind":"textbox","id":"sh/14retkri","slide":11,"text":"3","textPreview":"3","textChars":1,"textLines":1,"bbox":[90,332,60,44]}
+{"kind":"textbox","id":"sh/e1gfips7","slide":11,"text":"Tôi bị chấm như thế nào?","textPreview":"Tôi bị chấm như thế nào?","textChars":24,"textLines":1,"bbox":[170,332,370,35]}
+{"kind":"textbox","id":"sh/z2pwru9s","slide":11,"text":"Đạt / không đạt, giá thấp nhất, kỹ thuật, kết hợp","textPreview":"Đạt / không đạt, giá thấp nhất, kỹ thuật, kết hợp","textChars":49,"textLines":1,"bbox":[560,332,580,38]}
+{"kind":"textbox","id":"sh/orixoza9","slide":11,"text":"4","textPreview":"4","textChars":1,"textLines":1,"bbox":[90,427,60,44]}
+{"kind":"textbox","id":"sh/9sryx4ru","slide":11,"text":"Tôi phải nộp theo mẫu nào?","textPreview":"Tôi phải nộp theo mẫu nào?","textChars":26,"textLines":1,"bbox":[170,427,370,35]}
+{"kind":"textbox","id":"sh/mp0fmps3","slide":11,"text":"Biểu mẫu, bảo đảm dự thầu, hiệu lực hồ sơ","textPreview":"Biểu mẫu, bảo đảm dự thầu, hiệu lực hồ sơ","textChars":41,"textLines":1,"bbox":[560,427,580,38]}
+{"kind":"textbox","id":"sh/nq9gvu9o","slide":11,"text":"5","textPreview":"5","textChars":1,"textLines":1,"bbox":[90,522,60,44]}
+{"kind":"textbox","id":"sh/4vexcva5","slide":11,"text":"Sau khi trúng, tôi chịu gì?","textPreview":"Sau khi trúng, tôi chịu gì?","textChars":27,"textLines":1,"bbox":[170,522,370,35]}
+{"kind":"textbox","id":"sh/pw7el0ra","slide":11,"text":"Tiến độ, nghiệm thu, bảo hành, phạt và chấm dứt","textPreview":"Tiến độ, nghiệm thu, bảo hành, phạt và chấm dứt","textChars":47,"textLines":1,"bbox":[560,522,580,38]}
+{"kind":"notes","id":"nt/2mlfxy","slide":11,"text":"Tài liệu tham chiếu: Luật Đấu thầu hợp nhất (22-57-90); Nghị định 214/2025/NĐ-CP; Nghị định 349/2026/NĐ-CP; Quy chế lựa chọn nhà thầu Viettel 2026; Quy định lựa chọn nhà thầu qua mạng và đăng tải thông tin Viettel 2026; Hướng dẫn sử dụng Cổng đấu thầu Viettel. Nội dung đào tạo mang tính khái quát, cần đối chiếu văn bản hiện hành và hồ sơ cụ thể trước khi áp dụng."}
+{"kind":"slide","id":"sl/58qz6m","slide":12,"title":"LUẬT ĐẤU THẦU | 60 PHÚT","textShapes":8}
+{"kind":"shape","id":"sh/3i50369s","slide":12,"bbox":[0,0,1280,14]}
+{"kind":"textbox","id":"sh/o3e1cbqd","slide":12,"text":"LUẬT ĐẤU THẦU | 60 PHÚT","textPreview":"LUẬT ĐẤU THẦU | 60 PHÚT","textChars":23,"textLines":1,"bbox":[64,30,1150,25]}
+{"kind":"textbox","id":"sh/p4n25wry","slide":12,"text":"Đấu thầu qua mạng: thao tác không thay thế trách nhiệm","textPreview":"Đấu thầu qua mạng: thao tác không thay thế trách nhiệm","textChars":54,"textLines":1,"bbox":[64,62,1150,55]}
+{"kind":"textbox","id":"sh/edcj6h8b","slide":12,"text":"Nguồn: Luật Đấu thầu hợp nhất 22/2023, sửa đổi 57/2024 và 90/2025; NĐ 214/2025; NĐ 349/2026; tài liệu nội bộ Viettel 2026","textPreview":"Nguồn: Luật Đấu thầu hợp nhất 22/2023, sửa đổi 57/2024 và 90/2025; NĐ 214/2025; NĐ 349/2026; tài liệu nội bộ Viettel 2026","textChars":121,"textLines":1,"bbox":[64,684,1100,18]}
+{"kind":"shape","id":"sh/fel0zm9w","slide":12,"bbox":[90,160,10,10]}
+{"kind":"textbox","id":"sh/gfu18rqh","slide":12,"text":"Tìm TBMT / KHLCNT trên cổng phù hợp","textPreview":"Tìm TBMT / KHLCNT trên cổng phù hợp","textChars":35,"textLines":1,"bbox":[118,152,1022,54]}
+{"kind":"shape","id":"sh/1g3i1wr2","slide":12,"bbox":[90,232,10,10]}
+{"kind":"textbox","id":"sh/y9gjil8f","slide":12,"text":"Đăng nhập để tải hồ sơ, làm rõ và nộp hồ sơ","textPreview":"Đăng nhập để tải hồ sơ, làm rõ và nộp hồ sơ","textChars":43,"textLines":1,"bbox":[118,224,1022,54]}
+{"kind":"shape","id":"sh/zapkbq90","slide":12,"bbox":[90,304,10,10]}
+{"kind":"textbox","id":"sh/rutg7mxo","slide":12,"text":"Kiểm tra chữ ký số, định dạng, dung lượng và thời điểm hệ thống ghi nhận","textPreview":"Kiểm tra chữ ký số, định dạng, dung lượng và thời điểm hệ thống ghi nhận","textChars":72,"textLines":1,"bbox":[118,296,1022,54]}
+{"kind":"shape","id":"sh/6tkzehg3","slide":12,"bbox":[90,376,10,10]}
+{"kind":"textbox","id":"sh/twby9cfu","slide":12,"text":"Lưu bằng chứng: thông báo, biên bản, lịch sử trao đổi, kết quả","textPreview":"Lưu bằng chứng: thông báo, biên bản, lịch sử trao đổi, kết quả","textChars":62,"textLines":1,"bbox":[118,368,1022,54]}
+{"kind":"shape","id":"sh/sv2hgry9","slide":12,"bbox":[90,515,1030,55]}
+{"kind":"textbox","id":"sh/fytgbmxk","slide":12,"text":"Quy định Viettel 2026 chi tiết hóa việc lựa chọn qua mạng và cung cấp, đăng tải thông tin theo Quy chế công ty.","textPreview":"Quy định Viettel 2026 chi tiết hóa việc lựa chọn qua mạng và cung cấp, đăng tải thông tin theo Quy chế công ty.","textChars":111,"textLines":1,"bbox":[115,528,980,30]}
+{"kind":"notes","id":"nt/58qz6m","slide":12,"text":"Tài liệu tham chiếu: Luật Đấu thầu hợp nhất (22-57-90); Nghị định 214/2025/NĐ-CP; Nghị định 349/2026/NĐ-CP; Quy chế lựa chọn nhà thầu Viettel 2026; Quy định lựa chọn nhà thầu qua mạng và đăng tải thông tin Viettel 2026; Hướng dẫn sử dụng Cổng đấu thầu Viettel. Nội dung đào tạo mang tính khái quát, cần đối chiếu văn bản hiện hành và hồ sơ cụ thể trước khi áp dụng."}
+{"kind":"slide","id":"sl/10vo5i","slide":13,"title":"LUẬT ĐẤU THẦU | 60 PHÚT","textShapes":8}
+{"kind":"shape","id":"sh/qdgry5gb","slide":13,"bbox":[0,0,1280,14]}
+{"kind":"textbox","id":"sh/dgrqtkz2","slide":13,"text":"LUẬT ĐẤU THẦU | 60 PHÚT","textPreview":"LUẬT ĐẤU THẦU | 60 PHÚT","textChars":23,"textLines":1,"bbox":[64,30,1150,25]}
+{"kind":"textbox","id":"sh/sfi90fyh","slide":13,"text":"Tình huống 3 phút","textPreview":"Tình huống 3 phút","textChars":17,"textLines":1,"bbox":[64,62,1150,55]}
+{"kind":"textbox","id":"sh/fi9svuh8","slide":13,"text":"Nguồn: Luật Đấu thầu hợp nhất 22/2023, sửa đổi 57/2024 và 90/2025; NĐ 214/2025; NĐ 349/2026; tài liệu nội bộ Viettel 2026","textPreview":"Nguồn: Luật Đấu thầu hợp nhất 22/2023, sửa đổi 57/2024 và 90/2025; NĐ 214/2025; NĐ 349/2026; tài liệu nội bộ Viettel 2026","textChars":121,"textLines":1,"bbox":[64,684,1100,18]}
+{"kind":"textbox","id":"sh/eh0r2pgn","slide":13,"text":"Hồ sơ có tiêu chí kỹ thuật chưa rõ, nhà thầu hỏi sát thời điểm đóng thầu","textPreview":"Hồ sơ có tiêu chí kỹ thuật chưa rõ, nhà thầu hỏi sát thời điểm đóng thầu","textChars":72,"textLines":1,"bbox":[90,155,1030,50]}
+{"kind":"shape","id":"sh/1krax4zy","slide":13,"bbox":[90,250,10,10]}
+{"kind":"textbox","id":"sh/0ji94zyd","slide":13,"text":"Xác định kênh và thời hạn yêu cầu làm rõ","textPreview":"Xác định kênh và thời hạn yêu cầu làm rõ","textChars":40,"textLines":1,"bbox":[118,242,1022,54]}
+{"kind":"shape","id":"sh/nmtszuh4","slide":13,"bbox":[90,322,10,10]}
+{"kind":"textbox","id":"sh/2lkr69gj","slide":13,"text":"Đánh giá có cần sửa đổi HSMT hay chỉ trả lời làm rõ","textPreview":"Đánh giá có cần sửa đổi HSMT hay chỉ trả lời làm rõ","textChars":51,"textLines":1,"bbox":[118,314,1022,54]}
+{"kind":"shape","id":"sh/kr2tc72t","slide":13,"bbox":[90,394,10,10]}
+{"kind":"textbox","id":"sh/5sba5s3e","slide":13,"text":"Nếu sửa đổi, kiểm tra lại thời hạn nộp hồ sơ và thông báo trên hệ thống","textPreview":"Nếu sửa đổi, kiểm tra lại thời hạn nộp hồ sơ và thông báo trên hệ thống","textChars":71,"textLines":1,"bbox":[118,386,1022,54]}
+{"kind":"shape","id":"sh/ipkbaxkn","slide":13,"bbox":[90,466,10,10]}
+{"kind":"textbox","id":"sh/jqts32l8","slide":13,"text":"Ghi nhận đầy đủ căn cứ và người phê duyệt","textPreview":"Ghi nhận đầy đủ căn cứ và người phê duyệt","textChars":41,"textLines":1,"bbox":[118,458,1022,54]}
+{"kind":"notes","id":"nt/10vo5i","slide":13,"text":"Tài liệu tham chiếu: Luật Đấu thầu hợp nhất (22-57-90); Nghị định 214/2025/NĐ-CP; Nghị định 349/2026/NĐ-CP; Quy chế lựa chọn nhà thầu Viettel 2026; Quy định lựa chọn nhà thầu qua mạng và đăng tải thông tin Viettel 2026; Hướng dẫn sử dụng Cổng đấu thầu Viettel. Nội dung đào tạo mang tính khái quát, cần đối chiếu văn bản hiện hành và hồ sơ cụ thể trước khi áp dụng."}
+{"kind":"slide","id":"sl/nbghpu","slide":14,"title":"LUẬT ĐẤU THẦU | 60 PHÚT","textShapes":8}
+{"kind":"shape","id":"sh/up0rah8f","slide":14,"bbox":[0,0,1280,14]}
+{"kind":"textbox","id":"sh/hcralwrq","slide":14,"text":"LUẬT ĐẤU THẦU | 60 PHÚT","textPreview":"LUẬT ĐẤU THẦU | 60 PHÚT","textChars":23,"textLines":1,"bbox":[64,30,1150,25]}
+{"kind":"textbox","id":"sh/gbi9crq5","slide":14,"text":"Bốn việc phải nhớ sau buổi học","textPreview":"Bốn việc phải nhớ sau buổi học","textChars":30,"textLines":1,"bbox":[64,62,1150,55]}
+{"kind":"textbox","id":"sh/3etsn69w","slide":14,"text":"Nguồn: Luật Đấu thầu hợp nhất 22/2023, sửa đổi 57/2024 và 90/2025; NĐ 214/2025; NĐ 349/2026; tài liệu nội bộ Viettel 2026","textPreview":"Nguồn: Luật Đấu thầu hợp nhất 22/2023, sửa đổi 57/2024 và 90/2025; NĐ 214/2025; NĐ 349/2026; tài liệu nội bộ Viettel 2026","textChars":121,"textLines":1,"bbox":[64,684,1100,18]}
+{"kind":"shape","id":"sh/2d0re18b","slide":14,"bbox":[90,170,10,10]}
+{"kind":"textbox","id":"sh/pgbapwr2","slide":14,"text":"Chọn đúng khung áp dụng: Luật, Nghị định hay Quy chế Viettel","textPreview":"Chọn đúng khung áp dụng: Luật, Nghị định hay Quy chế Viettel","textChars":60,"textLines":1,"bbox":[118,162,1022,54]}
+{"kind":"shape","id":"sh/4f29grqh","slide":14,"bbox":[90,248,10,10]}
+{"kind":"textbox","id":"sh/jip8b29s","slide":14,"text":"Đọc HSMT từ yêu cầu đầu ra rồi quay về tiêu chí đánh giá","textPreview":"Đọc HSMT từ yêu cầu đầu ra rồi quay về tiêu chí đánh giá","textChars":56,"textLines":1,"bbox":[118,240,1022,54]}
+{"kind":"shape","id":"sh/ihgr2x87","slide":14,"bbox":[90,326,10,10]}
+{"kind":"textbox","id":"sh/o72t83m9","slide":14,"text":"Quản lý mốc thời gian bằng thông báo và dấu vết trên hệ thống","textPreview":"Quản lý mốc thời gian bằng thông báo và dấu vết trên hệ thống","textChars":61,"textLines":1,"bbox":[118,318,1022,54]}
+{"kind":"shape","id":"sh/98vuh8nu","slide":14,"bbox":[90,404,10,10]}
+{"kind":"textbox","id":"sh/m5kb6t43","slide":14,"text":"Mọi quyết định quan trọng phải có căn cứ và người chịu trách nhiệm","textPreview":"Mọi quyết định quan trọng phải có căn cứ và người chịu trách nhiệm","textChars":66,"textLines":1,"bbox":[118,396,1022,54]}
+{"kind":"textbox","id":"sh/n6tcfy5o","slide":14,"text":"Câu hỏi kiểm tra: “Nếu bị hỏi lại, tôi mở tài liệu nào để chứng minh?”","textPreview":"Câu hỏi kiểm tra: “Nếu bị hỏi lại, tôi mở tài liệu nào để chứng minh?”","textChars":70,"textLines":1,"bbox":[90,565,1000,40]}
+{"kind":"notes","id":"nt/nbghpu","slide":14,"text":"Tài liệu tham chiếu: Luật Đấu thầu hợp nhất (22-57-90); Nghị định 214/2025/NĐ-CP; Nghị định 349/2026/NĐ-CP; Quy chế lựa chọn nhà thầu Viettel 2026; Quy định lựa chọn nhà thầu qua mạng và đăng tải thông tin Viettel 2026; Hướng dẫn sử dụng Cổng đấu thầu Viettel. Nội dung đào tạo mang tính khái quát, cần đối chiếu văn bản hiện hành và hồ sơ cụ thể trước khi áp dụng."}

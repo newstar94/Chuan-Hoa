@@ -493,6 +493,20 @@ public sealed class DocumentRoleDetectorTests
         Assert.DoesNotContain(roles, item => item.Value == "codeNumber");
     }
 
+    [Fact]
+    public void Detects_place_date_when_day_is_left_blank_in_a_draft()
+    {
+        var snapshot = new LocalScanSnapshot("sha256:place-date-missing-day", 1,
+            Array.Empty<LocalSectionSnapshot>(), new[]
+            {
+                TableParagraph(1, "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM", 2),
+                TableParagraph(2, "Độc lập - Tự do - Hạnh phúc", 2),
+                TableParagraph(3, "Quảng Ninh, ngày tháng 9 năm 2026", 2)
+            }, Array.Empty<AnnotationProtectedSpan>());
+
+        Assert.Equal("placeAndIssuedDate", new DocumentRoleDetector().Detect(snapshot)[3]);
+    }
+
     private static LocalParagraphSnapshot TableParagraph(int index, string text, int column) =>
         new(index, text, "wdMainTextStory", 1, index * 100,
             "Times New Roman", tableIndex: 1, rowIndex: 1, cellIndex: column,

@@ -4,7 +4,6 @@ import { DocumentSnapshot } from './types';
 import { AutoFixEngine } from './autofix/AutoFixEngine';
 import { TextNormalizer } from './normalizer/TextNormalizer';
 import { TableFormatter } from './formatter/TableFormatter';
-import { LicenseManager } from './auth/LicenseManager';
 import { RuleLoader } from './rules/RuleLoader';
 
 const app = express();
@@ -90,23 +89,6 @@ app.get('/api/rules', (req: Request, res: Response) => {
       nonEndingAbbreviations: ruleLoader.nonEndingAbbrs.length
     }
   });
-});
-
-// 5. Quản lý bản quyền & VietQR
-app.post('/api/license/verify', (req: Request, res: Response) => {
-  const { licenseKey, deviceId, customerName, expiryDate } = req.body;
-  const isValid = LicenseManager.verifyLicense(licenseKey, deviceId, customerName, expiryDate);
-  res.json({ isValid, licenseKey, deviceId });
-});
-
-app.post('/api/license/create-qr', async (req: Request, res: Response) => {
-  try {
-    const { accountNo, bankCode, amount, memo } = req.body;
-    const qrUrl = await LicenseManager.generateVietQR(accountNo || '123456789', bankCode || 'MB', amount || 299000, memo || 'KICH HOAT ADDIN');
-    res.json({ qrUrl });
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
 });
 
 app.listen(port, () => {

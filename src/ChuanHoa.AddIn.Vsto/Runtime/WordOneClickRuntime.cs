@@ -62,6 +62,15 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
     public sealed class WordOneClickRuntime
     {
         private const float PointsPerMillimeter = 72.0f / 25.4f;
+
+        // Only header roles read the tier; plain body paragraphs never do.
+        private static readonly Nd30HeaderFontSizeTier UnusedHeaderTier =
+            new Nd30HeaderFontSizeTier(13d, 14d, 14d);
+
+        // Text edits made during the current 1-Click phase. Word COM runs on one STA
+        // thread; the field is set and cleared inside Execute only.
+        [ThreadStatic]
+        private static MainStoryEditTracker? s_tracker;
         private readonly Word.Application _application;
         private readonly WordDocumentCapabilityProvider _capabilityProvider;
         private readonly LocalAccessManager _accessManager;
@@ -118,31 +127,22 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 }
 
                 var annotations = new WordFindingAnnotationAdapter(_application, document);
-                annotations.ClearLane("format");
-                annotations.ClearLane("spelling");
+                var removedAnnotations = annotations.ClearLane("format", operation);
+                removedAnnotations += annotations.ClearLane("spelling", operation);
 
-                // Removing comment references can move subsequent absolute offsets.
-                // Structural edits must use a fresh snapshot, not pre-annotation positions.
-                new WordDocumentReadRuntime(_application, _accessManager).Prepare(
-                    context, DocumentAnalysisScope.Full, document, false);
-                local = context.LastLocalSnapshot!;
-                formatFindings = context.LastFormatScan!.Findings;
-                spellingFindings = context.LastSpellingScan!.Findings;
-                blocks = context.LastLogicalBlocks;
-                roles = context.LastRolesByParagraphIndex;
+                // Line removal does not move text; paragraph splitting resolves its
+                // paragraph by index and verifies the text, so both can run on the
+                // prepared snapshot. A single fresh snapshot afterwards replaces the
+                // up to three re-reads of earlier releases.
                 var removedObsoleteLines = RemoveMisclassifiedOwnedLines(document, local, roles);
-                if (removedObsoleteLines > 0)
+                var splitHeaders = SplitCombinedNationalHeaders(document, local);
+                if (removedAnnotations > 0 || removedObsoleteLines > 0 || splitHeaders > 0)
                 {
+                    // Removing comment references can move subsequent absolute offsets
+                    // and splitting changes paragraph indexes: never reuse the
+                    // pre-annotation findings or anchors.
                     new WordDocumentReadRuntime(_application, _accessManager).Prepare(
-                        context, DocumentAnalysisScope.Full, document, false);
-                    local = context.LastLocalSnapshot!;
-                }
-                if (SplitCombinedNationalHeaders(document, local) > 0 || removedObsoleteLines > 0)
-                {
-                    // Paragraph indexes and every text anchor changed. Never reuse
-                    // the pre-split findings, including spelling replacement spans.
-                    new WordDocumentReadRuntime(_application, _accessManager).Prepare(
-                        context, DocumentAnalysisScope.Full, document, false);
+                        context, DocumentAnalysisScope.Full, document, false, operation);
                     local = context.LastLocalSnapshot!;
                     formatFindings = context.LastFormatScan!.Findings;
                     spellingFindings = context.LastSpellingScan!.Findings;
@@ -150,53 +150,56 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     roles = context.LastRolesByParagraphIndex;
                 }
 
-                // Apply text edits first while every explicit-read offset is still exact.
-                // Later layout operations resolve main-story paragraphs by their stable
-                // paragraph index, so replacements that change character counts cannot
-                // shift formatting onto another paragraph.
+                // Paragraphs are located from snapshot offsets. Every text change made
+                // below is recorded so later operations map their offsets to the
+                // current document (no Paragraphs[i] lookups, which are O(n) each).
+                s_tracker = new MainStoryEditTracker();
+                operation?.ReportProgress(0, 4, "sửa chữ");
                 correctedSpellingItems = ApplyDeterministicSpellingFixes(document, local,
-                    formatFindings.Concat(spellingFindings).ToArray(), rules, blocks);
-                correctedSpellingItems += CollapseMultipleSpaces(document);
+                    formatFindings.Concat(spellingFindings).ToArray(), rules, blocks,
+                    includeRepeatedSpaces: true);
                 changedParagraphs += ApplyDeterministicParagraphFindingFixes(
                     document, local, formatFindings, roles);
+                operation?.ReportProgress(1, 4, "định dạng đoạn");
                 changedParagraphs += ApplyExplicitFormatFindingFixes(document, local,
                     formatFindings, rules, blocks, roles);
                 normalizedSections = NormalizeSections(document, local, rules);
-                NormalizeHeaderLayoutTables(document, local, roles);
-                foreach (var paragraph in local.Paragraphs.Where(p =>
-                    string.Equals(p.StoryType, "wdMainTextStory", StringComparison.Ordinal)))
-                {
-                    string role;
-                    roles.TryGetValue(paragraph.Index, out role);
-                    var headerFontTier = ResolveHeaderTier(local, blocks, paragraph.Index);
-                    if (ApplyParagraphFormat(document, paragraph, role ?? string.Empty, local, rules,
-                            headerFontTier))
-                        changedParagraphs++;
-                }
+                NormalizeHeaderLayoutTables(document, local, roles, blocks);
+                changedParagraphs += ApplyParagraphFormats(document, local, roles, rules, blocks);
+                changedParagraphs += ApplyTechnicalDocumentProfile(document, local, blocks, roles);
 
-                EnsurePageNumbers(document, local, rules);
+                operation?.ReportProgress(2, 4, "bảng và số trang");
+                EnsurePageNumbers(document, local, rules, blocks);
                 normalizedTables = NormalizeTables(document, local, roles);
                 WordAppendixPaginationNormalizer.Normalize(document, roles);
                 RemoveTrailingBlankParagraphs(document);
+                s_tracker = null;
+                ReleaseComMemory();
 
-                // Component lines use absolute page coordinates. Create or move them
-                // only after every operation that can change margins, header-table
-                // widths, pagination or paragraph placement; otherwise Word keeps the
-                // old X coordinate while the centred caption moves on repagination.
-                try
+                // Component lines are measured from the laid-out document. A technical
+                // document (no administrative block) has no component lines at all, so
+                // it skips this extra snapshot entirely.
+                operation?.ReportProgress(3, 4, "đường kẻ thành phần");
+                if (blocks.Any(block => block.IsAdministrative) ||
+                    local.LineShapes.Any(line => LineShapeOwnership.IsOwned(line.Name)))
                 {
-                    document.Repaginate();
-                    _application.ScreenRefresh();
+                    try
+                    {
+                        document.Repaginate();
+                        _application.ScreenRefresh();
+                    }
+                    catch (COMException) { }
+                    new WordDocumentReadRuntime(_application, _accessManager).Prepare(
+                        context, DocumentAnalysisScope.Full, document, false, operation);
+                    local = context.LastLocalSnapshot!;
+                    formatFindings = context.LastFormatScan!.Findings;
+                    blocks = context.LastLogicalBlocks;
+                    roles = context.LastRolesByParagraphIndex;
+                    s_tracker = new MainStoryEditTracker();
+                    insertedLines = InsertMissingRequiredLines(document, local, formatFindings,
+                        blocks, roles, originalLegacyLineRules);
+                    s_tracker = null;
                 }
-                catch (COMException) { }
-                new WordDocumentReadRuntime(_application, _accessManager).Prepare(
-                    context, DocumentAnalysisScope.Full, document, false);
-                local = context.LastLocalSnapshot!;
-                formatFindings = context.LastFormatScan!.Findings;
-                blocks = context.LastLogicalBlocks;
-                roles = context.LastRolesByParagraphIndex;
-                insertedLines = InsertMissingRequiredLines(document, local, formatFindings,
-                    blocks, roles, originalLegacyLineRules);
 
                 if (undoStarted)
                 {
@@ -226,9 +229,252 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             }
             finally
             {
+                s_tracker = null;
                 _application.DisplayAlerts = previousAlerts;
                 _application.ScreenUpdating = previousScreenUpdating;
+                ReleaseComMemory();
             }
+        }
+
+        private static void ReleaseComMemory()
+        {
+            // Release the RCWs of the finished phase so 32-bit Word does not keep
+            // tens of thousands of Range/Font/ParagraphFormat proxies alive.
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+        }
+
+        /// <summary>
+        /// Applies role formatting in document order. Consecutive plain body
+        /// paragraphs with the same target size are formatted as one Range, so a
+        /// long document needs a few hundred COM calls instead of ~15 per paragraph.
+        /// </summary>
+        private static int ApplyParagraphFormats(Word.Document document, LocalScanSnapshot snapshot,
+            IReadOnlyDictionary<int, string> roles, LocalRulePack rules,
+            IReadOnlyList<LogicalDocumentBlock> blocks)
+        {
+            var party = IsParty(snapshot);
+            var changed = 0;
+            var tiers = new Dictionary<int, Nd30HeaderFontSizeTier>();
+            var run = new List<LocalParagraphSnapshot>();
+            var runSize = 0f;
+            foreach (var paragraph in snapshot.Paragraphs
+                .Where(p => string.Equals(p.StoryType, "wdMainTextStory", StringComparison.Ordinal))
+                .OrderBy(p => p.Index))
+            {
+                string role;
+                roles.TryGetValue(paragraph.Index, out role);
+                role = role ?? string.Empty;
+                float size;
+                if (IsPlainBodyParagraph(paragraph, role, snapshot, party, out size))
+                {
+                    if (run.Count > 0 && (run[run.Count - 1].Index + 1 != paragraph.Index ||
+                        Math.Abs(runSize - size) > .01f))
+                    {
+                        changed += FormatBodyRun(document, snapshot, run, runSize, rules, party);
+                        run.Clear();
+                    }
+                    run.Add(paragraph);
+                    runSize = size;
+                    continue;
+                }
+                if (run.Count > 0)
+                {
+                    changed += FormatBodyRun(document, snapshot, run, runSize, rules, party);
+                    run.Clear();
+                }
+                if (string.IsNullOrWhiteSpace(paragraph.Text)) continue;
+                var tier = role.Length == 0
+                    ? UnusedHeaderTier
+                    : ResolveHeaderTierCached(snapshot, blocks, paragraph.Index, tiers);
+                if (ApplyParagraphFormat(document, paragraph, role, snapshot, rules, tier))
+                    changed++;
+            }
+            if (run.Count > 0)
+                changed += FormatBodyRun(document, snapshot, run, runSize, rules, party);
+            return changed;
+        }
+
+        private static bool IsPlainBodyParagraph(LocalParagraphSnapshot paragraph, string role,
+            LocalScanSnapshot snapshot, bool party, out float size)
+        {
+            size = party ? 14f : ValidOr(paragraph.FontSizePoints, 13, 14, 14);
+            if (role.Length != 0 || paragraph.IsInTable || string.IsNullOrWhiteSpace(paragraph.Text))
+                return false;
+            if (IsLegalPointParagraph(paragraph.Text)) return false;
+            if (Regex.IsMatch(paragraph.Text.Trim(), @"^Điều\s+\d+\s*[.:]",
+                    RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, TimeSpan.FromMilliseconds(200)))
+                return false;
+            if (snapshot.IntersectsProtectedSpan(paragraph)) return false;
+            return IsBodyParagraph(paragraph);
+        }
+
+        private static int FormatBodyRun(Word.Document document, LocalScanSnapshot snapshot,
+            IReadOnlyList<LocalParagraphSnapshot> run, float size, LocalRulePack rules, bool party)
+        {
+            Word.Range? first = null;
+            Word.Range? last = null;
+            Word.Range? range = null;
+            try
+            {
+                first = ResolveCurrentMainParagraphRange(document, run[0]);
+                last = run.Count == 1 ? null : ResolveCurrentMainParagraphRange(document, run[run.Count - 1]);
+                range = document.Range(first.Start, last == null ? first.End : last.End);
+                ApplyBodyFormat(range, size, rules, party);
+                return run.Count;
+            }
+            catch (Exception exception) when (exception is COMException ||
+                exception is InvalidOperationException)
+            {
+                // Fall back to the per-paragraph path for this run only.
+                var changed = 0;
+                foreach (var paragraph in run)
+                    if (ApplyParagraphFormat(document, paragraph, string.Empty, snapshot, rules,
+                            UnusedHeaderTier))
+                        changed++;
+                return changed;
+            }
+            finally { Release(range); Release(last); Release(first); }
+        }
+
+        private static void ApplyBodyFormat(Word.Range range, float size, LocalRulePack rules, bool party)
+        {
+            Word.Font? font = null;
+            Word.ParagraphFormat? format = null;
+            try
+            {
+                font = range.Font;
+                font.Name = rules.BodyFontName;
+                font.Color = Word.WdColor.wdColorAutomatic;
+                font.Size = size;
+                format = range.ParagraphFormat;
+                format.Alignment = Word.WdParagraphAlignment.wdAlignParagraphJustify;
+                format.RightIndent = 0f;
+                format.LeftIndent = (float)(ParagraphIndentPolicy.BodyLeftMillimeters * PointsPerMillimeter);
+                format.FirstLineIndent = (float)(ParagraphIndentPolicy.BodyFirstLineMillimeters * PointsPerMillimeter);
+                format.SpaceBeforeAuto = 0;
+                format.SpaceAfterAuto = 0;
+                format.SpaceBefore = 0f;
+                format.SpaceAfter = 6f;
+                // Widow/orphan control for body text (LATEX-PAGINATION-WIDOW).
+                format.WidowControl = -1;
+                if (party)
+                {
+                    format.LineSpacingRule = Word.WdLineSpacing.wdLineSpaceExactly;
+                    format.LineSpacing = 18f;
+                }
+                else
+                {
+                    format.LineSpacingRule = Word.WdLineSpacing.wdLineSpaceMultiple;
+                    format.LineSpacing = 14.4f;
+                }
+            }
+            finally { Release(format); Release(font); }
+        }
+
+        private static readonly Regex TableCaptionPattern = new Regex(
+            @"^\s*Bảng\s+(?:số\s+)?(?:\d+(?:\.\d+)*|[IVXLCDM]+)(?:[.\-–—/:]\s*|\s+|$)",
+            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, TimeSpan.FromMilliseconds(200));
+
+        private static readonly Regex FigureCaptionPattern = new Regex(
+            @"^\s*(?:Hình|Sơ\s+đồ|Biểu\s+đồ)\s+(?:số\s+)?(?:\d+(?:\.\d+)*|[IVXLCDM]+)(?:[.\-–—/:]\s*|\s+|$)",
+            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, TimeSpan.FromMilliseconds(200));
+
+        /// <summary>
+        /// "TechnicalDocument" profile (Đợt 5) for blocks that are not
+        /// administrative documents (D4): headings detected with the Vietnamese
+        /// hierarchy keep with the next paragraph and their lines together and get
+        /// consistent spacing (12/6 pt for level 1, 6/3 pt below); a table caption
+        /// keeps with its table and a picture keeps with its caption below.
+        /// Text is never changed.
+        /// </summary>
+        private static int ApplyTechnicalDocumentProfile(Word.Document document, LocalScanSnapshot snapshot,
+            IReadOnlyList<LogicalDocumentBlock> blocks, IReadOnlyDictionary<int, string> roles)
+        {
+            var technical = blocks.Where(block => !block.IsAdministrative).ToArray();
+            if (technical.Length == 0) return 0;
+            var main = snapshot.Paragraphs
+                .Where(p => string.Equals(p.StoryType, "wdMainTextStory", StringComparison.Ordinal) &&
+                    technical.Any(block => block.ContainsParagraph(p.Index)))
+                .OrderBy(p => p.Index)
+                .ToList();
+            if (main.Count == 0) return 0;
+            var byIndex = main.GroupBy(p => p.Index).ToDictionary(group => group.Key, group => group.First());
+            var blockIds = new Dictionary<int, string>();
+            foreach (var paragraph in main)
+            {
+                var owner = technical.First(block => block.ContainsParagraph(paragraph.Index));
+                blockIds[paragraph.Index] = "B" + owner.StartParagraphIndex.ToString(CultureInfo.InvariantCulture);
+            }
+
+            var changed = 0;
+            var headings = new HeadingDetector().Detect(main, new HeadingDetectionContext(roles, blockIds));
+            foreach (var heading in headings)
+            {
+                LocalParagraphSnapshot paragraph;
+                if (!byIndex.TryGetValue(heading.ParagraphIndex, out paragraph) ||
+                    snapshot.IntersectsProtectedSpan(paragraph)) continue;
+                var first = heading.Level <= 1;
+                if (SetKeepAndSpacing(document, paragraph, true, true,
+                        first ? 12f : 6f, first ? 6f : 3f))
+                    changed++;
+            }
+
+            var pictureParagraphs = new HashSet<int>(snapshot.GraphicObjects
+                .Where(item => item.IsInline && item.AnchorParagraphIndex.HasValue &&
+                    string.Equals(item.StoryType, "wdMainTextStory", StringComparison.Ordinal))
+                .Select(item => item.AnchorParagraphIndex!.Value));
+            for (var position = 0; position < main.Count; position++)
+            {
+                var paragraph = main[position];
+                if (paragraph.IsInTable) continue;
+                var text = paragraph.Text ?? string.Empty;
+                if (TableCaptionPattern.IsMatch(text))
+                {
+                    // Caption above its table: never leave it alone at a page end.
+                    if (SetKeepAndSpacing(document, paragraph, true, true, null, null)) changed++;
+                }
+                else if (FigureCaptionPattern.IsMatch(text) && position > 0 &&
+                    pictureParagraphs.Contains(main[position - 1].Index) &&
+                    main[position - 1].Index + 1 == paragraph.Index)
+                {
+                    // Picture above its caption: keep the picture with the caption.
+                    if (SetKeepAndSpacing(document, main[position - 1], true, false, null, null)) changed++;
+                }
+            }
+            return changed;
+        }
+
+        private static bool SetKeepAndSpacing(Word.Document document, LocalParagraphSnapshot paragraph,
+            bool keepWithNext, bool keepTogether, float? spaceBefore, float? spaceAfter)
+        {
+            Word.Range? range = null;
+            Word.ParagraphFormat? format = null;
+            try
+            {
+                range = ResolveCurrentMainParagraphRange(document, paragraph);
+                format = range.ParagraphFormat;
+                if (keepWithNext) format.KeepWithNext = -1;
+                if (keepTogether) format.KeepTogether = -1;
+                if (spaceBefore.HasValue)
+                {
+                    format.SpaceBeforeAuto = 0;
+                    format.SpaceBefore = spaceBefore.Value;
+                }
+                if (spaceAfter.HasValue)
+                {
+                    format.SpaceAfterAuto = 0;
+                    format.SpaceAfter = spaceAfter.Value;
+                }
+                return true;
+            }
+            catch (Exception exception) when (exception is COMException ||
+                exception is InvalidOperationException)
+            {
+                return false;
+            }
+            finally { Release(format); Release(range); }
         }
 
         public SelectedFindingFixResult ExecuteSelectedFinding(
@@ -776,6 +1022,10 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 case "ND30-PL1-M3-K1C":
                     return finding.CurrentIssue.IndexOf("thiếu dòng",
                         StringComparison.OrdinalIgnoreCase) >= 0;
+                case "ND30-PL1-M2-K1-QH":
+                    // "TÊN CƠ QUAN<TAB>CỘNG HÒA..." on one line is reported only.
+                    return finding.CurrentIssue.IndexOf("chung một dòng",
+                        StringComparison.OrdinalIgnoreCase) >= 0;
                 default:
                     return false;
             }
@@ -1024,6 +1274,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 var start = textRange.Start;
                 textRange.End = textRange.Start + existing.Length;
                 textRange.Text = replacement;
+                RecordTextEdit(start, existing.Length, replacement.Length);
                 paragraphRange.SetRange(start, checked(start + replacement.Length));
                 return string.Equals(paragraphRange.Text ?? string.Empty, replacement,
                     StringComparison.Ordinal);
@@ -1049,11 +1300,34 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
         private static void NormalizeSection(Word.Section section, bool party, LocalRulePack rules)
         {
-            section.PageSetup.PaperSize = Word.WdPaperSize.wdPaperA4;
-            section.PageSetup.TopMargin = (float)((party ? 20d : rules.TopMinMm) * PointsPerMillimeter);
-            section.PageSetup.BottomMargin = (float)((party ? 20d : rules.BottomMinMm) * PointsPerMillimeter);
-            section.PageSetup.LeftMargin = (float)((party ? 30d : rules.LeftMinMm) * PointsPerMillimeter);
-            section.PageSetup.RightMargin = (float)((party ? 15d : rules.RightMinMm) * PointsPerMillimeter);
+            Word.PageSetup? setup = null;
+            try
+            {
+                setup = section.PageSetup;
+                var top = (float)((party ? 20d : rules.TopMinMm) * PointsPerMillimeter);
+                var bottom = (float)((party ? 20d : rules.BottomMinMm) * PointsPerMillimeter);
+                var left = (float)((party ? 30d : rules.LeftMinMm) * PointsPerMillimeter);
+                var right = (float)((party ? 15d : rules.RightMinMm) * PointsPerMillimeter);
+                if (setup.Orientation == Word.WdOrientation.wdOrientLandscape)
+                {
+                    // Never flip the orientation chosen by the author. A landscape page
+                    // is bound on the same physical edge as the portrait pages once it
+                    // is rotated for reading: the binding margin is at the top.
+                    setup.PageWidth = 297f * PointsPerMillimeter;
+                    setup.PageHeight = 210f * PointsPerMillimeter;
+                    setup.TopMargin = left;
+                    setup.BottomMargin = right;
+                    setup.LeftMargin = top;
+                    setup.RightMargin = bottom;
+                    return;
+                }
+                setup.PaperSize = Word.WdPaperSize.wdPaperA4;
+                setup.TopMargin = top;
+                setup.BottomMargin = bottom;
+                setup.LeftMargin = left;
+                setup.RightMargin = right;
+            }
+            finally { Release(setup); }
         }
 
         private static bool ApplyParagraphFormat(Word.Document document, LocalParagraphSnapshot paragraph,
@@ -1114,10 +1388,20 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 range.Font.Size = style.Size;
                 range.Font.Bold = style.Bold ? -1 : 0;
                 range.Font.Italic = style.Italic ? -1 : 0;
-                range.Font.Underline = style.Underline
-                    ? Word.WdUnderline.wdUnderlineSingle
-                    : Word.WdUnderline.wdUnderlineNone;
+                // D6: a single underline of the whole motto is a valid separator
+                // chosen by the author; keep it instead of replacing it by a shape.
+                if (!(role == "nationalMotto" && paragraph.Underline == 1))
+                    range.Font.Underline = style.Underline
+                        ? Word.WdUnderline.wdUnderlineSingle
+                        : Word.WdUnderline.wdUnderlineNone;
                 if (role == "appendixTitle")
+                    range.Case = Word.WdCharacterCase.wdUpperCase;
+                // Quốc hiệu typed in lower case (accepted only inside the header
+                // zone) is capitalized in place; Range.Case keeps runs and anchors.
+                // A combined title + motto paragraph is never upper-cased.
+                if (role == "nationalTitle" && !party &&
+                    ComponentTextNormalizer.IsNationalTitle(paragraph.Text) &&
+                    !ComponentTextNormalizer.IsUppercaseNationalTitle(paragraph.Text))
                     range.Case = Word.WdCharacterCase.wdUpperCase;
                 range.ParagraphFormat.Alignment = style.Alignment;
                 if (!party && role != "nationalTitle" && role != "nationalMotto" &&
@@ -1345,6 +1629,9 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
             foreach (var block in blocks)
             {
+                // D4: a technical document (no national/party title or type name in
+                // its header zone) never receives component lines.
+                if (!block.IsAdministrative) continue;
                 if (IsParty(snapshot))
                 {
                     AddRequiredRoleLines(work, snapshot, block, "partyTitle", "HD05-M1-TITLE-LINE", false);
@@ -1374,11 +1661,20 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 if (!targets.Any(t => t.Item1 == item.Item1 && t.Item2 == index))
                     targets.Add(Tuple.Create(item.Item1, index));
             }
+            var paragraphsByIndex = snapshot.Paragraphs
+                .Where(p => string.Equals(p.StoryType, "wdMainTextStory", StringComparison.Ordinal))
+                .GroupBy(p => p.Index)
+                .ToDictionary(group => group.Key, group => group.First());
             foreach (var item in targets)
             {
                 var paragraphIndex = item.Item2;
-                var paragraph = snapshot.Paragraphs.FirstOrDefault(p => p.Index == paragraphIndex);
-                if (paragraph == null || !string.Equals(paragraph.StoryType, "wdMainTextStory", StringComparison.Ordinal)) continue;
+                LocalParagraphSnapshot paragraph;
+                if (!paragraphsByIndex.TryGetValue(paragraphIndex, out paragraph)) continue;
+                // D6: an existing solid bottom border (any component) or a single
+                // underline of the whole motto already satisfies NĐ30.
+                if (paragraph.HasBottomBorder ||
+                    (item.Item1 == "ND30-PL1-M2-K1-TN-LINE" && paragraph.Underline == 1))
+                    continue;
                 var ratio = item.Item1 == "ND30-PL1-M2-K2-ORG-LINE" ||
                     item.Item1 == "ND30-PL1-M2-K5A-SUBJ-LINE" ? .4d : 1d;
                 if (NormalizeRequiredLine(document, snapshot, paragraph, ratio, item.Item1,
@@ -1451,14 +1747,9 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 var width = (float)Math.Max(28d, textWidth * ratio);
                 var beginX = (float)(center.Value - width / 2d);
                 var y = (float)(top + fontSize.GetValueOrDefault(13d) * 1.25d + 2d);
-                range.Font.Underline = Word.WdUnderline.wdUnderlineNone;
-                Word.Border? bottom = null;
-                try
-                {
-                    bottom = range.ParagraphFormat.Borders[Word.WdBorderType.wdBorderBottom];
-                    bottom.LineStyle = Word.WdLineStyle.wdLineStyleNone;
-                }
-                finally { Release(bottom); }
+                // The author's underline or paragraph border is never removed here
+                // (D6 accepts both); paragraphs carrying one are not sent to this
+                // method by InsertMissingRequiredLines.
                 var inTable = range.get_Information(Word.WdInformation.wdWithInTable);
                 if (ruleCode == "ND30-PL1-M2-K5A-SUBJ-LINE")
                 {
@@ -1538,10 +1829,49 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 shape.Left = beginX;
                 shape.Top = y;
                 NormalizeLineStyle(shape);
-                shape.LockAnchor = 0;
+                AnchorLineToParagraph(shape, lineAnchor, y);
                 return true;
             }
             finally { Release(shape); Release(currentFont); Release(lineAnchor); Release(range); }
+        }
+
+        /// <summary>
+        /// D5: keep the horizontal page position (the caption does not move
+        /// sideways when content changes) but make the vertical position relative
+        /// to the anchor paragraph and lock the anchor, so the rule follows its
+        /// component when paragraphs are added above it or the file is reopened on
+        /// another printer. Word either keeps the visual position when the
+        /// relative-position mode changes or keeps the old number; both cases are
+        /// handled by comparing with the expected paragraph-relative offset.
+        /// </summary>
+        private static void AnchorLineToParagraph(Word.Shape shape, Word.Range lineAnchor, float pageTop)
+        {
+            try
+            {
+                var anchorTop = WordTextMeasurement.ReadFirstTextLineTop(lineAnchor);
+                if (!anchorTop.HasValue)
+                {
+                    shape.LockAnchor = 0;
+                    return;
+                }
+                var expected = (float)(pageTop - anchorTop.Value);
+                shape.RelativeVerticalPosition =
+                    Word.WdRelativeVerticalPosition.wdRelativeVerticalPositionParagraph;
+                if (Math.Abs(shape.Top - expected) > 6f) shape.Top = expected;
+                shape.LockAnchor = -1;
+            }
+            catch (COMException)
+            {
+                // Fall back to the previous, page-relative placement.
+                try
+                {
+                    shape.RelativeVerticalPosition =
+                        Word.WdRelativeVerticalPosition.wdRelativeVerticalPositionPage;
+                    shape.Top = pageTop;
+                    shape.LockAnchor = 0;
+                }
+                catch (COMException) { }
+            }
         }
 
         private static void RemoveTextualLineSubstitutes(Word.Document document,
@@ -1556,7 +1886,11 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     @"[\v\n][ \t]*[-_.\u2010\u2011\u2012\u2013\u2014\u2015](?:[ \t]*[-_.\u2010\u2011\u2012\u2013\u2014\u2015]){2,}[ \t]*(?=[\r\a]*$)",
                     string.Empty, RegexOptions.CultureInvariant);
                 if (!string.Equals(current, cleaned, StringComparison.Ordinal))
+                {
+                    var componentStart = componentRange.Start;
                     componentRange.Text = cleaned;
+                    RecordTextEdit(componentStart, current.Length, cleaned.Length);
+                }
             }
             finally { Release(componentRange); }
 
@@ -1575,7 +1909,9 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     var contentLength = current.TrimEnd('\r', '\a').Length;
                     if (contentLength <= 0) continue;
                     candidateRange.End = candidateRange.Start + contentLength;
+                    var separatorStart = candidateRange.Start;
                     candidateRange.Text = string.Empty;
+                    RecordTextEdit(separatorStart, contentLength, 0);
                 }
                 finally { Release(candidateRange); }
             }
@@ -1773,7 +2109,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 try
                 {
                     candidate = document.Shapes[index];
-                    if ((int)candidate.Type != 9) continue;
+                    if (!WordLineShapeKind.IsLineLike(candidate)) continue;
                     var name = candidate.Name ?? string.Empty;
                     if (normalized && deleteDuplicateCurrentOwned && string.Equals(name, ownedName, StringComparison.Ordinal))
                     {
@@ -1823,7 +2159,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 try
                 {
                     candidate = document.Shapes[index];
-                    if ((int)candidate.Type == 9 && string.Equals(candidate.Name, name, StringComparison.Ordinal)) candidate.Delete();
+                    if (string.Equals(candidate.Name, name, StringComparison.Ordinal) &&
+                        WordLineShapeKind.IsLineLike(candidate)) candidate.Delete();
                 }
                 catch (COMException) { }
                 finally { Release(candidate); }
@@ -1902,7 +2239,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 try
                 {
                     candidate = document.Shapes[index];
-                    if ((int)candidate.Type != 9) continue;
+                    if (!WordLineShapeKind.IsLineLike(candidate)) continue;
                     var name = candidate.Name ?? string.Empty;
                     if (string.Equals(name, ownedName, StringComparison.Ordinal) ||
                         LineShapeOwnership.IsOwnedForParagraph(name, paragraph.Index))
@@ -1943,35 +2280,87 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 line.AnchorParagraphIndex.Value <= paragraph.Index + 2;
         }
 
-        private static void EnsurePageNumbers(Word.Document document, LocalScanSnapshot snapshot, LocalRulePack rules)
+        private static void EnsurePageNumbers(Word.Document document, LocalScanSnapshot snapshot,
+            LocalRulePack rules, IReadOnlyList<LogicalDocumentBlock> blocks)
         {
             var party = IsParty(snapshot);
-            foreach (Word.Section section in document.Sections)
+            var administrativeFirstSections = AdministrativeFirstSections(snapshot, blocks);
+            var technicalOnly = administrativeFirstSections.Count == 0;
+            Word.Sections? sections = null;
+            try
             {
-                try
+                sections = document.Sections;
+                var count = sections.Count;
+                for (var index = 1; index <= count; index++)
                 {
-                    EnsurePageNumber(document, section, party, rules);
+                    Word.Section? section = null;
+                    try
+                    {
+                        section = sections[index];
+                        EnsurePageNumber(document, section, party, rules,
+                            administrativeFirstSections.Contains(index), technicalOnly);
+                    }
+                    finally { Release(section); }
                 }
-                finally { Release(section); }
             }
+            finally { Release(sections); }
+        }
+
+        /// <summary>Sections that open an administrative document (NĐ30 hides page 1's number there).</summary>
+        private static HashSet<int> AdministrativeFirstSections(LocalScanSnapshot snapshot,
+            IReadOnlyList<LogicalDocumentBlock> blocks)
+        {
+            var result = new HashSet<int>();
+            var bySection = snapshot.Paragraphs
+                .Where(p => string.Equals(p.StoryType, "wdMainTextStory", StringComparison.Ordinal))
+                .GroupBy(p => p.Index)
+                .ToDictionary(group => group.Key, group => group.First().SectionIndex);
+            foreach (var block in blocks)
+            {
+                int sectionIndex;
+                if (block.IsAdministrative && bySection.TryGetValue(block.StartParagraphIndex, out sectionIndex))
+                    result.Add(sectionIndex);
+            }
+            return result;
         }
 
         private static void EnsurePageNumber(Word.Document document, Word.Section section,
-            bool party, LocalRulePack rules)
+            bool party, LocalRulePack rules) =>
+            EnsurePageNumber(document, section, party, rules, section.Index == 1, false);
+
+        private static void EnsurePageNumber(Word.Document document, Word.Section section,
+            bool party, LocalRulePack rules, bool opensAdministrativeDocument, bool technicalOnly)
         {
             Word.HeaderFooter? header = null;
             Word.Range? range = null;
+            Word.Range? headerRange = null;
             Word.Field? field = null;
             try
             {
-                section.PageSetup.DifferentFirstPageHeaderFooter = -1;
-                RemoveFirstPageNumber(section);
-                if (!party) RemoveFooterPageNumbers(section);
+                // Only the first page of an administrative document hides its number.
+                // Later sections (for example a landscape progress chart) keep their
+                // header links and their page numbers.
+                if (opensAdministrativeDocument)
+                {
+                    section.PageSetup.DifferentFirstPageHeaderFooter = -1;
+                    RemoveFirstPageNumber(section);
+                }
+                // A technical document keeps page numbers the author put in the footer.
+                if (!party && !technicalOnly) RemoveFooterPageNumbers(section);
                 if (ContainsPageField(section)) return;
                 header = section.Headers[Word.WdHeaderFooterIndex.wdHeaderFooterPrimary];
                 if (!header.Exists) header.Exists = true;
+                headerRange = header.Range.Duplicate;
+                var existingText = (headerRange.Text ?? string.Empty).Trim('\r', '\a', ' ', '\t');
                 range = header.Range.Duplicate;
                 range.Collapse(Word.WdCollapseDirection.wdCollapseStart);
+                if (existingText.Length > 0)
+                {
+                    // Keep the author's header paragraph (company/package name) and its
+                    // alignment: the page number goes into its own new paragraph.
+                    range.InsertParagraphBefore();
+                    range.Collapse(Word.WdCollapseDirection.wdCollapseStart);
+                }
                 range.ParagraphFormat.Alignment = Word.WdParagraphAlignment.wdAlignParagraphCenter;
                 field = document.Fields.Add(range, Word.WdFieldType.wdFieldPage,
                     PreserveFormatting: true);
@@ -1980,59 +2369,87 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 field.Result.Font.Bold = 0;
                 field.Result.Font.Italic = 0;
             }
-            finally { Release(field); Release(range); Release(header); }
+            finally { Release(field); Release(headerRange); Release(range); Release(header); }
         }
 
         private static int NormalizeTables(Word.Document document, LocalScanSnapshot snapshot,
             IReadOnlyDictionary<int, string> roles)
         {
+            // Tables holding a recognized component are layout tables, not data.
+            var roleTables = new HashSet<int>(snapshot.Paragraphs
+                .Where(paragraph => paragraph.TableIndex.HasValue && roles.ContainsKey(paragraph.Index) &&
+                    string.Equals(paragraph.StoryType, "wdMainTextStory", StringComparison.Ordinal))
+                .Select(paragraph => paragraph.TableIndex!.Value));
             var count = 0;
-            foreach (Word.Table table in document.Tables)
+            Word.Tables? tables = null;
+            try
             {
-                Word.Row? first = null;
-                try
+                tables = document.Tables;
+                var tableCount = tables.Count;
+                for (var index = 1; index <= tableCount; index++)
                 {
-                    if (ContainsRecognizedRole(table, snapshot, roles)) continue;
-                    if (!IsLikelyDataTable(table)) continue;
-                    table.Rows.AllowBreakAcrossPages = 0;
-                    first = table.Rows[1];
-                    first.HeadingFormat = -1;
-                    count++;
+                    if (roleTables.Contains(index)) continue;
+                    Word.Table? table = null;
+                    Word.Row? first = null;
+                    try
+                    {
+                        table = tables[index];
+                        if (!IsLikelyDataTable(table)) continue;
+                        // Repeat and keep together only the header row. Forbidding
+                        // every row to break across pages left large blank areas
+                        // below long quality-control rows in technical documents.
+                        first = table.Rows[1];
+                        first.HeadingFormat = -1;
+                        first.AllowBreakAcrossPages = 0;
+                        count++;
+                    }
+                    catch (COMException) { }
+                    finally { Release(first); Release(table); }
                 }
-                catch (COMException) { }
-                finally { Release(first); Release(table); }
             }
+            finally { Release(tables); }
             return count;
         }
 
         private static void NormalizeHeaderLayoutTables(Word.Document document, LocalScanSnapshot snapshot,
-            IReadOnlyDictionary<int, string> roles)
+            IReadOnlyDictionary<int, string> roles, IReadOnlyList<LogicalDocumentBlock> blocks)
         {
-            var headerRoles = new HashSet<string>(StringComparer.Ordinal)
-            {
-                "nationalTitle",
-                "nationalMotto",
-                "organName",
-                "superiorOrganName",
-                "partyTitle",
-                "codeNumber",
-                "placeAndIssuedDate"
-            };
+            // A header layout table is identified only by detected roles, never by
+            // the words it contains: a data table listing "Quốc hội nước Cộng hòa xã
+            // hội chủ nghĩa Việt Nam..." must keep its borders and column widths.
+            var headerTableIndexes = new HashSet<int>(snapshot.Paragraphs
+                .Where(paragraph => paragraph.IsInTable && paragraph.TableIndex.HasValue &&
+                    string.Equals(paragraph.StoryType, "wdMainTextStory", StringComparison.Ordinal) &&
+                    roles.TryGetValue(paragraph.Index, out var role) &&
+                    (role == "nationalTitle" || role == "partyTitle" || role == "organName") &&
+                    blocks.Any(block => block.IsInHeaderZone(paragraph.Index)))
+                .Select(paragraph => paragraph.TableIndex!.Value));
+            if (headerTableIndexes.Count == 0) return;
 
             var normalizedAny = false;
-            foreach (Word.Table table in document.Tables)
+            Word.Tables? tables = null;
+            try
             {
-                try
+                tables = document.Tables;
+                var count = tables.Count;
+                foreach (var tableIndex in headerTableIndexes.OrderBy(value => value))
                 {
-                    if (IsHeaderLayoutTable(table, snapshot, roles, headerRoles))
+                    if (tableIndex < 1 || tableIndex > count) continue;
+                    Word.Table? table = null;
+                    try
                     {
-                        NormalizeHeaderTable(table);
-                        normalizedAny = true;
+                        table = tables[tableIndex];
+                        if (IsHeaderLayoutTable(table, snapshot, tableIndex))
+                        {
+                            NormalizeHeaderTable(table);
+                            normalizedAny = true;
+                        }
                     }
+                    catch (COMException) { }
+                    finally { Release(table); }
                 }
-                catch (COMException) { }
-                finally { Release(table); }
             }
+            finally { Release(tables); }
 
             if (normalizedAny)
             {
@@ -2041,32 +2458,31 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         }
 
         private static bool IsHeaderLayoutTable(Word.Table table, LocalScanSnapshot snapshot,
-            IReadOnlyDictionary<int, string> roles, ISet<string> headerRoles)
+            int tableIndex)
         {
-            Word.Range? range = null;
+            Word.Rows? rows = null;
+            Word.Columns? columns = null;
             try
             {
-                range = table.Range;
-                if (snapshot.Paragraphs.Any(paragraph =>
-                    roles.ContainsKey(paragraph.Index) &&
-                    headerRoles.Contains(roles[paragraph.Index]) &&
-                    paragraph.AbsoluteStart >= range.Start && paragraph.AbsoluteStart < range.End))
-                {
-                    return true;
-                }
-
-                var text = range.Text ?? string.Empty;
-                return text.IndexOf("CỘNG HÒA", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                    text.IndexOf("CỘNG HOÀ", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                    text.IndexOf("ĐẢNG CỘNG SẢN", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                    (text.IndexOf("Độc lập", StringComparison.OrdinalIgnoreCase) >= 0 &&
-                     text.IndexOf("Hạnh phúc", StringComparison.OrdinalIgnoreCase) >= 0);
+                // Bounded geometry: an NĐ30 header layout table is at most 4 rows by
+                // 3 columns. Larger tables are data tables even if they mention the
+                // national title.
+                rows = table.Rows;
+                columns = table.Columns;
+                if (rows.Count > 4 || columns.Count > 3) return false;
+                // The snapshot must agree that this table holds only a handful of
+                // short header paragraphs.
+                var paragraphs = snapshot.Paragraphs.Where(paragraph => paragraph.IsInTable &&
+                    paragraph.TableIndex == tableIndex &&
+                    string.Equals(paragraph.StoryType, "wdMainTextStory", StringComparison.Ordinal) &&
+                    !string.IsNullOrWhiteSpace(paragraph.Text)).ToArray();
+                return paragraphs.Length > 0 && paragraphs.Length <= 16;
             }
             catch (COMException)
             {
                 return false;
             }
-            finally { Release(range); }
+            finally { Release(columns); Release(rows); }
         }
 
         private static void NormalizeHeaderTable(Word.Table table)
@@ -2157,7 +2573,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
         private static int ApplyDeterministicSpellingFixes(Word.Document document, LocalScanSnapshot snapshot,
             IReadOnlyList<AnnotationFinding> findings, LocalRulePack rules,
-            IReadOnlyList<LogicalDocumentBlock> blocks)
+            IReadOnlyList<LogicalDocumentBlock> blocks, bool includeRepeatedSpaces = false)
         {
             var paragraphs = snapshot.Paragraphs.ToDictionary(item => item.Index);
             var edits = new List<SpellingEdit>();
@@ -2182,21 +2598,32 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 LocalParagraphSnapshot paragraph;
                 if (!paragraphs.TryGetValue(group.Key, out paragraph)) continue;
                 var printable = (paragraph.Text ?? string.Empty).TrimEnd('\r', '\a');
-                string? replacement = null;
                 if (group.Any(item => item.RuleCode == "ND30-PL1-M2-K1-TN-SEP"))
                 {
-                    replacement = LocalAdministrativeTextNormalizer.NationalMotto;
+                    // Never overwrite the paragraph with the canonical motto. Only a
+                    // paragraph that is exactly the motto is edited, and only the
+                    // differing separators/letters are replaced, so character
+                    // formatting and Shape anchors inside the paragraph survive.
+                    var mottoEdits = NationalMottoEditPlanner.Plan(printable);
+                    if (mottoEdits == null) continue;
+                    foreach (var mottoEdit in mottoEdits)
+                        edits.Add(new SpellingEdit(
+                            checked(paragraph.AbsoluteStart + mottoEdit.Offset), mottoEdit.Length,
+                            mottoEdit.Replacement, mottoEdit.ExpectedText, 100));
+                    continue;
                 }
-                else
-                {
-                    var abbreviation = ResolveExpectedTypeAbbreviation(snapshot,
-                        paragraph.Index, rules, blocks);
-                    replacement = LocalAdministrativeTextNormalizer.NormalizeCodeNumber(
-                        printable, IsParty(snapshot), abbreviation);
-                }
-                if (!string.Equals(printable, replacement, StringComparison.Ordinal))
+
+                var abbreviation = ResolveExpectedTypeAbbreviation(snapshot,
+                    paragraph.Index, rules, blocks);
+                var replacement = LocalAdministrativeTextNormalizer.NormalizeCodeNumber(
+                    printable, IsParty(snapshot), abbreviation);
+                // Guard every whole-paragraph replacement of a fixed component: a
+                // rewrite that changes the length a lot or keeps little of the
+                // original text is a misclassification, not a format correction.
+                if (!string.Equals(printable, replacement, StringComparison.Ordinal) &&
+                    ComponentTextNormalizer.IsSafeWholeParagraphReplacement(printable, replacement))
                     edits.Add(new SpellingEdit(paragraph.AbsoluteStart, printable.Length,
-                        replacement ?? printable, printable, 100));
+                        replacement, printable, 100));
             }
 
             foreach (var finding in findings)
@@ -2212,40 +2639,96 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 if (edit != null) edits.Add(edit);
             }
 
+            if (includeRepeatedSpaces)
+                AddRepeatedSpaceEdits(snapshot, edits);
+
             var applied = new List<SpellingEdit>();
             var count = 0;
+            int? contentEnd = null;
             foreach (var edit in edits.OrderByDescending(item => item.Start).ThenByDescending(item => item.Priority))
             {
-                if (applied.Any(item => Intersects(edit, item))) continue;
+                // Edits are applied from the end of the document; a sorted list of
+                // already-applied starts makes the overlap test logarithmic-ish in
+                // practice (only the closest applied edits can intersect).
+                if (IntersectsApplied(applied, edit)) continue;
                 Word.Range? range = null;
                 try
                 {
+                    var tracker = s_tracker;
+                    var start = tracker == null ? edit.Start : tracker.Map(edit.Start);
                     if (!string.IsNullOrEmpty(edit.ExpectedText))
                     {
-                        var validationEnd = checked(edit.Start + edit.ExpectedText.Length);
-                        if (validationEnd > document.Content.End) continue;
+                        var validationEnd = checked(start + edit.ExpectedText.Length);
+                        if (!contentEnd.HasValue)
+                        {
+                            Word.Range? content = null;
+                            try { content = document.Content; contentEnd = content.End; }
+                            finally { Release(content); }
+                        }
+                        if (validationEnd > contentEnd.Value) continue;
                         Word.Range? validation = null;
                         try
                         {
-                            validation = document.Range(edit.Start, validationEnd);
+                            validation = document.Range(start, validationEnd);
                             if (!string.Equals(validation.Text ?? string.Empty, edit.ExpectedText,
                                     StringComparison.Ordinal))
                                 continue;
                         }
                         finally { Release(validation); }
                     }
-                    range = document.Range(edit.Start, checked(edit.Start + edit.Length));
+                    range = document.Range(start, checked(start + edit.Length));
                     if (range.Editors.Count > 0 || range.Fields.Count > 0 ||
                         range.ContentControls.Count > 0 || range.InlineShapes.Count > 0)
                         continue;
                     if (edit.Length == 0) range.InsertBefore(edit.Replacement);
                     else range.Text = edit.Replacement;
+                    RecordTextEdit(start, edit.Length, edit.Replacement.Length);
+                    contentEnd = contentEnd.HasValue
+                        ? contentEnd.Value + edit.Replacement.Length - edit.Length
+                        : (int?)null;
                     applied.Add(edit);
                     count++;
                 }
                 finally { Release(range); }
             }
             return count;
+        }
+
+        private static bool IntersectsApplied(List<SpellingEdit> applied, SpellingEdit edit)
+        {
+            // Applied edits are appended in descending start order; only the most
+            // recent ones can reach back to this edit's span.
+            for (var index = applied.Count - 1; index >= 0; index--)
+            {
+                var item = applied[index];
+                if (Intersects(edit, item)) return true;
+                if (item.Start > edit.Start + Math.Max(edit.Length, 1) + 4096) break;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Replaces runs of two or more spaces by one space inside ordinary
+        /// main-story paragraphs. Table cells (often aligned with spaces),
+        /// protected spans, fields, hyperlinks and content controls are skipped.
+        /// </summary>
+        private static void AddRepeatedSpaceEdits(LocalScanSnapshot snapshot, ICollection<SpellingEdit> edits)
+        {
+            foreach (var paragraph in snapshot.Paragraphs)
+            {
+                if (!string.Equals(paragraph.StoryType, "wdMainTextStory", StringComparison.Ordinal) ||
+                    paragraph.IsInTable || paragraph.HasField == true || paragraph.HasHyperlink == true ||
+                    paragraph.HasContentControl == true || paragraph.HasMathObject == true ||
+                    paragraph.Text.IndexOf("  ", StringComparison.Ordinal) < 0 ||
+                    snapshot.IntersectsProtectedSpan(paragraph))
+                    continue;
+                foreach (Match match in Regex.Matches(paragraph.Text, @" {2,}",
+                    RegexOptions.CultureInvariant, TimeSpan.FromMilliseconds(200)))
+                {
+                    edits.Add(new SpellingEdit(checked(paragraph.AbsoluteStart + match.Index),
+                        match.Length, " ", match.Value, 5));
+                }
+            }
         }
 
         private static string ResolveExpectedTypeAbbreviation(LocalScanSnapshot snapshot,
@@ -2281,12 +2764,59 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             }
         }
 
+        /// <summary>
+        /// Locates a snapshot paragraph in the current document from its absolute
+        /// offsets (mapped through the text edits made since the snapshot) and
+        /// verifies both paragraph boundaries. Only when that check fails does it
+        /// fall back to Paragraphs[index], which is O(paragraphs) per call.
+        /// </summary>
         private static Word.Range ResolveCurrentMainParagraphRange(
             Word.Document document,
             LocalParagraphSnapshot paragraph)
         {
             if (!string.Equals(paragraph.StoryType, "wdMainTextStory", StringComparison.Ordinal) ||
-                paragraph.Index <= 0 || paragraph.Index > document.Paragraphs.Count)
+                paragraph.Index <= 0)
+                throw new InvalidOperationException(
+                    "Vị trí đoạn văn đã thay đổi. Hãy bấm lại chức năng để phân tích trạng thái mới.");
+
+            var tracker = s_tracker;
+            var start = tracker == null ? paragraph.AbsoluteStart : tracker.Map(paragraph.AbsoluteStart);
+            var end = tracker == null ? paragraph.AbsoluteEnd : tracker.Map(paragraph.AbsoluteEnd);
+            Word.Range? probe = null;
+            Word.Paragraphs? paragraphs = null;
+            Word.Paragraph? containing = null;
+            Word.Range? candidate = null;
+            try
+            {
+                probe = document.Range(start, start);
+                paragraphs = probe.Paragraphs;
+                containing = paragraphs.First;
+                candidate = containing.Range.Duplicate;
+                if (candidate.Start == start && candidate.End == end)
+                {
+                    var result = candidate;
+                    candidate = null;
+                    return result;
+                }
+            }
+            catch (COMException)
+            {
+            }
+            finally
+            {
+                Release(candidate);
+                Release(containing);
+                Release(paragraphs);
+                Release(probe);
+            }
+            return ResolveMainParagraphRangeByIndex(document, paragraph);
+        }
+
+        private static Word.Range ResolveMainParagraphRangeByIndex(
+            Word.Document document,
+            LocalParagraphSnapshot paragraph)
+        {
+            if (paragraph.Index > document.Paragraphs.Count)
                 throw new InvalidOperationException(
                     "Vị trí đoạn văn đã thay đổi. Hãy bấm lại chức năng để phân tích trạng thái mới.");
             Word.Paragraph? current = null;
@@ -2296,6 +2826,73 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 return current.Range.Duplicate;
             }
             finally { Release(current); }
+        }
+
+        /// <summary>
+        /// Records every text change (in current document coordinates, in the
+        /// order applied) and maps an offset of the snapshot to the current document.
+        /// </summary>
+        private sealed class MainStoryEditTracker
+        {
+            private readonly List<TrackedEdit> _edits = new List<TrackedEdit>();
+
+            public void Record(int currentStart, int oldLength, int newLength)
+            {
+                if (oldLength == newLength) return;
+                _edits.Add(new TrackedEdit(currentStart, oldLength, newLength - oldLength));
+            }
+
+            public int Map(int original)
+            {
+                var position = original;
+                foreach (var edit in _edits)
+                {
+                    // A paragraph boundary at the start of an insertion stays put; a
+                    // boundary at or after the end of a replaced span moves.
+                    var shifts = edit.OldLength == 0
+                        ? position > edit.Start
+                        : position >= edit.Start + edit.OldLength;
+                    if (shifts) position += edit.Delta;
+                }
+                return position;
+            }
+
+            private sealed class TrackedEdit
+            {
+                public TrackedEdit(int start, int oldLength, int delta)
+                {
+                    Start = start;
+                    OldLength = oldLength;
+                    Delta = delta;
+                }
+
+                public int Start { get; }
+                public int OldLength { get; }
+                public int Delta { get; }
+            }
+        }
+
+        private static void RecordTextEdit(int currentStart, int oldLength, int newLength)
+        {
+            s_tracker?.Record(currentStart, oldLength, newLength);
+        }
+
+        private static Nd30HeaderFontSizeTier ResolveHeaderTierCached(LocalScanSnapshot snapshot,
+            IReadOnlyList<LogicalDocumentBlock> blocks, int paragraphIndex,
+            IDictionary<int, Nd30HeaderFontSizeTier> cache)
+        {
+            var blockStart = -1;
+            foreach (var block in blocks)
+                if (block.ContainsParagraph(paragraphIndex))
+                {
+                    blockStart = block.StartParagraphIndex;
+                    break;
+                }
+            Nd30HeaderFontSizeTier tier;
+            if (cache.TryGetValue(blockStart, out tier)) return tier;
+            tier = ResolveHeaderTier(snapshot, blocks, paragraphIndex);
+            cache[blockStart] = tier;
+            return tier;
         }
 
         private static SpellingEdit? CreateSpellingEdit(AnnotationFinding finding,
@@ -2493,63 +3090,6 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             return null;
         }
 
-        private static int CollapseMultipleSpaces(Word.Document document)
-        {
-            var collapsed = 0;
-            try
-            {
-                for (var iteration = 0; iteration < 3; iteration++)
-                {
-                    Word.Range? content = null;
-                    Word.Find? find = null;
-                    Word.Replacement? replacement = null;
-                    try
-                    {
-                        content = document.Content;
-                        find = content.Find;
-                        find.ClearFormatting();
-                        replacement = find.Replacement;
-                        replacement.ClearFormatting();
-
-                        find.Text = "  ";
-                        replacement.Text = " ";
-                        find.Forward = true;
-                        find.Wrap = Word.WdFindWrap.wdFindStop;
-                        find.Format = false;
-                        find.MatchCase = false;
-                        find.MatchWholeWord = false;
-                        find.MatchWildcards = false;
-
-                        object replaceAll = Word.WdReplace.wdReplaceAll;
-                        object missing = Type.Missing;
-                        var found = find.Execute(ref missing, ref missing, ref missing, ref missing,
-                            ref missing, ref missing, ref missing, ref missing, ref missing,
-                            ref missing, ref replaceAll, ref missing, ref missing, ref missing, ref missing);
-                        if (found)
-                        {
-                            collapsed++;
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
-                    catch (COMException)
-                    {
-                        break;
-                    }
-                    finally
-                    {
-                        Release(replacement);
-                        Release(find);
-                        Release(content);
-                    }
-                }
-            }
-            catch (COMException) { }
-            return collapsed;
-        }
-
         private static bool SelectedFixChangesText(string lane, AnnotationFinding finding)
         {
             if (string.Equals(lane, "spelling", StringComparison.OrdinalIgnoreCase)) return true;
@@ -2692,19 +3232,6 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         {
             if (left.Length == 0 || right.Length == 0) return left.Start == right.Start;
             return left.Start < right.Start + right.Length && right.Start < left.Start + left.Length;
-        }
-
-        private static bool ContainsRecognizedRole(Word.Table table, LocalScanSnapshot snapshot,
-            IReadOnlyDictionary<int, string> roles)
-        {
-            Word.Range? range = null;
-            try
-            {
-                range = table.Range;
-                return snapshot.Paragraphs.Any(paragraph => roles.ContainsKey(paragraph.Index) &&
-                    paragraph.AbsoluteStart >= range.Start && paragraph.AbsoluteStart < range.End);
-            }
-            finally { Release(range); }
         }
 
         private static void RemoveTrailingBlankParagraphs(Word.Document document)

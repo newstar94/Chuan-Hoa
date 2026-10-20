@@ -1,18 +1,59 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Text;
 using ChuanHoa.Client.Core.Annotations;
 using ChuanHoa.Client.Core.Scanning;
 using Word = Microsoft.Office.Interop.Word;
 
 namespace ChuanHoa.AddIn.Vsto.Runtime
 {
+    /// <summary>What the last annotation pass did (D2 comment budget).</summary>
+    public sealed class LocalAnnotationSummary
+    {
+        public LocalAnnotationSummary(string lane, int totalFindings, int commentCount,
+            int annotatedFindings, int omittedFindings, string reportPath)
+        {
+            Lane = lane;
+            TotalFindings = totalFindings;
+            CommentCount = commentCount;
+            AnnotatedFindings = annotatedFindings;
+            OmittedFindings = omittedFindings;
+            ReportPath = reportPath ?? string.Empty;
+        }
+
+        public string Lane { get; }
+        public int TotalFindings { get; }
+        public int CommentCount { get; }
+        public int AnnotatedFindings { get; }
+        public int OmittedFindings { get; }
+        public string ReportPath { get; }
+
+        public string Describe()
+        {
+            if (TotalFindings == 0) return "Không phát hiện lỗi.";
+            var text = "Đã đánh dấu " + AnnotatedFindings.ToString(CultureInfo.CurrentCulture) + "/" +
+                TotalFindings.ToString(CultureInfo.CurrentCulture) + " điểm bằng " +
+                CommentCount.ToString(CultureInfo.CurrentCulture) + " comment.";
+            if (OmittedFindings > 0)
+                text += "\n" + OmittedFindings.ToString(CultureInfo.CurrentCulture) +
+                    " điểm còn lại chỉ có trong báo cáo đầy đủ" +
+                    (ReportPath.Length > 0 ? ":\n" + ReportPath : ".");
+            return text;
+        }
+    }
+
     public sealed class WordLocalScanRuntime
     {
         private readonly Word.Application _application;
         private readonly WordDocumentCapabilityProvider _capabilityProvider;
         private readonly LocalAccessManager _accessManager;
         private readonly AnnotationPlanner _planner = new AnnotationPlanner();
+
+        /// <summary>Summary of the most recent <see cref="ScanAndAnnotate"/> call.</summary>
+        public LocalAnnotationSummary? LastAnnotationSummary { get; private set; }
 
         public WordLocalScanRuntime(Word.Application application, LocalAccessManager accessManager)
         {
@@ -40,8 +81,12 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             if (!string.Equals(result.RulePackId, rules.PackId, StringComparison.Ordinal))
                 throw new InvalidOperationException(
                     "Gói quy tắc đã thay đổi. Hãy bấm lại chức năng kiểm tra.");
+            // D2: at most 200 comments per lane, one per paragraph, and one summary
+            // comment for a rule repeated in more than 20 paragraphs. Everything
+            // else stays in the scan result and in the local HTML report.
+            var options = AnnotationPlanOptions.Default;
             var plan = _planner.CreatePlan(result.Lane, result.ScanId, result.DocumentFingerprint, result.Revision,
-                ToAnnotationSnapshot(wordSnapshot), result.Findings);
+                ToAnnotationSnapshot(wordSnapshot), result.Findings, options);
             if (plan.Unresolved.Count > 0)
             {
                 var unresolvedIds = new HashSet<string>(plan.Unresolved.Select(u => u.FindingId), StringComparer.Ordinal);
@@ -58,8 +103,14 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     return f;
                 }).ToArray();
                 plan = _planner.CreatePlan(result.Lane, result.ScanId, result.DocumentFingerprint, result.Revision,
-                    ToAnnotationSnapshot(wordSnapshot), fallbackFindings);
+                    ToAnnotationSnapshot(wordSnapshot), fallbackFindings, options);
             }
+
+            var reportPath = plan.Omitted.Count > 0 || plan.Unresolved.Count > 0
+                ? TryWriteReport(document, result, plan)
+                : string.Empty;
+            LastAnnotationSummary = new LocalAnnotationSummary(result.Lane, result.Findings.Count,
+                plan.Comments.Count, plan.AnnotatedFindingCount, plan.Omitted.Count, reportPath);
 
             if (plan.Comments.Count > 0 || plan.VisualRanges.Count > 0)
             {
@@ -73,6 +124,34 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             }
 
             return result;
+        }
+
+        private static string TryWriteReport(Word.Document document, LocalScanResult result,
+            AnnotationPlan plan)
+        {
+            try
+            {
+                var directory = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "ChuanHoa", "Reports");
+                Directory.CreateDirectory(directory);
+                string name;
+                try { name = document.Name ?? string.Empty; }
+                catch (System.Runtime.InteropServices.COMException) { name = string.Empty; }
+                var safeName = new string((Path.GetFileNameWithoutExtension(name) ?? "TaiLieu")
+                    .Select(character => Path.GetInvalidFileNameChars().Contains(character) ? '_' : character)
+                    .ToArray());
+                if (safeName.Length == 0) safeName = "TaiLieu";
+                if (safeName.Length > 60) safeName = safeName.Substring(0, 60);
+                var now = DateTime.Now;
+                var path = Path.Combine(directory, safeName + "_" + result.Lane + "_" +
+                    now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture) + ".html");
+                File.WriteAllText(path, AnnotationReportBuilder.BuildHtml(name, result.Lane, now,
+                    result.Findings, plan), new UTF8Encoding(true));
+                return path;
+            }
+            catch (IOException) { return string.Empty; }
+            catch (UnauthorizedAccessException) { return string.Empty; }
         }
 
         internal static LocalScanSnapshot ToLocalSnapshot(WordDocumentSnapshot source, DocumentContext? context = null) =>

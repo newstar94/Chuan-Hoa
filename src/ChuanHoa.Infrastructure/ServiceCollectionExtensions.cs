@@ -1,8 +1,6 @@
 using ChuanHoa.Application.Persistence;
 using ChuanHoa.Contracts;
-using ChuanHoa.Contracts.Integration;
 using ChuanHoa.Infrastructure.Persistence;
-using ChuanHoa.Infrastructure.Admin;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
@@ -30,10 +28,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<PostgresTransactionRunner>();
         services.AddSingleton<PostgresOutboxWriter>();
         services.AddSingleton<IIdempotencyStore, PostgresIdempotencyStore>();
-        services.AddSingleton<IIntegrationAdminStore, PostgresIntegrationAdminStore>();
-        services.AddSingleton<IIntegrationReplayStore, PostgresIntegrationReplayStore>();
-        services.AddSingleton<IAccountAccessStore, PostgresAccountAccessStore>();
-        services.AddSingleton<IActivationKeyAdminStore, PostgresAccountAccessStore>();
         return services;
     }
 }

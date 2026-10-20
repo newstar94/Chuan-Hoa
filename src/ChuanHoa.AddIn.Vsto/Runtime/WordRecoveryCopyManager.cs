@@ -8,9 +8,10 @@ using Word = Microsoft.Office.Interop.Word;
 namespace ChuanHoa.AddIn.Vsto.Runtime
 {
     /// <summary>
-    /// Saves through Word and creates the recovery copy from a hidden Word clone. This
-    /// deliberately avoids File.Exists/File.Copy on Document.FullName because cloud-backed
-    /// documents can expose an https/OneDrive identity that is valid to Word but not System.IO.
+    /// Saves through Word and creates the recovery copy. A saved file on a local
+    /// fixed/removable drive is copied directly; cloud-backed documents (https or
+    /// OneDrive identities that are valid to Word but not System.IO) and network
+    /// paths are copied through a hidden Word clone.
     /// </summary>
     internal static class WordRecoveryCopyManager
     {
@@ -45,7 +46,11 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 DateTime.UtcNow.ToString("yyyyMMddHHmmssfff", CultureInfo.InvariantCulture) +
                 "-" + Guid.NewGuid().ToString("N").Substring(0, 12) + extension);
 
-            SaveThroughWordClone(application, document, path);
+            // A saved document on a local disk is copied byte-for-byte: opening a
+            // hidden Word clone doubles Word's memory for image-heavy documents and
+            // can exhaust 32-bit Word. Cloud/OneDrive identities keep the clone path.
+            if (!TryCopyLocalFile(document, path))
+                SaveThroughWordClone(application, document, path);
             if (!File.Exists(path) || new FileInfo(path).Length == 0)
                 throw new IOException("Word không tạo được bản sao khôi phục.");
             CleanupOwnedBackups(directory);
@@ -107,6 +112,45 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             }
             catch (IOException) { return Array.Empty<string>(); }
             catch (UnauthorizedAccessException) { return Array.Empty<string>(); }
+        }
+
+        private static bool TryCopyLocalFile(Word.Document document, string path)
+        {
+            string fullName;
+            bool saved;
+            try
+            {
+                fullName = document.FullName ?? string.Empty;
+                saved = document.Saved;
+            }
+            catch (COMException) { return false; }
+            if (!saved || string.IsNullOrWhiteSpace(fullName)) return false;
+            if (fullName.IndexOf("://", StringComparison.Ordinal) >= 0) return false;
+            try
+            {
+                if (!Path.IsPathRooted(fullName) || !File.Exists(fullName)) return false;
+                if (!string.Equals(Path.GetExtension(fullName), Path.GetExtension(path),
+                        StringComparison.OrdinalIgnoreCase)) return false;
+                var root = Path.GetPathRoot(fullName) ?? string.Empty;
+                if (root.StartsWith(@"\\", StringComparison.Ordinal)) return false;
+                var drive = new DriveInfo(root);
+                if (drive.DriveType != DriveType.Fixed && drive.DriveType != DriveType.Removable)
+                    return false;
+                File.Copy(fullName, path, false);
+                return new FileInfo(path).Length > 0;
+            }
+            catch (IOException) { return DeletePartialCopy(path); }
+            catch (UnauthorizedAccessException) { return DeletePartialCopy(path); }
+            catch (ArgumentException) { return false; }
+            catch (NotSupportedException) { return false; }
+        }
+
+        private static bool DeletePartialCopy(string path)
+        {
+            try { if (File.Exists(path)) File.Delete(path); }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
+            return false;
         }
 
         private static string ReadPath(Word.Document document)

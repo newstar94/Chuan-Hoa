@@ -6,4 +6,11 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\shared\dictionaries\typo_dictionary.json" LogicalName="ChuanHoa.Rules.typo_dictionary.json" />
+    <EmbeddedResource Include="..\..\shared\dictionaries\administrative_units.json" LogicalName="ChuanHoa.Rules.administrative_units.json" />
+    <EmbeddedResource Include="..\..\shared\dictionaries\special_capitalizations.json" LogicalName="ChuanHoa.Rules.special_capitalizations.json" />
+    <EmbeddedResource Include="..\..\shared\dictionaries\hunspell-vi\vi-DauCu.dic" LogicalName="ChuanHoa.Rules.vi-DauCu.dic" />
+    <EmbeddedResource Include="..\..\shared\dictionaries\hunspell-vi\vi-DauMoi.dic" LogicalName="ChuanHoa.Rules.vi-DauMoi.dic" />
+  </ItemGroup>
 </Project>

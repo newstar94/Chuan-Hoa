@@ -152,15 +152,8 @@ namespace ChuanHoa.AddIn.Vsto.Ribbon
             public bool IsEnabled(string controlId)
             {
                 if (_disposed) return false;
-                // Development commands can receive the first explicit click without
-                // opening Settings. This is not a permission grant: ExecuteButton
-                // still validates the signed feature lease before running a command.
-                // Passive Office callbacks must never initialize the runtime.
-#if CHUANHOA_DEVELOPMENT
+                // Free in every build. Passive callbacks never initialize the runtime.
                 return _owner._runtimeFactory != null;
-#else
-                return string.Equals(controlId, "btnThietLap", StringComparison.Ordinal);
-#endif
             }
 
             public int GetSelectedItemIndex(string controlId) => 0;

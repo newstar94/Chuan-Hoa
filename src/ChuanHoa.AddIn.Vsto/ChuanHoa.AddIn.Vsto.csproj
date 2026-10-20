@@ -33,7 +33,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="$(DevelopmentTrustedPublicKeyPath)" Condition="'$(Configuration)' == 'Development' and '$(DevelopmentTrustedPublicKeyPath)' != ''">
+    <EmbeddedResource Include="$(DevelopmentTrustedPublicKeyPath)" Condition="('$(Configuration)' == 'Development' or '$(SelfSignedRelease)' == 'True') and '$(DevelopmentTrustedPublicKeyPath)' != ''">
       <LogicalName>ChuanHoa.Development.TrustedPublicKey.xml</LogicalName>
     </EmbeddedResource>
     <BootstrapperPackage Include="Microsoft.VSTORuntime.4.0">
@@ -147,11 +147,9 @@
     <Compile Include="Runtime\WordAppendixPaginationNormalizer.cs" />
     <Compile Include="Runtime\WordLocalCommandRuntime.cs" />
     <Compile Include="Runtime\WordLocalScanRuntime.cs" />
+    <Compile Include="Runtime\WordLineShapeKind.cs" />
     <Compile Include="Runtime\WordOneClickRuntime.cs" />
     <Compile Include="Runtime\CustomDictionaryDialog.cs" />
-    <Compile Include="Runtime\AccountSettingsWindow.cs" />
-    <Compile Include="Runtime\AccountAccessApiClient.cs" />
-    <Compile Include="Runtime\ProtectedSessionStore.cs" />
     <Compile Include="Runtime\WordRecoveryCopyManager.cs" />
     <Compile Include="Runtime\WordTextMeasurement.cs" />
     <Compile Include="Runtime\WordMutationRuntime.cs" />

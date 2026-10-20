@@ -14,7 +14,9 @@ namespace ChuanHoa.Client.Core.Scanning
         Roman = 2,
         Alphabet = 3,
         Article = 4,
-        Unnumbered = 5
+        Unnumbered = 5,
+        /// <summary>"PHẦN I: ..." / "CHƯƠNG 2. ..." with a title.</summary>
+        Part = 6
     }
 
     /// <summary>
@@ -190,6 +192,12 @@ namespace ChuanHoa.Client.Core.Scanning
             @"^\s*(?<num>[IVXLCDM]+)(?:(?:\.|[-–—])\s*|\s+)(?<title>\S.*)$",
             RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
+        // Upper-case keyword only: "Phần 1 của báo cáo..." is a sentence, while
+        // "PHẦN I: THUYẾT MINH CHUNG" is the top level of a technical document.
+        private static readonly Regex PartPattern = new Regex(
+            @"^\s*(?<kw>PHẦN|CHƯƠNG)\s+(?<num>[IVXLCDM]+|\d+)\s*(?:[:.]|[-–—])?\s*(?<title>\S.*)$",
+            RegexOptions.CultureInvariant | RegexOptions.Compiled);
+
         private static readonly Regex UnnumberedPattern = new Regex(
             @"^\s*(?<title>MỞ\s+ĐẦU|LỜI\s+NÓI\s+ĐẦU|TỔNG\s+QUAN|KẾT\s+LUẬN|TÀI\s+LIỆU\s+THAM\s+KHẢO)\s*$",
             RegexOptions.CultureInvariant | RegexOptions.IgnoreCase | RegexOptions.Compiled);
@@ -232,6 +240,9 @@ namespace ChuanHoa.Client.Core.Scanning
             if (context == null) throw new ArgumentNullException(nameof(context));
 
             var results = new List<DetectedHeading>();
+            // Blocks in which a PHẦN/Roman heading has already been seen: there a
+            // bold "1. Thông tin chung" is a sub-heading, not a legal clause.
+            var blocksWithUpperLevel = new HashSet<string>(StringComparer.Ordinal);
             foreach (var paragraph in paragraphs)
             {
                 if (paragraph == null || !IsScannable(paragraph, context)) continue;
@@ -239,17 +250,82 @@ namespace ChuanHoa.Client.Core.Scanning
                 var text = (paragraph.Text ?? string.Empty).Trim();
                 if (!IsPotentialHeadingText(text)) continue;
 
+                var blockId = context.ResolveLogicalBlockId(paragraph.Index);
                 var detected = TryDetectHeading(
                     paragraph,
                     text,
-                    context.ResolveLogicalBlockId(paragraph.Index));
+                    blockId,
+                    blocksWithUpperLevel.Contains(blockId));
                 if (detected != null)
                 {
+                    if (detected.Kind == HeadingNumberingKind.Part ||
+                        detected.Kind == HeadingNumberingKind.Roman)
+                        blocksWithUpperLevel.Add(blockId);
                     results.Add(detected);
                 }
             }
 
-            return results;
+            return AssignHierarchyLevels(results);
+        }
+
+        /// <summary>
+        /// Vietnamese technical documents nest PHẦN → I. → 1. → 1.1. → 1.1.1.
+        /// The level is derived from the order in which the numbering families
+        /// first appear in each block, so "I." is Heading 1 and "1." Heading 2
+        /// under it, instead of both being level 1. Decimal depth stays relative
+        /// to the decimal family's base level.
+        /// </summary>
+        private static IReadOnlyList<DetectedHeading> AssignHierarchyLevels(List<DetectedHeading> headings)
+        {
+            if (headings.Count == 0) return headings;
+            var result = new List<DetectedHeading>(headings.Count);
+            foreach (var block in headings.GroupBy(item => item.LogicalBlockId, StringComparer.Ordinal))
+            {
+                var families = new List<HeadingNumberingKind>();
+                var maximumDecimalDepth = 1;
+                foreach (var heading in block)
+                {
+                    if (heading.Kind == HeadingNumberingKind.Decimal)
+                        maximumDecimalDepth = Math.Max(maximumDecimalDepth, heading.NumberParts.Count);
+                    if ((heading.Kind == HeadingNumberingKind.Part || heading.Kind == HeadingNumberingKind.Roman ||
+                         heading.Kind == HeadingNumberingKind.Decimal) && !families.Contains(heading.Kind))
+                        families.Add(heading.Kind);
+                }
+
+                var baseLevel = new Dictionary<HeadingNumberingKind, int>();
+                var next = 1;
+                foreach (var family in families)
+                {
+                    baseLevel[family] = next;
+                    next += family == HeadingNumberingKind.Decimal ? maximumDecimalDepth : 1;
+                }
+
+                foreach (var heading in block)
+                {
+                    int level;
+                    switch (heading.Kind)
+                    {
+                        case HeadingNumberingKind.Decimal:
+                            level = baseLevel[HeadingNumberingKind.Decimal] + heading.NumberParts.Count - 1;
+                            break;
+                        case HeadingNumberingKind.Part:
+                        case HeadingNumberingKind.Roman:
+                            level = baseLevel[heading.Kind];
+                            break;
+                        default:
+                            level = heading.Level;
+                            break;
+                    }
+                    level = Math.Max(1, Math.Min(9, level));
+                    result.Add(level == heading.Level ? heading : new DetectedHeading(
+                        heading.ParagraphIndex, heading.AbsoluteStart, level, heading.NumberText,
+                        heading.TitleText, heading.Kind, heading.NumberParts, heading.IsBold,
+                        heading.OutlineLevel, heading.KeepWithNext, heading.StyleName,
+                        heading.LogicalBlockId));
+                }
+            }
+            // Keep document order across blocks.
+            return result.OrderBy(item => item.AbsoluteStart).ThenBy(item => item.ParagraphIndex).ToList();
         }
 
         private static bool IsScannable(LocalParagraphSnapshot paragraph, HeadingDetectionContext context)
@@ -273,16 +349,43 @@ namespace ChuanHoa.Client.Core.Scanning
                 return false;
             }
 
+            // A trailing ":" is common in technical documents ("1. Thông tin
+            // chung:"); the level-1 decimal rule below still rejects clause-like text.
             var lastChar = text[text.Length - 1];
-            return lastChar != ';' && lastChar != ':' && lastChar != ',' &&
+            return lastChar != ';' && lastChar != ',' &&
                    lastChar != '.' && lastChar != '?' && lastChar != '!';
         }
 
         private static DetectedHeading? TryDetectHeading(
             LocalParagraphSnapshot paragraph,
             string text,
-            string logicalBlockId)
+            string logicalBlockId,
+            bool underUpperLevelHeading)
         {
+            text = text.TrimEnd(':').TrimEnd();
+            if (text.Length == 0) return null;
+
+            var partMatch = PartPattern.Match(text);
+            if (partMatch.Success)
+            {
+                var numberText = partMatch.Groups["num"].Value;
+                var value = char.IsDigit(numberText[0])
+                    ? (int.TryParse(numberText, NumberStyles.None, CultureInfo.InvariantCulture, out var digits) ? digits : 0)
+                    : ParseCanonicalRoman(numberText);
+                var partTitle = partMatch.Groups["title"].Value.Trim();
+                if (value > 0 && IsTitleShaped(partTitle))
+                {
+                    return CreateHeading(
+                        paragraph,
+                        1,
+                        partMatch.Groups["kw"].Value + " " + numberText,
+                        partTitle,
+                        HeadingNumberingKind.Part,
+                        new[] { value },
+                        logicalBlockId);
+                }
+            }
+
             var unnumberedMatch = UnnumberedPattern.Match(text);
             if (unnumberedMatch.Success)
             {
@@ -302,7 +405,8 @@ namespace ChuanHoa.Client.Core.Scanning
                 var numberText = decimalMatch.Groups["num"].Value;
                 var title = decimalMatch.Groups["title"].Value.Trim();
                 var parts = ParseDecimalParts(numberText);
-                if (parts.Count > 0 && IsConfidentDecimalHeading(paragraph, title, parts.Count))
+                if (parts.Count > 0 && IsConfidentDecimalHeading(paragraph, title, parts.Count,
+                        underUpperLevelHeading))
                 {
                     return CreateHeading(
                         paragraph,
@@ -365,7 +469,8 @@ namespace ChuanHoa.Client.Core.Scanning
         private static bool IsConfidentDecimalHeading(
             LocalParagraphSnapshot paragraph,
             string title,
-            int level)
+            int level,
+            bool underUpperLevelHeading)
         {
             if (!IsTitleShaped(title)) return false;
 
@@ -373,8 +478,10 @@ namespace ChuanHoa.Client.Core.Scanning
             if (level == 1)
             {
                 // A bare "1. ..." is also the canonical shape of a legal clause.
-                // Bold alone is therefore insufficient at level one.
-                return hasExplicitHeadingMetadata || IsUppercaseTitle(title);
+                // Bold alone is therefore insufficient at level one, unless the
+                // block already has a PHẦN/Roman heading above it.
+                return hasExplicitHeadingMetadata || IsUppercaseTitle(title) ||
+                    (underUpperLevelHeading && paragraph.Bold == true);
             }
 
             return hasExplicitHeadingMetadata || paragraph.Bold == true || IsUppercaseTitle(title);
@@ -438,6 +545,10 @@ namespace ChuanHoa.Client.Core.Scanning
 
             var issues = new List<HeadingIssue>();
             var states = new Dictionary<string, ContinuityState>(StringComparer.Ordinal);
+            // Numbering restarts under every new parent: Roman numbers restart in
+            // each PHẦN and "1." restarts under each new Roman heading.
+            var partScopes = new Dictionary<string, string>(StringComparer.Ordinal);
+            var romanScopes = new Dictionary<string, string>(StringComparer.Ordinal);
 
             foreach (var heading in headings)
             {
@@ -445,13 +556,31 @@ namespace ChuanHoa.Client.Core.Scanning
 
                 if (heading.Kind != HeadingNumberingKind.Decimal &&
                     heading.Kind != HeadingNumberingKind.Roman &&
-                    heading.Kind != HeadingNumberingKind.Article)
+                    heading.Kind != HeadingNumberingKind.Article &&
+                    heading.Kind != HeadingNumberingKind.Part)
                 {
                     continue;
                 }
 
                 var blockId = options.ResolveLogicalBlockId(heading);
-                var stateKey = blockId + "\u001f" + ((int)heading.Kind).ToString(CultureInfo.InvariantCulture);
+                string partScope;
+                partScopes.TryGetValue(blockId, out partScope);
+                string romanScope;
+                romanScopes.TryGetValue(blockId, out romanScope);
+                var scope = heading.Kind == HeadingNumberingKind.Roman ? (partScope ?? string.Empty)
+                    : heading.Kind == HeadingNumberingKind.Decimal ? (romanScope ?? partScope ?? string.Empty)
+                    : string.Empty;
+                if (heading.Kind == HeadingNumberingKind.Part)
+                {
+                    partScopes[blockId] = "P" + heading.NumberText;
+                    romanScopes.Remove(blockId);
+                }
+                else if (heading.Kind == HeadingNumberingKind.Roman)
+                {
+                    romanScopes[blockId] = (partScope ?? string.Empty) + "/R" + heading.NumberText;
+                }
+                var stateKey = blockId + "\u001f" + ((int)heading.Kind).ToString(CultureInfo.InvariantCulture) +
+                    "\u001f" + scope;
                 if (!states.TryGetValue(stateKey, out var state))
                 {
                     state = new ContinuityState();
@@ -463,7 +592,8 @@ namespace ChuanHoa.Client.Core.Scanning
                     AnalyzeDecimalHeading(heading, state, options, issues);
                 }
                 else if (heading.Kind == HeadingNumberingKind.Roman ||
-                         heading.Kind == HeadingNumberingKind.Article)
+                         heading.Kind == HeadingNumberingKind.Article ||
+                         heading.Kind == HeadingNumberingKind.Part)
                 {
                     AnalyzeScalarHeading(heading, state, options, issues);
                 }
@@ -516,7 +646,7 @@ namespace ChuanHoa.Client.Core.Scanning
                     state.PreviousDecimalLevel + " lên cấp " + heading.Level + ".",
                     "Chỉ chuyển tối đa đến cấp " + (state.PreviousDecimalLevel + 1) + ".");
             }
-            else if (heading.Level > 1 && !state.SeenDecimalPaths.Contains(parentPath) &&
+            else if (heading.NumberParts.Count > 1 && !state.SeenDecimalPaths.Contains(parentPath) &&
                      !state.LastDecimalByParent.ContainsKey(parentPath))
             {
                 structuralIssue = Issue(
@@ -644,6 +774,7 @@ namespace ChuanHoa.Client.Core.Scanning
         private static string FormatScalar(HeadingNumberingKind kind, int number)
         {
             if (kind == HeadingNumberingKind.Roman) return ToRoman(number);
+            if (kind == HeadingNumberingKind.Part) return "PHẦN " + ToRoman(number);
             if (kind == HeadingNumberingKind.Article) return "Điều " + number.ToString(CultureInfo.InvariantCulture);
             return number.ToString(CultureInfo.InvariantCulture);
         }

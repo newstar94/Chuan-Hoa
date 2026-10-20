@@ -14,7 +14,18 @@ namespace ChuanHoa.Client.Core.Annotations
             string expectedDocumentFingerprint,
             long expectedRevision,
             AnnotationDocumentSnapshot document,
-            IReadOnlyList<AnnotationFinding> findings)
+            IReadOnlyList<AnnotationFinding> findings) =>
+            CreatePlan(lane, scanId, expectedDocumentFingerprint, expectedRevision, document,
+                findings, AnnotationPlanOptions.Unlimited);
+
+        public AnnotationPlan CreatePlan(
+            string lane,
+            string scanId,
+            string expectedDocumentFingerprint,
+            long expectedRevision,
+            AnnotationDocumentSnapshot document,
+            IReadOnlyList<AnnotationFinding> findings,
+            AnnotationPlanOptions options)
         {
             if (string.IsNullOrWhiteSpace(lane))
             {
@@ -32,22 +43,28 @@ namespace ChuanHoa.Client.Core.Annotations
             {
                 throw new ArgumentNullException(nameof(findings));
             }
+            options = options ?? AnnotationPlanOptions.Unlimited;
 
-            var comments = new List<AnnotationCommentInstruction>();
-            var visualRanges = new List<AnnotationVisualInstruction>();
             var unresolved = new List<UnresolvedAnnotation>();
 
             if (!string.Equals(expectedDocumentFingerprint, document.DocumentFingerprint, StringComparison.Ordinal))
             {
                 AddAllUnresolved(findings, AnnotationResolutionCode.DocumentMismatch, unresolved);
-                return new AnnotationPlan(lane, scanId, comments, visualRanges, unresolved);
+                return new AnnotationPlan(lane, scanId, Array.Empty<AnnotationCommentInstruction>(),
+                    Array.Empty<AnnotationVisualInstruction>(), unresolved);
             }
             if (expectedRevision != document.Revision)
             {
                 AddAllUnresolved(findings, AnnotationResolutionCode.RevisionMismatch, unresolved);
-                return new AnnotationPlan(lane, scanId, comments, visualRanges, unresolved);
+                return new AnnotationPlan(lane, scanId, Array.Empty<AnnotationCommentInstruction>(),
+                    Array.Empty<AnnotationVisualInstruction>(), unresolved);
             }
 
+            // Build every lookup once. The previous implementation filtered and
+            // sorted all paragraphs again for each finding (O(findings × paragraphs
+            // × log paragraphs)), which took tens of seconds on long documents.
+            var index = new DocumentIndex(document);
+            var resolvedFindings = new List<ResolvedFinding>();
             foreach (var group in findings.GroupBy(item => item.FindingId, StringComparer.Ordinal))
             {
                 var finding = group.First();
@@ -66,56 +83,160 @@ namespace ChuanHoa.Client.Core.Annotations
 
                 ResolvedAnchor? resolved;
                 AnnotationResolutionCode code;
-                if (!TryResolve(document, finding.Anchor, out resolved, out code))
+                if (!TryResolve(index, finding.Anchor, out resolved, out code))
                 {
                     unresolved.Add(new UnresolvedAnnotation(finding.FindingId, code));
                     continue;
                 }
 
-                var resolvedAnchor = resolved!;
+                resolvedFindings.Add(new ResolvedFinding(finding, resolved!));
+            }
 
-                var marker = "[CHUẨN HÓA:" + lane.ToUpperInvariant() + ":" + finding.FindingId + "]";
+            return options.GroupByParagraph || options.MaximumComments > 0
+                ? CreateBudgetedPlan(lane, scanId, resolvedFindings, unresolved, options)
+                : CreateUnlimitedPlan(lane, scanId, resolvedFindings, unresolved);
+        }
+
+        private static AnnotationPlan CreateUnlimitedPlan(string lane, string scanId,
+            IReadOnlyList<ResolvedFinding> resolvedFindings, List<UnresolvedAnnotation> unresolved)
+        {
+            var comments = new List<AnnotationCommentInstruction>(resolvedFindings.Count);
+            var visualRanges = new List<AnnotationVisualInstruction>();
+            foreach (var item in resolvedFindings)
+            {
                 comments.Add(new AnnotationCommentInstruction(
-                    finding.FindingId,
-                    resolvedAnchor.StoryType,
-                    resolvedAnchor.SectionIndex,
-                    resolvedAnchor.Start,
-                    Math.Max(1, resolvedAnchor.Length),
-                    marker,
-                    BuildComment(finding)));
-                if (resolvedAnchor.ShouldMarkRed && resolvedAnchor.Length > 0 &&
-                    AnnotationPresentationPolicy.ShouldMarkRed(finding))
+                    item.Finding.FindingId,
+                    item.Anchor.StoryType,
+                    item.Anchor.SectionIndex,
+                    item.Anchor.Start,
+                    Math.Max(1, item.Anchor.Length),
+                    Marker(lane, item.Finding.FindingId),
+                    BuildComment(item.Finding)));
+                AddVisual(visualRanges, item, item.Finding.FindingId);
+            }
+            return new AnnotationPlan(lane, scanId, comments, MergeVisualRanges(visualRanges),
+                unresolved, Array.Empty<AnnotationFinding>(), comments.Count);
+        }
+
+        private static AnnotationPlan CreateBudgetedPlan(string lane, string scanId,
+            IReadOnlyList<ResolvedFinding> resolvedFindings, List<UnresolvedAnnotation> unresolved,
+            AnnotationPlanOptions options)
+        {
+            var omitted = new List<AnnotationFinding>();
+            var ordered = resolvedFindings
+                .OrderBy(item => item.Anchor.StoryOrder)
+                .ThenBy(item => item.Anchor.Start)
+                .ThenBy(item => item.Finding.FindingId, StringComparer.Ordinal)
+                .ToList();
+
+            // A rule code that occurs in many paragraphs (for example the body font
+            // of a whole technical document) becomes one summary comment at its
+            // first occurrence instead of hundreds of identical comments.
+            var summaryRules = new Dictionary<string, int>(StringComparer.Ordinal);
+            if (options.RepeatedRuleSummaryThreshold > 0)
+            {
+                foreach (var rule in ordered.GroupBy(item => item.Finding.RuleCode, StringComparer.Ordinal))
                 {
-                    visualRanges.Add(new AnnotationVisualInstruction(
-                        finding.FindingId,
-                        resolvedAnchor.StoryType,
-                        resolvedAnchor.SectionIndex,
-                        resolvedAnchor.Start,
-                        resolvedAnchor.Length));
+                    var paragraphCount = rule.Select(item => item.Anchor.ParagraphKey)
+                        .Distinct(StringComparer.Ordinal).Count();
+                    if (paragraphCount > options.RepeatedRuleSummaryThreshold)
+                        summaryRules[rule.Key] = paragraphCount;
                 }
             }
 
-            return new AnnotationPlan(
-                lane,
-                scanId,
-                comments,
-                MergeVisualRanges(visualRanges),
-                unresolved);
+            var units = new List<CommentUnit>();
+            var unitsByParagraph = new Dictionary<string, CommentUnit>(StringComparer.Ordinal);
+            var summarizedRules = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var item in ordered)
+            {
+                int repeatedParagraphs;
+                if (summaryRules.TryGetValue(item.Finding.RuleCode, out repeatedParagraphs))
+                {
+                    if (!summarizedRules.Add(item.Finding.RuleCode))
+                    {
+                        omitted.Add(item.Finding);
+                        continue;
+                    }
+                    units.Add(new CommentUnit(item, repeatedParagraphs));
+                    continue;
+                }
+
+                if (!options.GroupByParagraph)
+                {
+                    units.Add(new CommentUnit(item, 0));
+                    continue;
+                }
+
+                CommentUnit unit;
+                if (unitsByParagraph.TryGetValue(item.Anchor.ParagraphKey, out unit))
+                {
+                    unit.Add(item);
+                    continue;
+                }
+                unit = new CommentUnit(item, 0);
+                unitsByParagraph[item.Anchor.ParagraphKey] = unit;
+                units.Add(unit);
+            }
+
+            var comments = new List<AnnotationCommentInstruction>();
+            var visualRanges = new List<AnnotationVisualInstruction>();
+            var annotated = 0;
+            foreach (var unit in units
+                .OrderBy(item => item.Primary.Anchor.StoryOrder)
+                .ThenBy(item => item.Start))
+            {
+                if (options.MaximumComments > 0 && comments.Count >= options.MaximumComments)
+                {
+                    omitted.AddRange(unit.Items.Select(item => item.Finding));
+                    continue;
+                }
+
+                var primary = unit.Primary;
+                comments.Add(new AnnotationCommentInstruction(
+                    primary.Finding.FindingId,
+                    primary.Anchor.StoryType,
+                    primary.Anchor.SectionIndex,
+                    unit.Start,
+                    Math.Max(1, unit.End - unit.Start),
+                    Marker(lane, primary.Finding.FindingId),
+                    unit.BuildText()));
+                annotated += unit.Items.Count;
+                foreach (var item in unit.Items)
+                    AddVisual(visualRanges, item, primary.Finding.FindingId);
+            }
+
+            return new AnnotationPlan(lane, scanId, comments, MergeVisualRanges(visualRanges),
+                unresolved, omitted, annotated);
         }
 
+        private static void AddVisual(ICollection<AnnotationVisualInstruction> visualRanges,
+            ResolvedFinding item, string ownerFindingId)
+        {
+            if (item.Anchor.ShouldMarkRed && item.Anchor.Length > 0 &&
+                AnnotationPresentationPolicy.ShouldMarkRed(item.Finding))
+            {
+                visualRanges.Add(new AnnotationVisualInstruction(
+                    ownerFindingId,
+                    item.Anchor.StoryType,
+                    item.Anchor.SectionIndex,
+                    item.Anchor.Start,
+                    item.Anchor.Length));
+            }
+        }
+
+        private static string Marker(string lane, string findingId) =>
+            "[CHUẨN HÓA:" + lane.ToUpperInvariant() + ":" + findingId + "]";
+
         private static bool TryResolve(
-            AnnotationDocumentSnapshot document,
+            DocumentIndex index,
             AnnotationAnchor anchor,
             out ResolvedAnchor? resolved,
             out AnnotationResolutionCode code)
         {
             resolved = null;
             code = AnnotationResolutionCode.UnsupportedAnchor;
-            var storyParagraphs = document.Paragraphs
-                .Where(item => string.Equals(item.StoryType, anchor.StoryType, StringComparison.Ordinal))
-                .OrderBy(item => item.AbsoluteStart)
-                .ToList();
-            if (storyParagraphs.Count == 0)
+            var story = index.Story(anchor.StoryType);
+            if (story == null)
             {
                 code = AnnotationResolutionCode.StoryNotFound;
                 return false;
@@ -127,7 +248,7 @@ namespace ChuanHoa.Client.Core.Annotations
             {
                 case AnnotationAnchorKind.TextSpan:
                 case AnnotationAnchorKind.Paragraph:
-                    paragraph = FindParagraph(storyParagraphs, anchor);
+                    paragraph = story.FindParagraph(anchor);
                     if (paragraph == null)
                     {
                         code = AnnotationResolutionCode.ParagraphNotFound;
@@ -135,7 +256,7 @@ namespace ChuanHoa.Client.Core.Annotations
                     }
                     break;
                 case AnnotationAnchorKind.Section:
-                    paragraph = storyParagraphs.FirstOrDefault(item => item.SectionIndex == anchor.SectionIndex);
+                    paragraph = story.FirstInSection(anchor.SectionIndex);
                     shouldMarkRed = false;
                     if (paragraph == null)
                     {
@@ -144,7 +265,7 @@ namespace ChuanHoa.Client.Core.Annotations
                     }
                     break;
                 case AnnotationAnchorKind.Document:
-                    paragraph = storyParagraphs[0];
+                    paragraph = story.First;
                     shouldMarkRed = false;
                     break;
                 default:
@@ -168,7 +289,7 @@ namespace ChuanHoa.Client.Core.Annotations
                 offset = anchor.StartOffset.Value;
                 length = anchor.Length.Value;
                 if (string.IsNullOrEmpty(anchor.ExpectedText) || anchor.ExpectedText.Length != length ||
-                    !string.Equals(resolvedParagraph.Text.Substring(offset, length), anchor.ExpectedText, StringComparison.Ordinal))
+                    string.CompareOrdinal(resolvedParagraph.Text, offset, anchor.ExpectedText, 0, length) != 0)
                 {
                     code = AnnotationResolutionCode.ExpectedTextMismatch;
                     return false;
@@ -185,9 +306,7 @@ namespace ChuanHoa.Client.Core.Annotations
             }
 
             var absoluteStart = resolvedParagraph.AbsoluteStart + offset;
-            if (document.ProtectedSpans.Any(span =>
-                string.Equals(span.StoryType, anchor.StoryType, StringComparison.Ordinal) &&
-                Intersects(absoluteStart, Math.Max(1, length), span.Start, span.Length)))
+            if (story.IntersectsProtectedSpan(absoluteStart, Math.Max(1, length)))
             {
                 code = AnnotationResolutionCode.ProtectedSpan;
                 return false;
@@ -195,64 +314,48 @@ namespace ChuanHoa.Client.Core.Annotations
 
             resolved = new ResolvedAnchor(
                 anchor.StoryType,
+                story.Order,
                 resolvedParagraph.SectionIndex,
                 absoluteStart,
                 length,
-                shouldMarkRed);
+                shouldMarkRed,
+                story.Order.ToString(CultureInfo.InvariantCulture) + ":" +
+                    resolvedParagraph.AbsoluteStart.ToString(CultureInfo.InvariantCulture));
             code = AnnotationResolutionCode.Resolved;
             return true;
-        }
-
-        private static AnnotationParagraphSnapshot? FindParagraph(
-            IEnumerable<AnnotationParagraphSnapshot> paragraphs,
-            AnnotationAnchor anchor)
-        {
-            if (!anchor.ParagraphIndex.HasValue)
-            {
-                return null;
-            }
-
-            var matches = paragraphs.Where(item =>
-                item.ParagraphIndex == anchor.ParagraphIndex.Value &&
-                (!anchor.SectionIndex.HasValue || item.SectionIndex == anchor.SectionIndex.Value) &&
-                (!anchor.TableIndex.HasValue || item.TableIndex == anchor.TableIndex) &&
-                (!anchor.RowIndex.HasValue || item.RowIndex == anchor.RowIndex) &&
-                (!anchor.CellIndex.HasValue || item.CellIndex == anchor.CellIndex)).Take(2).ToList();
-            if (matches.Count == 1) return matches[0];
-
-            var fallback = paragraphs.Where(item => item.ParagraphIndex == anchor.ParagraphIndex.Value).Take(2).ToList();
-            return fallback.Count == 1 ? fallback[0] : null;
         }
 
         private static IReadOnlyList<AnnotationVisualInstruction> MergeVisualRanges(
             IEnumerable<AnnotationVisualInstruction> ranges)
         {
+            // Linear merge per (finding, story, section) after one sort. The old
+            // implementation searched the whole merged list with LastOrDefault for
+            // every range.
             var merged = new List<AnnotationVisualInstruction>();
             foreach (var group in ranges.GroupBy(
                 item => item.FindingId + "\u001f" + item.StoryType + "\u001f" +
                     item.SectionIndex.ToString(CultureInfo.InvariantCulture),
                 StringComparer.Ordinal))
             {
+                AnnotationVisualInstruction? previous = null;
                 foreach (var current in group.OrderBy(item => item.Start).ThenBy(item => item.Length))
                 {
-                    var previous = merged.LastOrDefault(item =>
-                        string.Equals(item.FindingId, current.FindingId, StringComparison.Ordinal) &&
-                        string.Equals(item.StoryType, current.StoryType, StringComparison.Ordinal) &&
-                        item.SectionIndex == current.SectionIndex);
                     if (previous == null || current.Start > previous.Start + previous.Length)
                     {
-                        merged.Add(current);
+                        if (previous != null) merged.Add(previous);
+                        previous = current;
                         continue;
                     }
 
                     var end = Math.Max(previous.Start + previous.Length, current.Start + current.Length);
-                    merged[merged.Count - 1] = new AnnotationVisualInstruction(
+                    previous = new AnnotationVisualInstruction(
                         previous.FindingId,
                         previous.StoryType,
                         previous.SectionIndex,
                         previous.Start,
                         end - previous.Start);
                 }
+                if (previous != null) merged.Add(previous);
             }
             return merged;
         }
@@ -291,11 +394,6 @@ namespace ChuanHoa.Client.Core.Annotations
             return (text ?? string.Empty).TrimEnd('\r', '\a');
         }
 
-        private static bool Intersects(int firstStart, int firstLength, int secondStart, int secondLength)
-        {
-            return firstStart < secondStart + secondLength && secondStart < firstStart + firstLength;
-        }
-
         private static void AddAllUnresolved(
             IEnumerable<AnnotationFinding> findings,
             AnnotationResolutionCode code,
@@ -307,27 +405,217 @@ namespace ChuanHoa.Client.Core.Annotations
             }
         }
 
+        /// <summary>All lookups the planner needs, built once per plan.</summary>
+        private sealed class DocumentIndex
+        {
+            private readonly Dictionary<string, StoryIndex> _stories =
+                new Dictionary<string, StoryIndex>(StringComparer.Ordinal);
+
+            public DocumentIndex(AnnotationDocumentSnapshot document)
+            {
+                var order = 0;
+                foreach (var story in document.Paragraphs.GroupBy(item => item.StoryType, StringComparer.Ordinal))
+                {
+                    var spans = document.ProtectedSpans
+                        .Where(span => string.Equals(span.StoryType, story.Key, StringComparison.Ordinal));
+                    _stories[story.Key] = new StoryIndex(order++, story, spans);
+                }
+            }
+
+            public StoryIndex? Story(string storyType)
+            {
+                StoryIndex story;
+                return _stories.TryGetValue(storyType ?? string.Empty, out story) ? story : null;
+            }
+        }
+
+        private sealed class StoryIndex
+        {
+            private readonly Dictionary<int, List<AnnotationParagraphSnapshot>> _byIndex =
+                new Dictionary<int, List<AnnotationParagraphSnapshot>>();
+            private readonly Dictionary<int, AnnotationParagraphSnapshot> _firstInSection =
+                new Dictionary<int, AnnotationParagraphSnapshot>();
+            private readonly int[] _spanStarts;
+            private readonly int[] _spanMaxEnds;
+
+            public StoryIndex(int order, IEnumerable<AnnotationParagraphSnapshot> paragraphs,
+                IEnumerable<AnnotationProtectedSpan> protectedSpans)
+            {
+                Order = order;
+                var sorted = paragraphs.OrderBy(item => item.AbsoluteStart).ToList();
+                First = sorted[0];
+                foreach (var paragraph in sorted)
+                {
+                    List<AnnotationParagraphSnapshot> list;
+                    if (!_byIndex.TryGetValue(paragraph.ParagraphIndex, out list))
+                    {
+                        list = new List<AnnotationParagraphSnapshot>(1);
+                        _byIndex[paragraph.ParagraphIndex] = list;
+                    }
+                    list.Add(paragraph);
+                    if (!_firstInSection.ContainsKey(paragraph.SectionIndex))
+                        _firstInSection[paragraph.SectionIndex] = paragraph;
+                }
+
+                var spans = protectedSpans.OrderBy(span => span.Start).ToArray();
+                _spanStarts = new int[spans.Length];
+                _spanMaxEnds = new int[spans.Length];
+                var maximumEnd = int.MinValue;
+                for (var i = 0; i < spans.Length; i++)
+                {
+                    _spanStarts[i] = spans[i].Start;
+                    maximumEnd = Math.Max(maximumEnd, spans[i].Start + spans[i].Length);
+                    _spanMaxEnds[i] = maximumEnd;
+                }
+            }
+
+            public int Order { get; }
+            public AnnotationParagraphSnapshot First { get; }
+
+            public AnnotationParagraphSnapshot? FirstInSection(int? sectionIndex)
+            {
+                if (!sectionIndex.HasValue) return null;
+                AnnotationParagraphSnapshot paragraph;
+                return _firstInSection.TryGetValue(sectionIndex.Value, out paragraph) ? paragraph : null;
+            }
+
+            public AnnotationParagraphSnapshot? FindParagraph(AnnotationAnchor anchor)
+            {
+                if (!anchor.ParagraphIndex.HasValue) return null;
+                List<AnnotationParagraphSnapshot> candidates;
+                if (!_byIndex.TryGetValue(anchor.ParagraphIndex.Value, out candidates)) return null;
+
+                AnnotationParagraphSnapshot? match = null;
+                var count = 0;
+                foreach (var item in candidates)
+                {
+                    if ((!anchor.SectionIndex.HasValue || item.SectionIndex == anchor.SectionIndex.Value) &&
+                        (!anchor.TableIndex.HasValue || item.TableIndex == anchor.TableIndex) &&
+                        (!anchor.RowIndex.HasValue || item.RowIndex == anchor.RowIndex) &&
+                        (!anchor.CellIndex.HasValue || item.CellIndex == anchor.CellIndex))
+                    {
+                        match = item;
+                        if (++count > 1) break;
+                    }
+                }
+                if (count == 1) return match;
+                return candidates.Count == 1 ? candidates[0] : null;
+            }
+
+            public bool IntersectsProtectedSpan(int start, int length)
+            {
+                if (_spanStarts.Length == 0) return false;
+                var end = start + length;
+                // Last span whose start is before the queried end.
+                var low = 0;
+                var high = _spanStarts.Length - 1;
+                var last = -1;
+                while (low <= high)
+                {
+                    var middle = low + (high - low) / 2;
+                    if (_spanStarts[middle] < end)
+                    {
+                        last = middle;
+                        low = middle + 1;
+                    }
+                    else high = middle - 1;
+                }
+                return last >= 0 && _spanMaxEnds[last] > start;
+            }
+        }
+
+        private sealed class ResolvedFinding
+        {
+            public ResolvedFinding(AnnotationFinding finding, ResolvedAnchor anchor)
+            {
+                Finding = finding;
+                Anchor = anchor;
+            }
+
+            public AnnotationFinding Finding { get; }
+            public ResolvedAnchor Anchor { get; }
+        }
+
+        private sealed class CommentUnit
+        {
+            private readonly int _repeatedParagraphs;
+
+            public CommentUnit(ResolvedFinding primary, int repeatedParagraphs)
+            {
+                Primary = primary;
+                _repeatedParagraphs = repeatedParagraphs;
+                Items.Add(primary);
+                Start = primary.Anchor.Start;
+                End = primary.Anchor.Start + Math.Max(1, primary.Anchor.Length);
+            }
+
+            public ResolvedFinding Primary { get; }
+            public List<ResolvedFinding> Items { get; } = new List<ResolvedFinding>();
+            public int Start { get; private set; }
+            public int End { get; private set; }
+
+            public void Add(ResolvedFinding item)
+            {
+                Items.Add(item);
+                Start = Math.Min(Start, item.Anchor.Start);
+                End = Math.Max(End, item.Anchor.Start + Math.Max(1, item.Anchor.Length));
+            }
+
+            public string BuildText()
+            {
+                if (_repeatedParagraphs > 0)
+                {
+                    var builder = new StringBuilder();
+                    builder.Append("Lỗi lặp lại ở ")
+                        .Append(_repeatedParagraphs.ToString(CultureInfo.InvariantCulture))
+                        .Append(" đoạn (chỉ đánh dấu lần đầu; danh sách đầy đủ trong báo cáo).")
+                        .AppendLine();
+                    builder.Append(BuildComment(Primary.Finding));
+                    return builder.ToString();
+                }
+                if (Items.Count == 1) return BuildComment(Primary.Finding);
+
+                var grouped = new StringBuilder();
+                grouped.Append("Đoạn này có ")
+                    .Append(Items.Count.ToString(CultureInfo.InvariantCulture))
+                    .Append(" lỗi:");
+                foreach (var item in Items)
+                {
+                    grouped.AppendLine();
+                    grouped.Append("• ").Append(AnnotationPresentationPolicy.CurrentIssue(item.Finding))
+                        .Append(" → ").Append(item.Finding.Expected.Trim());
+                }
+                return grouped.ToString();
+            }
+        }
+
         private sealed class ResolvedAnchor
         {
             public ResolvedAnchor(
                 string storyType,
+                int storyOrder,
                 int sectionIndex,
                 int start,
                 int length,
-                bool shouldMarkRed)
+                bool shouldMarkRed,
+                string paragraphKey)
             {
                 StoryType = storyType;
+                StoryOrder = storyOrder;
                 SectionIndex = sectionIndex;
                 Start = start;
                 Length = length;
                 ShouldMarkRed = shouldMarkRed;
+                ParagraphKey = paragraphKey;
             }
 
             public string StoryType { get; }
+            public int StoryOrder { get; }
             public int SectionIndex { get; }
             public int Start { get; }
             public int Length { get; }
             public bool ShouldMarkRed { get; }
+            public string ParagraphKey { get; }
         }
     }
 }

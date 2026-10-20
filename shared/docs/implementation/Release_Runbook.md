@@ -2,6 +2,24 @@
 
 ## Promotion path
 
+### Self-signed Release distribution (2026-10-13)
+
+The product owner selected distribution without purchasing a certificate. Use
+`tools/vsto/build_self_signed_release.ps1` with the existing explicit certificate
+and public-key pins. This builds the add-in and Client.Core with `Release`, retains
+signed manifests and integrity checks, and emits `artifacts/installers/release/ChuanHoa_Setup_<version>.exe`.
+Installer prompts and Apps & Features use the product name without Development Test.
+The existing installation identity, storage paths and certificate pins remain stable
+so upgrades, repair, rollback and uninstall can reuse the existing transaction.
+Internal legacy Development identifiers are compatibility identifiers, not the build configuration.
+
+This channel is a self-signed product distribution, not promotion to the publicly
+trusted enterprise/stable channel described below. The installer discloses the
+current-user certificate trust change. No purchased certificate or timestamp
+service is required for this channel; Windows publisher reputation is not asserted.
+Record package audit, tamper checks, offline smoke and the limits of live Word and
+installation verification for each version. Never infer those checks from a filename.
+
 `development → internal → pilot → stable → legacy-maintenance`
 
 ## Điều kiện trước build phát hành

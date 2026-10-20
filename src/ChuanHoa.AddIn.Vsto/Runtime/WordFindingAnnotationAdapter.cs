@@ -58,6 +58,10 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             ValidateRanges(plan);
             var previousPlan = CaptureExistingPlan(plan.Lane);
             var undoStarted = false;
+            // Word redraws the Modern Comments pane after every comment while screen
+            // updating is on; that alone made long documents appear frozen.
+            var previousScreenUpdating = ReadScreenUpdating();
+            SetScreenUpdating(false);
             try
             {
                 if (_supportsCustomUndoRecord)
@@ -128,7 +132,20 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 {
                     _application.UndoRecord.EndCustomRecord();
                 }
+                SetScreenUpdating(previousScreenUpdating);
             }
+        }
+
+        private bool ReadScreenUpdating()
+        {
+            try { return _application.ScreenUpdating; }
+            catch (COMException) { return true; }
+        }
+
+        private void SetScreenUpdating(bool value)
+        {
+            try { _application.ScreenUpdating = value; }
+            catch (COMException) { }
         }
 
         private AnnotationPlan CaptureExistingPlan(string lane)
@@ -138,6 +155,9 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             var visuals = new List<AnnotationVisualInstruction>();
             var visualPrefix = VariablePrefix + normalizedLane + "_";
             var commentPrefix = CommentVariablePrefix + normalizedLane + "_";
+            // Read every comment once; resolving each registered comment by a full
+            // scan of the Comments collection was O(comments²) COM calls.
+            CommentIndex? commentIndex = null;
             var variableCount = _document.Variables.Count;
             for (var variableIndex = 1; variableIndex <= variableCount; variableIndex++)
             {
@@ -172,10 +192,11 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     }
                     if (values.Length < 3) continue;
                     var findingId = DecodeFindingId(values[2]);
-                    string commentText;
-                    if (string.IsNullOrWhiteSpace(findingId) ||
-                        !TryReadRegisteredComment(range, values[1], out commentText))
-                        continue;
+                    if (string.IsNullOrWhiteSpace(findingId)) continue;
+                    if (commentIndex == null) commentIndex = ReadCommentIndex(null);
+                    var registered = commentIndex.FindOwned(range.StoryType, range.Start, range.End, values[1]);
+                    if (registered == null) continue;
+                    var commentText = registered.Text;
                     comments.Add(new AnnotationCommentInstruction(
                         findingId,
                         storyType,
@@ -200,43 +221,6 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 new List<UnresolvedAnnotation>());
         }
 
-        private bool TryReadRegisteredComment(Word.Range bookmarkRange, string signature,
-            out string text)
-        {
-            text = string.Empty;
-            var commentCount = _document.Comments.Count;
-            for (var commentIndex = 1; commentIndex <= commentCount; commentIndex++)
-            {
-                Word.Comment? comment = null;
-                Word.Range? scope = null;
-                Word.Range? body = null;
-                try
-                {
-                    comment = _document.Comments[commentIndex];
-                    scope = comment.Scope;
-                    if (scope.StoryType != bookmarkRange.StoryType ||
-                        scope.Start != bookmarkRange.Start || scope.End != bookmarkRange.End ||
-                        !string.Equals(comment.Author, "Chuẩn hóa", StringComparison.Ordinal) ||
-                        !string.Equals(comment.Initial, "CH", StringComparison.Ordinal))
-                        continue;
-                    body = comment.Range;
-                    var candidate = body.Text ?? string.Empty;
-                    if (!string.Equals(CommentSignature(candidate), signature,
-                            StringComparison.Ordinal))
-                        continue;
-                    text = candidate;
-                    return true;
-                }
-                finally
-                {
-                    Release(body);
-                    Release(scope);
-                    Release(comment);
-                }
-            }
-            return false;
-        }
-
         private void RestorePreviousPlan(string lane, AnnotationPlan previousPlan)
         {
             var recoveryAdapter = new WordFindingAnnotationAdapter(
@@ -246,95 +230,139 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 recoveryAdapter.Apply(previousPlan);
         }
 
-        public void ClearLane(string lane, DocumentOperationSession? operation = null)
+        /// <summary>Removes the lane's comments and red markers; returns how many were removed.</summary>
+        public int ClearLane(string lane, DocumentOperationSession? operation = null)
         {
             var normalizedLane = AnnotationOwnershipPolicy.NormalizeLane(lane);
             operation?.Checkpoint();
-            var registeredCommentSignatures = ReadRegisteredCommentSignaturesExcluding(normalizedLane, operation);
-            ClearRegisteredComments(normalizedLane, operation);
-
-            // Remove comments produced by versions that persisted a hidden marker in
-            // the comment body. New comments use an external registry so Word's Modern
-            // Comments pane no longer displays the misleading "Missing content" card.
-            var legacyCommentCount = _document.Comments.Count;
-            for (var index = legacyCommentCount; index >= 1; index--)
+            var previousScreenUpdating = ReadScreenUpdating();
+            SetScreenUpdating(false);
+            try
             {
-                if (index == legacyCommentCount || index % 25 == 0)
-                    operation?.Checkpoint();
-                Word.Comment? comment = null;
-                Word.Range? commentRange = null;
-                try
+                var registeredCommentSignatures = ReadRegisteredCommentSignaturesExcluding(normalizedLane, operation);
+                // One pass over Comments (scope, author, initials, text). Every
+                // decision below is a dictionary lookup, and the selected comments
+                // are deleted by descending index, so the COM work is linear in the
+                // number of comments instead of comments × registered variables.
+                var index = ReadCommentIndex(operation);
+                var removed = ClearRegisteredComments(normalizedLane, index, operation);
+
+                // Comments produced by versions that persisted a hidden marker in the
+                // comment body. New comments use an external registry so Word's Modern
+                // Comments pane no longer displays the misleading "Missing content" card.
+                foreach (var entry in index.Entries)
                 {
-                    comment = _document.Comments[index];
-                    commentRange = comment.Range;
-                    commentRange.TextRetrievalMode.IncludeHiddenText = true;
-                    var text = commentRange.Text ?? string.Empty;
-                    if (AnnotationOwnershipPolicy.IsOwnedComment(text, lane))
+                    if (!entry.MarkedForDeletion &&
+                        AnnotationOwnershipPolicy.IsOwnedComment(entry.TextWithHidden, lane))
+                        entry.MarkedForDeletion = true;
+                }
+
+                // A previous text mutation or a Word Modern Comments reconciliation can
+                // remove/move the external bookmark before the registered comment is
+                // cleared. Such an orphan has no usable finding identity and makes
+                // "Sửa lỗi đang chọn" fail forever. Remove only the add-in's exact author,
+                // initials and presentation; user comments are left untouched.
+                foreach (var entry in index.Entries)
+                {
+                    if (entry.MarkedForDeletion || !entry.IsOwnedAuthor) continue;
+                    if (IsAddInCommentPresentation(entry.Text) &&
+                        !registeredCommentSignatures.Contains(entry.Signature))
+                        entry.MarkedForDeletion = true;
+                }
+
+                removed += index.DeleteMarked(_document, operation);
+
+                var variableNamePrefix = VariablePrefix + normalizedLane + "_";
+                var variableCount = _document.Variables.Count;
+                for (var variableIndex = variableCount; variableIndex >= 1; variableIndex--)
+                {
+                    if (variableIndex == variableCount || variableIndex % 25 == 0)
+                        operation?.Checkpoint();
+                    Word.Variable? variable = null;
+                    try
                     {
-                        comment.Delete();
+                        variable = _document.Variables[variableIndex];
+                        if (!variable.Name.StartsWith(variableNamePrefix, StringComparison.Ordinal))
+                        {
+                            continue;
+                        }
+                        RestoreVisualMarker(variable.Value ?? string.Empty);
+                        variable.Delete();
+                        removed++;
+                    }
+                    finally
+                    {
+                        Release(variable);
                     }
                 }
-                finally
-                {
-                    Release(commentRange);
-                    Release(comment);
-                }
+                return removed;
             }
-
-            // A previous text mutation or a Word Modern Comments reconciliation can
-            // remove/move the external bookmark before the registered comment is
-            // cleared. Such an orphan has no usable finding identity and makes
-            // "Sửa lỗi đang chọn" fail forever. Remove only the add-in's exact author,
-            // initials and two-line presentation; user comments are left untouched.
-            var orphanCommentCount = _document.Comments.Count;
-            for (var index = orphanCommentCount; index >= 1; index--)
+            finally
             {
-                if (index == orphanCommentCount || index % 25 == 0)
-                    operation?.Checkpoint();
-                Word.Comment? comment = null;
-                Word.Range? commentRange = null;
-                try
-                {
-                    comment = _document.Comments[index];
-                    if (!string.Equals(comment.Author, "Chuẩn hóa", StringComparison.Ordinal) ||
-                        !string.Equals(comment.Initial, "CH", StringComparison.Ordinal))
-                        continue;
-                    commentRange = comment.Range;
-                    var text = commentRange.Text ?? string.Empty;
-                    if (text.StartsWith("Hiện tại:", StringComparison.Ordinal) &&
-                        text.IndexOf("Yêu cầu đúng:", StringComparison.Ordinal) >= 0 &&
-                        !registeredCommentSignatures.Contains(CommentSignature(text)))
-                        comment.Delete();
-                }
-                finally
-                {
-                    Release(commentRange);
-                    Release(comment);
-                }
+                SetScreenUpdating(previousScreenUpdating);
             }
+        }
 
-            var variableNamePrefix = VariablePrefix + normalizedLane + "_";
-            var variableCount = _document.Variables.Count;
-            for (var index = variableCount; index >= 1; index--)
+        private static bool IsAddInCommentPresentation(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return false;
+            if (text.StartsWith("Hiện tại:", StringComparison.Ordinal) &&
+                text.IndexOf("Yêu cầu đúng:", StringComparison.Ordinal) >= 0)
+                return true;
+            // Grouped (one comment per paragraph) and summary comments (D2).
+            if (text.StartsWith("Đoạn này có ", StringComparison.Ordinal) &&
+                text.IndexOf(" lỗi:", StringComparison.Ordinal) >= 0)
+                return true;
+            return text.StartsWith("Lỗi lặp lại ở ", StringComparison.Ordinal) &&
+                text.IndexOf("Yêu cầu đúng:", StringComparison.Ordinal) >= 0;
+        }
+
+        private CommentIndex ReadCommentIndex(DocumentOperationSession? operation)
+        {
+            var index = new CommentIndex();
+            Word.Comments? comments = null;
+            try
             {
-                if (index == variableCount || index % 25 == 0)
-                    operation?.Checkpoint();
-                Word.Variable? variable = null;
-                try
+                comments = _document.Comments;
+                var count = comments.Count;
+                for (var position = 1; position <= count; position++)
                 {
-                    variable = _document.Variables[index];
-                    if (!variable.Name.StartsWith(variableNamePrefix, StringComparison.Ordinal))
+                    if (position == 1 || position % 25 == 0)
+                        operation?.Checkpoint();
+                    Word.Comment? comment = null;
+                    Word.Range? scope = null;
+                    Word.Range? body = null;
+                    try
                     {
-                        continue;
+                        comment = comments[position];
+                        scope = comment.Scope;
+                        var author = comment.Author ?? string.Empty;
+                        var initial = comment.Initial ?? string.Empty;
+                        body = comment.Range;
+                        body.TextRetrievalMode.IncludeHiddenText = true;
+                        var withHidden = body.Text ?? string.Empty;
+                        body.TextRetrievalMode.IncludeHiddenText = false;
+                        var visible = body.Text ?? string.Empty;
+                        index.Add(new CommentIndexEntry(position, (int)scope.StoryType,
+                            scope.Start, scope.End,
+                            string.Equals(author, "Chuẩn hóa", StringComparison.Ordinal) &&
+                            string.Equals(initial, "CH", StringComparison.Ordinal),
+                            visible, withHidden, CommentSignature(visible)));
                     }
-                    RestoreVisualMarker(variable.Value ?? string.Empty);
-                    variable.Delete();
-                }
-                finally
-                {
-                    Release(variable);
+                    catch (COMException)
+                    {
+                        // An unreadable comment is never deleted.
+                    }
+                    finally
+                    {
+                        Release(body);
+                        Release(scope);
+                        Release(comment);
+                    }
                 }
             }
+            finally { Release(comments); }
+            return index;
         }
 
         private HashSet<string> ReadRegisteredCommentSignaturesExcluding(string normalizedLane,
@@ -669,9 +697,10 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 .Normalize(NormalizationForm.FormC);
         }
 
-        private void ClearRegisteredComments(string normalizedLane,
+        private int ClearRegisteredComments(string normalizedLane, CommentIndex index,
             DocumentOperationSession? operation)
         {
+            var removed = 0;
             var prefix = CommentVariablePrefix + normalizedLane + "_";
             var variableCount = _document.Variables.Count;
             for (var variableIndex = variableCount; variableIndex >= 1; variableIndex--)
@@ -693,10 +722,13 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     {
                         bookmark = _document.Bookmarks[bookmarkName];
                         bookmarkRange = bookmark.Range.Duplicate;
-                        DeleteRegisteredComment(bookmarkRange, signature, operation);
+                        var registered = index.FindOwned(bookmarkRange.StoryType,
+                            bookmarkRange.Start, bookmarkRange.End, signature);
+                        if (registered != null) registered.MarkedForDeletion = true;
                         bookmark.Delete();
                     }
                     variable.Delete();
+                    removed++;
                 }
                 finally
                 {
@@ -705,6 +737,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     Release(variable);
                 }
             }
+            return removed;
         }
 
         private void DeleteRegisteredComment(Word.Range bookmarkRange, string signature,
@@ -1263,6 +1296,101 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             {
                 Release(Value);
             }
+        }
+
+        private sealed class CommentIndexEntry
+        {
+            public CommentIndexEntry(int position, int storyType, int start, int end,
+                bool isOwnedAuthor, string text, string textWithHidden, string signature)
+            {
+                Position = position;
+                StoryType = storyType;
+                Start = start;
+                End = end;
+                IsOwnedAuthor = isOwnedAuthor;
+                Text = text;
+                TextWithHidden = textWithHidden;
+                Signature = signature;
+            }
+
+            public int Position { get; }
+            public int StoryType { get; }
+            public int Start { get; }
+            public int End { get; }
+            public bool IsOwnedAuthor { get; }
+            public string Text { get; }
+            public string TextWithHidden { get; }
+            public string Signature { get; }
+            public bool MarkedForDeletion { get; set; }
+        }
+
+        private sealed class CommentIndex
+        {
+            private readonly Dictionary<string, List<CommentIndexEntry>> _byScope =
+                new Dictionary<string, List<CommentIndexEntry>>(StringComparer.Ordinal);
+
+            public List<CommentIndexEntry> Entries { get; } = new List<CommentIndexEntry>();
+
+            public void Add(CommentIndexEntry entry)
+            {
+                Entries.Add(entry);
+                var key = Key(entry.StoryType, entry.Start, entry.End);
+                List<CommentIndexEntry> list;
+                if (!_byScope.TryGetValue(key, out list))
+                {
+                    list = new List<CommentIndexEntry>(1);
+                    _byScope[key] = list;
+                }
+                list.Add(entry);
+            }
+
+            /// <summary>The add-in comment registered for this exact scope and body signature.</summary>
+            public CommentIndexEntry? FindOwned(Word.WdStoryType storyType, int start, int end,
+                string signature)
+            {
+                List<CommentIndexEntry> list;
+                if (!_byScope.TryGetValue(Key((int)storyType, start, end), out list)) return null;
+                foreach (var entry in list)
+                {
+                    if (entry.MarkedForDeletion || !entry.IsOwnedAuthor) continue;
+                    if (string.Equals(entry.Signature, signature, StringComparison.Ordinal)) return entry;
+                }
+                return null;
+            }
+
+            public int DeleteMarked(Word.Document document, DocumentOperationSession? operation)
+            {
+                var marked = Entries.Where(entry => entry.MarkedForDeletion)
+                    .OrderByDescending(entry => entry.Position).ToArray();
+                if (marked.Length == 0) return 0;
+                Word.Comments? comments = null;
+                try
+                {
+                    comments = document.Comments;
+                    var processed = 0;
+                    foreach (var entry in marked)
+                    {
+                        if (processed++ % 25 == 0) operation?.Checkpoint();
+                        Word.Comment? comment = null;
+                        try
+                        {
+                            // Deleting in descending index order keeps every lower
+                            // index valid, so no re-enumeration is necessary.
+                            comment = comments[entry.Position];
+                            comment.Delete();
+                        }
+                        catch (COMException) { }
+                        finally { Release(comment); }
+                    }
+                }
+                finally { Release(comments); }
+                return marked.Length;
+            }
+
+            private static string Key(int storyType, int start, int end) =>
+                storyType.ToString(CultureInfo.InvariantCulture) + ":" +
+                start.ToString(CultureInfo.InvariantCulture) + ":" +
+                end.ToString(CultureInfo.InvariantCulture);
         }
 
         private sealed class ColorRun

@@ -2,8 +2,6 @@ using System.Net;
 using System.Net.Http.Json;
 using ChuanHoa.Api.Errors;
 using ChuanHoa.Api.Middleware;
-using ChuanHoa.Api.Security;
-using ChuanHoa.Api.Controllers;
 using ChuanHoa.Application;
 using ChuanHoa.Application.Scanning;
 using ChuanHoa.Contracts;
@@ -121,51 +119,22 @@ public sealed class ApiBoundaryTests
         Assert.Contains("new execution grant", error.Recovery, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
-    public async Task Document_scan_is_fail_closed_without_configured_identity_provider()
+    [Theory]
+    [InlineData("/v1/access/login")]
+    [InlineData("/v1/billing/payos/webhook")]
+    [InlineData("/v1/admin/integration/capabilities")]
+    [InlineData("/v1/document-jobs/scan")]
+    public async Task Retired_routes_are_not_exposed(string path)
     {
-        var builder = WebApplication.CreateBuilder(new WebApplicationOptions
-        {
-            EnvironmentName = "Testing"
-        });
+        var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseTestServer();
-        builder.Services.AddProblemDetails();
-        builder.Services.AddExceptionHandler<ApiExceptionHandler>();
-        builder.Services.AddSingleton<IClock, SystemClock>();
-        builder.Services.AddSingleton<TechnicalDocumentScanner>();
-        builder.Services.AddControllers().AddApplicationPart(typeof(DocumentScanController).Assembly);
-        builder.Services
-            .AddAuthentication(FailClosedAuthenticationDefaults.Scheme)
-            .AddScheme<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions, FailClosedAuthenticationHandler>(
-                FailClosedAuthenticationDefaults.Scheme,
-                _ => { });
-        builder.Services.AddAuthorization(options =>
-        {
-            options.AddPolicy("DocumentScan", policy =>
-            {
-                policy.RequireAuthenticatedUser();
-                policy.RequireClaim("scope", "document.scan");
-            });
-        });
-
+        builder.Services.AddControllers().AddApplicationPart(typeof(ApiExceptionHandler).Assembly);
         await using var app = builder.Build();
-        app.UseMiddleware<CorrelationIdMiddleware>();
-        app.UseExceptionHandler();
-        app.UseMiddleware<IdempotencyKeyValidationMiddleware>();
-        app.UseAuthentication();
-        app.UseAuthorization();
         app.MapControllers();
         await app.StartAsync();
         using var client = app.GetTestClient();
-        using var request = new HttpRequestMessage(HttpMethod.Post, "/v1/document-jobs/scan")
-        {
-            Content = JsonContent.Create(new { })
-        };
-        request.Headers.Add(ApiHeaders.IdempotencyKey, "scan-key-000000000001");
-
-        using var response = await client.SendAsync(request);
-
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        using var response = await client.PostAsync(path, null);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     private sealed class ApiFixture : IAsyncDisposable

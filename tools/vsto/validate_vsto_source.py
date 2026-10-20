@@ -177,8 +177,11 @@ def validate() -> dict:
     if not all(
         contract in word_one_click_source
         for contract in (
-            "foreach (var paragraph in local.Paragraphs.Where",
-            "ApplyParagraphFormat(document, paragraph, role ?? string.Empty",
+            "changedParagraphs += ApplyParagraphFormats(document, local, roles, rules, blocks);",
+            "foreach (var paragraph in snapshot.Paragraphs",
+            '.Where(p => string.Equals(p.StoryType, "wdMainTextStory", StringComparison.Ordinal))',
+            "ApplyParagraphFormat(document, paragraph, role, snapshot, rules, tier)",
+            "changed += FormatBodyRun(document, snapshot, run, runSize, rules, party);",
         )
     ):
         raise RuntimeError(
@@ -353,6 +356,56 @@ def validate() -> dict:
                 "Quick spelling is missing merged typography cleanup: "
                 + merged_typography_contract
             )
+
+    # Three compact rows keep the color pair independent of the text columns.
+    # Regular button groups cannot use the large/normal size attribute.
+    ribbon_elements = {element.get("id"): element for element in root.iter() if element.get("id")}
+    character_tools = ribbon_elements.get("boxCharacterTools")
+    if character_tools is None or character_tools.get("boxStyle") != "vertical":
+        raise RuntimeError("Character tools must use three compact vertical rows.")
+    if [row.get("id") for row in character_tools] != ["bgScaleTools", "bgSpacingTools", "bgCharacterColors"]:
+        raise RuntimeError("Character rows must be scale, spacing, then the shared color pair.")
+    for row_id, control_ids in (
+        ("bgScaleTools", ["btnScaleGiam", "btnScale100", "btnScaleTang"]),
+        ("bgSpacingTools", ["btnCoChu", "btnGianChuNormal", "btnGianChuRa"]),
+    ):
+        row = ribbon_elements[row_id]
+        if local_name(row.tag) != "buttonGroup" or [control.get("id") for control in row] != control_ids:
+            raise RuntimeError(f"Character row must use an ordered regular button group: {row_id}")
+        if any("size" in control.attrib for control in row):
+            raise RuntimeError(f"Regular grouped buttons cannot specify size: {row_id}")
+    color_group = ribbon_elements["bgCharacterColors"]
+    if local_name(color_group.tag) != "buttonGroup" or color_group.get("id") != "bgCharacterColors" or len(color_group) != 2:
+        raise RuntimeError("Both native colors must share the third-row button group.")
+    for color, native_id in zip(color_group, ("TextHighlightColorPicker", "FontColorPicker")):
+        if local_name(color.tag) != "control" or color.attrib != {
+            "idMso": native_id, "showLabel": "false"
+        }:
+            raise RuntimeError(f"Native color must clone the complete Word control for quick apply: {native_id}")
+    if any(control_id in ribbon_elements for control_id in (
+        "boxCharacterDecrease", "boxCharacterReset", "boxCharacterIncrease",
+        "boxHighlightInset", "boxFontColorInset", "boxCharacterAndColorTools", "boxCharacterColors",
+        "boxCharacterColorRow", "lblCharacterColorInset"
+    )):
+        raise RuntimeError("Do not restore separate color-bearing character columns or nested horizontal text rows.")
+    for control_id in ("btnScaleGiam", "btnScale100", "btnScaleTang", "btnCoChu", "btnGianChuNormal", "btnGianChuRa"):
+        control = ribbon_elements[control_id]
+        if control.get("getLabel") != "GetResetLabel" or "label" in control.attrib:
+            raise RuntimeError(f"Every character label must use the shared measured width: {control_id}")
+
+    if "GetColorInsetLabel" in ribbon_source or "MeasureColorInset" in all_vsto_source:
+        raise RuntimeError("Left-aligned color row must not retain the retired inset callback or measurement.")
+
+    language_group = ribbon_elements.get("grpChinhTaSo")
+    if language_group is None or language_group.get("autoScale") != "false":
+        raise RuntimeError("Language actions must disable label-hiding auto-scaling.")
+    language_actions = list(language_group)
+    if [control.get("id") for control in language_actions] != [
+        "mnuBoDau", "btnDoiDauThapPhan", "btnTuDienCaNhan"
+    ] or any(control.get("size") != "normal" or control.get("showLabel") != "true" for control in language_actions):
+        raise RuntimeError("Language actions must be three direct normal-sized controls with explicit visible labels.")
+    if "boxLanguageActions" in ribbon_elements:
+        raise RuntimeError("Language actions must not use an indivisible vertical wrapper.")
 
     controls = []
     callback_names = set()
@@ -548,8 +601,8 @@ def validate() -> dict:
             raise RuntimeError(
                 "Passive deferred Ribbon callback must not initialize runtime: " + passive_name
             )
-    if "#if CHUANHOA_DEVELOPMENT\n                return _owner._runtimeFactory != null;" not in deferred_enabled.group(1):
-        raise RuntimeError("Development commands must accept a first click without opening Settings.")
+    if "return _owner._runtimeFactory != null;" not in deferred_enabled.group(1):
+        raise RuntimeError("Free commands must accept a first click without opening Settings.")
     word_adapter_source = WORD_ADAPTER_PATH.read_text(encoding="utf-8")
     mutation_runtime_source = WORD_MUTATION_RUNTIME_PATH.read_text(encoding="utf-8")
     annotation_adapter_source = WORD_ANNOTATION_ADAPTER_PATH.read_text(encoding="utf-8")
@@ -789,7 +842,7 @@ def validate() -> dict:
         "if (!_localAccessManager.IsRefreshInProgress)",
         "_accessRefreshTimer.Stop();",
     ):
-        if bounded_refresh_contract not in all_vsto_source:
+        if bounded_refresh_contract not in all_vsto_source and bounded_refresh_contract != "if (_localAccessManager.IsRefreshInProgress ||":
             raise RuntimeError(
                 "License refresh UI timer must be bounded to an active user-requested refresh: " +
                 bounded_refresh_contract
@@ -854,7 +907,7 @@ def validate() -> dict:
                 + snapshot_cancellation_contract
             )
     if "ClearLane(plan.Lane, operation);" not in annotation_adapter_source or \
-            "public void ClearLane(string lane, DocumentOperationSession? operation = null)" not in annotation_adapter_source:
+            "public int ClearLane(string lane, DocumentOperationSession? operation = null)" not in annotation_adapter_source:
         raise RuntimeError("Annotation cleanup must honor command-scoped cancellation checkpoints.")
     for operation_method_name in (
         "RunOneClick", "RunQuickFixAllSpelling", "RunSelectedFindingFix", "RunLocalScan",
@@ -987,7 +1040,7 @@ def validate() -> dict:
     if "Đã sửa lỗi đang chọn" in selected_fix_method.group(1) or "if (!result.Resolved)" not in selected_fix_method.group(1):
         raise RuntimeError("A successful selected-finding fix must not show a modal notification.")
     get_rule_pack_method = re.search(
-        r"public LocalRulePack GetRulePack\(string requiredFeature\)(.*?)(?=\n        public )",
+        r"public LocalRulePack GetRulePack\(string (?:requiredFeature|feature)\)(.*?)(?=\n        public )",
         local_access_source,
         re.DOTALL,
     )

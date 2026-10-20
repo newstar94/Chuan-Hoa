@@ -20,7 +20,15 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
 {
     internal static class Program
     {
+#if CHUANHOA_SELF_SIGNED_RELEASE
+        private const string Title = "Chuẩn hóa - Cài đặt";
+        private const string ProductDisplayName = "Chuẩn hóa";
+        private const string InstallPrompt = "Cài đặt Chuẩn hóa miễn phí, hoạt động ngoại tuyến.\n\nBản phát hành dùng chứng thư tự ký. Trình cài đặt sẽ thêm chứng thư vào kho tin cậy của tài khoản Windows hiện tại.\n\nBản Chuẩn hóa đã cài trước đó sẽ được nâng cấp. Tiếp tục?";
+#else
         private const string Title = "Chu\u1EA9n h\u00F3a - C\u00E0i \u0111\u1EB7t th\u1EED nghi\u1EC7m";
+        private const string ProductDisplayName = "Chuẩn hóa - Development Test";
+        private const string InstallPrompt = "Đây là bản Development Test, chỉ dùng trên máy thử nghiệm.\n\nTrình cài đặt sẽ thêm chứng thư Development vào kho tin cậy của tài khoản Windows hiện tại và nâng cấp bản cũ. Tiếp tục?";
+#endif
         private const string PayloadResource = "ChuanHoa.DevelopmentInstaller.Payload.zip";
         private const string VersionResource = "ChuanHoa.DevelopmentInstaller.Version.txt";
         private const string TrustedPublicKeyPinResource =
@@ -106,7 +114,7 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
                         ReadCleanupOwnerProcessId(InvocationArguments));
                     if (!quiet)
                         MessageBox.Show(
-                            "Đã gỡ add-in Chuẩn hóa Development Test. Từ điển cá nhân và tài liệu của bạn được giữ nguyên.",
+                            "Đã gỡ " + ProductDisplayName + ". Từ điển cá nhân và tài liệu của bạn được giữ nguyên.",
                             Title, MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return 0;
                 }
@@ -114,10 +122,7 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
                 if (!quiet)
                 {
                     var answer = MessageBox.Show(
-                        "\u0110\u00E2y l\u00E0 b\u1EA3n Development Test, ch\u1EC9 d\u00F9ng tr\u00EAn m\u00E1y th\u1EED nghi\u1EC7m.\n\n" +
-                        "Tr\u00ECnh c\u00E0i \u0111\u1EB7t s\u1EBD th\u00EAm ch\u1EE9ng th\u01B0 Development v\u00E0o kho tin c\u1EADy c\u1EE7a t\u00E0i kho\u1EA3n Windows hi\u1EC7n t\u1EA1i.\n\n" +
-                        "N\u1EBFu \u0111\u00E3 c\u00F3 b\u1EA3n Chu\u1EA9n h\u00F3a Development c\u0169, tr\u00ECnh c\u00E0i \u0111\u1EB7t s\u1EBD t\u1EF1 thay th\u1EBF b\u1EA3n \u0111\u00F3.\n\n" +
-                        "Ti\u1EBFp t\u1EE5c?",
+                        InstallPrompt,
                         Title,
                         MessageBoxButtons.YesNo,
                         MessageBoxIcon.Warning,
@@ -197,7 +202,7 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
                 if (!quiet)
                 {
                     MessageBox.Show(
-                        "\u0110\u00E3 c\u00E0i add-in Chu\u1EA9n h\u00F3a Development Test " + version + ".\n\n" +
+                        "Đã cài " + ProductDisplayName + " " + version + ".\n\n" +
                         "H\u00E3y m\u1EDF Microsoft Word. C\u00E1c ch\u1EE9c n\u0103ng h\u1ED7 tr\u1EE3 c\u1EA3 t\u00E0i li\u1EC7u .doc/.docx \u0111\u00E3 l\u01B0u v\u00E0 v\u0103n b\u1EA3n m\u1EDBi ch\u01B0a l\u01B0u.",
                         Title,
                         MessageBoxButtons.OK,
@@ -1320,7 +1325,7 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
             {
                 if (entry == null)
                     throw new InvalidOperationException("Cannot register Chuẩn hóa in Apps & Features.");
-                entry.SetValue("DisplayName", "Chuẩn hóa - Development Test",
+                entry.SetValue("DisplayName", ProductDisplayName,
                     RegistryValueKind.String);
                 entry.SetValue("DisplayVersion", version, RegistryValueKind.String);
                 entry.SetValue("Publisher", "Chuẩn hóa", RegistryValueKind.String);

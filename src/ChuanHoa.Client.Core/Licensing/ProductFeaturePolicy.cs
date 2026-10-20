@@ -6,8 +6,10 @@ namespace ChuanHoa.Client.Core.Licensing
     public static class ProductFeaturePolicy
     {
         public const string TableImageTools = "TABLE_IMAGE_TOOLS";
+        // Chuẩn Hóa is a free product. Features are product functionality, not
+        // user entitlements; integrity checks for local rule packs remain separate.
         public static IReadOnlyList<string> FreeFeatures { get; } = Array.AsReadOnly(new[]
-            { "FORMAT_SCAN", "SPELLING_SCAN", TableImageTools });
+            { "FORMAT_SCAN", "SPELLING_SCAN", TableImageTools, "AUTOFIX", "DOCUMENT_TOOLS", "FULL_ACCESS" });
 
         public static string RequiredFeature(string commandId)
         {

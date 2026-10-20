@@ -29,13 +29,7 @@ $postgresBin = Join-Path $executionRoot '.tools\postgresql\pgsql\bin'
 $dataDirectory = Join-Path $executionRoot '.tools\postgresql-persistence-data'
 $logPath = Join-Path $executionRoot '.tools\postgresql-persistence.log'
 $databaseName = 'chuanhoa_persistence_test'
-$migrationPath = Join-Path $executionRoot 'database\migrations\V001__identity_trial_commercial_foundation.sql'
-$adminMigrationPath = Join-Path $executionRoot 'database\migrations\V002__admin_integration_commands.sql'
-$replayMigrationPath = Join-Path $executionRoot 'database\migrations\V003__admin_integration_replay_nonces.sql'
-$accessMigrationPath = Join-Path $executionRoot 'database\migrations\V004__account_sessions_and_activation_keys.sql'
-$adminAssertionPath = Join-Path $executionRoot 'tools\database\verify_v002_assertions.sql'
-$replayAssertionPath = Join-Path $executionRoot 'tools\database\verify_v003_assertions.sql'
-$accessAssertionPath = Join-Path $executionRoot 'tools\database\verify_v004_assertions.sql'
+$migrationPath = Join-Path $executionRoot 'database\migrations\V001__free_product_foundation.sql'
 $testProject = Join-Path $executionRoot 'tests\ChuanHoa.Infrastructure.IntegrationTests\ChuanHoa.Infrastructure.IntegrationTests.csproj'
 $dotnet = Join-Path $executionRoot '.tools\dotnet\dotnet.exe'
 $evidencePath = Join-Path $executionRoot 'shared\docs\implementation\evidence\persistence_integration.json'
@@ -65,7 +59,7 @@ function Invoke-Checked {
 }
 
 try {
-    foreach ($requiredPath in @($initdb, $pgCtl, $createdb, $dropdb, $psql, $migrationPath, $adminMigrationPath, $replayMigrationPath, $accessMigrationPath, $adminAssertionPath, $replayAssertionPath, $accessAssertionPath, $testProject, $dotnet)) {
+    foreach ($requiredPath in @($initdb, $pgCtl, $createdb, $dropdb, $psql, $migrationPath, $testProject, $dotnet)) {
         if (-not (Test-Path -LiteralPath $requiredPath)) {
             throw "Required file not found: $requiredPath"
         }
@@ -130,30 +124,6 @@ try {
         '-f', $migrationPath
     ) 'apply V001 migration'
 
-    Invoke-Checked $psql @(
-        '-X', '-v', 'ON_ERROR_STOP=1', '-h', '127.0.0.1', '-p', $Port,
-        '-U', 'postgres', '-d', $databaseName, '-f', $adminMigrationPath
-    ) 'apply V002 admin integration migration'
-    Invoke-Checked $psql @(
-        '-X', '-v', 'ON_ERROR_STOP=1', '-h', '127.0.0.1', '-p', $Port,
-        '-U', 'postgres', '-d', $databaseName, '-f', $adminAssertionPath
-    ) 'verify V002 admin integration migration'
-    Invoke-Checked $psql @(
-        '-X', '-v', 'ON_ERROR_STOP=1', '-h', '127.0.0.1', '-p', $Port,
-        '-U', 'postgres', '-d', $databaseName, '-f', $replayMigrationPath
-    ) 'apply V003 replay nonce migration'
-    Invoke-Checked $psql @(
-        '-X', '-v', 'ON_ERROR_STOP=1', '-h', '127.0.0.1', '-p', $Port,
-        '-U', 'postgres', '-d', $databaseName, '-f', $replayAssertionPath
-    ) 'verify V003 replay nonce migration'
-    Invoke-Checked $psql @(
-        '-X', '-v', 'ON_ERROR_STOP=1', '-h', '127.0.0.1', '-p', $Port,
-        '-U', 'postgres', '-d', $databaseName, '-f', $accessMigrationPath
-    ) 'apply V004 account and activation migration'
-    Invoke-Checked $psql @(
-        '-X', '-v', 'ON_ERROR_STOP=1', '-h', '127.0.0.1', '-p', $Port,
-        '-U', 'postgres', '-d', $databaseName, '-f', $accessAssertionPath
-    ) 'verify V004 account and activation migration'
 
     $previousConnectionString = $env:CHUANHOA_TEST_CONNECTION_STRING
     try {

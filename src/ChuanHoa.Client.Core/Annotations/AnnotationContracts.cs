@@ -288,12 +288,27 @@ namespace ChuanHoa.Client.Core.Annotations
             IReadOnlyList<AnnotationCommentInstruction> comments,
             IReadOnlyList<AnnotationVisualInstruction> visualRanges,
             IReadOnlyList<UnresolvedAnnotation> unresolved)
+            : this(lane, scanId, comments, visualRanges, unresolved,
+                Array.Empty<AnnotationFinding>(), comments == null ? 0 : comments.Count)
+        {
+        }
+
+        public AnnotationPlan(
+            string lane,
+            string scanId,
+            IReadOnlyList<AnnotationCommentInstruction> comments,
+            IReadOnlyList<AnnotationVisualInstruction> visualRanges,
+            IReadOnlyList<UnresolvedAnnotation> unresolved,
+            IReadOnlyList<AnnotationFinding> omitted,
+            int annotatedFindingCount)
         {
             Lane = lane;
             ScanId = scanId;
-            Comments = comments;
-            VisualRanges = visualRanges;
-            Unresolved = unresolved;
+            Comments = comments ?? throw new ArgumentNullException(nameof(comments));
+            VisualRanges = visualRanges ?? throw new ArgumentNullException(nameof(visualRanges));
+            Unresolved = unresolved ?? throw new ArgumentNullException(nameof(unresolved));
+            Omitted = omitted ?? throw new ArgumentNullException(nameof(omitted));
+            AnnotatedFindingCount = Math.Max(0, annotatedFindingCount);
         }
 
         public string Lane { get; }
@@ -301,5 +316,44 @@ namespace ChuanHoa.Client.Core.Annotations
         public IReadOnlyList<AnnotationCommentInstruction> Comments { get; }
         public IReadOnlyList<AnnotationVisualInstruction> VisualRanges { get; }
         public IReadOnlyList<UnresolvedAnnotation> Unresolved { get; }
+
+        /// <summary>
+        /// Resolved findings that were intentionally not turned into a comment
+        /// because of the comment budget (D2). They stay in the scan result and in
+        /// the local HTML report.
+        /// </summary>
+        public IReadOnlyList<AnnotationFinding> Omitted { get; }
+
+        /// <summary>Number of findings represented by the comments (grouped or not).</summary>
+        public int AnnotatedFindingCount { get; }
+    }
+
+    /// <summary>
+    /// D2 comment budget. <see cref="Unlimited"/> keeps the historical
+    /// one-comment-per-finding plan; <see cref="Default"/> groups per paragraph,
+    /// summarizes rule codes repeated in many paragraphs and caps the comments.
+    /// </summary>
+    public sealed class AnnotationPlanOptions
+    {
+        public AnnotationPlanOptions(int maximumComments, bool groupByParagraph,
+            int repeatedRuleSummaryThreshold)
+        {
+            MaximumComments = Math.Max(0, maximumComments);
+            GroupByParagraph = groupByParagraph;
+            RepeatedRuleSummaryThreshold = Math.Max(0, repeatedRuleSummaryThreshold);
+        }
+
+        public static AnnotationPlanOptions Unlimited { get; } = new AnnotationPlanOptions(0, false, 0);
+
+        public static AnnotationPlanOptions Default { get; } = new AnnotationPlanOptions(200, true, 20);
+
+        /// <summary>0 means no cap.</summary>
+        public int MaximumComments { get; }
+
+        public bool GroupByParagraph { get; }
+
+        /// <summary>0 disables summarizing; otherwise a rule code found in more
+        /// paragraphs than this gets a single summary comment.</summary>
+        public int RepeatedRuleSummaryThreshold { get; }
     }
 }

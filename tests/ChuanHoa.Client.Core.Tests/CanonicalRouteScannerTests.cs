@@ -171,7 +171,7 @@ public sealed class CanonicalRouteScannerTests
             item => item.RuleCode == "ND30-PL1-M2-K1-TN-LINE");
 
         Assert.Contains("không phải nét liền", finding.CurrentIssue, StringComparison.Ordinal);
-        Assert.Contains("Line Shape nét liền", finding.Expected, StringComparison.Ordinal);
+        Assert.Contains("đường kẻ ngang nét liền", finding.Expected, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -208,7 +208,7 @@ public sealed class CanonicalRouteScannerTests
             item => item.RuleCode == "ND30-PL1-M2-K1-TN-LINE");
 
         Assert.Contains("chuỗi dấu gạch/chấm", finding.CurrentIssue, StringComparison.Ordinal);
-        Assert.Contains("Line Shape nét liền", finding.Expected, StringComparison.Ordinal);
+        Assert.Contains("đường kẻ ngang nét liền", finding.Expected, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -274,19 +274,24 @@ public sealed class CanonicalRouteScannerTests
         Assert.Contains(findings, item => item.RuleCode == "ND30-PL1-M2-K1-TN-LINE");
     }
 
-    [Fact]
-    public void Underline_or_paragraph_border_does_not_satisfy_line_shape_rules()
+    [Theory]
+    [InlineData(1, false, false)]
+    [InlineData(0, true, false)]
+    [InlineData(0, false, true)]
+    [InlineData(2, false, true)]
+    public void Motto_separator_accepts_single_underline_or_bottom_border(
+        int underline, bool bottomBorder, bool expectedFinding)
     {
         var paragraph = new LocalParagraphSnapshot(1, "Độc lập - Tự do - Hạnh phúc", "wdMainTextStory",
             1, 100, "Times New Roman", fontSizePoints: 13, bold: true, alignment: 1,
-            role: "nationalMotto", underline: 1, hasBottomBorder: true,
+            role: "nationalMotto", underline: underline, hasBottomBorder: bottomBorder,
             pageNumber: 1, pageLeftPoints: 320, pageTopPoints: 80, textWidthPoints: 180);
         var snapshot = new LocalScanSnapshot("sha256:not-a-shape", 1, new[] { ValidSection() },
             new[] { paragraph }, Array.Empty<AnnotationProtectedSpan>(), Array.Empty<LocalLineShapeSnapshot>(), "STATE_ND30");
 
         var findings = new LocalDocumentScanner().ScanFormat(snapshot, Rules()).Findings;
 
-        Assert.Contains(findings, item => item.RuleCode == "ND30-PL1-M2-K1-TN-LINE");
+        Assert.Equal(expectedFinding, findings.Any(item => item.RuleCode == "ND30-PL1-M2-K1-TN-LINE"));
     }
 
     [Fact]
