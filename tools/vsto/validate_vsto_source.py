@@ -82,6 +82,10 @@ def validate() -> dict:
     ribbon_runtime_interface = RIBBON_RUNTIME_INTERFACE_PATH.read_text(encoding="utf-8")
     word_local_command_source = WORD_LOCAL_COMMAND_PATH.read_text(encoding="utf-8")
     word_one_click_source = WORD_ONE_CLICK_PATH.read_text(encoding="utf-8")
+    local_scan_source = (VSTO_ROOT / "Runtime" / "WordLocalScanRuntime.cs").read_text(encoding="utf-8")
+    if "var options = AnnotationPlanOptions.Unlimited;" not in local_scan_source or \
+            "AnnotationPlanOptions.Default" in local_scan_source:
+        raise RuntimeError("Word scans must comment every safely resolved finding without a budget or repeated-rule summary.")
     document_role_detector_source = DOCUMENT_ROLE_DETECTOR_PATH.read_text(encoding="utf-8")
     one_click_smoke_source = ONE_CLICK_SMOKE_PATH.read_text(encoding="utf-8")
     word_appendix_pagination_source = WORD_APPENDIX_PAGINATION_PATH.read_text(encoding="utf-8")

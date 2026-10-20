@@ -82,6 +82,32 @@ public sealed class AnnotationBudgetTests
         Assert.Empty(plan.Omitted);
     }
 
+    [Theory]
+    [InlineData("format")]
+    [InlineData("spelling")]
+    public void Unlimited_word_plan_keeps_all_551_repeated_findings_at_their_own_locations(string lane)
+    {
+        var paragraphs = Enumerable.Range(1, 551)
+            .Select(index => Paragraph(index, index * 100, "Đoạn " + index + "\r")).ToArray();
+        var findings = Enumerable.Range(1, 551)
+            .Select(index => Finding("f-" + index, "ND30-PL1-M1-K4-FONT", index)).ToArray();
+
+        var plan = new AnnotationPlanner().CreatePlan(lane, "scan", Fingerprint, 1,
+            Document(paragraphs), findings, AnnotationPlanOptions.Unlimited);
+
+        Assert.Equal(551, plan.Comments.Count);
+        Assert.Equal(551, plan.AnnotatedFindingCount);
+        Assert.Empty(plan.Omitted);
+        Assert.Empty(plan.Unresolved);
+        for (var index = 0; index < findings.Length; index++)
+        {
+            Assert.Equal(findings[index].FindingId, plan.Comments[index].FindingId);
+            Assert.Equal(paragraphs[index].AbsoluteStart, plan.Comments[index].Start);
+            Assert.Contains("Hiện tại:", plan.Comments[index].CommentText);
+            Assert.Contains("Yêu cầu đúng:", plan.Comments[index].CommentText);
+        }
+    }
+
     [Fact]
     public void Protected_span_lookup_matches_linear_scan()
     {
@@ -95,7 +121,7 @@ public sealed class AnnotationBudgetTests
         var findings = new[] { Finding("a", "ND30-PL1-M1-K4-FONT", 2) };
 
         var plan = new AnnotationPlanner().CreatePlan("format", "scan", Fingerprint, 1, document,
-            findings, AnnotationPlanOptions.Default);
+            findings, AnnotationPlanOptions.Unlimited);
 
         Assert.Empty(plan.Comments);
         Assert.Equal(AnnotationResolutionCode.ProtectedSpan, Assert.Single(plan.Unresolved).Code);

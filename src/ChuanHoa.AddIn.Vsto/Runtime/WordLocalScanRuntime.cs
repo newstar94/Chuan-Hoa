@@ -10,7 +10,7 @@ using Word = Microsoft.Office.Interop.Word;
 
 namespace ChuanHoa.AddIn.Vsto.Runtime
 {
-    /// <summary>What the last annotation pass did (D2 comment budget).</summary>
+    /// <summary>What the last in-document annotation pass did.</summary>
     public sealed class LocalAnnotationSummary
     {
         public LocalAnnotationSummary(string lane, int totalFindings, int commentCount,
@@ -81,10 +81,10 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             if (!string.Equals(result.RulePackId, rules.PackId, StringComparison.Ordinal))
                 throw new InvalidOperationException(
                     "Gói quy tắc đã thay đổi. Hãy bấm lại chức năng kiểm tra.");
-            // D2: at most 200 comments per lane, one per paragraph, and one summary
-            // comment for a rule repeated in more than 20 paragraphs. Everything
-            // else stays in the scan result and in the local HTML report.
-            var options = AnnotationPlanOptions.Default;
+            // Every safely resolved finding belongs at its own location in Word,
+            // including repeated rules. Never replace these comments with an HTML
+            // report or a summary at the first occurrence.
+            var options = AnnotationPlanOptions.Unlimited;
             var plan = _planner.CreatePlan(result.Lane, result.ScanId, result.DocumentFingerprint, result.Revision,
                 ToAnnotationSnapshot(wordSnapshot), result.Findings, options);
             if (plan.Unresolved.Count > 0)
