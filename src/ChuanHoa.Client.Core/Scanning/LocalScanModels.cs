@@ -74,7 +74,8 @@ namespace ChuanHoa.Client.Core.Scanning
             int? absoluteEnd = null, int? builtInStyleId = null,
             bool? hasField = null, bool? hasMathObject = null, bool? hasHyperlink = null,
             bool? hasContentControl = null, string? captionKind = null,
-            int tableNestingDepth = 0, double? leftIndentPoints = null, string? listMarker = null)
+            int tableNestingDepth = 0, double? leftIndentPoints = null, string? listMarker = null,
+            double? bottomBorderLengthPoints = null)
         {
             Index = index; Text = text ?? string.Empty; StoryType = storyType ?? string.Empty;
             SectionIndex = sectionIndex; AbsoluteStart = absoluteStart; FontName = fontName;
@@ -85,7 +86,8 @@ namespace ChuanHoa.Client.Core.Scanning
             ListMarker = listMarker;
             SpaceAfterPoints = spaceAfterPoints; IsInTable = isInTable;
             Role = role ?? "Unknown"; FontColor = fontColor; Underline = underline;
-            HasBottomBorder = hasBottomBorder; LineSpacingPoints = lineSpacingPoints;
+            HasBottomBorder = hasBottomBorder; BottomBorderLengthPoints = bottomBorderLengthPoints;
+            LineSpacingPoints = lineSpacingPoints;
             LineSpacingRule = lineSpacingRule; OutlineLevel = outlineLevel; PageNumber = pageNumber;
             PageLeftPoints = pageLeftPoints; PageTopPoints = pageTopPoints; TextWidthPoints = textWidthPoints;
             KeepWithNext = keepWithNext; WidowControl = widowControl; StyleName = styleName;
@@ -118,6 +120,11 @@ namespace ChuanHoa.Client.Core.Scanning
         public int? FontColor { get; }
         public int? Underline { get; }
         public bool HasBottomBorder { get; }
+        /// <summary>
+        /// Rendered length of the bottom border: Word draws it across the whole
+        /// column or cell between the paragraph indents, not under the text only.
+        /// </summary>
+        public double? BottomBorderLengthPoints { get; }
         public double? LineSpacingPoints { get; }
         public int? LineSpacingRule { get; }
         public int? OutlineLevel { get; }

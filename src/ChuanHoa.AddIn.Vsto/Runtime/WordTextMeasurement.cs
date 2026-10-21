@@ -127,6 +127,32 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             finally { Release(setup); Release(section); Release(sections); }
         }
 
+        /// <summary>
+        /// Length of a paragraph's bottom border as Word draws it: from the
+        /// leftmost indent (a hanging first line included) to the right indent of
+        /// the column or cell, whatever the width of the text above it.
+        /// </summary>
+        public static double? MeasureBottomBorderLength(Word.Range range)
+        {
+            var available = ReadAvailableWidth(range);
+            if (!available.HasValue) return null;
+            Word.ParagraphFormat? paragraphFormat = null;
+            try
+            {
+                paragraphFormat = range.ParagraphFormat;
+                var leftIndent = ValidIndent(paragraphFormat.LeftIndent);
+                var firstLineIndent = ValidIndent(paragraphFormat.FirstLineIndent);
+                var rightIndent = ValidIndent(paragraphFormat.RightIndent);
+                var length = available.Value - Math.Min(leftIndent, leftIndent + firstLineIndent) - rightIndent;
+                return length > 0d ? length : (double?)null;
+            }
+            catch (COMException)
+            {
+                return null;
+            }
+            finally { Release(paragraphFormat); }
+        }
+
         public static double? ReadHorizontalCenter(Word.Range range)
         {
             Word.ParagraphFormat? paragraphFormat = null;

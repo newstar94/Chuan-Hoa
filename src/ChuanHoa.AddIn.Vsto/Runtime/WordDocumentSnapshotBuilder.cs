@@ -169,7 +169,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             int? builtInStyleId = null, bool? hasField = null,
             bool? hasMathObject = null, bool? hasHyperlink = null,
             bool? hasContentControl = null, string? captionKind = null,
-            int tableNestingDepth = 0, double? leftIndentPoints = null, string? listMarker = null)
+            int tableNestingDepth = 0, double? leftIndentPoints = null, string? listMarker = null,
+            double? bottomBorderLengthPoints = null)
         {
             Index = index;
             Text = text;
@@ -195,6 +196,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             FontColor = fontColor;
             Underline = underline;
             HasBottomBorder = hasBottomBorder;
+            BottomBorderLengthPoints = bottomBorderLengthPoints;
             LineSpacingPoints = lineSpacingPoints;
             LineSpacingRule = lineSpacingRule;
             OutlineLevel = outlineLevel;
@@ -239,6 +241,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         public int? FontColor { get; }
         public int? Underline { get; }
         public bool HasBottomBorder { get; }
+        public double? BottomBorderLengthPoints { get; }
         public double? LineSpacingPoints { get; }
         public int? LineSpacingRule { get; }
         public int? OutlineLevel { get; }
@@ -740,6 +743,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                         int? fontColor = null;
                         int? underline = null;
                         var hasBottomBorder = false;
+                        double? bottomBorderLength = null;
                         double? lineSpacing = null;
                         int? lineSpacingRule = null;
                         int? outlineLevel = null;
@@ -792,8 +796,11 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                         {
                             phaseStarted = BeginTiming();
                             // Header-component candidates only: a solid bottom paragraph
-                            // border is an accepted NĐ30 separator (D6).
+                            // border is an accepted NĐ30 separator (D6) when its rendered
+                            // length matches the component, so record that length too.
                             hasBottomBorder = ReadBottomBorder(format);
+                            if (hasBottomBorder)
+                                bottomBorderLength = WordTextMeasurement.MeasureBottomBorderLength(range);
                             AddElapsed(ref borderTicks, phaseStarted);
                         }
                         phaseStarted = BeginTiming();
@@ -864,7 +871,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                             hasHyperlink,
                             hasContentControl,
                             captionKind,
-                            tableCoordinates.Item4, format == null ? null : ReadNullableFloat(format.LeftIndent), ReadListMarker(range)));
+                            tableCoordinates.Item4, format == null ? null : ReadNullableFloat(format.LeftIndent), ReadListMarker(range),
+                            bottomBorderLength));
                         AddElapsed(ref snapshotTicks, phaseStarted);
                     }
                     finally
@@ -952,6 +960,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                         int? fontColor = null;
                         int? underline = null;
                         var hasBottomBorder = false;
+                        double? bottomBorderLength = null;
                         double? lineSpacing = null;
                         int? lineSpacingRule = null;
                         int? outlineLevel = null;
@@ -991,7 +1000,11 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                         }
                         if (format != null && storyType == Word.WdStoryType.wdMainTextStory &&
                             storyParagraphIndex <= 80 && text.Length <= 250)
+                        {
                             hasBottomBorder = ReadBottomBorder(format);
+                            if (hasBottomBorder)
+                                bottomBorderLength = WordTextMeasurement.MeasureBottomBorderLength(range);
+                        }
                         if (storyType == Word.WdStoryType.wdMainTextStory)
                             currentSectionIndex = ResolveSectionIndex(sectionBoundaries, absoluteStart,
                                 currentSectionIndex);
@@ -1004,7 +1017,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                             lineSpacingRule, outlineLevel, 0, null, null, null,
                             keepWithNext, widowControl, styleName, absoluteEnd, builtInStyleId,
                             hasField, hasMathObject, hasHyperlink, hasContentControl, captionKind,
-                            tableCoordinates.Item4, format == null ? null : ReadNullableFloat(format.LeftIndent), ReadListMarker(range)));
+                            tableCoordinates.Item4, format == null ? null : ReadNullableFloat(format.LeftIndent), ReadListMarker(range),
+                            bottomBorderLength));
                     }
                     finally
                     {
@@ -1653,6 +1667,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     Hash(sha256, FormatNullable(paragraph.FontColor));
                     Hash(sha256, FormatNullable(paragraph.Underline));
                     Hash(sha256, paragraph.HasBottomBorder ? "1" : "0");
+                    Hash(sha256, FormatNullable(paragraph.BottomBorderLengthPoints));
                     Hash(sha256, FormatNullable(paragraph.LineSpacingPoints));
                     Hash(sha256, FormatNullable(paragraph.LineSpacingRule));
                     Hash(sha256, FormatNullable(paragraph.OutlineLevel));
@@ -1787,7 +1802,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                         center.HasValue ? center.Value - width / 2d : (double?)null, top, width,
                         p.KeepWithNext, p.WidowControl, p.StyleName, p.AbsoluteEnd, p.BuiltInStyleId,
                         p.HasField, p.HasMathObject, p.HasHyperlink, p.HasContentControl, p.CaptionKind,
-                        p.TableNestingDepth, p.LeftIndentPoints, p.ListMarker));
+                        p.TableNestingDepth, p.LeftIndentPoints, p.ListMarker,
+                        p.HasBottomBorder ? WordTextMeasurement.MeasureBottomBorderLength(range) : null));
                 }
                 catch (COMException) { result.Add(p); }
                 finally { Release(range); }

@@ -1670,9 +1670,12 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 var paragraphIndex = item.Item2;
                 LocalParagraphSnapshot paragraph;
                 if (!paragraphsByIndex.TryGetValue(paragraphIndex, out paragraph)) continue;
-                // D6: an existing solid bottom border (any component) or a single
-                // underline of the whole motto already satisfies NĐ30.
-                if (paragraph.HasBottomBorder ||
+                // D6: a single underline of the whole motto, or a solid bottom border
+                // the fresh scan measured at the required length, satisfies NĐ30. A
+                // border that runs across the column has a finding and is replaced
+                // by a Line Shape below.
+                if ((paragraph.HasBottomBorder && !findings.Any(finding =>
+                        finding.RuleCode == item.Item1 && finding.Anchor.ParagraphIndex == paragraphIndex)) ||
                     (item.Item1 == "ND30-PL1-M2-K1-TN-LINE" && paragraph.Underline == 1))
                     continue;
                 var ratio = item.Item1 == "ND30-PL1-M2-K2-ORG-LINE" ||
@@ -1747,9 +1750,11 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 var width = (float)Math.Max(28d, textWidth * ratio);
                 var beginX = (float)(center.Value - width / 2d);
                 var y = (float)(top + fontSize.GetValueOrDefault(13d) * 1.25d + 2d);
-                // The author's underline or paragraph border is never removed here
-                // (D6 accepts both); paragraphs carrying one are not sent to this
-                // method by InsertMissingRequiredLines.
+                // The author's underline is never removed here (D6 accepts it on the
+                // motto). A bottom border reaches this method only when it has the
+                // wrong length, so it is removed: it would otherwise remain as a
+                // second, column-wide rule under the new Line Shape.
+                if (paragraph.HasBottomBorder) RemoveBottomBorder(range);
                 var inTable = range.get_Information(Word.WdInformation.wdWithInTable);
                 if (ruleCode == "ND30-PL1-M2-K5A-SUBJ-LINE")
                 {
@@ -1872,6 +1877,22 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 }
                 catch (COMException) { }
             }
+        }
+
+        private static void RemoveBottomBorder(Word.Range range)
+        {
+            Word.ParagraphFormat? format = null;
+            Word.Borders? borders = null;
+            Word.Border? border = null;
+            try
+            {
+                format = range.ParagraphFormat;
+                borders = format.Borders;
+                border = borders[Word.WdBorderType.wdBorderBottom];
+                border.LineStyle = Word.WdLineStyle.wdLineStyleNone;
+            }
+            catch (COMException) { }
+            finally { Release(border); Release(borders); Release(format); }
         }
 
         private static void RemoveTextualLineSubstitutes(Word.Document document,

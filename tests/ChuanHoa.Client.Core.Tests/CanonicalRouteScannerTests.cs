@@ -294,6 +294,31 @@ public sealed class CanonicalRouteScannerTests
         Assert.Equal(expectedFinding, findings.Any(item => item.RuleCode == "ND30-PL1-M2-K1-TN-LINE"));
     }
 
+    [Theory]
+    // A paragraph border runs across the whole header column (about 300 pt after
+    // 1-Click), far past the motto text; one sized to the text is still accepted.
+    [InlineData("nationalMotto", "Độc lập - Tự do - Hạnh phúc", "ND30-PL1-M2-K1-TN-LINE", 299d, true)]
+    [InlineData("nationalMotto", "Độc lập - Tự do - Hạnh phúc", "ND30-PL1-M2-K1-TN-LINE", 182d, false)]
+    [InlineData("organName", "CƠ QUAN BAN HÀNH", "ND30-PL1-M2-K2-ORG-LINE", 180d, true)]
+    [InlineData("organName", "CƠ QUAN BAN HÀNH", "ND30-PL1-M2-K2-ORG-LINE", 75d, false)]
+    public void Bottom_border_separator_must_have_the_component_line_length(
+        string role, string text, string ruleCode, double borderLength, bool expectedFinding)
+    {
+        var paragraph = new LocalParagraphSnapshot(1, text, "wdMainTextStory",
+            1, 100, "Times New Roman", fontSizePoints: 13, bold: true, alignment: 1,
+            role: role, hasBottomBorder: true, pageNumber: 1, pageLeftPoints: 320,
+            pageTopPoints: 80, textWidthPoints: 180, bottomBorderLengthPoints: borderLength);
+        var snapshot = new LocalScanSnapshot("sha256:border-length", 1, new[] { ValidSection() },
+            new[] { paragraph }, Array.Empty<AnnotationProtectedSpan>(), Array.Empty<LocalLineShapeSnapshot>(), "STATE_ND30");
+
+        var findings = new LocalDocumentScanner().ScanFormat(snapshot, Rules()).Findings
+            .Where(item => item.RuleCode == ruleCode).ToArray();
+
+        Assert.Equal(expectedFinding, findings.Length > 0);
+        if (expectedFinding)
+            Assert.Contains("viền dưới đoạn", findings[0].CurrentIssue, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void Misanchored_dashed_or_wrong_length_lines_do_not_satisfy_shape_rules()
     {

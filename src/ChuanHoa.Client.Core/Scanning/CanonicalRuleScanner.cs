@@ -451,10 +451,31 @@ namespace ChuanHoa.Client.Core.Scanning
             double maximumWidthRatio, string ruleCode, string componentName, string expectedLength,
             LocalRulePack rules)
         {
-            // D6: a solid bottom paragraph border is an accepted separator for every
-            // component; a single underline of the whole line is accepted for the
-            // motto only, because that separator must be as long as the text.
-            if (paragraph.HasBottomBorder) return;
+            var expected = "Dùng đường kẻ ngang nét liền (Line Shape), không mũi tên, " + expectedLength +
+                " và đặt cân đối bên dưới (viền dưới đoạn chỉ hợp lệ khi cũng dài đúng như vậy" +
+                (string.Equals(ruleCode, "ND30-PL1-M2-K1-TN-LINE", StringComparison.Ordinal)
+                    ? "; với Tiêu ngữ có thể gạch chân đơn cả dòng" : string.Empty) + ").";
+            // D6: a solid bottom paragraph border is accepted for every component, but
+            // only at the required length. Word draws it between the paragraph indents
+            // across the whole column or cell, so under a centred motto it normally runs
+            // far past the text. Without a measurement it is accepted, as Line Shapes are.
+            if (paragraph.HasBottomBorder)
+            {
+                if (!paragraph.BottomBorderLengthPoints.HasValue || !paragraph.TextWidthPoints.HasValue ||
+                    paragraph.TextWidthPoints.Value <= 0d)
+                    return;
+                var borderRatio = paragraph.BottomBorderLengthPoints.Value / paragraph.TextWidthPoints.Value;
+                if (borderRatio >= minimumWidthRatio - .04d && borderRatio <= maximumWidthRatio + .04d) return;
+                findings.Add(Paragraph(ruleCode, paragraph,
+                    "Đường dưới " + componentName + " đang là viền dưới đoạn dài khoảng " +
+                    FormatMillimeters(paragraph.BottomBorderLengthPoints.Value) +
+                    " mm (chạy theo bề rộng cột), không khớp dòng chữ khoảng " +
+                    FormatMillimeters(paragraph.TextWidthPoints.Value) + " mm.",
+                    expected, rules, "Error"));
+                return;
+            }
+            // A single underline of the whole line is accepted for the motto only,
+            // because that separator must be exactly as long as the text.
             if (string.Equals(ruleCode, "ND30-PL1-M2-K1-TN-LINE", StringComparison.Ordinal) &&
                 paragraph.Underline.HasValue && paragraph.Underline.Value == 1)
                 return;
@@ -485,13 +506,11 @@ namespace ChuanHoa.Client.Core.Scanning
                     break;
             }
 
-            findings.Add(Paragraph(ruleCode, paragraph, issue,
-                "Dùng đường kẻ ngang nét liền, không mũi tên, " + expectedLength +
-                " và đặt cân đối bên dưới (Line Shape hoặc viền dưới đoạn nét liền" +
-                (string.Equals(ruleCode, "ND30-PL1-M2-K1-TN-LINE", StringComparison.Ordinal)
-                    ? "; với Tiêu ngữ có thể gạch chân đơn cả dòng" : string.Empty) + ").",
-                rules, "Error"));
+            findings.Add(Paragraph(ruleCode, paragraph, issue, expected, rules, "Error"));
         }
+
+        private static string FormatMillimeters(double points) =>
+            (points / PointsPerMillimeter).ToString("0", CultureInfo.InvariantCulture);
 
         private static RequiredLineStatus EvaluateRequiredLine(LocalScanSnapshot snapshot,
             LocalParagraphSnapshot paragraph,
