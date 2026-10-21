@@ -1251,6 +1251,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     var anchorTop = SafeInformationPoints(anchor, Word.WdInformation.wdVerticalPositionRelativeToPage);
                     var relativeHorizontal = (int)shape.RelativeHorizontalPosition;
                     var relativeVertical = (int)shape.RelativeVerticalPosition;
+                    var cellLeft = relativeHorizontal == 0 ? ReadLayoutCellLeft(shape, anchor) : null;
                     snapshots.Add(new WordLineShapeSnapshot(
                         snapshots.Count + 1,
                         shape.Name ?? string.Empty,
@@ -1265,7 +1266,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                         shape.Top,
                         shape.Width,
                         shape.Height,
-                        ResolvePageLeft(shape.Left, relativeHorizontal, anchorLeft, section),
+                        ResolvePageLeft(shape.Left, relativeHorizontal, anchorLeft, section, cellLeft),
                         ResolvePageTop(shape.Top, relativeVertical, anchorTop, section),
                         relativeHorizontal,
                         relativeVertical,
@@ -1985,13 +1986,36 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             return null;
         }
 
+        /// <summary>
+        /// Text-area origin of the table cell a shape is laid out in, or null when
+        /// the shape is not anchored in a table or is laid out outside its cell.
+        /// </summary>
+        private static double? ReadLayoutCellLeft(Word.Shape shape, Word.Range anchor)
+        {
+            try
+            {
+                if (shape.LayoutInCell == 0 ||
+                    !anchor.get_Information(Word.WdInformation.wdWithInTable))
+                    return null;
+                return WordTextMeasurement.ReadCellContentLeft(anchor);
+            }
+            catch (COMException)
+            {
+                return null;
+            }
+        }
+
         private static double? ResolvePageLeft(float left, int relativePosition, double? anchorLeft,
-            WordSectionSnapshot? section)
+            WordSectionSnapshot? section, double? cellLeft)
         {
             // Word persists LayoutInCell=true for shapes anchored in a layout table,
             // even after the shape is page-relative. In that state Left is already a
             // page coordinate and must not have the cell origin added a second time.
             if (relativePosition == 1) return left;
+            // A margin-relative line laid out in a cell is placed from the cell's
+            // text area (Word 2007 and 2013 layouts alike), not from the page margin;
+            // reading it at the margin hid the author's separator from 1-Click.
+            if (relativePosition == 0 && cellLeft.HasValue) return cellLeft.Value + left;
             if (relativePosition == 0 && section != null) return section.LeftMarginPoints + left;
             if ((relativePosition == 2 || relativePosition == 3) && anchorLeft.HasValue) return anchorLeft.Value + left;
             return null;

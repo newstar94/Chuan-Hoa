@@ -14,15 +14,32 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             var text = raw.Trim('\r', '\a', '\v', ' ', '\t');
             if (text.Length == 0) return 0d;
 
-            // Word's own layout is authoritative (character spacing, scaling,
-            // kerning). Measure the line directly above the separator: the last
-            // Shift+Enter segment of a two-line organ name, not both lines added up.
-            var native = MeasureLastSegmentInWord(range, raw);
-            if (native.HasValue) return native.Value;
-
+            // Measure the line directly above the separator: the last Shift+Enter
+            // segment of a two-line organ name, not both lines added up.
             var lastBreak = text.LastIndexOfAny(new[] { '\v', '\n' });
             if (lastBreak >= 0) text = text.Substring(lastBreak + 1).Trim(' ', '\t');
             if (text.Length == 0) return 0d;
+            var typographic = MeasureTypographically(range, text, fontName, fontSizePoints, bold, italic);
+
+            // Word's own layout is authoritative (kerning, rounding) only while it
+            // agrees with the font metrics. Information(wdHorizontalPosition...) can
+            // report the start of a centred line at the line's left boundary instead
+            // of its first glyph; that reading is (column + text) / 2 wide and drew
+            // separators almost twice as long as the motto.
+            var native = MeasureLastSegmentInWord(range, raw);
+            if (native.HasValue && Math.Abs(native.Value - typographic) <= typographic * .1d)
+                return native.Value;
+            return typographic;
+        }
+
+        /// <summary>
+        /// Width of <paramref name="text"/> from the font metrics (within 1% of
+        /// Word for Times New Roman), adjusted for the range's character scaling
+        /// and spacing and capped at the width available to the paragraph.
+        /// </summary>
+        private static double MeasureTypographically(Word.Range range, string text, string? fontName,
+            double? fontSizePoints, bool? bold, bool? italic)
+        {
             var family = string.IsNullOrWhiteSpace(fontName) ? "Times New Roman" : fontName;
             var size = (float)Math.Max(6d, fontSizePoints.GetValueOrDefault(13d));
             var style = FontStyle.Regular;
@@ -38,6 +55,20 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 format.FormatFlags |= StringFormatFlags.MeasureTrailingSpaces;
                 measured = graphics.MeasureString(text, font, int.MaxValue, format).Width;
             }
+
+            Word.Font? rangeFont = null;
+            try
+            {
+                rangeFont = range.Font;
+                var scaling = rangeFont.Scaling;
+                if (scaling > 0 && scaling < 9999999) measured *= scaling / 100d;
+                var spacing = rangeFont.Spacing;
+                if (spacing > -999999f && spacing < 999999f) measured += spacing * text.Length;
+            }
+            catch (COMException)
+            {
+            }
+            finally { Release(rangeFont); }
 
             var available = ReadAvailableWidth(range);
             return available.HasValue ? Math.Min(measured, available.Value) : measured;
@@ -175,74 +206,15 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             {
                 Word.Cells? cells = null;
                 Word.Cell? cell = null;
-                Word.Range? cellRange = null;
-                Word.Range? cellStart = null;
-                Word.Tables? tables = null;
-                Word.Table? table = null;
-                Word.Row? row = null;
-                Word.Sections? cellSections = null;
-                Word.Section? cellSection = null;
-                Word.PageSetup? cellSetup = null;
                 try
                 {
                     cells = range.Cells;
                     if (cells.Count == 0) return null;
                     cell = cells[1];
-                    cellRange = cell.Range.Duplicate;
-                    tables = cellRange.Tables;
-                    table = tables.Count > 0 ? tables[1] : null;
-                    cellSections = cellRange.Sections;
-                    cellSection = cellSections.Count > 0 ? cellSections[1] : null;
-                    cellSetup = cellSection?.PageSetup;
-
-                    // Information(wdHorizontalPositionRelativeToPage) can keep the
-                    // pre-resize X coordinate until Word saves or reopens the file.
-                    // For the left-aligned header layout table, derive the cell text
-                    // origin from current table geometry instead. This keeps a line
-                    // centred after 1-Click changes the table indent/column widths.
-                    if (table != null && cellSetup != null &&
-                        table.Rows.Alignment == Word.WdRowAlignment.wdAlignRowLeft)
-                    {
-                        row = table.Rows[cell.RowIndex];
-                        var precedingWidth = 0d;
-                        for (var index = 1; index <= row.Cells.Count; index++)
-                        {
-                            Word.Cell? candidate = null;
-                            Word.Range? candidateRange = null;
-                            try
-                            {
-                                candidate = row.Cells[index];
-                                candidateRange = candidate.Range;
-                                if (candidateRange.Start >= cellRange.Start) break;
-                                precedingWidth += candidate.Width;
-                            }
-                            finally { Release(candidateRange); Release(candidate); }
-                        }
-                        var tableIndent = ValidIndent(table.Rows.LeftIndent);
-                        var cellOuterLeft = cellSetup.LeftMargin + tableIndent + precedingWidth;
-                        var cellLeftPadding = ValidIndent(cell.LeftPadding);
-                        var cellRightPadding = ValidIndent(cell.RightPadding);
-                        var cellAvailableWidth = Math.Max(12d,
-                            cell.Width - cellLeftPadding - cellRightPadding);
-                        var cellContentLeft = cellOuterLeft + cellLeftPadding + leftIndent + firstLineIndent;
-                        var cellContentRight = cellOuterLeft + cellLeftPadding + cellAvailableWidth - rightIndent;
-                        return cellContentRight > cellContentLeft
-                            ? cellContentLeft + (cellContentRight - cellContentLeft) / 2d
-                            : cellOuterLeft + cellLeftPadding + cellAvailableWidth / 2d;
-                    }
-
-                    cellStart = cellRange.Duplicate;
-                    cellStart.SetRange(cellRange.Start, Math.Min(cellRange.Start + 1, cellRange.End));
-                    // A one-character cell range returns the start of the cell's text
-                    // area, after the left cell padding. Treating it as the outer cell
-                    // edge adds the padding twice and shifts every centred Line Shape
-                    // to the right by roughly half the combined cell padding.
-                    var left = SafeInformation(cellStart,
-                        Word.WdInformation.wdHorizontalPositionRelativeToPage);
+                    var left = ReadCellContentLeft(cell);
                     if (!left.HasValue) return null;
-                    var leftPadding = ValidIndent(cell.LeftPadding);
-                    var rightPadding = ValidIndent(cell.RightPadding);
-                    var availableWidth = Math.Max(12d, cell.Width - leftPadding - rightPadding);
+                    var availableWidth = Math.Max(12d,
+                        cell.Width - ValidIndent(cell.LeftPadding) - ValidIndent(cell.RightPadding));
                     var contentLeft = left.Value + leftIndent + firstLineIndent;
                     var contentRight = left.Value + availableWidth - rightIndent;
                     return contentRight > contentLeft
@@ -255,14 +227,6 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 }
                 finally
                 {
-                    Release(cellSetup);
-                    Release(cellSection);
-                    Release(cellSections);
-                    Release(row);
-                    Release(table);
-                    Release(tables);
-                    Release(cellStart);
-                    Release(cellRange);
                     Release(cell);
                     Release(cells);
                 }
@@ -288,6 +252,137 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 return null;
             }
             finally { Release(setup); Release(section); Release(sections); }
+        }
+
+        /// <summary>
+        /// Page X of the text area (after the left cell padding) of the table cell
+        /// holding <paramref name="range"/>; null outside a table.
+        /// </summary>
+        public static double? ReadCellContentLeft(Word.Range range)
+        {
+            if (!range.get_Information(Word.WdInformation.wdWithInTable)) return null;
+            Word.Cells? cells = null;
+            Word.Cell? cell = null;
+            try
+            {
+                cells = range.Cells;
+                if (cells.Count == 0) return null;
+                cell = cells[1];
+                return ReadCellContentLeft(cell);
+            }
+            catch (COMException)
+            {
+                return null;
+            }
+            finally
+            {
+                Release(cell);
+                Release(cells);
+            }
+        }
+
+        private static double? ReadCellContentLeft(Word.Cell cell)
+        {
+            Word.Range? cellRange = null;
+            Word.Range? cellStart = null;
+            Word.Tables? tables = null;
+            Word.Table? table = null;
+            Word.Rows? rows = null;
+            Word.Row? row = null;
+            Word.Cells? rowCells = null;
+            Word.Sections? cellSections = null;
+            Word.Section? cellSection = null;
+            Word.PageSetup? cellSetup = null;
+            try
+            {
+                cellRange = cell.Range.Duplicate;
+                tables = cellRange.Tables;
+                table = tables.Count > 0 ? tables[1] : null;
+                cellSections = cellRange.Sections;
+                cellSection = cellSections.Count > 0 ? cellSections[1] : null;
+                cellSetup = cellSection?.PageSetup;
+                if (table != null)
+                {
+                    rows = table.Rows;
+                    // Rows[i] throws for a table with vertically merged cells.
+                    try { row = rows[cell.RowIndex]; }
+                    catch (COMException) { row = null; }
+                }
+
+                // Information(wdHorizontalPositionRelativeToPage) can keep the
+                // pre-resize X coordinate until Word saves or reopens the file.
+                // For the left-aligned header layout table, derive the cell text
+                // origin from current table geometry instead. This keeps a line
+                // centred after 1-Click changes the table indent/column widths.
+                if (row != null && cellSetup != null &&
+                    row.Alignment == Word.WdRowAlignment.wdAlignRowLeft)
+                {
+                    rowCells = row.Cells;
+                    var precedingWidth = 0d;
+                    var firstLeftPadding = 0d;
+                    for (var index = 1; index <= rowCells.Count; index++)
+                    {
+                        Word.Cell? candidate = null;
+                        Word.Range? candidateRange = null;
+                        try
+                        {
+                            candidate = rowCells[index];
+                            if (index == 1) firstLeftPadding = ValidIndent(candidate.LeftPadding);
+                            candidateRange = candidate.Range;
+                            if (candidateRange.Start >= cellRange.Start) break;
+                            precedingWidth += candidate.Width;
+                        }
+                        finally { Release(candidateRange); Release(candidate); }
+                    }
+                    // Read this row, not table.Rows: the collection reports wdUndefined
+                    // (9999999) once any row differs, which read as 0 and moved every
+                    // header line right by the whole negative table indent.
+                    var rowIndent = ValidIndent(row.LeftIndent);
+                    // Layouts before Word 2013 (compatibility mode below 15) measure
+                    // the indent to the first cell's text, so its padding hangs out.
+                    var outdent = UsesLegacyTableIndent(cellRange) ? firstLeftPadding : 0d;
+                    return cellSetup.LeftMargin + rowIndent - outdent + precedingWidth +
+                        ValidIndent(cell.LeftPadding);
+                }
+
+                cellStart = cellRange.Duplicate;
+                cellStart.SetRange(cellRange.Start, Math.Min(cellRange.Start + 1, cellRange.End));
+                // A one-character cell range returns the start of the cell's text
+                // area, after the left cell padding. Treating it as the outer cell
+                // edge adds the padding twice and shifts every centred Line Shape
+                // to the right by roughly half the combined cell padding.
+                return SafeInformation(cellStart, Word.WdInformation.wdHorizontalPositionRelativeToPage);
+            }
+            catch (COMException)
+            {
+                return null;
+            }
+            finally
+            {
+                Release(cellSetup);
+                Release(cellSection);
+                Release(cellSections);
+                Release(rowCells);
+                Release(row);
+                Release(rows);
+                Release(table);
+                Release(tables);
+                Release(cellStart);
+                Release(cellRange);
+            }
+        }
+
+        private static bool UsesLegacyTableIndent(Word.Range range)
+        {
+            try
+            {
+                // The Document RCW is shared with the caller; it is not released here.
+                return range.Document.CompatibilityMode < 15;
+            }
+            catch (COMException)
+            {
+                return false;
+            }
         }
 
         private static double ValidIndent(float value) =>

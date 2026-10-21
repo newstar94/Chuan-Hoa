@@ -2548,7 +2548,6 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     try
                     {
                         row = table.Rows[r];
-                        row.LeftIndent = leftIndent;
                         row.Alignment = Word.WdRowAlignment.wdAlignRowLeft;
                         if (row.Cells.Count == 2)
                         {
@@ -2568,6 +2567,10 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                             }
                             catch (COMException) { }
                         }
+                        // Set last: in layouts before Word 2013 changing the first
+                        // cell's padding moves a later row's indent by the difference,
+                        // leaving "Số:" a few points left of the organ name.
+                        row.LeftIndent = leftIndent;
                     }
                     catch (COMException) { }
                     finally { Release(row); }
