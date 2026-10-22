@@ -41,6 +41,8 @@ namespace ChuanHoa.Client.Core.Scanning
         private static readonly Regex LeadingListMarkers = Rx(
             @"^\s*(?:(?:[-–—+•·▪◦‣⁃]\s+)|(?:\(\s*(?:\d+(?:\.\d+)*|[a-zđ])\s*\)\s*)|(?:(?:\d+(?:\.\d+)*|[a-zđ])[.)]\s+))+(?<letter>\p{L})",
             true);
+        private const int RepeatedForeignTermMinimum = 3;
+        private static readonly Regex UnitColumnHeaderRegex =Rx(@"^\s*(?:đơn\s+vị(?:\s+tính)?|đvt|đ\.v\.t\.?)\s*:?\s*$", true);
         private static readonly Regex MultipleWhitespaceRegex = Rx(@"[ \t]{2,}");
         private static readonly Regex WhitespaceBeforePunctuationRegex = Rx(@"[ \t]+(?=[,.;:!?])");
         private static readonly Regex RecipientOrAuthorityEndBoundaryRegex = Rx(@"^(?:Nơi\s+nhận\s*:|(?:TM\.|KT\.|TL\.|TUQ\.)\s*)", true);
@@ -153,14 +155,24 @@ namespace ChuanHoa.Client.Core.Scanning
             var paragraphs = Scannable(snapshot).ToArray();
             var roles = _roleDetector.Detect(snapshot);
             var lexicon = new VietnameseLexiconSpellChecker(rules.Lexicon);
-            foreach (var paragraph in paragraphs)
+            // The lexicon check reads each token in its context, including what the
+            // document itself establishes: a column headed "Đơn vị tính", units the
+            // text uses where only a unit can stand, and foreign terms it repeats.
+            var tokens = paragraphs.Select(paragraph =>
+                VietnameseWordTokenizer.TokenizeParagraph(paragraph.Text, paragraph.Index)).ToArray();
+            var unitColumn = FindUnitColumnParagraphs(paragraphs);
+            var documentVocabulary = CollectDocumentUnits(paragraphs, tokens, unitColumn);
+            CollectRepeatedForeignTerms(documentVocabulary, tokens, lexicon);
+            for (var paragraphIndex = 0; paragraphIndex < paragraphs.Length; paragraphIndex++)
             {
+                var paragraph = paragraphs[paragraphIndex];
                 cancellationToken.ThrowIfCancellationRequested();
                 AddMatches(findings, paragraph, MultipleWhitespaceRegex, "LOCAL-TYPO-SPACE", "Có khoảng trắng thừa.", "Chỉ để một khoảng trắng.", rules);
                 AddMatches(findings, paragraph, WhitespaceBeforePunctuationRegex, "LOCAL-TYPO-PUNCT", "Có khoảng trắng trước dấu câu.", "Xóa khoảng trắng trước dấu câu.", rules);
                 CheckHiddenCharacters(findings, paragraph, rules);
                 CheckDictionary(findings, paragraph, rules, snapshot.DictionaryScopeId, _personalDictionary);
-                CheckLexicon(findings, paragraph, rules, lexicon, snapshot.DictionaryScopeId, _personalDictionary);
+                CheckLexicon(findings, paragraph, rules, lexicon, snapshot.DictionaryScopeId, _personalDictionary,
+                    tokens[paragraphIndex], unitColumn.Contains(paragraph.Index), documentVocabulary);
                 CheckTelex(findings, paragraph, rules);
                 CheckBareShortDates(findings, paragraph, rules, roles);
                 CheckSentenceCapitalization(findings, paragraph, rules, roles);
@@ -1146,7 +1158,8 @@ namespace ChuanHoa.Client.Core.Scanning
         private static void CheckLexicon(ICollection<AnnotationFinding> findings,
             LocalParagraphSnapshot paragraph, LocalRulePack rules,
             VietnameseLexiconSpellChecker lexicon, string documentId,
-            PersonalDictionaryManager personalDictionary)
+            PersonalDictionaryManager personalDictionary, IReadOnlyList<VietnameseTokenSpan> tokens,
+            bool inUnitColumn, ISet<string> documentVocabulary)
         {
             if (lexicon.Count == 0) return;
             var mapped = NormalizedTextOffsetMap.Create(paragraph.Text);
@@ -1154,14 +1167,17 @@ namespace ChuanHoa.Client.Core.Scanning
                 mapped, personalDictionary.GetUserWords());
             var leadingMarker = LeadingListMarkers.Match(paragraph.Text);
             var contentStart = leadingMarker.Success ? leadingMarker.Groups["letter"].Index : -1;
-            var tokens = VietnameseWordTokenizer.TokenizeParagraph(paragraph.Text, paragraph.Index);
-            foreach (var token in tokens)
+            for (var tokenIndex = 0; tokenIndex < tokens.Count; tokenIndex++)
             {
+                var token = tokens[tokenIndex];
                 var normalizedToken = token.Text.Normalize(NormalizationForm.FormC);
                 if (token.Kind != VietnameseTokenKind.Word || token.Length == 0 ||
                     (contentStart >= 0 && token.StartOffset + token.Length <= contentStart) ||
                     IsCoveredBySpan(token.StartOffset, token.Length, protectedDictionaryPhrases) ||
                     ShouldIgnoreLexiconToken(token, tokens) || lexicon.IsKnown(normalizedToken) ||
+                    documentVocabulary.Contains(normalizedToken) ||
+                    ContextualTokenClassifier.Classify(tokens, tokenIndex, inUnitColumn) !=
+                        ContextualTokenKind.None ||
                     personalDictionary.IsKnownOrIgnored(normalizedToken, documentId) ||
                     OverlapsExistingTextFinding(findings, paragraph, token.StartOffset, token.Length))
                     continue;
@@ -1184,6 +1200,67 @@ namespace ChuanHoa.Client.Core.Scanning
             foreach (var occurrence in WholePhraseMatches(mapped, entry))
                 spans.Add(occurrence);
             return spans;
+        }
+
+        /// <summary>
+        /// Paragraphs below a table header "Đơn vị tính"/"ĐVT" in the same column:
+        /// every short token there is a unit ("Kg", "md", "m2"), whatever the lexicon says.
+        /// </summary>
+        private static HashSet<int> FindUnitColumnParagraphs(IReadOnlyList<LocalParagraphSnapshot> paragraphs)
+        {
+            var headers = paragraphs.Where(paragraph => paragraph.IsInTable && paragraph.TableIndex.HasValue &&
+                    paragraph.RowIndex.HasValue && paragraph.CellIndex.HasValue &&
+                    UnitColumnHeaderRegex.IsMatch(paragraph.Text.Normalize(NormalizationForm.FormC)))
+                .ToArray();
+            var result = new HashSet<int>();
+            if (headers.Length == 0) return result;
+            foreach (var paragraph in paragraphs)
+                if (paragraph.IsInTable && headers.Any(header => header.StoryType == paragraph.StoryType &&
+                        header.TableIndex == paragraph.TableIndex && header.CellIndex == paragraph.CellIndex &&
+                        header.RowIndex < paragraph.RowIndex))
+                    result.Add(paragraph.Index);
+            return result;
+        }
+
+        /// <summary>
+        /// Short tokens the document itself uses as units or codes (in a unit column,
+        /// behind "ĐVT:" or glued to a number, e.g. "120md"); they are accepted in the
+        /// document's other paragraphs too ("đơn giá tính theo md").
+        /// </summary>
+        private static HashSet<string> CollectDocumentUnits(IReadOnlyList<LocalParagraphSnapshot> paragraphs,
+            IReadOnlyList<IReadOnlyList<VietnameseTokenSpan>> tokens, ISet<int> unitColumn)
+        {
+            var units = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            for (var paragraphIndex = 0; paragraphIndex < paragraphs.Count; paragraphIndex++)
+            {
+                var paragraphTokens = tokens[paragraphIndex];
+                var inUnitColumn = unitColumn.Contains(paragraphs[paragraphIndex].Index);
+                for (var tokenIndex = 0; tokenIndex < paragraphTokens.Count; tokenIndex++)
+                    if (ContextualTokenClassifier.IsDocumentUnitEvidence(paragraphTokens, tokenIndex, inUnitColumn))
+                        units.Add(paragraphTokens[tokenIndex].Text.Normalize(NormalizationForm.FormC));
+            }
+            return units;
+        }
+
+        /// <summary>
+        /// Foreign technical terms the document repeats ("inox", "granite", "aptomat"):
+        /// a Latin word without diacritics that occurs at least three times and is not
+        /// unaccented Vietnamese ("khong") is part of the document's own vocabulary.
+        /// A one-off misspelling is not repeated identically, so it is still reported.
+        /// </summary>
+        private static void CollectRepeatedForeignTerms(ISet<string> vocabulary,
+            IReadOnlyList<IReadOnlyList<VietnameseTokenSpan>> tokens, VietnameseLexiconSpellChecker lexicon)
+        {
+            var counts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            foreach (var paragraphTokens in tokens)
+            foreach (var token in paragraphTokens)
+                if (token.Kind == VietnameseTokenKind.Word && token.Text.Length >= 4 &&
+                    token.Text.All(character => character < 128 && char.IsLetter(character)))
+                    counts[token.Text] = counts.TryGetValue(token.Text, out var count) ? count + 1 : 1;
+            foreach (var entry in counts)
+                if (entry.Value >= RepeatedForeignTermMinimum && !lexicon.IsKnown(entry.Key) &&
+                    !lexicon.IsUnaccentedVietnamese(entry.Key))
+                    vocabulary.Add(entry.Key);
         }
 
         private static bool IsCoveredBySpan(int start, int length,

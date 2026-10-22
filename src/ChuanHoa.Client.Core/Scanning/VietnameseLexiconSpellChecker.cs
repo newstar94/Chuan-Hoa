@@ -16,6 +16,7 @@ namespace ChuanHoa.Client.Core.Scanning
         private static readonly CultureInfo Vietnamese = CultureInfo.GetCultureInfo("vi-VN");
         private readonly HashSet<string> _words;
         private readonly Dictionary<int, string[]> _wordsByLength;
+        private HashSet<string>? _unaccentedWords;
 
         public VietnameseLexiconSpellChecker(IEnumerable<string> words)
         {
@@ -33,6 +34,17 @@ namespace ChuanHoa.Client.Core.Scanning
         public bool IsKnown(string word)
         {
             return !string.IsNullOrWhiteSpace(word) && _words.Contains(Normalize(word));
+        }
+
+        /// <summary>
+        /// True when <paramref name="word"/> is a lexicon word typed without its
+        /// diacritics ("khong" for "không"): Vietnamese, not a foreign term.
+        /// </summary>
+        public bool IsUnaccentedVietnamese(string word)
+        {
+            if (string.IsNullOrWhiteSpace(word)) return false;
+            _unaccentedWords ??= new HashSet<string>(_words.Select(RemoveDiacritics), StringComparer.Ordinal);
+            return _unaccentedWords.Contains(RemoveDiacritics(Normalize(word)));
         }
 
         /// <summary>
@@ -91,6 +103,17 @@ namespace ChuanHoa.Client.Core.Scanning
 
         private static string Normalize(string value) =>
             value.Normalize(NormalizationForm.FormC).ToLower(Vietnamese);
+
+        private static string RemoveDiacritics(string value)
+        {
+            var builder = new StringBuilder(value.Length);
+            foreach (var character in value.Normalize(NormalizationForm.FormD))
+            {
+                if (CharUnicodeInfo.GetUnicodeCategory(character) == UnicodeCategory.NonSpacingMark) continue;
+                builder.Append(character == 'đ' ? 'd' : character == 'Đ' ? 'D' : character);
+            }
+            return builder.ToString();
+        }
 
         private static string ApplyCase(string source, string target)
         {
