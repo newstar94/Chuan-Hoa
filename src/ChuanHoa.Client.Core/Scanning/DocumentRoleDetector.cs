@@ -409,9 +409,11 @@ namespace ChuanHoa.Client.Core.Scanning
             IReadOnlyDictionary<int, string> assigned)
         {
             var motto = main[index];
-            for (var position = index - 1; position >= 0 && index - position <= 6; position--)
+            for (var position = index - 1; position >= 0; position--)
             {
                 var candidate = main[position];
+                if (motto.IsInTable && (!candidate.IsInTable || candidate.TableIndex != motto.TableIndex))
+                    return false;
                 string role;
                 var isTitle = assigned.TryGetValue(candidate.Index, out role) &&
                     string.Equals(role, "nationalTitle", StringComparison.Ordinal);
@@ -421,7 +423,7 @@ namespace ChuanHoa.Client.Core.Scanning
                     if (!motto.IsInTable) return false;
                     continue;
                 }
-                if (position == index - 1) return true;
+                if (!motto.IsInTable) return position == index - 1 && !candidate.IsInTable;
                 // Word lists every cell of a row before the next row, so in a
                 // header table the title can be several paragraphs earlier: accept
                 // the same cell or the cell directly below in the same column.

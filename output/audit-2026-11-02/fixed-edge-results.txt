@@ -1,0 +1,4 @@
+﻿PROBE_PROCESS x64=True
+LINE_RESIDUE shapes=1 lineFindings=1 issues=Đã có Line Shape dưới Tiêu ngữ nhưng đường kẻ không phải nét liền, đang có mũi tên hoặc đang bị ẩn.
+LINE_RESIDUE shapes=2 lineFindings=1 issues=Đã có Line Shape dưới Tiêu ngữ nhưng đường kẻ không phải nét liền, đang có mũi tên hoặc đang bị ẩn.
+CANCEL request_ms=107 returned_ms=115

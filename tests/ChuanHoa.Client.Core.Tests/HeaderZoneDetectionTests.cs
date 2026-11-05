@@ -11,6 +11,47 @@ namespace ChuanHoa.Client.Core.Tests;
 /// </summary>
 public sealed class HeaderZoneDetectionTests
 {
+    [Theory]
+    [InlineData("NFD")]
+    [InlineData("dash")]
+    [InlineData("hidden")]
+    [InlineData("missing")]
+    public void Combined_header_detection_and_split_share_original_offsets(string variant)
+    {
+        var title = "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM";
+        var motto = "Độc lập - Tự do - Hạnh phúc";
+        if (variant == "NFD") { title = title.Normalize(NormalizationForm.FormD); motto = motto.Normalize(NormalizationForm.FormD); }
+        if (variant == "dash") motto = motto.Replace('-', '\u2011');
+        if (variant == "hidden") title = title.Replace("CỘNG", "CỘNG\u200b");
+        if (variant == "missing") motto = "Độc lập Tự do Hạnh phúc";
+        var text = title + "\v" + motto;
+        Assert.True(ComponentTextNormalizer.IsCombinedNationalHeader(text));
+        Assert.Equal(new[] { title.Length }, CombinedNationalHeader.GetBreakOffsets(text));
+        Assert.Equal(new[] { title.Length, text.Length }, CombinedNationalHeader.GetBreakOffsets(text + "\v-----"));
+        Assert.Empty(CombinedNationalHeader.GetBreakOffsets(text + "\vNội dung khác"));
+    }
+
+    [Fact]
+    public void Adjacent_cells_in_different_columns_are_not_title_and_motto()
+    {
+        var roles = Detect(Cell(1, "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM", 1, 1, 1),
+            Cell(2, "Độc lập - Tự do - Hạnh phúc", 1, 1, 2));
+        Assert.NotEqual("nationalMotto", Role(roles, 2));
+    }
+
+    [Fact]
+    public void Table_motto_can_follow_many_paragraphs_in_another_column()
+    {
+        var paragraphs = new List<LocalParagraphSnapshot>
+        {
+            Cell(1, "ỦY BAN NHÂN DÂN", 1, 1, 1),
+            Cell(2, "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM", 1, 1, 2)
+        };
+        for (var i = 3; i < 10; i++) paragraphs.Add(Cell(i, "Cơ quan cấp trên " + i, 1, 2, 1));
+        paragraphs.Add(Cell(10, "Độc lập - Tự do - Hạnh phúc", 1, 2, 2));
+        Assert.Equal("nationalMotto", Role(Detect(paragraphs.ToArray()), 10));
+    }
+
     [Fact]
     public void Legal_basis_citing_the_constitution_is_not_the_national_title()
     {

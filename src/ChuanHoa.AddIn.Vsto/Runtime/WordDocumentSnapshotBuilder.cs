@@ -447,7 +447,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             Word.Document document,
             DocumentContext context,
             WordDocumentCapability capability,
-            DocumentOperationSession? operation = null)
+            DocumentOperationSession? operation = null,
+            bool captureComponentLayoutForMutation = false)
         {
             if (document == null)
             {
@@ -476,10 +477,14 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             var builtInStyles = Measure("built-in-styles", () => CaptureBuiltInStyleNames(document));
             var paragraphs = Measure("paragraphs", () =>
                 CaptureParagraphs(document, tables, sectionBoundaries, builtInStyles, allowPageLayout, operation));
-            paragraphs = CaptureRequiredLineLayout(document, paragraphs, operation);
+            // Ordinary scans never force layout for heavy files. Only the explicit
+            // line-mutation phase, after its single repagination, requests geometry
+            // for semantic owners and shapes; bulk paragraphs remain guarded.
+            allowPageLayout = allowPageLayout || captureComponentLayoutForMutation;
+            paragraphs = CaptureRequiredLineLayout(document, paragraphs, allowPageLayout, operation);
             operation?.ReportProgress(paragraphs.Count, paragraphs.Count, "đọc đường kẻ");
             var lineShapes = Measure("line-shapes", () =>
-                CaptureLineShapes(document, sections, paragraphs, operation));
+                CaptureLineShapes(document, sections, paragraphs, allowPageLayout, operation));
             operation?.ReportProgress(paragraphs.Count, paragraphs.Count, "đọc hình và đối tượng");
             var protectedSpans = Measure("protected-spans", () => CaptureProtectedSpans(document, operation));
             var graphicObjects = Measure("graphic-objects", () =>
@@ -1107,6 +1112,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             Word.Document document,
             IReadOnlyList<WordSectionSnapshot> sections,
             IReadOnlyList<WordParagraphSnapshot> paragraphs,
+            bool allowPageLayout,
             DocumentOperationSession? operation)
         {
             var snapshots = new List<WordLineShapeSnapshot>();
@@ -1115,7 +1121,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             try
             {
                 documentShapes = document.Shapes;
-                CaptureShapeCollection(documentShapes, sections, paragraphs, snapshots, seen, operation);
+                CaptureShapeCollection(documentShapes, sections, paragraphs, snapshots, seen, allowPageLayout, operation);
             }
             catch (COMException)
             {
@@ -1143,9 +1149,9 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                         section = documentSections[sectionIndex];
                         headers = section.Headers;
                         footers = section.Footers;
-                        CaptureHeaderFooterShapes(headers, sections, paragraphs, snapshots, seen, operation);
+                        CaptureHeaderFooterShapes(headers, sections, paragraphs, snapshots, seen, allowPageLayout, operation);
                         headers = null;
-                        CaptureHeaderFooterShapes(footers, sections, paragraphs, snapshots, seen, operation);
+                        CaptureHeaderFooterShapes(footers, sections, paragraphs, snapshots, seen, allowPageLayout, operation);
                         footers = null;
                     }
                     catch (COMException)
@@ -1167,6 +1173,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         private static void CaptureHeaderFooterShapes(Word.HeadersFooters collection,
             IReadOnlyList<WordSectionSnapshot> sections, IReadOnlyList<WordParagraphSnapshot> paragraphs,
             ICollection<WordLineShapeSnapshot> snapshots, ISet<string> seen,
+            bool allowPageLayout,
             DocumentOperationSession? operation)
         {
             try
@@ -1186,7 +1193,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                         headerFooter = collection[index];
                         if (!headerFooter.Exists) continue;
                         shapes = headerFooter.Shapes;
-                        CaptureShapeCollection(shapes, sections, paragraphs, snapshots, seen, operation);
+                        CaptureShapeCollection(shapes, sections, paragraphs, snapshots, seen, allowPageLayout, operation);
                     }
                     catch (COMException)
                     {
@@ -1207,6 +1214,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         private static void CaptureShapeCollection(Word.Shapes shapes,
             IReadOnlyList<WordSectionSnapshot> sections, IReadOnlyList<WordParagraphSnapshot> paragraphs,
             ICollection<WordLineShapeSnapshot> snapshots, ISet<string> seen,
+            bool allowPageLayout,
             DocumentOperationSession? operation)
         {
             var shapeCount = shapes.Count;
@@ -1247,11 +1255,11 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     catch (COMException) { }
                     var sectionIndex = ReadSectionIndex(anchor);
                     var section = FindSection(sections, sectionIndex);
-                    var anchorLeft = SafeInformationPoints(anchor, Word.WdInformation.wdHorizontalPositionRelativeToPage);
-                    var anchorTop = SafeInformationPoints(anchor, Word.WdInformation.wdVerticalPositionRelativeToPage);
+                    var anchorLeft = allowPageLayout ? SafeInformationPoints(anchor, Word.WdInformation.wdHorizontalPositionRelativeToPage) : null;
+                    var anchorTop = allowPageLayout ? SafeInformationPoints(anchor, Word.WdInformation.wdVerticalPositionRelativeToPage) : null;
                     var relativeHorizontal = (int)shape.RelativeHorizontalPosition;
                     var relativeVertical = (int)shape.RelativeVerticalPosition;
-                    var cellLeft = relativeHorizontal == 0 ? ReadLayoutCellLeft(shape, anchor) : null;
+                    var cellLeft = allowPageLayout && relativeHorizontal == 0 ? ReadLayoutCellLeft(shape, anchor) : null;
                     snapshots.Add(new WordLineShapeSnapshot(
                         snapshots.Count + 1,
                         shape.Name ?? string.Empty,
@@ -1261,7 +1269,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                         sectionIndex,
                         anchor.Start,
                         FindAnchorParagraph(paragraphs, anchor.StoryType.ToString(), anchor.Start),
-                        SafeInformation(anchor, Word.WdInformation.wdActiveEndPageNumber),
+                        allowPageLayout ? SafeInformation(anchor, Word.WdInformation.wdActiveEndPageNumber) : 0,
                         shape.Left,
                         shape.Top,
                         shape.Width,
@@ -1761,7 +1769,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         }
 
         private static IReadOnlyList<WordParagraphSnapshot> CaptureRequiredLineLayout(Word.Document document,
-            IReadOnlyList<WordParagraphSnapshot> paragraphs, DocumentOperationSession? operation)
+            IReadOnlyList<WordParagraphSnapshot> paragraphs, bool allowPageLayout, DocumentOperationSession? operation)
         {
             // Table count and absolute paragraph index are not document boundaries.
             // Retain the bulk-reader safety guards, then measure only semantic line
@@ -1790,21 +1798,41 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 try
                 {
                     range = document.Range(p.AbsoluteStart, p.AbsoluteEnd);
-                    var width = WordTextMeasurement.MeasureParagraphWidth(range, p.FontName,
-                        p.FontSizePoints, p.Bold, p.Italic);
-                    var center = WordTextMeasurement.ReadHorizontalCenter(range);
-                    var top = WordTextMeasurement.ReadLastTextLineTop(range);
+                    // Semantic owners may occur after the bulk reader's 80/150
+                    // paragraph limits. Always refresh their actual separator state.
+                    var format = range.ParagraphFormat;
+                    var font = range.Font;
+                    bool hasBorder;
+                    int? underline;
+                    string? fontName;
+                    double? fontSize;
+                    bool? bold;
+                    bool? italic;
+                    try
+                    {
+                        hasBorder = ReadBottomBorder(format);
+                        underline = ReadNullableInteger((int)font.Underline);
+                        fontName = ReadFontName(font);
+                        fontSize = ReadNullableFloat(font.Size);
+                        bold = ReadNullableBoolean(font.Bold);
+                        italic = ReadNullableBoolean(font.Italic);
+                    }
+                    finally { Release(font); Release(format); }
+                    var width = allowPageLayout ? WordTextMeasurement.MeasureParagraphWidth(range, fontName,
+                        fontSize, bold, italic) : (double?)null;
+                    var center = allowPageLayout ? WordTextMeasurement.ReadHorizontalCenter(range) : null;
+                    var top = allowPageLayout ? WordTextMeasurement.ReadLastTextLineTop(range) : null;
                     result.Add(new WordParagraphSnapshot(p.Index, p.Text, p.Role, p.RoleConfidence,
-                        p.FontName, p.FontSizePoints, p.Bold, p.Italic, p.Alignment,
+                        fontName, fontSize, bold, italic, p.Alignment,
                         p.FirstLineIndentPoints, p.SpaceBeforePoints, p.SpaceAfterPoints, p.IsInTable,
                         p.StoryType, p.SectionIndex, p.AbsoluteStart, p.TableIndex, p.RowIndex, p.CellIndex,
-                        p.FontColor, p.Underline, p.HasBottomBorder, p.LineSpacingPoints, p.LineSpacingRule,
-                        p.OutlineLevel, SafeInformation(range, Word.WdInformation.wdActiveEndPageNumber),
-                        center.HasValue ? center.Value - width / 2d : (double?)null, top, width,
+                        p.FontColor, underline, hasBorder, p.LineSpacingPoints, p.LineSpacingRule,
+                        p.OutlineLevel, allowPageLayout ? SafeInformation(range, Word.WdInformation.wdActiveEndPageNumber) : 0,
+                        center.HasValue && width.HasValue ? center.Value - width.Value / 2d : (double?)null, top, width,
                         p.KeepWithNext, p.WidowControl, p.StyleName, p.AbsoluteEnd, p.BuiltInStyleId,
                         p.HasField, p.HasMathObject, p.HasHyperlink, p.HasContentControl, p.CaptionKind,
                         p.TableNestingDepth, p.LeftIndentPoints, p.ListMarker,
-                        p.HasBottomBorder ? WordTextMeasurement.MeasureBottomBorderLength(range) : null));
+                        hasBorder ? WordTextMeasurement.MeasureBottomBorderLength(range) : null));
                 }
                 catch (COMException) { result.Add(p); }
                 finally { Release(range); }

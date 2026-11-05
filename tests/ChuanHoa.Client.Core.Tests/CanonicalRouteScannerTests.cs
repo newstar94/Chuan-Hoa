@@ -193,6 +193,32 @@ public sealed class CanonicalRouteScannerTests
     }
 
     [Fact]
+    public void New_valid_line_does_not_hide_old_dashed_component_line()
+    {
+        var paragraph = P(1, "Độc lập - Tự do - Hạnh phúc", "nationalMotto", size: 13,
+            bold: true, alignment: 1, page: 1, left: 320, top: 80, width: 180);
+        var snapshot = new LocalScanSnapshot("sha256:duplicate-old-line", 1, new[] { ValidSection() },
+            new[] { paragraph }, Array.Empty<AnnotationProtectedSpan>(),
+            new[] { Line(1, paragraph, 320, 98, 180), Line(2, paragraph, 320, 130, 180, 4) }, "STATE_ND30");
+        Assert.Contains(new LocalDocumentScanner().ScanFormat(snapshot, Rules()).Findings,
+            item => item.RuleCode == "ND30-PL1-M2-K1-TN-LINE");
+    }
+
+    [Fact]
+    public void Nearby_dashed_artwork_with_another_anchor_is_not_a_component_duplicate()
+    {
+        var paragraph = P(1, "Độc lập - Tự do - Hạnh phúc", "nationalMotto", size: 13,
+            bold: true, alignment: 1, page: 1, left: 320, top: 80, width: 180);
+        var artwork = new LocalLineShapeSnapshot(2, "UserArtwork", 9, paragraph.StoryType, 1,
+            900, 9, 1, 320, 130, 180, 0, 320, 130, 1, 1, true, 4, .75, 0, 1, 1);
+        var snapshot = new LocalScanSnapshot("sha256:unrelated-line", 1, new[] { ValidSection() },
+            new[] { paragraph }, Array.Empty<AnnotationProtectedSpan>(),
+            new[] { Line(1, paragraph, 320, 98, 180), artwork }, "STATE_ND30");
+        Assert.DoesNotContain(new LocalDocumentScanner().ScanFormat(snapshot, Rules()).Findings,
+            item => item.RuleCode == "ND30-PL1-M2-K1-TN-LINE");
+    }
+
+    [Fact]
     public void Text_dashes_below_motto_do_not_replace_a_solid_line_shape()
     {
         var paragraph = P(1, "Độc lập - Tự do - Hạnh phúc", "nationalMotto", size: 13,

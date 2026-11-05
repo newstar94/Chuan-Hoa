@@ -190,7 +190,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     }
                     catch (COMException) { }
                     new WordDocumentReadRuntime(_application, _accessManager).Prepare(
-                        context, DocumentAnalysisScope.Full, document, false, operation);
+                        context, DocumentAnalysisScope.Format, document, false, operation,
+                        captureComponentLayoutForMutation: true);
                     local = context.LastLocalSnapshot!;
                     formatFindings = context.LastFormatScan!.Findings;
                     blocks = context.LastLogicalBlocks;
@@ -209,7 +210,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
                 context.ClearReadAnalysis();
                 var readRuntime = new WordDocumentReadRuntime(_application, _accessManager);
-                readRuntime.Prepare(context, DocumentAnalysisScope.Full, document, false, operation);
+                readRuntime.Prepare(context, DocumentAnalysisScope.Full, document, false, operation,
+                    captureComponentLayoutForMutation: insertedLines > 0);
                 var remaining = context.LastFormatScan!.Findings
                     .Concat(context.LastSpellingScan!.Findings).ToArray();
                 return new OneClickResult(backup, changedParagraphs, insertedLines,
@@ -1798,14 +1800,23 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     l.AnchorParagraphIndex.HasValue && (ownerBlock.ContainsParagraph(l.AnchorParagraphIndex.Value) ||
                         IsAdjacentBlankHeaderAnchor(snapshot, ownerBlock, l)) &&
                     page > 0 && l.AnchorPageNumber == page && l.PageLeftPoints.HasValue && l.PageTopPoints.HasValue &&
-                    (Math.Abs(l.PageTopPoints.Value - y) <= 18d &&
+                    ((l.AnchorParagraphIndex == paragraph.Index &&
+                      l.PageTopPoints.Value >= top && l.PageTopPoints.Value <= top + 110d &&
+                      Math.Abs(l.PageLeftPoints.Value + l.WidthPoints / 2d - center.Value) <= 18d &&
+                      l.BeginArrowheadStyle == 1 && l.EndArrowheadStyle == 1) ||
+                     Math.Abs(l.PageTopPoints.Value - y) <= 18d &&
                      Math.Abs(l.PageLeftPoints.Value + l.WidthPoints / 2d - center.Value) <= 18d ||
                     IsLegacyHeaderSeparator(snapshot, paragraph, l, ruleCode, top, center.Value, textWidth,
                          availableWidth)) &&
                     Math.Abs(l.HeightPoints) <= 3d &&
                     l.WidthPoints >= 10d && l.WidthPoints <= availableWidth).ToArray();
                 var preparedLegacyNames = originalLegacyLineRules.Where(item =>
-                        string.Equals(item.Value, ruleCode, StringComparison.Ordinal))
+                        string.Equals(item.Value, ruleCode, StringComparison.Ordinal) &&
+                        snapshot.LineShapes.Any(line => line.Name == item.Key &&
+                            line.AnchorStoryType == paragraph.StoryType &&
+                            line.AnchorSectionIndex == paragraph.SectionIndex &&
+                            ownerBlock != null && line.AnchorParagraphIndex.HasValue &&
+                            ownerBlock.ContainsParagraph(line.AnchorParagraphIndex.Value)))
                     .Select(item => item.Key).ToArray();
                 var currentNames = new HashSet<string>(
                     snapshot.LineShapes.Select(item => item.Name), StringComparer.Ordinal);

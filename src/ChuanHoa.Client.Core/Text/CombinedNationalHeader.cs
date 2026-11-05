@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using System.Text.RegularExpressions;
 
 namespace ChuanHoa.Client.Core.Text
 {
@@ -11,12 +10,18 @@ namespace ChuanHoa.Client.Core.Text
         public static int[] GetBreakOffsets(string text)
         {
             if (string.IsNullOrEmpty(text)) return Array.Empty<int>();
-            var match = Regex.Match(text,
-                @"^\s*CỘNG\s+H(?:ÒA|OÀ)\s+XÃ\s+HỘI\s+CHỦ\s+NGHĨA\s+VIỆT\s+NAM[ \t]*(?<break>[\v\n])[ \t]*Độc\s+lập[ \t]*[-–—][ \t]*Tự\s+do[ \t]*[-–—][ \t]*Hạnh\s+phúc[ \t]*(?:(?<break>[\v\n])[ \t]*[-_.–—]{3,}[ \t]*)?[\r\a]*$",
-                RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-            return match.Success
-                ? match.Groups["break"].Captures.Cast<Capture>().Select(c => c.Index).ToArray()
-                : Array.Empty<int>();
+            var breaks = Enumerable.Range(0, text.Length)
+                .Where(i => text[i] == '\v' || text[i] == '\n').ToArray();
+            if (breaks.Length < 1 || breaks.Length > 2) return Array.Empty<int>();
+            // Compare normalized components, but return offsets in the ORIGINAL
+            // UTF-16 text so NFD and invisible characters never move Word anchors.
+            if (!ComponentTextNormalizer.IsNationalTitle(text.Substring(0, breaks[0])) ||
+                !ComponentTextNormalizer.IsNationalMotto(text.Substring(breaks[0] + 1)))
+                return Array.Empty<int>();
+            if (breaks.Length == 2 &&
+                ComponentTextNormalizer.Normalize(text.Substring(breaks[1] + 1)).Length != 0)
+                return Array.Empty<int>();
+            return breaks;
         }
     }
 }

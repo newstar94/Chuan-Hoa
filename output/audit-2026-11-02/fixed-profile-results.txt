@@ -1,0 +1,3 @@
+﻿PROBE_PROCESS x64=True
+SPELLING_PHASE capitalization_rules=6469 paragraphs=1000 elapsed_ms=33 findings=0
+SPELLING_FULL paragraphs=1000 elapsed_ms=883 findings=0 first=

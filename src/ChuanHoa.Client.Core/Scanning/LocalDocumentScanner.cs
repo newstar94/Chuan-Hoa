@@ -45,11 +45,11 @@ namespace ChuanHoa.Client.Core.Scanning
         }
 
         public LocalScanResult ScanSpelling(LocalScanSnapshot snapshot, LocalRulePack rules,
-            CancellationToken cancellationToken = default(CancellationToken))
+            CancellationToken cancellationToken = default(CancellationToken), Action? checkpoint = null)
         {
             Validate(snapshot, rules);
             return Result("spelling", snapshot, rules,
-                _canonical.ScanSpelling(snapshot, rules, cancellationToken), 0);
+                _canonical.ScanSpelling(snapshot, rules, cancellationToken, checkpoint), 0);
         }
 
         private static IEnumerable<LocalParagraphSnapshot> Scannable(LocalScanSnapshot snapshot) =>

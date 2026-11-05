@@ -74,7 +74,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             DocumentAnalysisScope scope,
             Word.Document? activeDocument = null,
             bool allowSavedDocumentCache = true,
-            DocumentOperationSession? operation = null)
+            DocumentOperationSession? operation = null,
+            bool captureComponentLayoutForMutation = false)
         {
             if (context == null) throw new ArgumentNullException(nameof(context));
             var document = activeDocument ?? _application.ActiveDocument;
@@ -90,7 +91,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 ? _accessManager.GetRulePack(LocalAccessManager.SpellingFeature)
                 : null;
             var documentIsSaved = ReadSavedState(document);
-            if (allowSavedDocumentCache && context.CanReuseAnalysis(
+            if (allowSavedDocumentCache && !captureComponentLayoutForMutation && context.CanReuseAnalysis(
                     documentIsSaved,
                     requireFormat,
                     requireSpelling,
@@ -101,7 +102,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     spellingRules?.Version))
                 return true;
 
-            var snapshot = _snapshotBuilder.Build(document, context, capability, operation);
+            var snapshot = _snapshotBuilder.Build(document, context, capability, operation,
+                captureComponentLayoutForMutation);
             var initialLocal = WordLocalScanRuntime.ToLocalSnapshot(snapshot, context);
             WordDocumentTypeClassifier.DetectAndApply(context, initialLocal, false);
             var local = WordLocalScanRuntime.ToLocalSnapshot(snapshot, context);
@@ -115,7 +117,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             operation?.Checkpoint();
             var spellingScan = spellingRules == null ? null :
                 _scanner.ScanSpelling(local, spellingRules,
-                    operation == null ? default(System.Threading.CancellationToken) : operation.CancellationToken);
+                    operation == null ? default(System.Threading.CancellationToken) : operation.CancellationToken,
+                    operation == null ? (Action?)null : operation.Checkpoint);
             operation?.Checkpoint();
             context.SetAnalysis(snapshot, local, formatScan, spellingScan, documentIsSaved);
             return false;

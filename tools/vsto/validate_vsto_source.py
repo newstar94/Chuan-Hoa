@@ -862,6 +862,11 @@ def validate() -> dict:
         raise RuntimeError("Unknown selected-finding lanes must fail closed instead of defaulting to format.")
     for required_heavy_document_guard in (
         "IsPageLayoutCaptureSafe(document)",
+        "CaptureRequiredLineLayout(document, paragraphs, allowPageLayout, operation)",
+        "CaptureLineShapes(document, sections, paragraphs, allowPageLayout, operation)",
+        "allowPageLayout ? WordTextMeasurement.MeasureParagraphWidth",
+        "allowPageLayout ? SafeInformationPoints(anchor",
+        "hasBorder = ReadBottomBorder(format)",
         "tables.Count > 10",
         "content.End - content.Start <= 200000",
         "allowPageLayout && paragraphCount <= 400",
@@ -899,7 +904,7 @@ def validate() -> dict:
         if operation_contract not in document_operation_source:
             raise RuntimeError("Document operation contract is missing: " + operation_contract)
     for snapshot_cancellation_contract in (
-        "CaptureLineShapes(document, sections, paragraphs, operation)",
+        "CaptureLineShapes(document, sections, paragraphs, allowPageLayout, operation)",
         "CaptureTables(document, operation)",
         "CaptureProtectedSpans(document, operation)",
         "operation?.Checkpoint();",

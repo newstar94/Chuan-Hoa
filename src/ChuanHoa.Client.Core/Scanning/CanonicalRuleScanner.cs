@@ -149,7 +149,7 @@ namespace ChuanHoa.Client.Core.Scanning
         }
 
         public IReadOnlyList<AnnotationFinding> ScanSpelling(LocalScanSnapshot snapshot, LocalRulePack rules,
-            CancellationToken cancellationToken = default(CancellationToken))
+            CancellationToken cancellationToken = default(CancellationToken), Action? checkpoint = null)
         {
             var findings = new List<AnnotationFinding>();
             var paragraphs = Scannable(snapshot).ToArray();
@@ -165,6 +165,7 @@ namespace ChuanHoa.Client.Core.Scanning
             CollectRepeatedForeignTerms(documentVocabulary, tokens, lexicon);
             for (var paragraphIndex = 0; paragraphIndex < paragraphs.Length; paragraphIndex++)
             {
+                checkpoint?.Invoke();
                 var paragraph = paragraphs[paragraphIndex];
                 cancellationToken.ThrowIfCancellationRequested();
                 AddMatches(findings, paragraph, MultipleWhitespaceRegex, "LOCAL-TYPO-SPACE", "Có khoảng trắng thừa.", "Chỉ để một khoảng trắng.", rules);
@@ -180,7 +181,7 @@ namespace ChuanHoa.Client.Core.Scanning
                 CheckArticleClauseCapitalization(findings, paragraph, rules);
             }
             cancellationToken.ThrowIfCancellationRequested();
-            CheckConfiguredCapitalizations(findings, paragraphs, rules, roles);
+            CheckConfiguredCapitalizations(findings, paragraphs, rules, roles, cancellationToken, checkpoint);
             CheckAdministrativeNumerals(findings, paragraphs, rules);
             cancellationToken.ThrowIfCancellationRequested();
             return findings;
@@ -546,6 +547,12 @@ namespace ChuanHoa.Client.Core.Scanning
 
             var styled = associated.Where(HasRequiredLineStyle).ToArray();
             if (styled.Length == 0) return RequiredLineStatus.InvalidStyle;
+            // A valid new line must not conceal an old, explicitly component-owned
+            // invalid separator. Nearby unrelated artwork remains outside this rule.
+            if (associated.Any(line => !HasRequiredLineStyle(line) &&
+                (IsOwnedLineForParagraph(line.Name, paragraph.Index) ||
+                 line.AnchorParagraphIndex == paragraph.Index)))
+                return RequiredLineStatus.InvalidStyle;
 
             var positioned = styled.Where(line => IsBelow(line, paragraph)).ToArray();
             if (positioned.Length == 0) return RequiredLineStatus.InvalidPosition;
@@ -1401,7 +1408,8 @@ namespace ChuanHoa.Client.Core.Scanning
         }
 
         private static void CheckConfiguredCapitalizations(ICollection<AnnotationFinding> findings,
-            IEnumerable<LocalParagraphSnapshot> paragraphs, LocalRulePack rules, IDictionary<int, string> roles)
+            IEnumerable<LocalParagraphSnapshot> paragraphs, LocalRulePack rules, IDictionary<int, string> roles,
+            CancellationToken cancellationToken = default(CancellationToken), Action? checkpoint = null)
         {
             var codes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
@@ -1412,17 +1420,45 @@ namespace ChuanHoa.Client.Core.Scanning
             };
             var paragraphList = paragraphs.ToArray();
             var maps = new Dictionary<int, NormalizedTextOffsetMap>();
+            var candidates = new Dictionary<string, HashSet<int>>(StringComparer.Create(Vietnamese, true));
+            var fallback = new HashSet<int>();
             foreach (var p in paragraphList)
             {
+                checkpoint?.Invoke();
+                cancellationToken.ThrowIfCancellationRequested();
                 if (!IsMostlyUppercase(p.Text) && !string.IsNullOrWhiteSpace(p.Text))
+                {
                     maps[p.Index] = NormalizedTextOffsetMap.Create(p.Text);
+                    var normalized = maps[p.Index].Normalized;
+                    // Unusual collation-ignorable characters retain the exhaustive
+                    // path. The index is only a candidate filter, never a matcher.
+                    if (normalized.Any(c => char.GetUnicodeCategory(c) == UnicodeCategory.Format ||
+                        char.GetUnicodeCategory(c) == UnicodeCategory.Control ||
+                        char.GetUnicodeCategory(c) == UnicodeCategory.NonSpacingMark)) fallback.Add(p.Index);
+                    foreach (Match token in Regex.Matches(normalized, @"[\p{L}\p{Nd}]+"))
+                    {
+                        if (!candidates.TryGetValue(token.Value, out var indexes))
+                            candidates[token.Value] = indexes = new HashSet<int>();
+                        indexes.Add(p.Index);
+                    }
+                }
             }
+            var byIndex = paragraphList.ToDictionary(p => p.Index);
             foreach (var rule in rules.Capitalizations)
             {
+                checkpoint?.Invoke();
+                cancellationToken.ThrowIfCancellationRequested();
                 string code;
                 if (!codes.TryGetValue(rule.Category, out code) || string.IsNullOrWhiteSpace(rule.Expected)) continue;
-                foreach (var paragraph in paragraphList)
+                var firstToken = Regex.Match(rule.Expected.Normalize(NormalizationForm.FormC), @"^[\p{L}\p{Nd}]+");
+                IEnumerable<int> selected = maps.Keys;
+                if (firstToken.Success)
+                    selected = candidates.TryGetValue(firstToken.Value, out var indexes)
+                        ? indexes.Concat(fallback).Distinct() : fallback;
+                foreach (var paragraphIndex in selected.OrderBy(i => i))
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    var paragraph = byIndex[paragraphIndex];
                     string role;
                     if (roles.TryGetValue(paragraph.Index, out role) && IsCapitalizationExemptRole(role)) continue;
                     if (!maps.TryGetValue(paragraph.Index, out var mapped)) continue;

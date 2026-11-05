@@ -1,0 +1,13 @@
+COMBINED case=canonical recognized=True breaks=1 role=nationalTitle splitFinding=True
+COMBINED case=NFD recognized=True breaks=0 role=nationalTitle splitFinding=False
+COMBINED case=nonbreaking-hyphen recognized=True breaks=0 role=nationalTitle splitFinding=False
+COMBINED case=missing-separators recognized=True breaks=0 role=nationalTitle splitFinding=False
+COMBINED case=zero-width recognized=True breaks=0 role=nationalTitle splitFinding=False
+STORY case=wdMainTextStory title=True motto=True
+STORY case=wdPrimaryHeaderStory title=False motto=False
+STORY case=wdTextFrameStory title=False motto=False
+TABLE_ADJACENT_WRONG_COLUMN mottoRole=nationalMotto
+TABLE_VALID_ROW_BELOW_GAP7 titleRole=nationalTitle mottoRole=none
+CORE_BENCH paragraphs=500 format_ms=66 spelling_ms=8202 findings=500
+CORE_BENCH paragraphs=2000 format_ms=110 spelling_ms=34128 findings=2000
+CORE_BENCH paragraphs=8000 format_ms=425 spelling_ms=121101 findings=8000
