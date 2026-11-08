@@ -652,16 +652,77 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             return Execute("Đổi dấu phân cách số", (_, __) =>
             {
                 var range = MutableSelectionOrParagraph();
+                try { ApplyToParagraphsWithin(range, ConvertDecimalSeparatorText); }
+                finally { Release(range); }
+            });
+        }
+
+        /// <summary>
+        /// Joins lines broken only by the source's line width (text pasted from a
+        /// PDF) inside the selection. Requires a selection: on a whole document the
+        /// heading blocks and signature lines are too easy to merge by mistake.
+        /// </summary>
+        public string JoinBrokenLines()
+        {
+            // Checked before Execute: a failure inside it undoes the last action,
+            // which would be the user's own edit when nothing was changed yet.
+            var selection = _application.Selection;
+            if (selection == null || selection.Start == selection.End)
+                throw new InvalidOperationException(
+                    "Hãy bôi đen các dòng bị ngắt (ví dụ đoạn văn dán từ PDF) rồi bấm lại Nối dòng.");
+            return Execute("Nối dòng", (_, __) =>
+            {
+                Word.Range? range = null;
                 try
                 {
-                    var source = range.Text ?? string.Empty;
-                    var converted = Regex.Replace(source, @"(?<!\d)(\d{1,3}(?:,\d{3})+)\.(\d+)(?!\d)", match =>
-                        match.Groups[1].Value.Replace(',', '.') + "," + match.Groups[2].Value,
-                        RegexOptions.CultureInvariant, TimeSpan.FromMilliseconds(250));
-                    if (!string.Equals(source, converted, StringComparison.Ordinal)) range.Text = converted;
+                    range = _application.Selection.Range.Duplicate;
+                    WordBrokenLineJoiner.Join(range);
                 }
                 finally { Release(range); }
             });
+        }
+
+        private static string ConvertDecimalSeparatorText(string source) =>
+            Regex.Replace(source, @"(?<!\d)(\d{1,3}(?:,\d{3})+)\.(\d+)(?!\d)", match =>
+                match.Groups[1].Value.Replace(',', '.') + "," + match.Groups[2].Value,
+                RegexOptions.CultureInvariant, TimeSpan.FromMilliseconds(250));
+
+        /// <summary>
+        /// Applies <paramref name="transform"/> paragraph by paragraph, each clipped
+        /// to <paramref name="range"/>, through span edits that keep character
+        /// formatting. A paragraph holding a field is skipped on its own instead
+        /// of the whole selection. Paragraphs run last to first so a length change
+        /// never moves the part of the range still to be processed.
+        /// </summary>
+        private static void ApplyToParagraphsWithin(Word.Range range, Func<string, string> transform)
+        {
+            var start = range.Start;
+            var end = range.End;
+            var spans = new List<Word.Range>();
+            Word.Paragraphs? paragraphs = null;
+            try
+            {
+                paragraphs = range.Paragraphs;
+                foreach (Word.Paragraph paragraph in paragraphs)
+                {
+                    try { spans.Add(paragraph.Range.Duplicate); }
+                    finally { Release(paragraph); }
+                }
+                for (var index = spans.Count - 1; index >= 0; index--)
+                {
+                    var span = spans[index];
+                    var spanStart = Math.Max(span.Start, start);
+                    var spanEnd = Math.Min(span.End, end);
+                    if (spanEnd <= spanStart) continue;
+                    span.SetRange(spanStart, spanEnd);
+                    WordMinimalTextEditor.Apply(span, transform);
+                }
+            }
+            finally
+            {
+                foreach (var span in spans) Release(span);
+                Release(paragraphs);
+            }
         }
 
         public string CleanWhitespaceAndPunctuation()
@@ -671,11 +732,13 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 var selection = _application.Selection;
                 if (selection.Start != selection.End)
                 {
+                    // Whole paragraphs: trimming at a selection edge inside a
+                    // sentence would glue two words together.
                     Word.Range? range = null;
                     try
                     {
                         range = selection.Range.Duplicate;
-                        CleanWhitespaceInRange(range);
+                        CleanWhitespaceInStory(range);
                     }
                     finally { Release(range); }
                 }
@@ -701,7 +764,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     try
                     {
                         range = selection.Range.Duplicate;
-                        NormalizeQuotationMarksInRange(range);
+                        NormalizeQuotationMarksInStory(range);
                     }
                     finally { Release(range); }
                 }
@@ -768,15 +831,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             }
         }
 
-        private static void CleanWhitespaceInRange(Word.Range range)
-        {
-            var source = range.Text ?? string.Empty;
-            var cleaned = VietnameseTypographyCleaner.CleanWhitespaceAndPunctuation(source);
-            if (!string.Equals(source, cleaned, StringComparison.Ordinal))
-            {
-                range.Text = cleaned;
-            }
-        }
+        private static void CleanWhitespaceInRange(Word.Range range) =>
+            WordMinimalTextEditor.Apply(range, VietnameseTypographyCleaner.CleanWhitespaceAndPunctuation);
 
         private static void NormalizeQuotationMarksInStory(Word.Range story)
         {
@@ -796,15 +852,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             }
         }
 
-        private static void NormalizeQuotationMarksInRange(Word.Range range)
-        {
-            var source = range.Text ?? string.Empty;
-            var cleaned = VietnameseTypographyCleaner.NormalizeQuotationMarks(source);
-            if (!string.Equals(source, cleaned, StringComparison.Ordinal))
-            {
-                range.Text = cleaned;
-            }
-        }
+        private static void NormalizeQuotationMarksInRange(Word.Range range) =>
+            WordMinimalTextEditor.Apply(range, VietnameseTypographyCleaner.NormalizeQuotationMarks);
 
         public string ConvertLegacyEncodingToUnicode()
         {

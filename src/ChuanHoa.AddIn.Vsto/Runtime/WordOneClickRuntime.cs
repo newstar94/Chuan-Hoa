@@ -18,8 +18,9 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
     {
         public OneClickResult(string backupPath, int changedParagraphs, int insertedLines,
             int normalizedSections, int normalizedTables, int correctedSpellingItems,
-            IReadOnlyList<AnnotationFinding> remainingFindings)
+            IReadOnlyList<AnnotationFinding> remainingFindings, bool spellingAlreadyChecked = false)
         {
+            SpellingAlreadyChecked = spellingAlreadyChecked;
             BackupPath = backupPath;
             ChangedParagraphs = changedParagraphs;
             InsertedLines = insertedLines;
@@ -37,6 +38,12 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         public int CorrectedSpellingItems { get; }
         public int RemainingFindings => RemainingFindingItems.Count;
         public IReadOnlyList<AnnotationFinding> RemainingFindingItems { get; }
+
+        /// <summary>
+        /// The words were unchanged since "Sửa nhanh chính tả": the spelling lane
+        /// was not scanned, fixed or re-annotated, and its comments were kept.
+        /// </summary>
+        public bool SpellingAlreadyChecked { get; }
     }
 
     public sealed class SelectedFindingFixResult
@@ -112,6 +119,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             var normalizedSections = 0;
             var normalizedTables = 0;
             var correctedSpellingItems = 0;
+            var spellingAlreadyChecked = false;
             var originalLegacyLineRules = FindLegacyHeaderSeparatorRules(local, roles);
 
             try
@@ -126,9 +134,30 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     undoStarted = true;
                 }
 
+                // Text pasted from a PDF keeps the source's line breaks inside
+                // sentences. Join them first, while the snapshot still matches the
+                // document, then re-read so every later step sees whole paragraphs.
+                if (WordBrokenLineJoiner.JoinWrappedBodyLines(document, local, roles) > 0)
+                {
+                    new WordDocumentReadRuntime(_application, _accessManager).Prepare(
+                        context, DocumentAnalysisScope.Full, document, false, operation,
+                        skipCheckedSpelling: true);
+                    local = context.LastLocalSnapshot!;
+                    formatFindings = context.LastFormatScan!.Findings;
+                    spellingFindings = context.LastSpellingScan!.Findings;
+                    blocks = context.LastLogicalBlocks;
+                    roles = context.LastRolesByParagraphIndex;
+                }
+
+                // After "Sửa nhanh chính tả", with the words unchanged since, the
+                // spelling lane is done: no spelling scan, fix or re-annotation here,
+                // and the spelling comments it left stay where they are.
+                spellingAlreadyChecked = context.IsSpellingChecked(local);
+
                 var annotations = new WordFindingAnnotationAdapter(_application, document);
                 var removedAnnotations = annotations.ClearLane("format", operation);
-                removedAnnotations += annotations.ClearLane("spelling", operation);
+                if (!spellingAlreadyChecked)
+                    removedAnnotations += annotations.ClearLane("spelling", operation);
 
                 // Line removal does not move text; paragraph splitting resolves its
                 // paragraph by index and verifies the text, so both can run on the
@@ -142,7 +171,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     // and splitting changes paragraph indexes: never reuse the
                     // pre-annotation findings or anchors.
                     new WordDocumentReadRuntime(_application, _accessManager).Prepare(
-                        context, DocumentAnalysisScope.Full, document, false, operation);
+                        context, DocumentAnalysisScope.Full, document, false, operation,
+                        skipCheckedSpelling: spellingAlreadyChecked);
                     local = context.LastLocalSnapshot!;
                     formatFindings = context.LastFormatScan!.Findings;
                     spellingFindings = context.LastSpellingScan!.Findings;
@@ -210,12 +240,15 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
                 context.ClearReadAnalysis();
                 var readRuntime = new WordDocumentReadRuntime(_application, _accessManager);
-                readRuntime.Prepare(context, DocumentAnalysisScope.Full, document, false, operation,
+                readRuntime.Prepare(context,
+                    spellingAlreadyChecked ? DocumentAnalysisScope.Format : DocumentAnalysisScope.Full,
+                    document, false, operation,
                     captureComponentLayoutForMutation: insertedLines > 0);
                 var remaining = context.LastFormatScan!.Findings
-                    .Concat(context.LastSpellingScan!.Findings).ToArray();
+                    .Concat(context.LastSpellingScan?.Findings ?? Array.Empty<AnnotationFinding>()).ToArray();
                 return new OneClickResult(backup, changedParagraphs, insertedLines,
-                    normalizedSections, normalizedTables, correctedSpellingItems, remaining);
+                    normalizedSections, normalizedTables, correctedSpellingItems, remaining,
+                    spellingAlreadyChecked);
             }
             catch (Exception exception)
             {
@@ -693,7 +726,19 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     undoStarted = true;
                 }
 
-                var fixedCount = 0;
+                // Text pasted from a PDF keeps the source's line breaks inside
+                // sentences. Join them first, then re-read so the word fixes below
+                // use offsets of the joined text.
+                var fixedCount = WordBrokenLineJoiner.JoinWrappedBodyLines(document, local,
+                    context.LastRolesByParagraphIndex);
+                if (fixedCount > 0)
+                {
+                    new WordDocumentReadRuntime(_application, _accessManager).Prepare(
+                        context, DocumentAnalysisScope.Spelling, document, false, operation);
+                    local = context.LastLocalSnapshot!;
+                    findings = context.LastSpellingScan!.Findings;
+                }
+
                 if (findings.Count > 0)
                 {
                     fixedCount += ApplyDeterministicSpellingFixes(document, local, findings, rules,
@@ -747,16 +792,10 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                         try
                         {
                             range = paragraph.Range.Duplicate;
-                            var source = range.Text ?? string.Empty;
-                            if (string.IsNullOrWhiteSpace(source)) continue;
-
-                            var cleaned = VietnameseTypographyCleaner.CleanWhitespaceAndPunctuation(source);
-                            cleaned = VietnameseTypographyCleaner.NormalizeQuotationMarks(cleaned);
-                            if (!string.Equals(source, cleaned, StringComparison.Ordinal))
-                            {
-                                range.Text = cleaned;
+                            // Span edits only: rewriting the paragraph text would drop
+                            // bold/italic words, fields and the paragraph mark.
+                            if (WordMinimalTextEditor.Apply(range, CleanTypography) > 0)
                                 modifiedCount++;
-                            }
                         }
                         finally
                         {
@@ -773,6 +812,10 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             }
             return modifiedCount;
         }
+
+        private static string CleanTypography(string text) =>
+            VietnameseTypographyCleaner.NormalizeQuotationMarks(
+                VietnameseTypographyCleaner.CleanWhitespaceAndPunctuation(text));
 
         private static IEnumerable<Word.Range> EditableStories(Word.Document document)
         {

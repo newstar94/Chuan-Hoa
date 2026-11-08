@@ -191,6 +191,10 @@ namespace ChuanHoa.AddIn.Vsto.Ribbon
         {
             Runtime.ExecuteButton(RequireControlId(control));
         }
+        public void OnNoiDong(Office.IRibbonControl control)
+        {
+            Runtime.ExecuteButton(RequireControlId(control));
+        }
         public void OnParagraph(Office.IRibbonControl control)
         {
             Runtime.ExecuteButton(RequireControlId(control));

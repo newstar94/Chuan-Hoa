@@ -48,11 +48,11 @@
   "counts": {
     "tabs": 1,
     "groups": 7,
-    "buttons": 39,
+    "buttons": 40,
     "menus": 3,
     "dropDowns": 2,
     "checkBoxes": 0,
-    "interactiveControls": 44
+    "interactiveControls": 45
   },
   "approvedProductChanges": [
     {
@@ -2108,6 +2108,52 @@
         "testIds": [
           "RIBBON-039",
           "CONTROL-btnTuDienCaNhan"
+        ]
+      }
+    },
+    {
+      "groupId": "grpChinhTaSo",
+      "parentContainerId": null,
+      "controlType": "button",
+      "id": "btnNoiDong",
+      "label": "Nối dòng",
+      "size": "normal",
+      "imageMso": "TableMergeCells",
+      "callbacks": {
+        "getEnabled": "GetEnabledHasDocument",
+        "onAction": "OnNoiDong"
+      },
+      "screenTip": "Nối dòng bị ngắt",
+      "superTip": "Bôi đen đoạn văn dán từ PDF rồi bấm để nối các dòng bị ngắt giữa câu thành đoạn liền. Giữ chỗ xuống dòng sau dấu chấm, chấm phẩy, hai chấm và trước gạch đầu dòng, đánh số, Điều, Chương hoặc dòng chữ in hoa. Có thể hoàn tác bằng Ctrl+Z.",
+      "staticItems": [],
+      "order": 40,
+      "commandContract": {
+        "commandId": "btnNoiDong",
+        "executionMode": "LOCAL_EXECUTION_GRANT",
+        "entitlement": "DOCUMENT_TOOLS",
+        "riskTier": "SAFE",
+        "mutationScope": "SELECTED_LINE_BREAKS",
+        "preconditions": [
+          "ACTIVE_DOCUMENT",
+          "DOCUMENT_WRITABLE",
+          "NOT_PROTECTED",
+          "NO_ACTIVE_MUTATION_JOB",
+          "VALID_SELECTION"
+        ],
+        "capability": "WORD_SPAN_EDIT_LINE_JOIN",
+        "undoPolicy": "ONE_CUSTOM_UNDO_RECORD",
+        "backupPolicy": "NOT_REQUIRED",
+        "telemetryAllowlist": [
+          "commandId",
+          "resultCode",
+          "durationBucket",
+          "clientRelease",
+          "wordVersion",
+          "bitness"
+        ],
+        "testIds": [
+          "RIBBON-040",
+          "CONTROL-btnNoiDong"
         ]
       }
     }

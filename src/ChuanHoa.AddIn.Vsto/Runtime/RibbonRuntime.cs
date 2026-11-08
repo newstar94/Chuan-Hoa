@@ -124,6 +124,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 { "btnKieuOaUy", () => RunLocalCommand("Kiểu oà, uý", () => _localCommandRuntime.NormalizeTonePlacement(VietnameseTonePlacementStyle.MainVowel)) },
                 { "btnKieuOaUy2", () => RunLocalCommand("Kiểu òa, úy", () => _localCommandRuntime.NormalizeTonePlacement(VietnameseTonePlacementStyle.FirstVowel)) },
                 { "btnDoiDauThapPhan", () => RunLocalCommand("Dấu phẩy thập phân", _localCommandRuntime.ConvertDecimalSeparators) },
+                { "btnNoiDong", () => RunLocalCommand("Nối dòng", _localCommandRuntime.JoinBrokenLines) },
                 { "btnTuDienCaNhan", () => _localCommandRuntime.OpenCustomDictionaryDialog() },
                 { "btnKiemTraPhienBanMoi", ShowUpdateStatus },
                 { "btnGioiThieu", ShowAbout }
@@ -610,15 +611,28 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     var remainingFormat = _localScanRuntime.ScanAndAnnotate(context, false, activeDocument,
                         _currentDocumentOperation);
                     formatSummary = _localScanRuntime.LastAnnotationSummary;
-                    var remainingSpelling = _localScanRuntime.ScanAndAnnotate(context, true, activeDocument,
-                        _currentDocumentOperation);
-                    spellingSummary = _localScanRuntime.LastAnnotationSummary;
-                    remainingFindingCount = remainingFormat.Findings.Count + remainingSpelling.Findings.Count;
+                    if (result.SpellingAlreadyChecked)
+                    {
+                        // The spelling comments left by "Sửa nhanh chính tả" are kept.
+                        remainingFindingCount = remainingFormat.Findings.Count +
+                            context.SpellingCheckedRemainingFindings;
+                    }
+                    else
+                    {
+                        var remainingSpelling = _localScanRuntime.ScanAndAnnotate(context, true, activeDocument,
+                            _currentDocumentOperation);
+                        spellingSummary = _localScanRuntime.LastAnnotationSummary;
+                        remainingFindingCount = remainingFormat.Findings.Count + remainingSpelling.Findings.Count;
+                    }
                 }
                 SynchronizeDocumentTypeSelection(context);
-                ShowScanCompletion("Chuẩn hóa toàn bộ hoàn tất.\nĐiểm còn lại sau khi sửa: " +
-                    remainingFindingCount.ToString(System.Globalization.CultureInfo.CurrentCulture) + ".",
-                    formatSummary, spellingSummary);
+                var title = "Chuẩn hóa toàn bộ hoàn tất.\nĐiểm còn lại sau khi sửa: " +
+                    remainingFindingCount.ToString(System.Globalization.CultureInfo.CurrentCulture) + ".";
+                if (result.SpellingAlreadyChecked)
+                    title += "\nChính tả: đã sửa ở bước Sửa nhanh chính tả, giữ nguyên " +
+                        context.SpellingCheckedRemainingFindings.ToString(
+                            System.Globalization.CultureInfo.CurrentCulture) + " điểm đã đánh dấu.";
+                ShowScanCompletion(title, formatSummary, spellingSummary);
             }
             catch (OperationCanceledException)
             {
@@ -669,17 +683,23 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     _application, "Sửa nhanh chính tả", DocumentOperationState.Capturing);
                 FocusDocumentForCommand(document);
                 var context = _contextStore.GetOrCreate(document);
+                // Fix on the document exactly as it was read. Annotating before the
+                // fixes only to replace those comments afterwards cost a full comment
+                // pass, and inserted comment marks that moved the offsets the fixes use.
                 _documentReadRuntime.Prepare(context, DocumentAnalysisScope.Spelling, document, false,
                     _currentDocumentOperation);
-                _localScanRuntime.ScanAndAnnotate(context, true, document, _currentDocumentOperation);
 
                 var fixedCount = _oneClickRuntime.FixAllSpellingFindings(context, document,
                     _currentDocumentOperation);
 
                 _documentReadRuntime.Prepare(context, DocumentAnalysisScope.Spelling, document, false,
                     _currentDocumentOperation);
+                var checkedSnapshot = context.LastLocalSnapshot!;
                 var remainingScan = _localScanRuntime.ScanAndAnnotate(context, true, document,
                     _currentDocumentOperation);
+                // Comments and highlights do not change the words, so 1-Click can
+                // reuse this result while the text stays as it is now.
+                context.MarkSpellingChecked(checkedSnapshot, remainingScan.Findings.Count);
 
                 MessageBox.Show(
                     "Sửa nhanh chính tả hoàn tất.",

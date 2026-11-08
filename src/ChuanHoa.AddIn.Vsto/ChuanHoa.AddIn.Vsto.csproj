@@ -147,6 +147,8 @@
     <Compile Include="Runtime\WordAppendixPaginationNormalizer.cs" />
     <Compile Include="Runtime\WordLocalCommandRuntime.cs" />
     <Compile Include="Runtime\WordLocalScanRuntime.cs" />
+    <Compile Include="Runtime\WordMinimalTextEditor.cs" />
+    <Compile Include="Runtime\WordBrokenLineJoiner.cs" />
     <Compile Include="Runtime\WordLineShapeKind.cs" />
     <Compile Include="Runtime\WordOneClickRuntime.cs" />
     <Compile Include="Runtime\CustomDictionaryDialog.cs" />

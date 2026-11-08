@@ -12,6 +12,7 @@
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <DebugType>pdbonly</DebugType>
@@ -27,6 +28,7 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.IO.Compression" />
     <Reference Include="System.IO.Compression.FileSystem" />
     <Reference Include="System.Security" />
@@ -36,6 +38,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
+    <Compile Include="InstallProgressWindow.cs" />
     <EmbeddedResource Include="$(PayloadZip)" LogicalName="ChuanHoa.DevelopmentInstaller.Payload.zip" />
     <EmbeddedResource Include="$(VersionFile)" LogicalName="ChuanHoa.DevelopmentInstaller.Version.txt" />
     <EmbeddedResource Include="$(IntermediateOutputPath)ChuanHoa.DevelopmentInstaller.TrustedPublicKey.sha256"

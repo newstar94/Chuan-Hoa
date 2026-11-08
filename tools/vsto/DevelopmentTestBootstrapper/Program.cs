@@ -72,6 +72,7 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
                 value => string.Equals(value, "/uninstall", StringComparison.OrdinalIgnoreCase));
             var cleanupCache = Array.Exists(args ?? new string[0],
                 value => string.Equals(value, "/cleanup-cache", StringComparison.OrdinalIgnoreCase));
+            InstallProgressWindow? progress = null;
 
             try
             {
@@ -109,9 +110,16 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
                     "DevelopmentInstaller");
                 if (uninstall)
                 {
+                    if (!quiet)
+                        progress = new InstallProgressWindow(Title, "Đang gỡ " + ProductDisplayName, 2);
+                    progress?.Begin("Đang gỡ add-in khỏi Word…");
                     UninstallDevelopmentChannel(baseDirectory);
+                    progress?.Begin("Đang dọn bộ cài đã lưu…");
                     ScheduleInstallerCacheCleanup(ReadVersionResource(), signingCertificatePin,
                         ReadCleanupOwnerProcessId(InvocationArguments));
+                    progress?.Complete("Đã gỡ xong.");
+                    progress?.Dispose();
+                    progress = null;
                     if (!quiet)
                         MessageBox.Show(
                             "Đã gỡ " + ProductDisplayName + ". Từ điển cá nhân và tài liệu của bạn được giữ nguyên.",
@@ -131,6 +139,10 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
                 }
 
                 var version = ReadVersionResource();
+                if (!quiet)
+                    progress = new InstallProgressWindow(Title,
+                        "Đang cài " + ProductDisplayName + " " + version, InstallStepCount);
+                progress?.Begin("Đang chuẩn bị cài đặt…");
                 var trustedPublicKeyPin = ReadSha256Resource(TrustedPublicKeyPinResource);
                 EnsureNoLegacyClickOnceDevelopmentAddIn();
                 var installDirectory = Path.Combine(baseDirectory, "Current");
@@ -141,7 +153,9 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
                 {
                     try
                     {
+                        progress?.Begin("Đang giải nén các tệp…");
                         ExtractPayload(stagingDirectory);
+                        progress?.Begin("Đang kiểm tra chữ ký số và tính toàn vẹn…");
                         VerifyStagedPayload(stagingDirectory, version,
                             trustedPublicKeyPin, signingCertificatePin,
                             signingRootCertificatePin);
@@ -149,16 +163,21 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
                             stagingDirectory, "ChuanHoa.LocalDevelopment.Public.cer");
                         var rootCertificatePath = Path.Combine(
                             stagingDirectory, "ChuanHoa.LocalDevelopment.Root.cer");
+                        progress?.Begin("Đang cài chứng thư tin cậy…");
                         transaction.TrustDevelopmentCertificate(
                             rootCertificatePath, signingRootCertificatePin,
                             certificatePath, signingCertificatePin);
                         InjectFault("after-trusted-certificate");
+                        progress?.Begin("Đang cài khóa xác thực…");
                         transaction.InstallTrustedDevelopmentKey(stagingDirectory, trustedPublicKeyPin);
                         InjectFault("after-trusted-key");
+                        progress?.Begin("Đang kiểm tra .NET Framework và VSTO Runtime…");
                         EnsureRequiredRuntimes();
+                        progress?.Begin("Đang kiểm tra bộ quy tắc…");
                         EnsureDevelopmentAccess(stagingDirectory, version);
                         InjectFault("after-access-smoke");
 
+                        progress?.Begin("Đang kích hoạt phiên bản mới…");
                         transaction.Activate();
                         transaction.InstallVstoInclusion(
                             Path.Combine(installDirectory,
@@ -167,12 +186,14 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
                         InjectFault("after-current-switch");
                         var cachedInstallerPath = transaction.CacheRunningInstaller(
                             signingCertificatePin);
+                        progress?.Begin("Đang đăng ký với Word và Apps & Features…");
                         RegisterInstalledDevelopmentManifest(installDirectory);
                         RegisterInstallerState(version, installDirectory,
                             cachedInstallerPath, trustedPublicKeyPin,
                             signingCertificatePin, signingRootCertificatePin);
                         RegisterAppsFeatures(version, installDirectory, cachedInstallerPath);
                         InjectFault("after-registry");
+                        progress?.Begin("Đang kiểm tra lại đăng ký…");
                         VerifyDirectRegistration(version, installDirectory,
                             cachedInstallerPath, trustedPublicKeyPin,
                             signingCertificatePin, signingRootCertificatePin);
@@ -181,6 +202,7 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
                     }
                     catch (Exception installError)
                     {
+                        progress?.Status("Đang hoàn tác các thay đổi…");
                         try
                         {
                             transaction.Rollback();
@@ -196,8 +218,12 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
                     }
                 }
 
+                progress?.Begin("Đang làm mới bộ nhớ đệm của Word…");
                 TryClearWordRibbonValidationCache();
                 TryClearWordResiliencyAndVstoSolutionMetadata();
+                progress?.Complete("Hoàn tất.");
+                progress?.Dispose();
+                progress = null;
 
                 if (!quiet)
                 {
@@ -212,6 +238,8 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
             }
             catch (Exception exception)
             {
+                progress?.Dispose();
+                progress = null;
                 SignalOfficeContextFailure();
                 if (quiet) Console.Error.WriteLine(exception);
                 if (!quiet)
@@ -226,9 +254,13 @@ namespace ChuanHoa.DevelopmentTestBootstrapper
             }
             finally
             {
+                progress?.Dispose();
                 SignalOfficeContextCompletion();
             }
         }
+
+        /// <summary>Steps reported to the progress window during an installation.</summary>
+        private const int InstallStepCount = 11;
 
         private static int? TryRunInOfficeContext(string[] args)
         {

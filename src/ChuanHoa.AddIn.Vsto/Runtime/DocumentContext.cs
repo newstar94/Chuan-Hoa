@@ -53,6 +53,32 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
         public DateTimeOffset? LastSnapshotAtUtc { get; private set; }
 
+        /// <summary>
+        /// <see cref="SpellingTextFingerprint"/> of the document right after "Sửa
+        /// nhanh chính tả" finished. While the words still match it, 1-Click skips
+        /// its spelling lane and keeps the spelling annotations already in the
+        /// document. Deliberately survives <see cref="ClearReadAnalysis"/>: it
+        /// describes the words, not a cached snapshot.
+        /// </summary>
+        public string? SpellingCheckedTextFingerprint { get; private set; }
+
+        /// <summary>Spelling findings "Sửa nhanh chính tả" left for the user to review.</summary>
+        public int SpellingCheckedRemainingFindings { get; private set; }
+
+        public void MarkSpellingChecked(LocalScanSnapshot snapshot, int remainingFindings)
+        {
+            if (snapshot == null) throw new ArgumentNullException(nameof(snapshot));
+            SpellingCheckedTextFingerprint = SpellingTextFingerprint.Compute(snapshot);
+            SpellingCheckedRemainingFindings = Math.Max(0, remainingFindings);
+        }
+
+        public bool IsSpellingChecked(LocalScanSnapshot snapshot)
+        {
+            if (snapshot == null) throw new ArgumentNullException(nameof(snapshot));
+            return SpellingCheckedTextFingerprint != null && string.Equals(SpellingCheckedTextFingerprint,
+                SpellingTextFingerprint.Compute(snapshot), StringComparison.Ordinal);
+        }
+
         public bool SnapshotCapturedFromSavedDocument { get; private set; }
 
         public string LastCapabilityReasonCode { get; set; } = "ACTIVE_DOCUMENT_REQUIRED";

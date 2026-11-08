@@ -24,10 +24,12 @@ namespace ChuanHoa.Client.Core.Text
         private static readonly Regex UrlOrEmailRegex = new Regex(
             @"(?:https?://[^\s<>""'()]+|www\.[^\s<>""'()]+|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}|(?<![@\w.-])(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+(?:vn|com|org|net|gov|edu)(?:\.vn)?(?:/[^\s<>""'()]*)?)",
             RegexOptions.Compiled | RegexOptions.IgnoreCase);
-        private static readonly Regex InsideParenthesesOpenRegex = new Regex(@"\(\s+", RegexOptions.Compiled);
-        private static readonly Regex InsideParenthesesCloseRegex = new Regex(@"\s+\)", RegexOptions.Compiled);
-        private static readonly Regex InsideBracketsOpenRegex = new Regex(@"\[\s+", RegexOptions.Compiled);
-        private static readonly Regex InsideBracketsCloseRegex = new Regex(@"\s+\]", RegexOptions.Compiled);
+        // Only spaces and tabs: \s would also delete manual line breaks (\v),
+        // page/section breaks (\f) and paragraph marks next to a bracket.
+        private static readonly Regex InsideParenthesesOpenRegex = new Regex(@"\([ \t]+", RegexOptions.Compiled);
+        private static readonly Regex InsideParenthesesCloseRegex = new Regex(@"[ \t]+\)", RegexOptions.Compiled);
+        private static readonly Regex InsideBracketsOpenRegex = new Regex(@"\[[ \t]+", RegexOptions.Compiled);
+        private static readonly Regex InsideBracketsCloseRegex = new Regex(@"[ \t]+\]", RegexOptions.Compiled);
 
         /// <summary>
         /// Dọn dẹp khoảng trắng và chuẩn hóa khoảng cách trước/sau dấu câu.
@@ -100,8 +102,9 @@ namespace ChuanHoa.Client.Core.Text
                 }
             }
 
-            // 6. Cắt khoảng trắng thừa ở đầu và cuối dòng
-            core = core.Trim();
+            // 6. Cắt dấu cách thừa ở đầu và cuối đoạn. Chỉ cắt dấu cách: Trim()
+            // mặc định còn xóa tab thụt đầu dòng, ngắt dòng (\v) và ngắt trang (\f).
+            core = core.Trim(' ');
 
             return core + suffix;
         }
@@ -165,8 +168,8 @@ namespace ChuanHoa.Client.Core.Text
             var result = sb.ToString();
 
             // Dọn khoảng trắng sát mép trong ngoặc kép: “ abc ” ➔ “abc”
-            result = Regex.Replace(result, @"“\s+", "“");
-            result = Regex.Replace(result, @"\s+”", "”");
+            result = Regex.Replace(result, @"“[ \t]+", "“");
+            result = Regex.Replace(result, @"[ \t]+”", "”");
 
             // Đảm bảo có khoảng trắng phía ngoài ngoặc kép nếu liền kề chữ cái
             result = Regex.Replace(result, @"([A-Za-zÀ-ỹ0-9])(“)", "$1 $2");

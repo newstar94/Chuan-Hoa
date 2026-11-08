@@ -85,6 +85,7 @@
             <button id="btnKieuOaUy2" label="Kiểu òa, úy" screentip="Kiểu òa, úy" supertip="Chuyển toàn bộ dấu thanh sang dạng đặt trên nguyên âm đầu (theo thông lệ)." onAction="OnKieuOaUy2" />
           </menu>
           <button id="btnDoiDauThapPhan" label="Dấu phẩy thập phân" size="normal" imageMso="CommaStyle" screentip="Dấu phẩy thập phân" supertip="Chuyển kiểu viết số về chuẩn Việt Nam 1,234,567.89 → 1.234.567,89" getEnabled="GetEnabledHasDocument" onAction="OnDoiDauThapPhan" showLabel="true" />
+          <button id="btnNoiDong" label="Nối dòng" size="normal" imageMso="TableMergeCells" screentip="Nối dòng bị ngắt" supertip="Bôi đen đoạn văn dán từ PDF rồi bấm để nối các dòng bị ngắt giữa câu thành đoạn liền. Giữ chỗ xuống dòng sau dấu chấm, chấm phẩy, hai chấm và trước gạch đầu dòng, đánh số, Điều, Chương hoặc dòng chữ in hoa. Có thể hoàn tác bằng Ctrl+Z." getEnabled="GetEnabledHasDocument" onAction="OnNoiDong" showLabel="true" />
           <button id="btnTuDienCaNhan" label="Từ điển cá nhân" size="normal" screentip="Quản lý từ điển cá nhân" supertip="Xem, thêm và xóa thuật ngữ riêng mà bộ kiểm tra chính tả cần bỏ qua." getEnabled="GetEnabledAlways" getImage="GetImageTuDienCaNhan" onAction="OnTuDienCaNhan" showLabel="true" />
         </group>
         <group id="grpAbout" label="Thiết lập">

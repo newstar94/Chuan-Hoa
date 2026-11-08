@@ -94,6 +94,24 @@ public sealed class VietnameseTextConversionTests
     }
 
     [Theory]
+    [InlineData("Kết thúc trang.\f", "Kết thúc trang.\f")]
+    [InlineData("\fĐầu trang mới", "\fĐầu trang mới")]
+    [InlineData("Dòng một\vDòng  hai\v", "Dòng một\vDòng hai\v")]
+    [InlineData("\tĐoạn thụt  đầu dòng bằng tab", "\tĐoạn thụt đầu dòng bằng tab")]
+    [InlineData("(\vxuống dòng\v)", "(\vxuống dòng\v)")]
+    [InlineData("  Cắt dấu cách hai đầu  ", "Cắt dấu cách hai đầu")]
+    public void CleanWhitespaceAndPunctuationKeepsBreaksAndTabs(string source, string expected)
+    {
+        Assert.Equal(expected, VietnameseTypographyCleaner.CleanWhitespaceAndPunctuation(source));
+    }
+
+    [Fact]
+    public void NormalizeQuotationMarksKeepsLineBreaksInsideQuotes()
+    {
+        Assert.Equal("“\vTrích dẫn\v”", VietnameseTypographyCleaner.NormalizeQuotationMarks("\"\vTrích dẫn\v\""));
+    }
+
+    [Theory]
     [InlineData("\"Nội dung văn bản\"", "“Nội dung văn bản”")]
     [InlineData("Báo cáo \" kết quả thực hiện \" năm 2026", "Báo cáo “kết quả thực hiện” năm 2026")]
     [InlineData("\"Cụm từ có quote thiếu", "\"Cụm từ có quote thiếu")]

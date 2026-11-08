@@ -274,6 +274,9 @@ namespace ChuanHoa.OneClickSmoke
                     "Văn bản  có khoảng trắng ,dấu câu;liền ( nội dung ) [ thử ] và \" trích dẫn \".\r";
                 document.Content.Font.Name = "Times New Roman";
                 document.Content.Font.Size = 13f;
+                // A bold word in the middle must stay bold: the cleanup edits only
+                // the differing characters instead of rewriting the paragraph.
+                SetBold(document, (document.Content.Text ?? string.Empty).IndexOf("khoảng", StringComparison.Ordinal), 6);
                 object fileName = path;
                 object saveFormat = format;
                 document.SaveAs(ref fileName, ref saveFormat);
@@ -302,6 +305,10 @@ namespace ChuanHoa.OneClickSmoke
                 Assert(string.Equals(actual.TrimEnd('\r', '\a'), expected, StringComparison.Ordinal),
                     "Quick spelling did not merge whitespace, punctuation and bracket/quotation cleanup. " +
                     "Expected=" + expected + " Actual=" + actual.Replace("\r", "|"));
+                Assert(BoldState(document, actual.IndexOf("khoảng", StringComparison.Ordinal), 6) == -1,
+                    "Quick spelling lost the bold formatting of a word inside the cleaned paragraph.");
+                Assert(BoldState(document, 0, 3) == 0,
+                    "Quick spelling spread the bold formatting to the start of the paragraph.");
             }
             finally
             {
@@ -1218,6 +1225,31 @@ namespace ChuanHoa.OneClickSmoke
         private static void Assert(bool condition, string message)
         {
             if (!condition) throw new InvalidOperationException(message);
+        }
+
+        private static void SetBold(Word.Document document, int start, int length)
+        {
+            Assert(start >= 0, "Bold probe text was not found.");
+            Word.Range range = null;
+            try
+            {
+                range = document.Range(start, start + length);
+                range.Bold = 1;
+            }
+            finally { Release(range); }
+        }
+
+        /// <summary>-1 when the whole span is bold, 0 when none of it is, 9999999 when mixed.</summary>
+        private static int BoldState(Word.Document document, int start, int length)
+        {
+            Assert(start >= 0, "Bold probe text was not found after cleanup.");
+            Word.Range range = null;
+            try
+            {
+                range = document.Range(start, start + length);
+                return range.Bold;
+            }
+            finally { Release(range); }
         }
 
         private static bool SameComObject(object left, object right)

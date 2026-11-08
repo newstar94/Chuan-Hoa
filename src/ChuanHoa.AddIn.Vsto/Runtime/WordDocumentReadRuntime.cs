@@ -75,7 +75,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             Word.Document? activeDocument = null,
             bool allowSavedDocumentCache = true,
             DocumentOperationSession? operation = null,
-            bool captureComponentLayoutForMutation = false)
+            bool captureComponentLayoutForMutation = false,
+            bool skipCheckedSpelling = false)
         {
             if (context == null) throw new ArgumentNullException(nameof(context));
             var document = activeDocument ?? _application.ActiveDocument;
@@ -107,8 +108,13 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             var initialLocal = WordLocalScanRuntime.ToLocalSnapshot(snapshot, context);
             WordDocumentTypeClassifier.DetectAndApply(context, initialLocal, false);
             var local = WordLocalScanRuntime.ToLocalSnapshot(snapshot, context);
+            // Words already checked by "Sửa nhanh chính tả" and unchanged since
+            // need no second spelling pass; the snapshot itself is always fresh.
+            var spellingAlreadyChecked = skipCheckedSpelling && spellingRules != null &&
+                context.IsSpellingChecked(local);
             operation?.Transition(DocumentOperationState.Scanning,
-                requireFormat && requireSpelling ? "kiểm tra thể thức và chính tả" :
+                requireFormat && requireSpelling && !spellingAlreadyChecked ? "kiểm tra thể thức và chính tả" :
+                requireFormat && spellingAlreadyChecked ? "kiểm tra thể thức" :
                 requireFormat ? "kiểm tra thể thức" :
                 requireSpelling ? "kiểm tra chính tả" : "chuẩn bị dữ liệu");
             var formatScan = formatRules == null ? null :
@@ -116,6 +122,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     operation == null ? default(System.Threading.CancellationToken) : operation.CancellationToken);
             operation?.Checkpoint();
             var spellingScan = spellingRules == null ? null :
+                spellingAlreadyChecked ? _scanner.AlreadyCheckedSpelling(local, spellingRules) :
                 _scanner.ScanSpelling(local, spellingRules,
                     operation == null ? default(System.Threading.CancellationToken) : operation.CancellationToken,
                     operation == null ? (Action?)null : operation.Checkpoint);
@@ -138,7 +145,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             // between Prepare and WordOneClickRuntime.Execute.
             WordRecoveryCopyManager.EnsurePersistentDocument(_application, document);
             context.ClearReadAnalysis();
-            Prepare(context, DocumentAnalysisScope.Full, document, false, operation);
+            Prepare(context, DocumentAnalysisScope.Full, document, false, operation,
+                skipCheckedSpelling: true);
             context.RequireFullAnalysis();
         }
 

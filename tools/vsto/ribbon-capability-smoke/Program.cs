@@ -19,7 +19,7 @@ namespace ChuanHoa.RibbonCapabilitySmoke
             "btnKeepWithNext", "btnChenSoTrang", "btnCoChu", "btnGianChuNormal",
             "btnGianChuRa", "btnLapDongTieuDe", "btnChuanHoaBang", "btnChuanHoaAnh",
             "btnCanDinhO", "btnCanGiuaO", "btnXoaKyTuThuaBangExcel", "mnuBoDau",
-            "btnKieuOaUy", "btnKieuOaUy2", "btnDoiDauThapPhan",
+            "btnKieuOaUy", "btnKieuOaUy2", "btnDoiDauThapPhan", "btnNoiDong",
             "mnuThongTinTienIch", "btnKiemTraPhienBanMoi",
             "btnGioiThieu", "btnSuaLoiDangChon", "btnSuaTatCaChinhTa",
             "btnTuDienCaNhan", "btnXoaTabKhongLeader", "btnThietLap", "btnScaleGiam", "btnScale100", "btnScaleTang", "btnParagraph"

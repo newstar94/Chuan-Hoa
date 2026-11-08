@@ -170,7 +170,7 @@ def arrange_compact_columns(root: ET.Element, elements: dict) -> None:
     # Keep the complete three-row normal layout, with each caption explicit.
     language_group = elements["grpChinhTaSo"]
     language_group.set("autoScale", "false")
-    for control_id in ("mnuBoDau", "btnDoiDauThapPhan", "btnTuDienCaNhan"):
+    for control_id in ("mnuBoDau", "btnDoiDauThapPhan", "btnNoiDong", "btnTuDienCaNhan"):
         control = elements[control_id]
         parent = next(parent for parent in root.iter() if control in list(parent))
         parent.remove(control)

@@ -2,16 +2,16 @@
   "schemaVersion": 1,
   "testId": "PRODUCT-DECISION-CONSISTENCY-001",
   "status": "PASS",
-  "verifiedOn": "2026-09-11",
-  "productVersion": "1.0.0.173",
+  "verifiedOn": "2026-11-08",
+  "productVersion": "1.0.0.194",
   "ribbonCounts": {
     "tabs": 1,
     "groups": 7,
-    "buttons": 39,
+    "buttons": 40,
     "menus": 3,
     "dropDowns": 2,
     "checkBoxes": 0,
-    "interactiveControls": 44
+    "interactiveControls": 45
   },
   "requiredLockedDecisions": [
     "DEC-031",
@@ -26,8 +26,8 @@
     "decision_unlock": true
   },
   "hashes": {
-    "ribbonContractSha256": "C6CA651D6F32CB71868991D6B29A72B3263E01710452C86ECAE38D201FA63D72",
-    "ribbonXmlSha256": "976E273D5CE52145FFC29E49222255504C6F60A04A4E08C49DDEF486835A0D69",
+    "ribbonContractSha256": "A3BF30720239F4E4FD4A972E955275B142F78A2DA760AADA844C46210986D8BA",
+    "ribbonXmlSha256": "CF3B6A088886BA0DE063C86FF472CA198F8352E2A4A69330F1E4BBC72E94ECD8",
     "decisionRegisterSha256": "30373E08E28CCE0668A3634AA80C92F2885D441D09B26D42AB0C0962FA28C984",
     "architectureDecisionsSha256": "B31AD60247FCAB51FA8450A0303E5B9A898AD6B931C6C549A800ADA7B27A2171"
   },

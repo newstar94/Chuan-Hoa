@@ -352,13 +352,22 @@ def validate() -> dict:
         )
     for merged_typography_contract in (
         "fixedCount += CleanTypographyAndQuotes(document);",
-        "VietnameseTypographyCleaner.CleanWhitespaceAndPunctuation(source)",
-        "VietnameseTypographyCleaner.NormalizeQuotationMarks(cleaned)",
+        "VietnameseTypographyCleaner.CleanWhitespaceAndPunctuation(text)",
+        "VietnameseTypographyCleaner.NormalizeQuotationMarks(",
+        "WordMinimalTextEditor.Apply(range, CleanTypography)",
     ):
         if merged_typography_contract not in word_one_click_source:
             raise RuntimeError(
                 "Quick spelling is missing merged typography cleanup: "
                 + merged_typography_contract
+            )
+    # Assigning a whole paragraph's text gives every character the formatting
+    # of the first one and flattens fields: cleanups write span edits only.
+    for whole_paragraph_rewrite in ("range.Text = cleaned", "range.Text = converted"):
+        if whole_paragraph_rewrite in word_one_click_source + word_local_command_source:
+            raise RuntimeError(
+                "Text cleanup must use WordMinimalTextEditor span edits, not: "
+                + whole_paragraph_rewrite
             )
 
     # Three compact rows keep the color pair independent of the text columns.
@@ -405,9 +414,9 @@ def validate() -> dict:
         raise RuntimeError("Language actions must disable label-hiding auto-scaling.")
     language_actions = list(language_group)
     if [control.get("id") for control in language_actions] != [
-        "mnuBoDau", "btnDoiDauThapPhan", "btnTuDienCaNhan"
+        "mnuBoDau", "btnDoiDauThapPhan", "btnNoiDong", "btnTuDienCaNhan"
     ] or any(control.get("size") != "normal" or control.get("showLabel") != "true" for control in language_actions):
-        raise RuntimeError("Language actions must be three direct normal-sized controls with explicit visible labels.")
+        raise RuntimeError("Language actions must be four direct normal-sized controls with explicit visible labels.")
     if "boxLanguageActions" in ribbon_elements:
         raise RuntimeError("Language actions must not use an indivisible vertical wrapper.")
 

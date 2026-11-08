@@ -52,6 +52,17 @@ namespace ChuanHoa.Client.Core.Scanning
                 _canonical.ScanSpelling(snapshot, rules, cancellationToken, checkpoint), 0);
         }
 
+        /// <summary>
+        /// The spelling result for a document whose words were already checked and
+        /// fixed by "Sửa nhanh chính tả" and have not changed since
+        /// (<see cref="SpellingTextFingerprint"/>): nothing new to report.
+        /// </summary>
+        public LocalScanResult AlreadyCheckedSpelling(LocalScanSnapshot snapshot, LocalRulePack rules)
+        {
+            Validate(snapshot, rules);
+            return Result("spelling", snapshot, rules, Array.Empty<AnnotationFinding>(), 0);
+        }
+
         private static IEnumerable<LocalParagraphSnapshot> Scannable(LocalScanSnapshot snapshot) =>
             snapshot.Paragraphs.Where(item => !string.IsNullOrWhiteSpace(item.Text));
 
