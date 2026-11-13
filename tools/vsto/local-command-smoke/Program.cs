@@ -101,7 +101,27 @@ namespace ChuanHoa.LocalCommandSmoke
                             tabRange.ParagraphFormat.TabStops.Add(90f, Word.WdTabAlignment.wdAlignTabLeft,
                                 Word.WdTabLeader.wdTabLeaderDashes);
                         }
+                        // First-line indents: a body indent stays; a table that
+                        // inherits one tab everywhere (uniform path) and a table
+                        // with mixed indents (per-paragraph path) lose positive
+                        // values, while a hanging indent in a cell is kept.
+                        document.Paragraphs[1].Format.FirstLineIndent = 36f;
+                        table.Range.ParagraphFormat.FirstLineIndent = 36f;
+                        mergedHeaderTable.Cell(3, 1).Range.ParagraphFormat.FirstLineIndent = 36f;
+                        mergedHeaderTable.Cell(4, 1).Range.ParagraphFormat.LeftIndent = 18f;
+                        mergedHeaderTable.Cell(4, 1).Range.ParagraphFormat.FirstLineIndent = -18f;
                         backups.Add(commands.RemoveLeaderlessTabStops());
+                        Assert(Math.Abs(document.Paragraphs[1].Format.FirstLineIndent - 36f) < .1f,
+                            "Tab cleanup removed a body first-line indent.");
+                        Assert(Math.Abs(table.Cell(1, 1).Range.ParagraphFormat.FirstLineIndent) < .1f &&
+                            Math.Abs(table.Cell(2, 2).Range.ParagraphFormat.FirstLineIndent) < .1f,
+                            "Tab cleanup kept a uniform first-line indent inside a table.");
+                        Assert(Math.Abs(mergedHeaderTable.Cell(3, 1).Range.ParagraphFormat.FirstLineIndent) < .1f,
+                            "Tab cleanup kept a first-line indent inside a table with mixed indents.");
+                        Assert(Math.Abs(mergedHeaderTable.Cell(4, 1).Range.ParagraphFormat.FirstLineIndent + 18f) < .1f &&
+                            Math.Abs(mergedHeaderTable.Cell(4, 1).Range.ParagraphFormat.LeftIndent - 18f) < .1f,
+                            "Tab cleanup changed a hanging indent inside a table.");
+                        Console.WriteLine("TABLE_FIRST_LINE_INDENT_PASS UNIFORM MIXED KEEP_BODY KEEP_HANGING");
                         for (var i = 0; i < tabRanges.Length; i++)
                         {
                             Assert(tabRanges[i].Text == texts[i], "Tab cleanup changed text.");

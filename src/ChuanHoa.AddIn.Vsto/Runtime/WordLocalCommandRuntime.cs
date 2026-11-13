@@ -159,6 +159,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                                 }
                                 finally { Release(tabs); Release(format); Release(paragraph); }
                             }
+                            ClearTableFirstLineIndents(story);
                             var next = story.NextStoryRange;
                             Release(story);
                             story = next;
@@ -167,6 +168,71 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     finally { Release(story); }
                 }
             }, createBackup: true);
+        }
+
+        // Word reports wdUndefined (9999999) when the paragraphs of a range differ.
+        private const float MixedParagraphValue = 999998f;
+        private const float IndentTolerancePoints = .5f;
+
+        /// <summary>
+        /// Clears a positive first-line indent (typically one default tab, or a body
+        /// indent inherited from Normal) from every paragraph inside the tables of
+        /// <paramref name="story"/>, nested tables included. Hanging indents and left
+        /// indents are kept: numbered items and labels in cells rely on them.
+        /// </summary>
+        private static void ClearTableFirstLineIndents(Word.Range story)
+        {
+            Word.Tables? tables = null;
+            try
+            {
+                tables = story.Tables;
+                var count = tables.Count;
+                for (var index = 1; index <= count; index++)
+                {
+                    Word.Table? table = null;
+                    Word.Range? range = null;
+                    Word.ParagraphFormat? format = null;
+                    try
+                    {
+                        table = tables[index];
+                        range = table.Range;
+                        format = range.ParagraphFormat;
+                        var uniform = format.FirstLineIndent;
+                        if (uniform < MixedParagraphValue)
+                        {
+                            // One write for the common case of a table that inherits
+                            // the same indent in every cell.
+                            if (uniform > IndentTolerancePoints) format.FirstLineIndent = 0f;
+                            continue;
+                        }
+                        ClearPositiveFirstLineIndents(range);
+                    }
+                    finally { Release(format); Release(range); Release(table); }
+                }
+            }
+            finally { Release(tables); }
+        }
+
+        private static void ClearPositiveFirstLineIndents(Word.Range range)
+        {
+            Word.Paragraphs? paragraphs = null;
+            try
+            {
+                paragraphs = range.Paragraphs;
+                foreach (Word.Paragraph paragraph in paragraphs)
+                {
+                    Word.ParagraphFormat? format = null;
+                    try
+                    {
+                        format = paragraph.Format;
+                        var indent = format.FirstLineIndent;
+                        if (indent > IndentTolerancePoints && indent < MixedParagraphValue)
+                            format.FirstLineIndent = 0f;
+                    }
+                    finally { Release(format); Release(paragraph); }
+                }
+            }
+            finally { Release(paragraphs); }
         }
 
         public string SetCharacterSpacing(float delta, bool reset)

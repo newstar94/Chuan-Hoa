@@ -43,7 +43,7 @@
           <box id="boxKeepPageNum" boxStyle="vertical">
             <button id="btnParagraph" label="Paragraph" size="normal" imageMso="ParagraphDialog" screentip="Mở Paragraph" supertip="Mở hộp thoại Paragraph của Word cho đoạn hiện tại hoặc vùng chọn." getEnabled="GetEnabledHasDocument" onAction="OnParagraph" />
             <button id="btnKeepWithNext" label="Keep with next" size="normal" imageMso="FootnoteNextWord" screentip="Keep with next" supertip="Giữ đoạn hiện tại cùng trang với đoạn kế tiếp" getEnabled="GetEnabledHasDocument" onAction="OnKeepWithNext" />
-            <button id="btnXoaTabKhongLeader" label="Xóa tab" size="normal" imageMso="ClearFormatting" screentip="Xóa tab stop không có leader" supertip="Xóa mọi tab stop có Leader=None trong tài liệu, kể cả bảng, đầu trang và chân trang. Giữ ký tự tab và các tab stop có leader khác. Có thể hoàn tác bằng Undo." getEnabled="GetEnabledHasDocument" onAction="OnXoaTabKhongLeader" />
+            <button id="btnXoaTabKhongLeader" label="Xóa tab" size="normal" imageMso="ClearFormatting" screentip="Xóa tab stop không có leader và thụt đầu dòng trong bảng" supertip="Xóa mọi tab stop có Leader=None trong tài liệu, kể cả bảng, đầu trang và chân trang; bỏ thụt đầu dòng (First Line Indent) của các đoạn trong bảng. Giữ ký tự tab, thụt treo và các tab stop có leader khác. Có thể hoàn tác bằng Undo." getEnabled="GetEnabledHasDocument" onAction="OnXoaTabKhongLeader" />
           </box>
           <box id="boxCharacterTools" boxStyle="vertical">
             <buttonGroup id="bgScaleTools">
