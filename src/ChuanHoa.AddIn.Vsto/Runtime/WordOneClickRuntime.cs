@@ -2818,10 +2818,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             var typeParagraph = snapshot.Paragraphs.FirstOrDefault(item =>
                 block.Roles.TryGetValue(item.Index, out var role) && role == "typeName");
             if (typeParagraph == null) return string.Empty;
-            var typeName = Regex.Replace(typeParagraph.Text ?? string.Empty, @"\s+", " ")
-                .Trim().Trim('.', ':');
-            var entry = rules.DocumentTypeAbbreviations.FirstOrDefault(item =>
-                string.Equals(item.TypeName, typeName, StringComparison.OrdinalIgnoreCase));
+            var entry = DocumentTypeAbbreviationPolicy.Resolve(rules, typeParagraph.Text,
+                IsParty(snapshot));
             return entry == null ? string.Empty : entry.Abbreviation;
         }
 
@@ -3037,6 +3035,10 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 case "LOCAL-TYPO-SPACE":
                     return new SpellingEdit(start, length, " ",
                         expectedText, 40);
+                case "LOCAL-TYPO-PLACEHOLDER":
+                    // A leftover placeholder needs the author's real data; it is
+                    // reported only and never filled or removed automatically.
+                    return null;
                 case "LOCAL-TYPO-HIDDEN":
                     return new SpellingEdit(start, length, string.Empty,
                         expectedText, 40);
@@ -3108,6 +3110,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 case "LOCAL-TYPO-PUNCT":
                 case "LOCAL-TYPO-HIDDEN":
                     return string.Empty;
+                case "LOCAL-TYPO-PLACEHOLDER":
+                    return null;
                 case "ND30-PL1-M2-K6B-DATE":
                     return "ngày " + expectedText;
                 case "ND30-PL2-M5-K7":

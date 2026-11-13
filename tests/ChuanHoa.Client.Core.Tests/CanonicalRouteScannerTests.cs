@@ -28,8 +28,8 @@ public sealed class CanonicalRouteScannerTests
     [Fact]
     public void Registry_contains_product_routes_and_shape_rules_without_removed_tone_or_iy()
     {
-        Assert.Equal(76, CanonicalRuleScanner.RegisteredRuleCodes.Count);
-        Assert.Equal(76, CanonicalRuleScanner.RegisteredRuleCodes.Distinct(StringComparer.Ordinal).Count());
+        Assert.Equal(77, CanonicalRuleScanner.RegisteredRuleCodes.Count);
+        Assert.Equal(77, CanonicalRuleScanner.RegisteredRuleCodes.Distinct(StringComparer.Ordinal).Count());
         Assert.DoesNotContain("ND30-PL1-M2-K9B-LUU", CanonicalRuleScanner.RegisteredRuleCodes);
         Assert.DoesNotContain("ND30-PL1-M1-K2", CanonicalRuleScanner.RegisteredRuleCodes);
         Assert.DoesNotContain(CanonicalRuleScanner.RegisteredRuleCodes,
@@ -49,6 +49,9 @@ public sealed class CanonicalRouteScannerTests
                 new[] { P(1, "Kính gửi: Ban giám đốc", "recipientSalutationInline") },
                 Array.Empty<AnnotationProtectedSpan>()), rules),
             scanner.ScanSpelling(BadSpellingSnapshot(), rules),
+            scanner.ScanSpelling(new LocalScanSnapshot("sha256:draft-placeholder", 1, new[] { ValidSection() },
+                new[] { P(1, "Kinh phí thực hiện: [CẦN BỔ SUNG: số tiền].", font: "Times New Roman", size: 13) },
+                Array.Empty<AnnotationProtectedSpan>()), rules),
             scanner.ScanSpelling(
                 new LocalScanSnapshot("sha256:bad-lexicon", 1, new[] { ValidSection() },
                     new[] { P(1, "từ nhậnn", font: "Times New Roman", size: 13) },

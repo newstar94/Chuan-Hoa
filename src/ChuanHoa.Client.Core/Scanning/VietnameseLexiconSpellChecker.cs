@@ -54,7 +54,10 @@ namespace ChuanHoa.Client.Core.Scanning
         /// </summary>
         public string? FindDeterministicCorrection(string word)
         {
-            if (string.IsNullOrWhiteSpace(word) || IsKnown(word)) return null;
+            if (string.IsNullOrWhiteSpace(word)) return null;
+            var lookalike = FindLookalikeCorrection(word);
+            if (lookalike != null) return lookalike;
+            if (IsKnown(word)) return null;
             var normalized = Normalize(word);
             var maximumDistance = normalized.Length >= 7 ? 2 : 1;
             string? best = null;
@@ -83,6 +86,20 @@ namespace ChuanHoa.Client.Core.Scanning
                 }
             }
             return bestCount == 1 ? ApplyCase(word, best!) : null;
+        }
+
+        /// <summary>
+        /// Returns the word with Latin Eth (Ð/ð) replaced by Đ/đ when that yields a
+        /// lexicon word or an upper-case abbreviation (ÐHQG). The replacement keeps
+        /// length and case, so it is safe for 1-Click.
+        /// </summary>
+        public string? FindLookalikeCorrection(string word)
+        {
+            if (!ChuanHoa.Client.Core.Text.VietnameseLookalikeLetters.ContainsEth(word)) return null;
+            var folded = ChuanHoa.Client.Core.Text.VietnameseLookalikeLetters.FoldEth(word);
+            if (IsKnown(folded)) return folded;
+            var letters = folded.Where(char.IsLetter).ToArray();
+            return letters.Length > 1 && letters.All(char.IsUpper) ? folded : null;
         }
 
         /// <summary>

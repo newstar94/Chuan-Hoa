@@ -66,6 +66,17 @@ namespace ChuanHoa.Client.Core.Scanning
         private static readonly Regex ParenthesizedShortDateRegex = Rx(@"\([^()]*\b\d{1,2}[/.-]\d{1,2}[/.-]\d{4}\b[^()]*\)");
         private static readonly Regex OfficialLetterSubjectPartyRegex = Rx(@"^\s*(?:về việc|V/v)\s+", false);
         private static readonly Regex OfficialLetterSubjectStateRegex = Rx(@"^\s*(?:V/v|Về việc)\s+", true);
+        // Drafting placeholders left in the text: bracketed "[CẦN BỔ SUNG: ...]" or
+        // "[Tên cơ quan]" notes, "???", mail-merge «Field»/<<Field>> and "<tên ...>"
+        // slots. Dotted fill-in areas ("Số: .../QĐ-UBND") are authored form fields and
+        // are deliberately not matched; neither are "[...]" elisions or "[1]" notes.
+        private static readonly Regex DraftPlaceholderRegex = Rx(
+            @"\[\s*(?:cần\s+bổ\s+sung|cần\s+điền|placeholder|todo|tbd)\b[^\[\]\r\n]{0,160}\]" +
+            @"|\[\s*(?:tên|họ\s+(?:và\s+)?tên|ngày|số|địa\s+danh|địa\s+chỉ|chức\s+vụ|chức\s+danh|nội\s+dung|trích\s+yếu|nơi\s+nhận|cơ\s+quan|đơn\s+vị)\b[^\[\]\r\n]{0,60}\]" +
+            @"|\?{3,}" +
+            @"|<<[^<>\r\n]{1,60}>>" +
+            @"|«[\p{L}\p{N}_]{1,40}»" +
+            @"|<\p{L}[\p{L}\p{M} _]{0,58}\p{L}>", true);
         private static readonly object DynamicRegexCacheLock = new object();
         private static readonly Dictionary<string, Regex> DynamicRegexCache =
             new Dictionary<string, Regex>(StringComparer.Ordinal);
@@ -77,6 +88,7 @@ namespace ChuanHoa.Client.Core.Scanning
         public static readonly IReadOnlyList<string> RegisteredRuleCodes = new[]
         {
             "LOCAL-TYPO-DICT", "LOCAL-TYPO-LEXICON", "LOCAL-TYPO-HIDDEN", "LOCAL-TYPO-PUNCT", "LOCAL-TYPO-SPACE", "LOCAL-TYPO-TELEX",
+            "LOCAL-TYPO-PLACEHOLDER",
             "ND30-PL1-M1-K1", "ND30-PL1-M1-K3", "ND30-PL1-M1-K4-COLOR", "ND30-PL1-M1-K4-FONT", "ND30-PL1-M1-K7",
             "ND30-PL1-M2-K1-C", "ND30-PL1-M2-K1-QH", "ND30-PL1-M2-K1-TN", "ND30-PL1-M2-K1-TN-SEP",
             "ND30-PL1-M2-K2-ORG", "ND30-PL1-M2-K2-SUP", "ND30-PL1-M2-K3-ABBR", "ND30-PL1-M2-K3-CASE", "ND30-PL1-M2-K3-PAD",
@@ -171,6 +183,8 @@ namespace ChuanHoa.Client.Core.Scanning
                 AddMatches(findings, paragraph, MultipleWhitespaceRegex, "LOCAL-TYPO-SPACE", "Có khoảng trắng thừa.", "Chỉ để một khoảng trắng.", rules);
                 AddMatches(findings, paragraph, WhitespaceBeforePunctuationRegex, "LOCAL-TYPO-PUNCT", "Có khoảng trắng trước dấu câu.", "Xóa khoảng trắng trước dấu câu.", rules);
                 CheckHiddenCharacters(findings, paragraph, rules);
+                CheckLookalikeLetters(findings, paragraph, rules, lexicon, tokens[paragraphIndex]);
+                CheckDraftPlaceholders(findings, paragraph, rules);
                 CheckDictionary(findings, paragraph, rules, snapshot.DictionaryScopeId, _personalDictionary);
                 CheckLexicon(findings, paragraph, rules, lexicon, snapshot.DictionaryScopeId, _personalDictionary,
                     tokens[paragraphIndex], unitColumn.Contains(paragraph.Index), documentVocabulary);
@@ -780,18 +794,26 @@ namespace ChuanHoa.Client.Core.Scanning
                         party ? "Dùng Số 01-QĐ/TW." : "Dùng dấu / và dấu - giữa các nhóm ký hiệu.", rules));
                 if (notation.Value.Any(char.IsWhiteSpace))
                     findings.Add(Span("ND30-PL1-M2-K3-SPACE", paragraph, notation.Index, notation.Length, "Ký hiệu có khoảng trắng.", "Không để khoảng trắng trong ký hiệu.", rules));
-                if (notation.Value.Any(char.IsLower))
-                    findings.Add(Span("ND30-PL1-M2-K3-CASE", paragraph, notation.Index, notation.Length, "Ký hiệu có chữ thường.", "Viết hoa ký hiệu, trừ viết tắt được quy định riêng.", rules));
                 var type = snapshot.Paragraphs.FirstOrDefault(item =>
                     block.Roles.TryGetValue(item.Index, out var role) && role == "typeName");
-                if (type != null)
-                {
-                    var entry = rules.DocumentTypeAbbreviations.FirstOrDefault(x => Eq(Collapse(type.Text).Trim('.', ':'), x.TypeName));
-                    var actual = party ? notation.Value.Split('/')[0] : notation.Value.Split('-')[0];
-                    if (entry != null && !Eq(actual, entry.Abbreviation))
-                        findings.Add(Span("ND30-PL1-M2-K3-ABBR", paragraph, notation.Index, Math.Min(actual.Length, notation.Length),
-                            "Ký hiệu tên loại không khớp tên văn bản.", "Dùng " + entry.Abbreviation + " cho " + entry.TypeName + ".", rules));
-                }
+                var entry = type == null ? null : DocumentTypeAbbreviationPolicy.Resolve(rules, type.Text, party);
+                var actual = party ? notation.Value.Split('/')[0] : notation.Value.Split('-')[0];
+                // Phụ lục III writes TTr, QyĐ, CTr and TrS with lower-case letters. Such
+                // a type group is left out of the upper-case check: written correctly it
+                // is valid, and written in the wrong case it is reported once, as ABBR,
+                // with the official form (upper-casing it would make TTR, not TTr).
+                var typeGroupCaseHandled = entry != null
+                    ? Eq(actual, entry.Abbreviation) &&
+                        (string.Equals(actual, entry.Abbreviation, StringComparison.Ordinal) ||
+                         DocumentTypeAbbreviationPolicy.HasLowercase(entry.Abbreviation))
+                    : DocumentTypeAbbreviationPolicy.IsOfficialMixedCase(actual, rules);
+                var caseStart = typeGroupCaseHandled ? Math.Min(notation.Length, actual.Length + 1) : 0;
+                if (notation.Value.Substring(caseStart).Any(char.IsLower))
+                    findings.Add(Span("ND30-PL1-M2-K3-CASE", paragraph, notation.Index + caseStart, notation.Length - caseStart, "Ký hiệu có chữ thường.", "Viết hoa ký hiệu, trừ viết tắt được quy định riêng.", rules));
+                if (entry != null && !string.Equals(actual, entry.Abbreviation, StringComparison.Ordinal) &&
+                    (!Eq(actual, entry.Abbreviation) || DocumentTypeAbbreviationPolicy.HasLowercase(entry.Abbreviation)))
+                    findings.Add(Span("ND30-PL1-M2-K3-ABBR", paragraph, notation.Index, Math.Min(actual.Length, notation.Length),
+                        "Ký hiệu tên loại không khớp tên văn bản.", "Dùng " + entry.Abbreviation + " cho " + entry.TypeName + ".", rules));
             }
         }
 
@@ -1133,6 +1155,48 @@ namespace ChuanHoa.Client.Core.Scanning
                     findings.Add(Span("LOCAL-TYPO-HIDDEN", paragraph, offset, 1, "Có ký tự ẩn U+" + ((int)hidden).ToString("X4", CultureInfo.InvariantCulture) + ".", "Loại bỏ ký tự ẩn.", rules));
                     offset++;
                 }
+            }
+        }
+
+        /// <summary>
+        /// A word typed with Latin Eth (Ð/ð) instead of Đ/đ looks correct, so the
+        /// lexicon check would skip it as a capitalized name or heading. Report it
+        /// regardless of case with the exact replacement 1-Click applies.
+        /// </summary>
+        private static void CheckLookalikeLetters(ICollection<AnnotationFinding> findings,
+            LocalParagraphSnapshot paragraph, LocalRulePack rules,
+            VietnameseLexiconSpellChecker lexicon, IReadOnlyList<VietnameseTokenSpan> tokens)
+        {
+            foreach (var token in tokens)
+            {
+                if (token.Kind != VietnameseTokenKind.Word &&
+                    token.Kind != VietnameseTokenKind.AcronymOrUpper) continue;
+                var correction = lexicon.FindLookalikeCorrection(token.Text);
+                if (correction == null) continue;
+                findings.Add(Span("LOCAL-TYPO-LEXICON", paragraph, token.StartOffset, token.Length,
+                    "Từ “" + token.Text + "” dùng chữ Ð (Latin Eth) trông giống Đ nhưng khác mã ký tự.",
+                    "Sửa thành “" + correction + "”.", rules));
+            }
+        }
+
+        /// <summary>
+        /// Report-only: a placeholder needs the author's real data (number, signer,
+        /// date, figures), so it is never filled or removed automatically.
+        /// </summary>
+        private static void CheckDraftPlaceholders(ICollection<AnnotationFinding> findings,
+            LocalParagraphSnapshot paragraph, LocalRulePack rules)
+        {
+            foreach (Match match in DraftPlaceholderRegex.Matches(paragraph.Text))
+            {
+                if (!match.Success || match.Length == 0) continue;
+                var value = match.Value;
+                // "<tên cơ quan>" or "<số>" is a slot; "<br>" or "<div>" is markup.
+                if (value[0] == '<' && value[1] != '<' &&
+                    value.IndexOf(' ') < 0 && value.All(character => character < 128))
+                    continue;
+                findings.Add(Span("LOCAL-TYPO-PLACEHOLDER", paragraph, match.Index, match.Length,
+                    "Còn chỗ giữ chỗ “" + value + "” chưa điền.",
+                    "Điền nội dung thật trước khi ban hành; không để ký hiệu giữ chỗ trong văn bản.", rules));
             }
         }
 

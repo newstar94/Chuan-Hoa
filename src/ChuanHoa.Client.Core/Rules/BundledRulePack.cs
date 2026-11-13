@@ -140,17 +140,45 @@ public static class BundledRulePack
         yield return ("lunarYear", "Bính Ngọ");
     }
 
+    /// <summary>
+    /// Phụ lục III NĐ 30/2020/NĐ-CP (27 administrative types and 3 copy forms), plus
+    /// Thông tư for the legal-document type the role detector also recognizes. Công văn
+    /// has no type abbreviation: its notation is issuer–drafting unit (Mẫu 1.5).
+    /// Mixed case is part of the official form (TTr, QyĐ, CTr, TrS).
+    /// </summary>
     private static IEnumerable<(string TypeName, string Abbreviation)> DocumentTypeEntries()
     {
         yield return ("Nghị quyết", "NQ");
         yield return ("Quyết định", "QĐ");
         yield return ("Chỉ thị", "CT");
-        yield return ("Thông tư", "TT");
+        yield return ("Quy chế", "QC");
+        yield return ("Quy định", "QyĐ");
+        yield return ("Thông cáo", "TC");
         yield return ("Thông báo", "TB");
+        yield return ("Hướng dẫn", "HD");
+        yield return ("Chương trình", "CTr");
         yield return ("Kế hoạch", "KH");
+        yield return ("Phương án", "PA");
+        yield return ("Đề án", "ĐA");
+        yield return ("Dự án", "DA");
         yield return ("Báo cáo", "BC");
+        yield return ("Biên bản", "BB");
         yield return ("Tờ trình", "TTr");
-        yield return ("Công văn", "CV");
+        yield return ("Hợp đồng", "HĐ");
+        yield return ("Công điện", "CĐ");
+        yield return ("Bản ghi nhớ", "BGN");
+        yield return ("Bản thỏa thuận", "BTT");
+        yield return ("Giấy ủy quyền", "GUQ");
+        yield return ("Giấy mời", "GM");
+        yield return ("Giấy giới thiệu", "GGT");
+        yield return ("Giấy nghỉ phép", "GNP");
+        yield return ("Phiếu gửi", "PG");
+        yield return ("Phiếu chuyển", "PC");
+        yield return ("Phiếu báo", "PB");
+        yield return ("Bản sao y", "SY");
+        yield return ("Bản trích sao", "TrS");
+        yield return ("Bản sao lục", "SL");
+        yield return ("Thông tư", "TT");
     }
 
 

@@ -9,6 +9,7 @@ Nguồn sự thật: canonical draft 96 rule. Phạm vi sản phẩm gồm 73 `B
 | `LOCAL-TYPO-PUNCT` | `CheckPunctuationSpacingTypo` | spelling | `AddMatches` | `LOCAL-RULE-PORT-001` | IMPLEMENTED_LOCAL |
 | `LOCAL-TYPO-SPACE` | `CheckExtraSpaceTypo` | spelling | `AddMatches` | `LOCAL-RULE-PORT-001` | IMPLEMENTED_LOCAL |
 | `LOCAL-TYPO-TELEX` | `CheckTelexLeftoverTypo` | spelling | `CheckTelex` | `LOCAL-RULE-PORT-001` | IMPLEMENTED_LOCAL |
+| `LOCAL-TYPO-PLACEHOLDER` | Không có trong VBA; route mới, ý tưởng đối chiếu từ `kanazawahere/nd30` (MIT) | spelling | `CheckDraftPlaceholders` (chỉ báo, 1-Click không điền/xóa) | `DRAFT-PLACEHOLDER-001` | IMPLEMENTED_LOCAL_PENDING_WORD_SMOKE |
 | `ND30-PL1-M1-K1` | `CheckPageSizeA4` | format | `CheckPageSetup` | `LOCAL-RULE-PORT-001` | IMPLEMENTED_LOCAL |
 | `ND30-PL1-M1-K2` | `CheckPageOrientation` | format | `CheckPageSetup` | `LOCAL-RULE-PORT-001` | IMPLEMENTED_LOCAL |
 | `ND30-PL1-M1-K3` | `CheckPageMargins` | format | `CheckPageSetup` | `LOCAL-RULE-PORT-001` | IMPLEMENTED_LOCAL |

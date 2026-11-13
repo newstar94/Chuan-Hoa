@@ -31,11 +31,16 @@ namespace ChuanHoa.Client.Core.Scanning
                 numeric < 10)
                 number = numeric.ToString("00", CultureInfo.InvariantCulture);
 
-            var notation = match.Groups["notation"].Value.ToUpperInvariant().Trim();
-            var parts = Regex.Split(notation, @"[\s/\-.]+")
+            // Groups are upper-cased except an official mixed-case type abbreviation
+            // (TTr, QyĐ, CTr, TrS in Phụ lục III), which is kept exactly as written.
+            var parts = Regex.Split(match.Groups["notation"].Value.Trim(), @"[\s/\-.]+")
                 .Where(part => !string.IsNullOrWhiteSpace(part))
+                .Select(part => DocumentTypeAbbreviationPolicy.IsOfficialMixedCase(part)
+                    ? part
+                    : part.ToUpperInvariant())
                 .ToList();
-            var expected = (expectedTypeAbbreviation ?? string.Empty).Trim().ToUpperInvariant();
+            // The expected abbreviation comes from the rule pack in its official case.
+            var expected = (expectedTypeAbbreviation ?? string.Empty).Trim();
 
             if (party)
             {
@@ -43,7 +48,11 @@ namespace ChuanHoa.Client.Core.Scanning
                 {
                     var expectedIndex = parts.FindIndex(part =>
                         string.Equals(part, expected, StringComparison.OrdinalIgnoreCase));
-                    if (expectedIndex >= 0) parts = parts.Skip(expectedIndex).ToList();
+                    if (expectedIndex >= 0)
+                    {
+                        parts = parts.Skip(expectedIndex).ToList();
+                        parts[0] = expected;
+                    }
                     else ReplaceLeadingTypeGroup(parts, expected);
                 }
                 var partyNotation = parts.Count <= 1
@@ -56,7 +65,11 @@ namespace ChuanHoa.Client.Core.Scanning
             {
                 var expectedIndex = parts.FindIndex(part =>
                     string.Equals(part, expected, StringComparison.OrdinalIgnoreCase));
-                if (expectedIndex >= 0) parts = parts.Skip(expectedIndex).ToList();
+                if (expectedIndex >= 0)
+                {
+                    parts = parts.Skip(expectedIndex).ToList();
+                    parts[0] = expected;
+                }
                 else ReplaceLeadingTypeGroup(parts, expected);
             }
             var administrativeNotation = string.Join("-", parts);

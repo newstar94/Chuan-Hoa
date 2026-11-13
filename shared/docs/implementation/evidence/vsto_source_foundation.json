@@ -10,9 +10,9 @@
     "checkBoxes": 0,
     "interactiveControls": 45
   },
-  "scannerFindingCodes": 91,
+  "scannerFindingCodes": 92,
   "latexFindingCodes": 7,
-  "oneClickPolicyFindingCodes": 91,
+  "oneClickPolicyFindingCodes": 92,
   "callbackMethods": 57,
   "invariants": {
     "exactlyOneRibbonTab": true,
