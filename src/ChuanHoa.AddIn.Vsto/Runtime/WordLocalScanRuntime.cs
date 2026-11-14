@@ -205,6 +205,23 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 source.ProtectedSpans.Select(item => new AnnotationProtectedSpan(item.StoryType, item.AbsoluteStart, item.Length)).ToArray());
     }
 
+    internal static class WordRegimeClassifier
+    {
+        /// <summary>
+        /// Applies the automatic regime unless the user chose one: a year-bearing
+        /// NQ-HĐND/QĐ-UBND notation selects VBQPPL (Phụ lục III NĐ 187/2025/NĐ-CP,
+        /// Mẫu số 17-20); otherwise an earlier automatic VBQPPL result reverts to ND30.
+        /// </summary>
+        internal static string DetectAndApply(DocumentContext context, LocalScanSnapshot snapshot)
+        {
+            if (context == null) throw new ArgumentNullException(nameof(context));
+            if (snapshot == null) throw new ArgumentNullException(nameof(snapshot));
+            if (context.RegimeWasSelectedManually) return context.RegimeCode;
+            context.RegimeCode = new DocumentRoleDetector().ResolveRegime(snapshot);
+            return context.RegimeCode;
+        }
+    }
+
     internal static class WordDocumentTypeClassifier
     {
         internal static string DetectAndApply(DocumentContext context, LocalScanSnapshot snapshot,

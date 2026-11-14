@@ -727,6 +727,53 @@ namespace ChuanHoa.Client.Core.Scanning
             }
         }
 
+        /// <summary>
+        /// Effective regime. A manual selection always wins. Otherwise the regime is
+        /// VBQPPL when the first header "Số, ký hiệu" carries the issuing year and the
+        /// NQ-HĐND or QĐ-UBND notation of Mẫu số 17-20 (Phụ lục III NĐ 187/2025/NĐ-CP);
+        /// ND30 administrative documents of the same bodies are numbered without the year.
+        /// Anything else keeps the snapshot regime, and a previous automatic VBQPPL
+        /// result reverts to ND30 once the year-bearing notation is gone.
+        /// </summary>
+        public string ResolveRegime(LocalScanSnapshot snapshot)
+        {
+            if (snapshot == null) throw new ArgumentNullException(nameof(snapshot));
+            if (snapshot.RegimeWasSelectedManually) return snapshot.RegimeCode;
+            if (DetectVbqpplKind(snapshot) != VbqpplDocumentKind.Other) return LocalRegimeCodes.Vbqppl;
+            return VbqpplRegimePolicy.IsVbqppl(snapshot.RegimeCode) ? LocalRegimeCodes.Nd30 : snapshot.RegimeCode;
+        }
+
+        /// <summary>
+        /// Kind of the first block that has a header "Số, ký hiệu" (Mẫu 17-20), read from the
+        /// year-bearing notation. Returns Other when no such notation exists.
+        /// </summary>
+        public VbqpplDocumentKind DetectVbqpplKind(LocalScanSnapshot snapshot)
+        {
+            if (snapshot == null) throw new ArgumentNullException(nameof(snapshot));
+            var byIndex = snapshot.Paragraphs.GroupBy(p => p.Index).ToDictionary(g => g.Key, g => g.First());
+            foreach (var block in DetectBlocks(snapshot))
+            {
+                var code = block.Roles.Where(role => role.Value == "codeNumber")
+                    .OrderBy(role => role.Key).Select(role => role.Key).ToArray();
+                if (code.Length == 0) continue;
+                LocalParagraphSnapshot paragraph;
+                if (!byIndex.TryGetValue(code[0], out paragraph)) continue;
+                return VbqpplRegimePolicy.KindFromCodeNumber(CodeLine(paragraph.Text));
+            }
+            return VbqpplDocumentKind.Other;
+        }
+
+        /// <summary>
+        /// A header-table cell can hold the organ name and the "Số:" line in one paragraph
+        /// separated by line breaks; only the line that starts with "Số" is the notation.
+        /// </summary>
+        private static string CodeLine(string text)
+        {
+            foreach (var line in (text ?? string.Empty).Split('\r', '\n', '\v', '\a'))
+                if (Regex.IsMatch(line, @"^\s*Số\b", RegexOptions.IgnoreCase)) return line;
+            return text ?? string.Empty;
+        }
+
         public string ResolveDocumentType(LocalScanSnapshot snapshot)
         {
             if (snapshot == null) throw new ArgumentNullException(nameof(snapshot));

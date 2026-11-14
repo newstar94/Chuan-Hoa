@@ -143,7 +143,7 @@ def validate() -> dict:
     # comment that the product can neither repair nor deliberately retain.
     emitted_rule_codes = set(
         re.findall(
-            r'"((?:ND30|HD05|FORMAT|SPELLING|LOCAL-TYPO|LATEX)-[A-Z0-9][A-Z0-9-]*)"',
+            r'"((?:ND30|ND187|HD05|FORMAT|SPELLING|LOCAL-TYPO|LATEX)-[A-Z0-9][A-Z0-9-]*)"',
             "\n".join(
                 (
                     canonical_scanner_source,

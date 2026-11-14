@@ -12,6 +12,7 @@
               <item id="iqdND30" label="VB hành chính (NĐ 30)" />
               <item id="iqdVIETTEL" label="Viettel (QĐ 11095)" />
               <item id="iqdDANG" label="VB của Đảng (HD 05)" />
+              <item id="iqdVBQPPL" label="VB quy phạm pháp luật (NĐ 78, NĐ 187)" />
             </dropDown>
             <dropDown id="ddLoaiVanBan" label="Loại:" screentip="Loại văn bản" supertip="Add-in tự nhận diện loại văn bản đang soạn thảo. Bạn có thể chọn lại thủ công. Danh mục thay đổi theo Quy định đang chọn (Viettel có thêm 5 loại riêng)" getEnabled="GetEnabledLoaiVanBan" getItemCount="GetItemCountLoaiVanBan" getItemLabel="GetItemLabelLoaiVanBan" getSelectedItemIndex="GetSelectedIndexLoaiVanBan" onAction="OnChonLoaiVanBan" visible="false" />
           </box>

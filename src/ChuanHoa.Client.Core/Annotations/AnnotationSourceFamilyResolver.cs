@@ -11,6 +11,7 @@ namespace ChuanHoa.Client.Core.Annotations
 
             if (HasPrefix(ruleCode, "ND30-")) return AnnotationSourceFamily.Nd30;
             if (HasPrefix(ruleCode, "HD05-")) return AnnotationSourceFamily.Hd05;
+            if (HasPrefix(ruleCode, "ND187-")) return AnnotationSourceFamily.Vbqppl;
             if (HasPrefix(ruleCode, "LATEX-")) return AnnotationSourceFamily.LatexTypst;
             if (HasPrefix(ruleCode, "LOCAL-") || HasPrefix(ruleCode, "SPELLING-"))
                 return AnnotationSourceFamily.LocalLanguage;

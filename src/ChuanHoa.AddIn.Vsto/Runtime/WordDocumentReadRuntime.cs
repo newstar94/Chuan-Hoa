@@ -107,6 +107,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 captureComponentLayoutForMutation);
             var initialLocal = WordLocalScanRuntime.ToLocalSnapshot(snapshot, context);
             WordDocumentTypeClassifier.DetectAndApply(context, initialLocal, false);
+            WordRegimeClassifier.DetectAndApply(context, initialLocal);
             var local = WordLocalScanRuntime.ToLocalSnapshot(snapshot, context);
             // Words already checked by "Sửa nhanh chính tả" and unchanged since
             // need no second spelling pass; the snapshot itself is always fresh.

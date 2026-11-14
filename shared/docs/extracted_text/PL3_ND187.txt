@@ -1,0 +1,253 @@
+[NGUON / SOURCE]
+Van ban: Nghi dinh so 187/2025/ND-CP ngay 01/7/2025 cua Chinh phu.
+Dieu 3 khoan 3 diem c ND 187/2025/ND-CP: "Thay the Phu luc III ban hanh kem theo Nghi dinh so 78/2025/ND-CP bang Phu luc III ban hanh kem theo Nghi dinh nay".
+Tep goc: https://datafiles.chinhphu.vn/cpp/files/vbpq/2025/7/187-ndcp.signed.pdf
+  (lien ket tu https://vanban.chinhphu.vn/?pageid=27160&docid=214570), tai ngay 2026-11-14,
+  SHA-256 60fd1511d55fc4da36bde8a579e52e330afe3adec3d493b9a5f3a3579b08f6ed.
+Phu luc III bat dau o trang PDF 76. Mau so 17 = trang PDF 111-112; Mau 18 = 113-114; Mau 19 = 115-116; Mau 20 = 117-118.
+PHUONG PHAP: PDF la ban quet, khong co lop chu. Noi dung duoi day duoc chep lai bang cach doc anh trang
+(pdftoppm 150 dpi), KHONG phai OCR may va KHONG phai ban chinh thuc. Chi chep: bang danh muc mau (trang 1-3)
+va Mau so 17, 18, 19, 20. Cac mau khac CHUA chep. Dau "..." va so trong ngoac (1), (2)... la cua ban goc.
+[[trang N]] = so trang in tren Phu luc III.
+
+==================================================================================================
+[[trang 1]]
+Phụ lục III
+MẪU VĂN BẢN QUY PHẠM PHÁP LUẬT CỦA CHÍNH PHỦ, THỦ TƯỚNG CHÍNH PHỦ, BỘ, CƠ QUAN NGANG BỘ, TÒA ÁN NHÂN DÂN TỐI CAO, VIỆN KIỂM SÁT NHÂN DÂN TỐI CAO, KIỂM TOÁN NHÀ NƯỚC, HỘI ĐỒNG NHÂN DÂN, ỦY BAN NHÂN DÂN CÁC CẤP, CHỦ TỊCH ỦY BAN NHÂN DÂN CẤP TỈNH
+(Kèm theo Nghị định số 187/2025/NĐ-CP ngày 01 tháng 7 năm 2025 của Chính phủ)
+
+I. MẪU VĂN BẢN QUY PHẠM PHÁP LUẬT BAN HÀNH MỚI, VĂN BẢN QUY PHẠM PHÁP LUẬT THAY THẾ
+Mẫu số 01 | Nghị định của Chính phủ (quy định trực tiếp)
+Mẫu số 02 | - Nghị định của Chính phủ (ban hành Quy chế/Điều lệ/Danh mục...) - Quy chế/Điều lệ/Danh mục... ban hành kèm theo Nghị định của Chính phủ
+Mẫu số 03 | Nghị quyết của Chính phủ
+Mẫu số 04 | Nghị quyết liên tịch giữa Chính phủ với Đoàn Chủ tịch Ủy ban Trung ương Mặt trận Tổ quốc Việt Nam
+Mẫu số 05 | Quyết định của Thủ tướng Chính phủ (quy định trực tiếp)
+Mẫu số 06 | - Quyết định của Thủ tướng Chính phủ (ban hành Quy định/Quy chế/Điều lệ/Danh mục...) - Quy định/Quy chế/Điều lệ/Danh mục... ban hành kèm theo Quyết định của Thủ tướng Chính phủ
+Mẫu số 07 | Nghị quyết của Hội đồng Thẩm phán Tòa án nhân dân tối cao
+Mẫu số 08 | Thông tư của Chánh án Tòa án nhân dân tối cao (quy định trực tiếp)
+Mẫu số 09 | - Thông tư của Chánh án Tòa án nhân dân tối cao (ban hành Quy định/Quy chế...) - Quy định/Quy chế... ban hành kèm theo Thông tư của Chánh án Tòa án nhân dân tối cao
+Mẫu số 10 | Thông tư của Viện trưởng Viện kiểm sát nhân dân tối cao (quy định trực tiếp)
+Mẫu số 11 | - Thông tư của Viện trưởng Viện kiểm sát nhân dân tối cao (ban hành Quy định/Quy chế...) - Quy định/Quy chế... ban hành kèm theo Thông tư của Viện trưởng Viện kiểm sát nhân dân tối cao
+Mẫu số 12 | Thông tư của Tổng Kiểm toán nhà nước (quy định trực tiếp)
+[[trang 2]]
+Mẫu số 13 | - Thông tư của Tổng Kiểm toán nhà nước (ban hành chuẩn mực kiểm toán nhà nước/quy trình kiểm toán) - Quy định chuẩn mực kiểm toán nhà nước, quy trình kiểm toán ban hành kèm theo Thông tư của Tổng Kiểm toán nhà nước
+Mẫu số 14 | Thông tư của Bộ trưởng, Thủ trưởng cơ quan ngang bộ (quy định trực tiếp)
+Mẫu số 15 | - Thông tư của Bộ trưởng, Thủ trưởng cơ quan ngang bộ (ban hành Quy định/Quy chế/Điều lệ/Danh mục...) - Quy định/Quy chế/Điều lệ/Danh mục... ban hành kèm theo Thông tư của Bộ trưởng, Thủ trưởng cơ quan ngang bộ
+Mẫu số 16 | Thông tư liên tịch giữa Chánh án Tòa án nhân dân tối cao, Viện trưởng Viện kiểm sát nhân dân tối cao, Tổng Kiểm toán nhà nước, Bộ trưởng, Thủ trưởng cơ quan ngang bộ
+Mẫu số 17 | Nghị quyết của Hội đồng nhân dân các cấp (quy định trực tiếp)
+Mẫu số 18 | - Nghị quyết của Hội đồng nhân dân các cấp (ban hành Quy định/Quy chế...) - Quy định/Quy chế... ban hành kèm theo Nghị quyết của Hội đồng nhân dân các cấp
+Mẫu số 19 | Quyết định của Ủy ban nhân dân các cấp (quy định trực tiếp)
+Mẫu số 20 | - Quyết định của Ủy ban nhân dân các cấp (ban hành Quy định/Quy chế...) - Quy định/Quy chế... ban hành kèm theo Quyết định của Ủy ban nhân dân các cấp
+Mẫu số 21 | Quyết định của Chủ tịch Ủy ban nhân dân cấp tỉnh (quy định trực tiếp)
+Mẫu số 22 | - Quyết định của Chủ tịch Ủy ban nhân dân cấp tỉnh (ban hành Quy định/Quy chế...) - Quy định/Quy chế... ban hành kèm theo Quyết định của Chủ tịch Ủy ban nhân dân cấp tỉnh
+II. MẪU VĂN BẢN QUY PHẠM PHÁP LUẬT SỬA ĐỔI, BỔ SUNG, BÃI BỎ VĂN BẢN QUY PHẠM PHÁP LUẬT
+Mẫu số 23 | Văn bản quy phạm pháp luật sửa đổi, bổ sung một số điều của một văn bản (văn bản quy phạm pháp luật của Chính phủ, Thủ tướng Chính phủ, Bộ trưởng, Thủ trưởng cơ quan ngang bộ, Hội đồng nhân dân, Ủy ban nhân dân các cấp, Chủ tịch Ủy ban nhân dân cấp tỉnh)
+[[trang 3]]
+Mẫu số 24 | Văn bản quy phạm pháp luật sửa đổi, bổ sung một số điều của nhiều văn bản (văn bản quy phạm pháp luật của Chính phủ, Thủ tướng Chính phủ, Bộ trưởng, Thủ trưởng cơ quan ngang bộ, Hội đồng nhân dân, Ủy ban nhân dân các cấp, Chủ tịch Ủy ban nhân dân cấp tỉnh)
+Mẫu số 25 | Văn bản quy phạm pháp luật bãi bỏ văn bản/các văn bản (văn bản quy phạm pháp luật của Chính phủ, Thủ tướng Chính phủ, Bộ trưởng, Thủ trưởng cơ quan ngang bộ, Hội đồng nhân dân, Ủy ban nhân dân các cấp, Chủ tịch Ủy ban nhân dân cấp tỉnh)
+III. MẪU PHỤ LỤC
+Mẫu số 26 | Phụ lục ban hành kèm theo văn bản quy phạm pháp luật
+
+==================================================================================================
+[[trang 36]]
+Mẫu số 17. Nghị quyết của Hội đồng nhân dân cấp các cấp (quy định trực tiếp)
+   [ghi chú người chép: tiêu đề mẫu trong bản gốc ghi đúng nguyên văn "cấp các cấp"; bảng danh mục ghi "các cấp"]
+
+HỘI ĐỒNG NHÂN DÂN...(1)                CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+      ________                                Độc lập - Tự do - Hạnh phúc
+                                              ___________________________
+Số:.../20...(2)/NQ-HĐND                     ...(3), ngày...tháng...năm...(2)
+
+                                 NGHỊ QUYẾT
+                         .................................(4)
+
+        Căn cứ Luật Tổ chức chính quyền địa phương số...............................;
+        Căn cứ........................................................................(5);
+        Xét Tờ trình.........................; Báo cáo thẩm tra của.......; ý kiến thảo luận của đại biểu Hội đồng nhân dân tại kỳ họp;
+        Hội đồng nhân dân ban hành Nghị quyết..........................................(4).
+
+                                 Phần I (nếu có)
+                                 (Tên của phần)
+                                 Chương I (nếu có)
+                                 (Tên của chương)
+                                 Mục 1 (nếu có)
+                                 (Tên của mục)
+                                 Tiểu mục 1 (nếu có)
+                                 (Tên của tiểu mục)
+
+        Điều 1. (Tên của điều)
+        1.....................................................................
+        a)....................................................................
+        Điều ... (Tên của điều)
+        1.....................................................................
+        a)....................................................................
+
+        Nghị quyết này đã được Hội đồng nhân dân...(1) khóa..., Kỳ họp thứ... thông qua ngày...tháng...năm...
+
+Nơi nhận:                                             CHỦ TỊCH
+- ..............;                                      (Chữ ký, dấu)
+- ..............;
+- Lưu: VT, ...(6). A.XX(7).
+                                                      Họ và tên
+[[trang 37]]
+Ghi chú:
+(1) Tên tỉnh, thành phố, xã phường, đặc khu ban hành nghị quyết.
+(2) Năm ban hành.
+(3) Tên địa danh tỉnh, thành phố, xã, phường, đặc khu ban hành nghị quyết.
+(4) Tên gọi của nghị quyết.
+(5) Tên của văn bản là căn cứ ban hành văn bản.
+(6) Số lượng bản lưu.
+(7) Số lượng bản phát hành (nếu cần).
+
+[[trang 38]]
+Mẫu số 18. Nghị quyết của Hội đồng nhân dân các cấp (ban hành Quy định/Quy chế...)
+
+HỘI ĐỒNG NHÂN DÂN...(1)                CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+                                              Độc lập - Tự do - Hạnh phúc
+Số:.../20...(2)/NQ-HĐND                     ...(3), ngày...tháng...năm...(2)
+
+                                 NGHỊ QUYẾT
+                         .................................(4)
+
+        Căn cứ Luật Tổ chức chính quyền địa phương số...............................;
+        Căn cứ........................................................................(5);
+        Xét Tờ trình.........................; Báo cáo thẩm tra của.......; ý kiến thảo luận của đại biểu Hội đồng nhân dân tại kỳ họp;
+        Hội đồng nhân dân ban hành Nghị quyết..........................................(4).
+        Điều 1. Ban hành kèm theo Nghị quyết này.........................(6)
+        Điều 2..................................................................
+        Điều....................................................................
+        Nghị quyết này đã được Hội đồng nhân dân...(1) khóa..., Kỳ họp thứ... thông qua ngày...tháng...năm...
+
+Nơi nhận:                                             CHỦ TỊCH
+- ..............;                                      (Chữ ký, dấu)
+- ..............;
+- Lưu: VT, ...(7). A.XX(8).
+                                                      Họ và tên
+Ghi chú:
+(1) Tên tỉnh, thành phố, xã, phường, đặc khu ban hành nghị quyết.
+(2) Năm ban hành.
+(3) Tên địa danh tỉnh, thành phố, xã, phường, đặc khu ban hành nghị quyết.
+(4) Tên gọi của nghị quyết.
+(5) Tên của văn bản là căn cứ ban hành văn bản.
+(6) Tên Quy định/Quy chế...
+(7) Số lượng bản lưu.
+(8) Số lượng bản phát hành (nếu cần).
+[[trang 39]]
+Quy định/Quy chế... ban hành kèm theo Nghị quyết của Hội đồng nhân dân các cấp
+
+(*) HỘI ĐỒNG NHÂN DÂN ...(1)            CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+                                              Độc lập - Tự do - Hạnh phúc
+
+                              QUY ĐỊNH/QUY CHẾ...
+                         .................................(2)
+                  (Ban hành kèm theo Nghị quyết số.../20.../NQ-HĐND)
+
+                                 Phần I (nếu có) ... Tiểu mục 1 (nếu có) [như Mẫu 17]
+        Điều 1. (Tên của điều)
+        1.....................................................................
+        a)....................................................................
+        Điều ... (Tên của điều)
+Ghi chú:
+(*) Đóng dấu treo.
+(1) Tên tỉnh, thành phố, xã, phường, đặc khu ban hành Quy định/Quy chế...
+(2) Tên Quy định/Quy chế...
+
+[[trang 40]]
+Mẫu số 19. Quyết định của Ủy ban nhân dân các cấp (quy định trực tiếp)
+
+ỦY BAN NHÂN DÂN ...(1)                 CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+      ________                                Độc lập - Tự do - Hạnh phúc
+                                              ___________________________
+Số:.../20...(2)/QĐ-UBND                     ...(3), ngày...tháng...năm...(2)
+
+                                 QUYẾT ĐỊNH
+                         .................................(4)
+
+        Căn cứ Luật Tổ chức chính quyền địa phương số...............................;
+        Căn cứ........................................................................(5);
+        Theo đề nghị của..............................................................(6);
+        Ủy ban nhân dân ban hành Quyết định..........................................(4).
+
+                                 Phần I (nếu có) ... Tiểu mục 1 (nếu có) [như Mẫu 17]
+
+        Điều 1. (Tên của điều)
+        1.....................................................................
+        a)....................................................................
+        Điều ... (Tên của điều)
+        1.....................................................................
+        a)....................................................................
+
+Nơi nhận:                                     TM. ỦY BAN NHÂN DÂN
+- ..............;                                    CHỦ TỊCH
+- ..............;                                  (Chữ ký, dấu)
+- Lưu: VT, ...(7). A.XX(8).
+                                                      Họ và tên
+[[trang 41]]
+Ghi chú:
+(1) Tên tỉnh, thành phố, xã, phường, đặc khu ban hành quyết định.
+(2) Năm ban hành.
+(3) Tên địa danh tỉnh, thành phố, xã, phường, đặc khu ban hành quyết định.
+(4) Tên gọi của quyết định.
+(5) Tên của văn bản là căn cứ ban hành văn bản.
+(6) Thủ trưởng cơ quan, đơn vị chủ trì soạn thảo quyết định.
+(7) Chữ viết tắt đơn vị chủ trì soạn thảo và số lượng bản lưu.
+(8) Số lượng bản phát hành (nếu cần).
+
+[[trang 42]]
+Mẫu số 20. Quyết định của Ủy ban nhân dân các cấp (ban hành Quy định/Quy chế...)
+
+ỦY BAN NHÂN DÂN ...(1)                 CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+                                              Độc lập - Tự do - Hạnh phúc
+Số:.../20...(2)/QĐ-UBND                     ...(3), ngày...tháng...năm...(2)
+
+                                 QUYẾT ĐỊNH
+                         .................................(4)
+
+        Căn cứ Luật Tổ chức chính quyền địa phương số...............................;
+        Căn cứ........................................................................(5);
+        Theo đề nghị của..............................................................(6);
+        Ủy ban nhân dân ban hành Quyết định..........................................(4).
+        Điều 1. Ban hành kèm theo Quyết định này.........................(7)
+        Điều 2..................................................................
+        Điều....................................................................
+
+Nơi nhận:                                     TM. ỦY BAN NHÂN DÂN
+- ..............;                                    CHỦ TỊCH
+- ..............;                                  (Chữ ký, dấu)
+- Lưu: VT, ...(8). A.XX(9).
+                                                      Họ và tên
+Ghi chú:
+(1) Tên tỉnh, thành phố, xã, phường, đặc khu ban hành quyết định.
+(2) Năm ban hành.
+(3) Tên địa danh tỉnh, thành phố, xã, phường, đặc khu ban hành quyết định.
+(4) Tên gọi của quyết định.
+(5) Tên của văn bản là căn cứ ban hành văn bản.
+(6) Thủ trưởng cơ quan, đơn vị chủ trì soạn thảo quyết định.
+(7) Tên Quy định/Quy chế...
+(8) Chữ viết tắt đơn vị chủ trì soạn thảo và số lượng bản lưu.
+(9) Số lượng bản phát hành (nếu cần).
+[[trang 43]]
+Quy định/Quy chế... ban hành kèm theo Quyết định của Ủy ban nhân dân các cấp
+
+(*) ỦY BAN NHÂN DÂN ...(1)             CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+                                              Độc lập - Tự do - Hạnh phúc
+
+                              QUY ĐỊNH/QUY CHẾ...
+                         .................................(2)
+                  (Ban hành kèm theo Quyết định số.../20.../QĐ-UBND)
+
+                                 Phần I (nếu có) ... Tiểu mục 1 (nếu có)
+        Điều 1. (Tên của điều)
+        1.....................................................................
+[phần còn lại của trang 43 CHƯA chép]
+
+==================================================================================================
+[GHI NHẬN CỦA NGƯỜI CHÉP - không phải nội dung văn bản]
+1. Mẫu 17/18 (NQ HĐND) không có dòng "QUYẾT NGHỊ:"; câu chuyển tiếp là "Hội đồng nhân dân ban hành Nghị quyết ...".
+   Mẫu 19/20 (QĐ UBND) không có dòng "QUYẾT ĐỊNH:" sau căn cứ; câu chuyển tiếp là "Ủy ban nhân dân ban hành Quyết định ...".
+   Khớp với Phụ lục I, Mục 1, Phần III, khoản 1 điểm đ.
+2. Mẫu 17/18 có dòng "...(3), ngày...tháng...năm...(2)" bên phải, ngang dòng "Số:". Phụ lục I, Mục 1, Phần II,
+   khoản 6 điểm b lại ghi "Địa danh, ngày, tháng, năm ban hành văn bản quy phạm pháp luật, trừ văn bản của Quốc hội,
+   Ủy ban Thường vụ Quốc hội, Hội đồng nhân dân, được trình bày trên cùng một dòng với số, ký hiệu".
+   Hai chỗ không khớp nhau về văn bản của HĐND; mã nguồn KHÔNG kiểm tra có/không có dòng địa danh-ngày cho NQ HĐND.
+3. Số, ký hiệu có năm: "Số:.../20...(2)/NQ-HĐND", "Số:.../20...(2)/QĐ-UBND".

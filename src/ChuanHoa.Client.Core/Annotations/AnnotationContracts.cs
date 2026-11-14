@@ -10,7 +10,9 @@ namespace ChuanHoa.Client.Core.Annotations
         Nd30 = 2,
         Hd05 = 3,
         LatexTypst = 4,
-        LocalLanguage = 5
+        LocalLanguage = 5,
+        /// <summary>Văn bản quy phạm pháp luật: Phụ lục I NĐ 187/2025/NĐ-CP.</summary>
+        Vbqppl = 6
     }
 
     public enum AnnotationSeverityLevel

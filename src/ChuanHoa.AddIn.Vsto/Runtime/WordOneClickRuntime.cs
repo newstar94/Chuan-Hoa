@@ -883,9 +883,10 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 {
                     section = document.Sections[sectionIndex];
                     if (finding.RuleCode == "ND30-PL1-M1-K1" ||
-                        finding.RuleCode == "ND30-PL1-M1-K3")
+                        finding.RuleCode == "ND30-PL1-M1-K3" ||
+                        finding.RuleCode == "ND187-PL1-I3-MARGIN")
                     {
-                        NormalizeSection(section, IsParty(snapshot), rules);
+                        NormalizeSection(section, IsParty(snapshot), rules, IsVbqppl(snapshot));
                         return true;
                     }
                     if (finding.RuleCode == "ND30-PL1-M1-K7")
@@ -1012,6 +1013,11 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 case "ND30-PL1-M2-K5B-STYLE": role = "officialLetterSubject"; return true;
                 case "ND30-PL1-M2-K6A-STYLE": role = "legalBasis"; return true;
                 case "ND30-PL1-M2-K7D-STYLE": role = "signerAuthority"; return true;
+                // VBQPPL style findings (Phụ lục I NĐ 187/2025/NĐ-CP): re-apply the role
+                // format; the signer size is 13 under the VBQPPL regime.
+                case "ND187-PL1-II4-TYPE": role = "typeName"; return true;
+                case "ND187-PL1-II7-SIGNER": role = "signerAuthority"; return true;
+                case "ND187-PL1-III1-BASIS": role = "legalBasis"; return true;
                 case "ND30-PL1-M1-K4-FONT":
                 case "ND30-PL1-M1-K4-COLOR":
                 case "ND30-PL1-M2-K6E-ALIGN":
@@ -1057,7 +1063,14 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 case "ND30-PL1-M2-K6D-TITLE":
                 case "ND30-PL1-M3-K1A-REF":
                 case "ND30-PL1-M3-K1D":
+                // The HĐND passage line is free text the author must write; report only.
+                case "ND187-PL1-II6C-PASSAGE":
                     return true;
+                // Qualified VBQPPL findings (punctuation, missing/legacy enacting formula,
+                // "TM." line) change wording or structure: report only.
+                case "ND187-PL1-III1-BASIS":
+                case "ND187-PL1-II7-SIGNER":
+                    return finding.FindingId.IndexOf("-Q", StringComparison.Ordinal) >= 0;
                 case "ND30-PL1-M2-K9A-LAYOUT":
                     return finding.CurrentIssue.IndexOf("tách dòng nhưng không có danh sách",
                         StringComparison.OrdinalIgnoreCase) >= 0;
@@ -1330,12 +1343,13 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         private static int NormalizeSections(Word.Document document, LocalScanSnapshot snapshot, LocalRulePack rules)
         {
             var party = IsParty(snapshot);
+            var vbqppl = IsVbqppl(snapshot);
             var count = 0;
             foreach (Word.Section section in document.Sections)
             {
                 try
                 {
-                    NormalizeSection(section, party, rules);
+                    NormalizeSection(section, party, rules, vbqppl);
                     count++;
                 }
                 finally { Release(section); }
@@ -1343,7 +1357,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             return count;
         }
 
-        private static void NormalizeSection(Word.Section section, bool party, LocalRulePack rules)
+        private static void NormalizeSection(Word.Section section, bool party, LocalRulePack rules,
+            bool vbqppl = false)
         {
             Word.PageSetup? setup = null;
             try
@@ -1353,6 +1368,26 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 var bottom = (float)((party ? 20d : rules.BottomMinMm) * PointsPerMillimeter);
                 var left = (float)((party ? 30d : rules.LeftMinMm) * PointsPerMillimeter);
                 var right = (float)((party ? 15d : rules.RightMinMm) * PointsPerMillimeter);
+                if (vbqppl)
+                {
+                    // Phụ lục I NĐ 187/2025/NĐ-CP, Mục 1, Phần I, khoản 3: trái 30-35 mm, phải
+                    // 15-20 mm. Top/bottom are left as the author set them: khoản 3 (15-20 mm)
+                    // and the sơ đồ of Phần IV (20-25 mm) disagree.
+                    left = (float)(VbqpplRegimePolicy.LeftMarginMinMm * PointsPerMillimeter);
+                    right = (float)(VbqpplRegimePolicy.RightMarginMinMm * PointsPerMillimeter);
+                    if (setup.Orientation == Word.WdOrientation.wdOrientLandscape)
+                    {
+                        setup.PageWidth = 297f * PointsPerMillimeter;
+                        setup.PageHeight = 210f * PointsPerMillimeter;
+                        setup.TopMargin = left;
+                        setup.BottomMargin = right;
+                        return;
+                    }
+                    setup.PaperSize = Word.WdPaperSize.wdPaperA4;
+                    setup.LeftMargin = left;
+                    setup.RightMargin = right;
+                    return;
+                }
                 if (setup.Orientation == Word.WdOrientation.wdOrientLandscape)
                 {
                     // Never flip the orientation chosen by the author. A landscape page
@@ -1427,6 +1462,11 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 }
 
                 var style = StyleFor(role, party, paragraph, headerFontTier);
+                // Phụ lục I NĐ 187/2025/NĐ-CP, Mục 1, Phần II, khoản 7 điểm b: chức vụ người
+                // ký của văn bản quy phạm pháp luật cỡ chữ 13.
+                if (style != null && role == "signerAuthority" && IsVbqppl(snapshot))
+                    style = S((float)VbqpplRegimePolicy.SignerAuthorityFontPoints, true, false,
+                        Word.WdParagraphAlignment.wdAlignParagraphCenter);
                 if (style == null) return false;
                 range.Font.Name = rules.BodyFontName;
                 range.Font.Color = Word.WdColor.wdColorAutomatic;
@@ -2664,7 +2704,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 "ND30-PL1-M2-K3-ABBR",
                 "ND30-PL1-M2-K3-SPACE",
                 "ND30-PL1-M2-K3-CASE",
-                "ND30-PL1-M2-K3-PAD"
+                "ND30-PL1-M2-K3-PAD",
+                "ND187-PL1-II3-CODE"
             };
 
             foreach (var group in findings.Where(item =>
@@ -2693,8 +2734,12 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
                 var abbreviation = ResolveExpectedTypeAbbreviation(snapshot,
                     paragraph.Index, rules, blocks);
-                var replacement = LocalAdministrativeTextNormalizer.NormalizeCodeNumber(
-                    printable, IsParty(snapshot), abbreviation);
+                // A VBQPPL notation keeps the issuing year (Số: 05/2025/QĐ-UBND); the ND30
+                // normalizer would drop it as a legacy form.
+                var replacement = IsVbqppl(snapshot)
+                    ? LocalAdministrativeTextNormalizer.NormalizeVbqpplCodeNumber(printable, abbreviation)
+                    : LocalAdministrativeTextNormalizer.NormalizeCodeNumber(
+                        printable, IsParty(snapshot), abbreviation);
                 // Guard every whole-paragraph replacement of a fixed component: a
                 // rewrite that changes the length a lot or keeps little of the
                 // original text is a misclassification, not a format correction.
@@ -2834,6 +2879,9 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 case "ND30-PL1-M2-K3-SPACE":
                 case "ND30-PL1-M2-K3-CASE":
                 case "ND30-PL1-M2-K3-PAD":
+                // VBQPPL notation: NormalizeVbqpplCodeNumber keeps the year and never
+                // invents a missing one, so the "-Qyear" finding stays reported.
+                case "ND187-PL1-II3-CODE":
                     return true;
                 default:
                     return false;
@@ -3388,6 +3436,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
 
         private static bool IsParty(LocalScanSnapshot snapshot) =>
             string.Equals(snapshot.RegimeCode, "PARTY_HD05", StringComparison.OrdinalIgnoreCase);
+
+        private static bool IsVbqppl(LocalScanSnapshot snapshot) => VbqpplRegimePolicy.IsVbqppl(snapshot);
 
         private static ParagraphStyle S(double size, bool bold, bool italic,
             Word.WdParagraphAlignment alignment, bool underline = false) =>

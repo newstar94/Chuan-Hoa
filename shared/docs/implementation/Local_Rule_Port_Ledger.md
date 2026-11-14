@@ -89,6 +89,12 @@ Các detector dưới đây không được tính ngược vào 73 route VBA bas
 | `ND30-PL1-M2-K2-ORG-LINE` | Phụ lục I NĐ30, Phần I.I.2.b | format | `CheckRequiredLineShapes` | `WORD-LINE-SHAPE-001` | IMPLEMENTED_LOCAL_SOURCE_BACKED |
 | `ND30-PL1-M2-K5A-SUBJ-LINE` | Phụ lục I NĐ30, Phần I.I.5.b | format | `CheckRequiredLineShapes` | `WORD-LINE-SHAPE-001` | IMPLEMENTED_LOCAL_SOURCE_BACKED |
 | `HD05-M1-TITLE-LINE` | HD05, Phần II.I.1.2 | format | `CheckRequiredLineShapes` | `WORD-LINE-SHAPE-001` | IMPLEMENTED_LOCAL_SOURCE_BACKED |
+| `ND187-PL1-I3-MARGIN` | Không có trong VBA; Phụ lục I NĐ 187/2025/NĐ-CP (thay Phụ lục I NĐ 78/2025/NĐ-CP), Mục 1, Phần I khoản 3 (chỉ lề trái 30–35 mm, phải 15–20 mm; lề trên/dưới không kiểm vì khoản 3 ghi 15–20 mm còn sơ đồ Phần IV ghi 20–25 mm) | format | `CheckPageSetup` (regime VBQPPL); 1-Click `NormalizeSection(..., vbqppl)` chỉ đặt lề trái/phải | `VBQPPL-REGIME-001` | IMPLEMENTED_LOCAL_PENDING_WORD_SMOKE |
+| `ND187-PL1-II3-CODE` | Không có trong VBA; Phụ lục I NĐ 187/2025/NĐ-CP (thay Phụ lục I NĐ 78/2025/NĐ-CP), Mục 1, Phần II khoản 3 điểm d, đ; Mẫu số 17–20 Phụ lục III | format | `CheckVbqpplCodeNumber`; 1-Click `NormalizeVbqpplCodeNumber` giữ năm, không tự thêm năm | `VBQPPL-REGIME-001` | IMPLEMENTED_LOCAL_PENDING_WORD_SMOKE |
+| `ND187-PL1-II4-TYPE` | Không có trong VBA; Phụ lục I NĐ 187/2025/NĐ-CP (thay Phụ lục I NĐ 78/2025/NĐ-CP), Mục 1, Phần II khoản 4 điểm b (tên loại cỡ 14) | format | `CheckTypeAndSubject` (regime VBQPPL) | `VBQPPL-REGIME-001` | IMPLEMENTED_LOCAL_PENDING_WORD_SMOKE |
+| `ND187-PL1-II6C-PASSAGE` | Không có trong VBA; Phụ lục I NĐ 187/2025/NĐ-CP (thay Phụ lục I NĐ 78/2025/NĐ-CP), Mục 1, Phần II khoản 6 điểm c; Mẫu số 17, 18 | format | `CheckVbqpplDocument` (chỉ NQ HĐND; chỉ báo) | `VBQPPL-REGIME-001` | IMPLEMENTED_LOCAL_PENDING_WORD_SMOKE |
+| `ND187-PL1-II7-SIGNER` | Không có trong VBA; Phụ lục I NĐ 187/2025/NĐ-CP (thay Phụ lục I NĐ 78/2025/NĐ-CP), Mục 1, Phần II khoản 7 điểm a, b; Mẫu số 17–20 | format | `CheckSignerAndRecipients`, `CheckVbqpplDocument` (TM. chỉ báo) | `VBQPPL-REGIME-001` | IMPLEMENTED_LOCAL_PENDING_WORD_SMOKE |
+| `ND187-PL1-III1-BASIS` | Không có trong VBA; Phụ lục I NĐ 187/2025/NĐ-CP (thay Phụ lục I NĐ 78/2025/NĐ-CP), Mục 1, Phần III khoản 1 và điểm đ; Mẫu số 17–20 | format | `CheckVbqpplDocument` (dấu câu/câu ban hành chỉ báo) | `VBQPPL-REGIME-001` | IMPLEMENTED_LOCAL_PENDING_WORD_SMOKE |
 
 ## Gate còn mở
 

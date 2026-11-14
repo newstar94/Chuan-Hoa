@@ -28,8 +28,8 @@ public sealed class CanonicalRouteScannerTests
     [Fact]
     public void Registry_contains_product_routes_and_shape_rules_without_removed_tone_or_iy()
     {
-        Assert.Equal(77, CanonicalRuleScanner.RegisteredRuleCodes.Count);
-        Assert.Equal(77, CanonicalRuleScanner.RegisteredRuleCodes.Distinct(StringComparer.Ordinal).Count());
+        Assert.Equal(83, CanonicalRuleScanner.RegisteredRuleCodes.Count);
+        Assert.Equal(83, CanonicalRuleScanner.RegisteredRuleCodes.Distinct(StringComparer.Ordinal).Count());
         Assert.DoesNotContain("ND30-PL1-M2-K9B-LUU", CanonicalRuleScanner.RegisteredRuleCodes);
         Assert.DoesNotContain("ND30-PL1-M1-K2", CanonicalRuleScanner.RegisteredRuleCodes);
         Assert.DoesNotContain(CanonicalRuleScanner.RegisteredRuleCodes,
@@ -45,6 +45,9 @@ public sealed class CanonicalRouteScannerTests
         {
             scanner.ScanFormat(BadFormatSnapshot(), rules),
             scanner.ScanFormat(LayoutOnlySnapshot(), rules),
+            // VBQPPL regime routes use the bundled abbreviation table.
+            scanner.ScanFormat(VbqpplRegimeTests.BadUbndDecision(), BundledRulePack.Load("1.0.0.197")),
+            scanner.ScanFormat(VbqpplRegimeTests.BadHdndResolution(), BundledRulePack.Load("1.0.0.197")),
             scanner.ScanFormat(new LocalScanSnapshot("single-salutation", 1, new[] { ValidSection() },
                 new[] { P(1, "Kính gửi: Ban giám đốc", "recipientSalutationInline") },
                 Array.Empty<AnnotationProtectedSpan>()), rules),

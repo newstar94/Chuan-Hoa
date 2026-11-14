@@ -104,8 +104,18 @@ namespace ChuanHoa.Client.Core.Scanning
             "ND30-PL1-M2-K9B-LIST", "ND30-PL1-M3-K1A-NUM", "ND30-PL1-M3-K1A-REF",
             "ND30-PL1-M3-K1B", "ND30-PL1-M3-K1C", "ND30-PL1-M3-K1D", "ND30-PL1-MV-CT1", "ND30-PL2-M1",
             "ND30-PL2-M2-K1", "ND30-PL2-M3-K1A", "ND30-PL2-M3-K1B", "ND30-PL2-M3-K1C", "ND30-PL2-M3-K1D",
-            "ND30-PL2-M3-K1E", "ND30-PL2-M4-K1A", "ND30-PL2-M4-K1B", "ND30-PL2-M5-K5", "ND30-PL2-M5-K7", "ND30-PL2-M5-K8A"
+            "ND30-PL2-M3-K1E", "ND30-PL2-M4-K1A", "ND30-PL2-M4-K1B", "ND30-PL2-M5-K5", "ND30-PL2-M5-K7", "ND30-PL2-M5-K8A",
+            // VBQPPL regime: Phụ lục I NĐ 187/2025/NĐ-CP (replaces Phụ lục I NĐ 78/2025/NĐ-CP).
+            VbqpplMarginCode, VbqpplCodeNumberCode, VbqpplTypeNameCode, VbqpplPassageCode,
+            VbqpplSignerCode, VbqpplLegalBasisCode
         };
+
+        public const string VbqpplMarginCode = "ND187-PL1-I3-MARGIN";
+        public const string VbqpplCodeNumberCode = "ND187-PL1-II3-CODE";
+        public const string VbqpplTypeNameCode = "ND187-PL1-II4-TYPE";
+        public const string VbqpplPassageCode = "ND187-PL1-II6C-PASSAGE";
+        public const string VbqpplSignerCode = "ND187-PL1-II7-SIGNER";
+        public const string VbqpplLegalBasisCode = "ND187-PL1-III1-BASIS";
 
         public static readonly IReadOnlyList<string> LatexRuleCodes = AcademicTypographyRuleCodes.All;
 
@@ -132,6 +142,10 @@ namespace ChuanHoa.Client.Core.Scanning
         {
             var findings = new List<AnnotationFinding>();
             cancellationToken.ThrowIfCancellationRequested();
+            if (snapshot == null) throw new ArgumentNullException(nameof(snapshot));
+            // A manual regime wins; otherwise a year-bearing NQ-HĐND/QĐ-UBND notation
+            // (Mẫu 17-20, Phụ lục III NĐ 187/2025/NĐ-CP) selects the VBQPPL regime.
+            snapshot = snapshot.WithRegime(_roleDetector.ResolveRegime(snapshot));
             var blocks = _roleDetector.DetectBlocks(snapshot);
             var roles = MergeRoles(blocks);
             CheckPageSetup(findings, snapshot, rules);
@@ -151,6 +165,8 @@ namespace ChuanHoa.Client.Core.Scanning
             CheckStructure(findings, snapshot, rules, roles);
             cancellationToken.ThrowIfCancellationRequested();
             CheckSignerAndRecipients(findings, snapshot, rules, roles);
+            if (VbqpplRegimePolicy.IsVbqppl(snapshot))
+                CheckVbqpplDocument(findings, snapshot, rules, roles, blocks);
             CheckAppendices(findings, snapshot, rules, roles);
             CheckFontSizeConsistency(findings, snapshot, rules, roles);
             cancellationToken.ThrowIfCancellationRequested();
@@ -214,6 +230,24 @@ namespace ChuanHoa.Client.Core.Scanning
                     Near(longSide, 210d * PointsPerMillimeter, 2d);
                 if (!isA4 && !isA5)
                     findings.Add(Section("ND30-PL1-M1-K1", section.Index, "Khổ giấy không phải A4.", "Dùng khổ A4 210 × 297 mm.", rules));
+                if (VbqpplRegimePolicy.IsVbqppl(snapshot))
+                {
+                    // PL I NĐ 187/2025/NĐ-CP, Mục 1, Phần I, khoản 3: left 30-35 mm and right
+                    // 15-20 mm. Top/bottom are not checked: khoản 3 (15-20 mm) and the sơ đồ
+                    // of Phần IV (20-25 mm) disagree. A rotated landscape page keeps the
+                    // binding edge on top, as in the ND30 branch below.
+                    var bindingMargin = section.IsLandscape ? section.TopMarginPoints : section.LeftMarginPoints;
+                    var outerMargin = section.IsLandscape ? section.BottomMarginPoints : section.RightMarginPoints;
+                    if (!Between(bindingMargin, VbqpplRegimePolicy.LeftMarginMinMm, VbqpplRegimePolicy.LeftMarginMaxMm) ||
+                        !Between(outerMargin, VbqpplRegimePolicy.RightMarginMinMm, VbqpplRegimePolicy.RightMarginMaxMm))
+                        findings.Add(Section(VbqpplMarginCode, section.Index,
+                            "Lề trái hoặc lề phải nằm ngoài khoảng quy định cho văn bản quy phạm pháp luật.",
+                            "Lề trái 30–35 mm, lề phải 15–20 mm (Phụ lục I NĐ 187/2025/NĐ-CP). Lề trên/dưới không được kiểm tra vì khoản 3 Phần I và sơ đồ Phần IV ghi khác nhau.",
+                            rules));
+                    if (!section.HasPageNumbers)
+                        findings.Add(Section("ND30-PL1-M1-K7", section.Index, "Section chưa có số trang.", "Đánh số trang bằng chữ số Ả Rập theo thể thức.", rules));
+                    continue;
+                }
                 var marginsValid = party
                     ? Near(section.TopMarginPoints, 20d * PointsPerMillimeter, 1.5d) &&
                         Near(section.BottomMarginPoints, 20d * PointsPerMillimeter, 1.5d) &&
@@ -305,7 +339,9 @@ namespace ChuanHoa.Client.Core.Scanning
                 .ToArray();
 
             var last = contentParagraphs.LastOrDefault();
-            if (last != null)
+            // The closing-punctuation rule is an administrative (ND30) rule; Phụ lục I
+            // NĐ 187/2025/NĐ-CP has no equivalent, so a VBQPPL document is not checked.
+            if (last != null && !VbqpplRegimePolicy.IsVbqppl(snapshot))
             {
                 var text = last.Text.Trim();
                 if (text.Length > 0 &&
@@ -770,10 +806,16 @@ namespace ChuanHoa.Client.Core.Scanning
             LocalRulePack rules, IReadOnlyList<LogicalDocumentBlock> blocks)
         {
             var party = IsParty(snapshot);
+            var vbqppl = VbqpplRegimePolicy.IsVbqppl(snapshot);
             foreach (var block in blocks)
             foreach (var paragraph in snapshot.Paragraphs.Where(item =>
                 block.Roles.TryGetValue(item.Index, out var role) && role == "codeNumber"))
             {
+                if (vbqppl)
+                {
+                    CheckVbqpplCodeNumber(findings, snapshot, rules, block, paragraph);
+                    continue;
+                }
                 var match = CodeNumber.Match(paragraph.Text);
                 if (!match.Success) continue;
                 if (!party && match.Groups["colon"].Length == 0)
@@ -817,6 +859,183 @@ namespace ChuanHoa.Client.Core.Scanning
             }
         }
 
+        private const string Nd187Pl1 = "Phụ lục I NĐ 187/2025/NĐ-CP, Mục 1";
+
+        /// <summary>
+        /// "Số, ký hiệu" of a VBQPPL: PL I NĐ 187/2025/NĐ-CP, Mục 1, Phần II, khoản 3 điểm d, đ —
+        /// số thứ tự / năm ban hành (đầy đủ các số) / ký hiệu in hoa; "Số:" có dấu hai chấm;
+        /// số nhỏ hơn 10 thêm số 0; gạch chéo giữa số và ký hiệu, gạch nối giữa các nhóm,
+        /// không cách chữ. Mẫu số 17-20: "Số:.../20...(2)/NQ-HĐND", ".../QĐ-UBND".
+        /// </summary>
+        private static void CheckVbqpplCodeNumber(ICollection<AnnotationFinding> findings, LocalScanSnapshot snapshot,
+            LocalRulePack rules, LogicalDocumentBlock block, LocalParagraphSnapshot paragraph)
+        {
+            var line = (paragraph.Text ?? string.Empty).Split('\r', '\n', '\v', '\a')
+                .FirstOrDefault(item => Regex.IsMatch(item, @"^\s*Số\b", RegexOptions.IgnoreCase));
+            if (line == null) return;
+            Match match;
+            if (!VbqpplRegimePolicy.TryParseYearNotation(line, out match))
+            {
+                findings.Add(ParagraphQualified(VbqpplCodeNumberCode, paragraph, "year",
+                    "Số, ký hiệu văn bản quy phạm pháp luật thiếu năm ban hành hoặc sai cấu trúc số/năm/ký hiệu.",
+                    "Trình bày Số: số thứ tự/năm ban hành/ký hiệu, ví dụ Số: 05/2025/QĐ-UBND (" + Nd187Pl1 + ", Phần II, khoản 3).",
+                    rules));
+                return;
+            }
+            if (match.Groups["colon"].Length == 0)
+                findings.Add(ParagraphQualified(VbqpplCodeNumberCode, paragraph, "colon",
+                    "Thiếu dấu hai chấm sau từ Số.", "Viết Số: ... (" + Nd187Pl1 + ", Phần II, khoản 3 điểm đ).", rules));
+            int value;
+            var number = match.Groups["number"].Value;
+            if (int.TryParse(number, out value) && value < 10 && number.Length < 2)
+                findings.Add(ParagraphQualified(VbqpplCodeNumberCode, paragraph, "pad",
+                    "Số nhỏ hơn 10 chưa ghi thêm số 0 phía trước.", "Viết 0" + number + " (" + Nd187Pl1 + ", Phần II, khoản 3 điểm đ).", rules));
+            var notation = match.Groups["notation"].Value;
+            if (notation.Any(char.IsWhiteSpace) || Regex.IsMatch(line, @"\d\s+/|/\s+"))
+                findings.Add(ParagraphQualified(VbqpplCodeNumberCode, paragraph, "space",
+                    "Số, ký hiệu có khoảng trắng.", "Các ký tự trong số, ký hiệu trình bày liền nhau, không cách chữ.", rules));
+            var compact = Regex.Replace(notation, @"\s+", string.Empty);
+            if (!Regex.IsMatch(compact, @"^[\p{L}\d]+(?:-[\p{L}\d]+)+$"))
+                findings.Add(ParagraphQualified(VbqpplCodeNumberCode, paragraph, "separator",
+                    "Ký hiệu văn bản sai dấu phân cách.",
+                    "Giữa các nhóm chữ viết tắt trong ký hiệu dùng dấu gạch nối (-), ví dụ NQ-HĐND, QĐ-UBND.", rules));
+            if (compact.Any(char.IsLower))
+                findings.Add(ParagraphQualified(VbqpplCodeNumberCode, paragraph, "case",
+                    "Ký hiệu có chữ thường.", "Ký hiệu của văn bản trình bày bằng chữ in hoa.", rules));
+            var type = snapshot.Paragraphs.FirstOrDefault(item =>
+                block.Roles.TryGetValue(item.Index, out var role) && role == "typeName");
+            var entry = type == null ? null : DocumentTypeAbbreviationPolicy.Resolve(rules, type.Text, false);
+            var actual = compact.Split('-')[0];
+            if (entry != null && !Eq(actual, entry.Abbreviation))
+                findings.Add(ParagraphQualified(VbqpplCodeNumberCode, paragraph, "abbreviation",
+                    "Ký hiệu tên loại không khớp tên văn bản.", "Dùng " + entry.Abbreviation + " cho " + entry.TypeName + ".", rules));
+        }
+
+        /// <summary>
+        /// Rules of Phụ lục I NĐ 187/2025/NĐ-CP that have no ND30 counterpart, for the forms
+        /// Mẫu số 17-20 of Phụ lục III (NQ HĐND, QĐ UBND).
+        /// </summary>
+        private static void CheckVbqpplDocument(ICollection<AnnotationFinding> findings, LocalScanSnapshot snapshot,
+            LocalRulePack rules, IDictionary<int, string> roles, IReadOnlyList<LogicalDocumentBlock> blocks)
+        {
+            var kind = VbqpplKind(snapshot, blocks);
+            var main = Scannable(snapshot).Where(p => p.StoryType == "wdMainTextStory")
+                .OrderBy(p => p.Index).ToArray();
+
+            // Căn cứ: Phần III, khoản 1 — in thường, cỡ 14, nghiêng; sau mỗi căn cứ xuống dòng,
+            // cuối dòng chấm phẩy. Điểm đ — then "tên cơ quan ... ban hành ... tên văn bản",
+            // cỡ 14, nghiêng, kết thúc là dấu chấm.
+            var bases = ConsecutiveRoleBlocks(main, roles, "legalBasis").FirstOrDefault();
+            if (bases != null && bases.Count > 0)
+            {
+                foreach (var paragraph in bases)
+                {
+                    CheckStyle(findings, VbqpplLegalBasisCode, paragraph, rules,
+                        VbqpplRegimePolicy.LegalBasisFontPoints, VbqpplRegimePolicy.LegalBasisFontPoints,
+                        false, true, 3, "Căn cứ ban hành");
+                    var printable = TrimParagraphTerminator(paragraph.Text).TrimEnd();
+                    if (printable.Length > 0 && !printable.EndsWith(";", StringComparison.Ordinal))
+                        findings.Add(ParagraphQualified(VbqpplLegalBasisCode, paragraph, "punct",
+                            "Căn cứ ban hành chưa kết thúc bằng dấu chấm phẩy.",
+                            "Cuối mỗi căn cứ có dấu chấm phẩy (;) (" + Nd187Pl1 + ", Phần III, khoản 1).", rules));
+                }
+                var lastBasis = bases[bases.Count - 1];
+                var next = main.FirstOrDefault(p => p.Index > lastBasis.Index);
+                if (next != null && VbqpplRegimePolicy.IsEnactingFormula(next.Text))
+                {
+                    CheckStyle(findings, VbqpplLegalBasisCode, next, rules,
+                        VbqpplRegimePolicy.LegalBasisFontPoints, VbqpplRegimePolicy.LegalBasisFontPoints,
+                        false, true, next.Alignment.GetValueOrDefault(3), "Câu ban hành văn bản");
+                    if (!TrimParagraphTerminator(next.Text).TrimEnd().EndsWith(".", StringComparison.Ordinal))
+                        findings.Add(ParagraphQualified(VbqpplLegalBasisCode, next, "formula-punct",
+                            "Câu ban hành văn bản chưa kết thúc bằng dấu chấm.",
+                            "Kết thúc bằng dấu chấm (.) (" + Nd187Pl1 + ", Phần III, khoản 1 điểm đ).", rules));
+                }
+                else if (kind != VbqpplDocumentKind.Other)
+                {
+                    var formula = kind == VbqpplDocumentKind.HdndResolution
+                        ? "Hội đồng nhân dân ban hành Nghị quyết ..."
+                        : "Ủy ban nhân dân ban hành Quyết định ...";
+                    var operative = next != null && VbqpplRegimePolicy.IsOperativeHeading(next.Text);
+                    findings.Add(ParagraphQualified(VbqpplLegalBasisCode, operative ? next! : lastBasis, "formula",
+                        operative
+                            ? "Văn bản quy phạm pháp luật dùng dòng \"" + Collapse(next!.Text) + "\" thay cho câu ban hành văn bản."
+                            : "Thiếu câu ban hành văn bản sau phần căn cứ.",
+                        "Sau phần căn cứ trình bày: " + formula + " (cỡ 14, nghiêng, kết thúc dấu chấm), theo " +
+                        Nd187Pl1 + ", Phần III, khoản 1 điểm đ và Mẫu số " +
+                        (kind == VbqpplDocumentKind.HdndResolution ? "17, 18" : "19, 20") + " Phụ lục III.", rules));
+                }
+            }
+
+            // Thông tin HĐND thông qua nghị quyết: Phần II, khoản 6 điểm c — in thường, cỡ 13-14,
+            // nghiêng, phía dưới điều cuối cùng; khóa số La Mã, kỳ họp số Ả Rập trừ kỳ họp thứ nhất.
+            if (kind == VbqpplDocumentKind.HdndResolution)
+            {
+                var passages = main.Where(p => VbqpplRegimePolicy.IsPassageLine(p.Text)).ToArray();
+                foreach (var passage in passages)
+                {
+                    CheckStyle(findings, VbqpplPassageCode, passage, rules, 13, 14, false, true,
+                        passage.Alignment.GetValueOrDefault(3), "Thông tin thông qua nghị quyết");
+                    var problems = VbqpplRegimePolicy.PassageNumberingProblems(passage.Text);
+                    if (problems.Length > 0)
+                        findings.Add(ParagraphQualified(VbqpplPassageCode, passage, "numbering",
+                            "Thông tin thông qua nghị quyết: " + string.Join(", ", problems) + ".",
+                            "Số chỉ khóa dùng số La Mã; số chỉ kỳ họp dùng số Ả Rập, trừ kỳ họp thứ nhất (" +
+                            Nd187Pl1 + ", Phần II, khoản 6 điểm c).", rules));
+                }
+                var hasArticle = main.Any(p => Article.IsMatch(p.Text));
+                var signer = WithRole(snapshot, roles, "signerAuthority").OrderBy(p => p.Index).FirstOrDefault();
+                if (passages.Length == 0 && hasArticle && signer != null)
+                    findings.Add(ParagraphQualified(VbqpplPassageCode, signer, "missing",
+                        "Thiếu thông tin về thời điểm Hội đồng nhân dân thông qua nghị quyết.",
+                        "Phía dưới điều cuối cùng ghi: Nghị quyết này đã được Hội đồng nhân dân ... khóa ..., Kỳ họp thứ ... thông qua ngày ... tháng ... năm ... (chữ in thường, cỡ 13–14, nghiêng; " +
+                        Nd187Pl1 + ", Phần II, khoản 6 điểm c; Mẫu số 17, 18).", rules));
+            }
+
+            // Ký: Phần II, khoản 7 điểm a — quyết định của UBND: Chủ tịch thay mặt UBND ký và
+            // ghi "TM." trước "Ủy ban nhân dân"; nghị quyết của HĐND: Chủ tịch HĐND ký
+            // (Mẫu số 17, 18 chỉ ghi "CHỦ TỊCH").
+            var authorities = WithRole(snapshot, roles, "signerAuthority").OrderBy(p => p.Index).ToArray();
+            if (authorities.Length == 0) return;
+            var normalized = authorities.Select(p => VbqpplRegimePolicy.Normalize(p.Text).ToUpper(Vietnamese)).ToArray();
+            if (kind == VbqpplDocumentKind.UbndDecision &&
+                !normalized.Any(text => Regex.IsMatch(text, @"^TM\.\s*(?:ỦY|UỶ)\s+BAN\s+NHÂN\s+DÂN\b")))
+                findings.Add(ParagraphQualified(VbqpplSignerCode, authorities[0], "tm",
+                    "Quyết định quy phạm pháp luật của Ủy ban nhân dân thiếu dòng \"TM. ỦY BAN NHÂN DÂN\".",
+                    "Ghi TM. ỦY BAN NHÂN DÂN phía trên chức vụ CHỦ TỊCH (" + Nd187Pl1 +
+                    ", Phần II, khoản 7 điểm a; Mẫu số 19, 20).", rules));
+            if (kind == VbqpplDocumentKind.HdndResolution)
+                for (var i = 0; i < authorities.Length; i++)
+                    if (normalized[i].StartsWith("TM.", StringComparison.Ordinal))
+                        findings.Add(ParagraphQualified(VbqpplSignerCode, authorities[i], "tm",
+                            "Nghị quyết quy phạm pháp luật của Hội đồng nhân dân không ghi \"TM.\" trước chức vụ người ký.",
+                            "Chủ tịch Hội đồng nhân dân ký; ghi chức vụ CHỦ TỊCH (" + Nd187Pl1 +
+                            ", Phần II, khoản 7 điểm a; Mẫu số 17, 18).", rules));
+        }
+
+        private static VbqpplDocumentKind VbqpplKind(LocalScanSnapshot snapshot, IReadOnlyList<LogicalDocumentBlock> blocks)
+        {
+            var byIndex = snapshot.Paragraphs.GroupBy(p => p.Index).ToDictionary(g => g.Key, g => g.First());
+            foreach (var block in blocks)
+            {
+                string? code = null, type = null, organ = null;
+                foreach (var role in block.Roles.OrderBy(item => item.Key))
+                {
+                    LocalParagraphSnapshot paragraph;
+                    if (!byIndex.TryGetValue(role.Key, out paragraph)) continue;
+                    if (role.Value == "codeNumber" && code == null) code = paragraph.Text;
+                    else if (role.Value == "typeName" && type == null) type = paragraph.Text;
+                    else if (role.Value == "organName" && organ == null) organ = paragraph.Text;
+                }
+                if (code == null && type == null) continue;
+                var line = (code ?? string.Empty).Split('\r', '\n', '\v', '\a')
+                    .FirstOrDefault(item => Regex.IsMatch(item, @"^\s*Số\b", RegexOptions.IgnoreCase));
+                var kind = VbqpplRegimePolicy.KindFromCodeNumber(line);
+                return kind != VbqpplDocumentKind.Other ? kind : VbqpplRegimePolicy.KindFromHeader(type, organ);
+            }
+            return VbqpplDocumentKind.Other;
+        }
+
         private static void CheckPlaceDate(ICollection<AnnotationFinding> findings, LocalScanSnapshot snapshot,
             LocalRulePack rules, IDictionary<int, string> roles, IReadOnlyList<LogicalDocumentBlock> blocks)
         {
@@ -848,7 +1067,14 @@ namespace ChuanHoa.Client.Core.Scanning
         {
             var party = IsParty(snapshot);
             foreach (var paragraph in WithRole(snapshot, roles, "typeName"))
-                CheckStyle(findings, "ND30-PL1-M2-K5A-TYPE", paragraph, rules, party ? 15 : 13, party ? 16 : 14, true, false, 1, "Tên loại văn bản");
+            {
+                // PL I NĐ 187/2025/NĐ-CP, Mục 1, Phần II, khoản 4 điểm b: tên loại cỡ chữ 14.
+                if (VbqpplRegimePolicy.IsVbqppl(snapshot))
+                    CheckStyle(findings, VbqpplTypeNameCode, paragraph, rules,
+                        VbqpplRegimePolicy.TypeNameFontPoints, VbqpplRegimePolicy.TypeNameFontPoints, true, false, 1, "Tên loại văn bản");
+                else
+                    CheckStyle(findings, "ND30-PL1-M2-K5A-TYPE", paragraph, rules, party ? 15 : 13, party ? 16 : 14, true, false, 1, "Tên loại văn bản");
+            }
             foreach (var paragraph in WithRole(snapshot, roles, "subject"))
                 CheckStyle(findings, "ND30-PL1-M2-K5A-SUBJ", paragraph, rules, party ? 14 : 13, party ? 15 : 14, true, false, 1, "Trích yếu");
             foreach (var paragraph in WithRole(snapshot, roles, "subjectContinuation"))
@@ -876,6 +1102,9 @@ namespace ChuanHoa.Client.Core.Scanning
                 .OrderBy(p => p.Index)
                 .ToArray();
             var legalBasisBlocks = ConsecutiveRoleBlocks(mainParagraphs, roles, "legalBasis");
+            // A VBQPPL preamble ends with the "... ban hành ..." formula, not with the last
+            // căn cứ; its own check runs in CheckVbqpplDocument.
+            if (VbqpplRegimePolicy.IsVbqppl(snapshot)) legalBasisBlocks = Array.Empty<IReadOnlyList<LocalParagraphSnapshot>>();
             foreach (var bases in legalBasisBlocks)
             {
                 for (var index = 0; index < bases.Count; index++)
@@ -996,7 +1225,13 @@ namespace ChuanHoa.Client.Core.Scanning
             var party = IsParty(snapshot);
             foreach (var paragraph in WithRole(snapshot, roles, "signerAuthority"))
             {
-                CheckStyle(findings, "ND30-PL1-M2-K7D-STYLE", paragraph, rules, party ? 14 : 13, 14, true, false, 1, "Quyền hạn, chức vụ người ký");
+                // PL I NĐ 187/2025/NĐ-CP, Mục 1, Phần II, khoản 7 điểm b: chức vụ cỡ chữ 13.
+                if (VbqpplRegimePolicy.IsVbqppl(snapshot))
+                    CheckStyle(findings, VbqpplSignerCode, paragraph, rules,
+                        VbqpplRegimePolicy.SignerAuthorityFontPoints, VbqpplRegimePolicy.SignerAuthorityFontPoints,
+                        true, false, 1, "Quyền hạn, chức vụ người ký");
+                else
+                    CheckStyle(findings, "ND30-PL1-M2-K7D-STYLE", paragraph, rules, party ? 14 : 13, 14, true, false, 1, "Quyền hạn, chức vụ người ký");
                 var match = (party ? SignerAuthorityPartyAbbrRegex : SignerAuthorityStateAbbrRegex).Match(paragraph.Text);
                 if (match.Success && match.Groups["abbr"].Value.Any(char.IsLower))
                     findings.Add(Span("ND30-PL1-M2-K7B-AUTH", paragraph, match.Groups["abbr"].Index, match.Groups["abbr"].Length,

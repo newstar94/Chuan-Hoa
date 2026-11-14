@@ -343,6 +343,14 @@ namespace ChuanHoa.Client.Core.Scanning
         public IReadOnlyList<LocalGraphicObjectSnapshot> GraphicObjects { get; }
         public int SchemaVersion { get; }
 
+        /// <summary>Same snapshot with another effective regime; every other value is kept.</summary>
+        public LocalScanSnapshot WithRegime(string regimeCode) =>
+            string.Equals(regimeCode, RegimeCode, StringComparison.Ordinal)
+                ? this
+                : new LocalScanSnapshot(DocumentFingerprint, Revision, Sections, Paragraphs, ProtectedSpans,
+                    LineShapes, regimeCode, DocumentTypeCode, RegimeWasSelectedManually,
+                    DocumentTypeWasSelectedManually, DictionaryScopeId, Tables, GraphicObjects, SchemaVersion);
+
         public bool IntersectsProtectedSpan(LocalParagraphSnapshot paragraph)
         {
             if (paragraph == null) throw new ArgumentNullException(nameof(paragraph));

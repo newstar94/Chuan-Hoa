@@ -267,8 +267,9 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             using (var regime = new ComboBox { Left = 105, Top = 20, Width = 275, DropDownStyle = ComboBoxStyle.DropDownList })
             using (var type = new ComboBox { Left = 105, Top = 65, Width = 275, DropDownStyle = ComboBoxStyle.DropDownList })
             {
-                regime.Items.AddRange(new object[] { "VB hành chính (NĐ 30)", "Viettel (QĐ 11095)", "VB của Đảng (HD 05)" });
-                regime.SelectedIndex = Math.Max(0, Math.Min(2, GetSelectedItemIndex("ddQuyDinh")));
+                regime.Items.AddRange(new object[] { "VB hành chính (NĐ 30)", "Viettel (QĐ 11095)", "VB của Đảng (HD 05)",
+                    "VB quy phạm pháp luật (NĐ 78, NĐ 187)" });
+                regime.SelectedIndex = Math.Max(0, Math.Min(RegimeItemIds.Length - 1, GetSelectedItemIndex("ddQuyDinh")));
                 for (var i = 0; i < DocumentTypeItemCount; i++) type.Items.Add(GetDocumentTypeItemLabel(i));
                 type.SelectedIndex = Math.Max(0, Math.Min(type.Items.Count - 1, GetSelectedItemIndex("ddLoaiVanBan")));
                 var oldRegime = regime.SelectedIndex;
@@ -304,7 +305,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 dialog.AcceptButton = save; dialog.CancelButton = cancel;
                 if (dialog.ShowDialog() != DialogResult.OK) return;
                 if (regime.SelectedIndex != oldRegime)
-                    SelectDropDownItem("ddQuyDinh", new[] { "iqdND30", "iqdVIETTEL", "iqdDANG" }[regime.SelectedIndex], regime.SelectedIndex);
+                    SelectDropDownItem("ddQuyDinh", RegimeItemIds[regime.SelectedIndex], regime.SelectedIndex);
                 if (type.SelectedIndex != oldType)
                     SelectDropDownItem("ddLoaiVanBan", "", type.SelectedIndex);
             }
@@ -907,6 +908,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     f.SourceFamily == AnnotationSourceFamily.Nd30);
                 var hd05Findings = result.Findings.Count(f =>
                     f.SourceFamily == AnnotationSourceFamily.Hd05);
+                var vbqpplFindings = result.Findings.Count(f =>
+                    f.SourceFamily == AnnotationSourceFamily.Vbqppl);
                 var localFindings = result.Findings.Count(f =>
                     f.SourceFamily == AnnotationSourceFamily.LocalLanguage);
                 var latexFindings = result.Findings.Count(f =>
@@ -919,6 +922,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     : "Phát hiện và đánh dấu: " + result.Findings.Count + " điểm cần lưu ý:\n" +
                       "  • NĐ30: " + nd30Findings + ".\n" +
                       "  • HD05: " + hd05Findings + ".\n" +
+                      (vbqpplFindings > 0 ? "  • VBQPPL (NĐ 187): " + vbqpplFindings + ".\n" : string.Empty) +
                       "  • Quy tắc ngôn ngữ/local: " + localFindings + ".\n" +
                       "  • Khuyến nghị LaTeX/Typst: " + latexFindings + ".\n" +
                       (unknownFindings > 0 ? "  • Chưa phân loại/chưa đánh giá: " + unknownFindings + ".\n" : string.Empty) +
@@ -1055,7 +1059,15 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         private static void SynchronizeDocumentTypeSelection(DocumentContext context)
         {
             context.SetSelection("ddLoaiVanBan", MapDocumentTypeIndex(context.DocumentTypeCode));
+            // Mirror an automatic regime result (VBQPPL detection) into the regime list.
+            if (!context.RegimeWasSelectedManually)
+                context.SetSelection("ddQuyDinh", Math.Max(0, Array.IndexOf(RegimeCodes, context.RegimeCode)));
         }
+
+        // Same order as the ddQuyDinh items in Ribbon/ChuanHoaRibbon.xml.
+        private static readonly string[] RegimeItemIds = { "iqdND30", "iqdVIETTEL", "iqdDANG", "iqdVBQPPL" };
+        private static readonly string[] RegimeCodes =
+            { LocalRegimeCodes.Nd30, LocalRegimeCodes.Viettel, LocalRegimeCodes.PartyHd05, LocalRegimeCodes.Vbqppl };
 
         private static string MapRegime(string selectedId)
         {
@@ -1067,6 +1079,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     return "VIETTEL";
                 case "iqdDANG":
                     return "PARTY_HD05";
+                case "iqdVBQPPL":
+                    return LocalRegimeCodes.Vbqppl;
                 default:
                     return "UNKNOWN";
             }

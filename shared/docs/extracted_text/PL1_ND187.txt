@@ -1,0 +1,254 @@
+[NGUON / SOURCE]
+Van ban: Nghi dinh so 187/2025/ND-CP ngay 01/7/2025 cua Chinh phu (sua doi, bo sung ND 78/2025/ND-CP va ND 79/2025/ND-CP).
+Dieu 3 khoan 3 diem a ND 187/2025/ND-CP: "Thay the Phu luc I ban hanh kem theo Nghi dinh so 78/2025/ND-CP bang Phu luc I ban hanh kem theo Nghi dinh nay".
+=> Phu luc I cua ND 78/2025/ND-CP KHONG con hieu luc; ban duoi day la Phu luc I hien hanh (theo ND 187/2025/ND-CP).
+Tep goc: https://datafiles.chinhphu.vn/cpp/files/vbpq/2025/7/187-ndcp.signed.pdf
+  (lien ket tu https://vanban.chinhphu.vn/?pageid=27160&docid=214570), tai ngay 2026-11-14,
+  SHA-256 60fd1511d55fc4da36bde8a579e52e330afe3adec3d493b9a5f3a3579b08f6ed, 152 trang PDF.
+Phu luc I = trang PDF 40-55 (danh so trang rieng 1-16 trong Phu luc).
+PHUONG PHAP: PDF la ban quet, khong co lop chu. Noi dung duoi day duoc chep lai bang cach doc anh trang
+(pdftoppm 150 dpi), KHONG phai OCR may va KHONG phai ban chinh thuc. Truoc khi trich dan lam can cu phap ly,
+doi chieu voi tep PDF goc. Danh dau [[trang N]] = so trang in tren Phu luc (trang PDF = N + 39).
+
+==================================================================================================
+[[trang 1]]
+Phụ lục I
+THỂ THỨC, KỸ THUẬT TRÌNH BÀY VĂN BẢN QUY PHẠM PHÁP LUẬT;
+VIẾT HOA TRONG VĂN BẢN QUY PHẠM PHÁP LUẬT
+(Kèm theo Nghị định số 187/2025/NĐ-CP ngày 01 tháng 7 năm 2025 của Chính phủ)
+
+Mục 1
+THỂ THỨC, KỸ THUẬT TRÌNH BÀY VĂN BẢN QUY PHẠM PHÁP LUẬT
+
+I. QUY ĐỊNH CHUNG
+
+1. Văn bản được trình bày trên trang giấy khổ A4 (210 mi-li-mét (mm) x 297 mi-li-mét (mm)).
+
+2. Kiểu trình bày: Theo chiều dài của khổ A4. Phần phụ lục của văn bản quy phạm pháp luật có các bảng, biểu thì có thể được trình bày theo chiều rộng.
+
+3. Định lề trang: Cách mép trên và mép dưới, mép phải 15 - 20 mi-li-mét (mm), cách mép trái 30 - 35 mi-li-mét (mm).
+
+4. Phông chữ: Phông chữ tiếng Việt, kiểu chữ Times New Roman, bộ mã ký tự Unicode theo Tiêu chuẩn Việt Nam TCVN 6909:2001, màu đen.
+
+5. Cỡ chữ và kiểu chữ: Theo quy định cụ thể cho từng thành phần thể thức theo Phần III, Mục 1 Phụ lục này.
+
+6. Vị trí trình bày các thành phần thể thức được thực hiện theo Phần IV, Mục 1 Phụ lục này.
+
+7. Trang của văn bản được đánh số thứ tự bằng số Ả Rập, cỡ chữ 13, kiểu chữ đứng, không hiển thị số trang thứ nhất, đặt canh giữa theo chiều ngang trong phần lề trên của văn bản.
+
+Số trang của văn bản được ban hành kèm theo được đánh số riêng theo từng văn bản.
+
+Số trang của Phụ lục được đánh số riêng theo từng Phụ lục.
+
+II. CÁC THÀNH PHẦN THỂ THỨC CHÍNH
+
+1. Phần mở đầu, Quốc hội và Tiêu ngữ trong văn bản quy phạm pháp luật
+
+a) Phần mở đầu của văn bản quy phạm pháp luật gồm có Quốc hiệu; Tiêu ngữ; tên cơ quan, người có thẩm quyền ban hành văn bản; số, ký hiệu của văn bản; tên văn bản và căn cứ ban hành văn bản.
+
+b) Phần mở đầu văn bản được ban hành kèm theo văn bản khác (quy định/quy chế/điều lệ/danh mục) gồm có Quốc hiệu; Tiêu ngữ; tên cơ quan, người có thẩm
+[[trang 2]]
+quyền ban hành văn bản; tên văn bản. Dưới tên văn bản được ban hành kèm theo phải ghi rõ tên, số, ký hiệu và ngày, tháng, năm ban hành của văn bản ban hành kèm theo.
+
+c) Quốc hiệu: "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM" được trình bày bằng chữ in hoa, cỡ chữ 12 - 13, kiểu chữ đứng, đậm và ở phía trên cùng, bên phải trang đầu tiên của văn bản.
+
+d) Tiêu ngữ: "Độc lập - Tự do - Hạnh phúc" được trình bày bằng chữ in thường, cỡ chữ 13 - 14, kiểu chữ đứng, đậm và được canh giữa liền phía dưới Quốc hiệu; chữ cái đầu của các cụm từ được viết hoa, giữa các cụm từ có gạch nối (-), có cách chữ; phía dưới có đường kẻ ngang, nét liền, có độ dài bằng độ dài của dòng chữ.
+
+2. Tên cơ quan, người có thẩm quyền ban hành văn bản quy phạm pháp luật
+
+a) Tên cơ quan, người có thẩm quyền ban hành văn bản là tên chính thức, đầy đủ của cơ quan hoặc chức danh nhà nước của người có thẩm quyền ban hành văn bản theo quy định của Luật Ban hành văn bản quy phạm pháp luật.
+
+b) Tên cơ quan hoặc chức danh nhà nước của người có thẩm quyền ban hành văn bản được trình bày trên một dòng bằng chữ in hoa, cỡ chữ 12 - 13, kiểu chữ đứng, đậm, đặt cân đối ở phía trên cùng, bên trái trang đầu tiên của văn bản; phía dưới có đường kẻ ngang, nét liền, có độ dài bằng 1/3 đến 1/2 độ dài của dòng chữ và đặt ở giữa, cân đối với dòng chữ.
+
+Đối với lệnh, quyết định của Chủ tịch nước, phía trên chức danh Chủ tịch nước trình bày hình Quốc huy.
+
+3. Số, ký hiệu của văn bản quy phạm pháp luật
+
+a) Số, ký hiệu của luật, nghị quyết của Quốc hội, pháp lệnh, nghị quyết của Ủy ban Thường vụ Quốc hội gồm có loại văn bản, số thứ tự của văn bản, năm ban hành văn bản, tên viết tắt của cơ quan ban hành văn bản và số khóa Quốc hội.
+
+b) Số, ký hiệu của nghị quyết liên tịch, thông tư liên tịch gồm số thứ tự của văn bản, năm ban hành văn bản, tên viết tắt của loại văn bản, tên viết tắt của cơ quan cùng ban hành văn bản.
+
+Nghị quyết liên tịch giữa Ủy ban Thường vụ Quốc hội với Đoàn Chủ tịch Ủy ban Trung ương Mặt trận Tổ quốc Việt Nam; Nghị quyết liên tịch giữa Ủy ban Thường vụ Quốc hội, Chính phủ với Đoàn Chủ tịch Ủy ban Trung ương Mặt trận Tổ quốc Việt Nam được đánh số theo hệ thống quản lý văn bản quy phạm pháp luật của Ủy ban Thường vụ Quốc hội.
+[[trang 3]]
+Nghị quyết liên tịch giữa Chính phủ với Đoàn Chủ tịch Ủy ban Trung ương Mặt trận Tổ quốc Việt Nam được đánh số theo hệ thống quản lý văn bản quy phạm pháp luật của Chính phủ.
+
+c) Số, ký hiệu của lệnh, quyết định của Chủ tịch nước gồm có số thứ tự của văn bản, năm ban hành văn bản, tên viết tắt của loại văn bản, chữ viết tắt chức danh nhà nước của người có thẩm quyền ban hành văn bản.
+
+d) Số, ký hiệu của các văn bản quy phạm pháp luật khác gồm số thứ tự của văn bản, năm ban hành văn bản, tên viết tắt của loại văn bản, chữ viết tắt của cơ quan ban hành văn bản hoặc chức danh nhà nước của người có thẩm quyền ban hành văn bản.
+
+đ) Thể thức, kỹ thuật trình bày số, ký hiệu của văn bản quy phạm pháp luật:
+
+- Số, ký hiệu của văn bản được đặt canh giữa dưới tên cơ quan ban hành văn bản hoặc chức danh nhà nước của người có thẩm quyền ban hành văn bản. Các ký tự trong số, ký hiệu của văn bản được trình bày liền nhau, không cách chữ.
+
+- Ký hiệu của văn bản gồm chữ viết tắt tên loại văn bản và chữ viết tắt tên cơ quan hoặc chức danh nhà nước của người có thẩm quyền ban hành văn bản. Chữ viết tắt tên cơ quan hoặc chức danh nhà nước của người có thẩm quyền ban hành văn bản phải được quy định cụ thể, ngắn gọn, dễ hiểu, đúng quy định. Ký hiệu của văn bản được trình bày bằng chữ in hoa, cỡ chữ 13, kiểu chữ đứng. Giữa số và ký hiệu văn bản có dấu gạch chéo (/), giữa các nhóm chữ viết tắt trong ký hiệu văn bản có dấu gạch nối (-), không cách chữ.
+
+- Số của văn bản được ghi bằng chữ số Ả Rập, gồm số thứ tự đăng ký được đánh theo từng loại văn bản do cơ quan ban hành trong một năm và năm ban hành văn bản đó; bắt đầu liên tiếp từ số 01 và đánh số liên tiếp đến văn bản cuối cùng được ban hành trong năm; năm được tính từ ngày 01 tháng 01 và kết thúc vào ngày 31 tháng 12 của năm đó; trường hợp cơ quan ban hành được hình thành do việc sắp xếp, tổ chức bộ máy thì số 01 là số văn bản đầu tiên được tính kể từ ngày cơ quan ban hành chính thức hoạt động; năm ban hành phải ghi đầy đủ các số. Từ "Số" được trình bày bằng chữ in thường, cỡ chữ 13, kiểu chữ đứng; sau từ "Số" có dấu hai chấm (:); với những số nhỏ hơn 10 phải ghi thêm số 0 phía trước.
+
+- Số khóa Quốc hội được thể hiện bằng số Ả Rập. Giữa số, năm ban hành và ký hiệu của văn bản có dấu gạch chéo (/); giữa các nhóm chữ viết tắt trong ký hiệu văn bản của Chủ tịch nước, nghị quyết liên tịch có dấu gạch nối (-), không cách chữ.
+
+4. Tên văn bản quy phạm pháp luật
+
+a) Tên luật, pháp lệnh được trình bày bằng chữ in hoa, cỡ chữ 14, kiểu chữ đứng, đậm, đặt canh giữa theo chiều ngang của văn bản; tên loại văn bản, tên gọi của văn bản được trình bày trên các dòng riêng.
+[[trang 4]]
+b) Đối với các văn bản khác, tên văn bản được trình bày như sau:
+
+- Tên loại văn bản được trình bày bằng chữ in hoa, cỡ chữ 14, kiểu chữ đứng, đậm, đặt canh giữa theo chiều ngang của văn bản.
+
+- Tên gọi của văn bản được trình bày bằng chữ in thường, cỡ chữ 13 - 14, kiểu chữ đứng, đậm; đặt dưới tên loại văn bản và canh giữa theo chiều ngang của văn bản.
+
+c) Đối với văn bản được ban hành kèm theo, nội dung chú thích về việc ban hành văn bản kèm theo được đặt trong ngoặc đơn, trình bày bằng chữ in thường, cỡ chữ 13 - 14, kiểu chữ nghiêng, đặt canh giữa theo chiều ngang của văn bản và liền dưới tên văn bản.
+
+5. Thứ tự của điều khoản bổ sung và trật tự các điều khoản của văn bản được sửa đổi, bổ sung một số điều
+
+Căn cứ vào nội dung bổ sung để xác định vị trí của điều khoản bổ sung trong văn bản được sửa đổi, bổ sung. Số thứ tự của phần, chương, mục, tiểu mục, điều, khoản được bổ sung gồm phần số và phần chữ. Phần số được thể hiện theo số thứ tự của phần, chương, mục, tiểu mục, điều, khoản trong văn bản được sửa đổi, bổ sung một số điều. Phần chữ được sắp xếp theo thứ tự trong bảng chữ cái tiếng Việt vào sau số chỉ điều, khoản đứng liền trước đó.
+
+6. Địa danh, ngày, tháng, năm ban hành văn bản quy phạm pháp luật
+
+a) Trình bày địa danh:
+
+- Địa danh trong văn bản do cơ quan nhà nước ở trung ương ban hành (nếu có) là tên gọi của tỉnh, thành phố trực thuộc trung ương nơi cơ quan ban hành văn bản đóng trụ sở.
+
+- Địa danh ghi trên văn bản do các cơ quan nhà nước ở địa phương ban hành là tên gọi chính thức của đơn vị hành chính của cơ quan ban hành văn bản.
+
+- Đối với những đơn vị hành chính được đặt theo tên người, bằng chữ số hoặc sự kiện lịch sử thì phải ghi tên gọi đầy đủ của đơn vị hành chính của cơ quan ban hành văn bản.
+
+b) Trình bày ngày, tháng, năm ban hành văn bản:
+
+Ngày, tháng, năm ban hành văn bản là ngày, tháng, năm văn bản được thông qua hoặc ký ban hành. Ngày, tháng, năm ban hành văn bản phải được viết đầy đủ; các số thể hiện ngày, tháng, năm dùng số Ả Rập; đối với số nhỏ hơn 10 và các tháng 1, 2 thì thêm số 0 phía trước.
+[[trang 5]]
+Địa danh, ngày, tháng, năm ban hành văn bản quy phạm pháp luật, trừ văn bản của Quốc hội, Ủy ban Thường vụ Quốc hội, Hội đồng nhân dân, được trình bày trên cùng một dòng với số, ký hiệu của văn bản, bằng chữ in thường, cỡ chữ 13 - 14, kiểu chữ nghiêng; sau địa danh có dấu phẩy (,); đặt phía dưới, ở giữa, cân đối với Quốc hiệu và Tiêu ngữ.
+
+c) Thông tin về thời điểm Quốc hội thông qua luật, nghị quyết; Hội đồng nhân dân thông qua nghị quyết được trình bày bằng chữ in thường, cỡ chữ 13 - 14, kiểu chữ nghiêng, đặt phía dưới điều cuối cùng của văn bản. Số chỉ khóa Quốc hội, Hội đồng nhân dân dùng số La Mã; số chỉ kỳ họp Quốc hội, Hội đồng nhân dân dùng số Ả Rập, trừ kỳ họp thứ nhất.
+
+Điều cuối cùng của luật, nghị quyết của Quốc hội và thông tin về thời điểm Quốc hội thông qua văn bản được phân cách bằng đường kẻ ngang liền từ lề trái đến lề phải.
+
+7. Ký văn bản quy phạm pháp luật
+
+a) Chức vụ của người có thẩm quyền ký văn bản theo quy định của pháp luật và phải được thể hiện đầy đủ trong văn bản.
+
+- Chức vụ của người có thẩm quyền ký chứng thực luật, nghị quyết của Quốc hội, nghị quyết của Hội đồng nhân dân được đặt cân đối phía bên phải theo chiều ngang của văn bản, phía dưới phần thông tin về thời điểm Quốc hội, Hội đồng nhân dân thông qua văn bản.
+
+- Chức vụ của người có thẩm quyền ký pháp lệnh, nghị quyết của Ủy ban Thường vụ Quốc hội, quyết định của Chủ tịch nước được đặt cân đối phía bên phải theo chiều ngang của văn bản, phía dưới điều cuối cùng của pháp lệnh, nghị quyết của Ủy ban Thường vụ Quốc hội, quyết định của Chủ tịch nước; đối với lệnh của Chủ tịch nước, chức vụ của người có thẩm quyền ký văn bản phía dưới nội dung cuối cùng của lệnh của Chủ tịch nước.
+
+- Chức vụ những người có thẩm quyền ký nghị quyết liên tịch được trình bày phía dưới điều cuối cùng của văn bản, theo chiều ngang và đặt cân đối đều hai bên của trang văn bản.
+
+- Chức vụ của người có thẩm quyền ký nghị định, nghị quyết của Chính phủ, nghị quyết của Hội đồng Thẩm phán Tòa án nhân dân tối cao, quyết định của Ủy ban nhân dân, Chủ tịch Ủy ban nhân dân được đặt cân đối phía bên phải theo chiều ngang của văn bản, phía dưới điều cuối cùng của văn bản quy phạm pháp luật.
+
+- Đối với nghị định, nghị quyết của Chính phủ thì Thủ tướng Chính phủ thay mặt Chính phủ ký; đối với nghị quyết của Hội đồng Thẩm phán Tòa án nhân dân tối cao thì Chánh án Tòa án nhân dân tối cao thay mặt Hội đồng Thẩm phán Tòa án nhân dân tối cao ký; đối với quyết định của Ủy ban nhân dân các cấp thì Chủ tịch Ủy ban nhân dân thay mặt Ủy ban nhân dân ký và phải ghi chữ "TM." vào trước từ "Chính phủ", "Hội đồng Thẩm phán", "Ủy ban nhân dân".
+[[trang 6]]
+- Đối với nghị quyết liên tịch thì phải ghi rõ tên cơ quan và chức vụ của người ký văn bản. Đối với nghị quyết liên tịch thì Chủ tịch Quốc hội thay mặt Ủy ban Thường vụ Quốc hội, Thủ tướng Chính phủ thay mặt Chính phủ, Chủ tịch Ủy ban Trung ương Mặt trận Tổ quốc Việt Nam thay mặt Đoàn Chủ tịch Ủy ban Trung ương Mặt trận Tổ quốc Việt Nam ký và phải ghi chữ "TM." trước chữ "Ủy ban Thường vụ Quốc hội", "Chính phủ", "Đoàn Chủ tịch Ủy ban Trung ương Mặt trận Tổ quốc Việt Nam".
+
+- Đối với quyết định của Thủ tướng Chính phủ, thông tư của Bộ trưởng, Thủ trưởng cơ quan ngang bộ, thông tư của Chánh án Tòa án nhân dân tối cao, Viện trưởng Viện kiểm sát nhân dân tối cao, Tổng Kiểm toán nhà nước, Chủ tịch Ủy ban nhân dân cấp tỉnh thì ghi chức vụ của người ký văn bản.
+
+- Đối với thông tư liên tịch thì Chánh án Tòa án nhân dân tối cao, Viện trưởng Viện kiểm sát nhân dân tối cao, Tổng Kiểm toán nhà nước, Bộ trưởng, Thủ trưởng cơ quan ngang bộ cùng ký. Chức vụ của người đứng đầu cơ quan chủ trì được trình bày phía bên phải; chức vụ của người đứng đầu cơ quan cùng ký văn bản được trình bày phía bên trái.
+
+- Đối với nghị quyết của Hội đồng nhân dân các cấp thì Chủ tịch Hội đồng nhân dân ký.
+
+b) Chức vụ của người có thẩm quyền ký văn bản được trình bày bằng chữ in hoa, cỡ chữ 13, kiểu chữ đứng, đậm.
+
+Các chữ "TM.", "KT." hoặc "Q.", quyền hạn và chức vụ của người ký được trình bày bằng chữ in hoa, cỡ chữ từ 13, kiểu chữ đứng, đậm.
+
+Trường hợp cơ quan, người có thẩm quyền ký văn bản quy phạm pháp luật quy định tại Mục 7, Phần II Phụ lục này giao cấp phó ký thay văn bản thì phải ghi chữ "KT." vào trước chức vụ của người có thẩm quyền ký văn bản.
+
+c) Họ và tên của người ký văn bản được trình bày bằng chữ in thường, cỡ chữ 13 - 14, kiểu chữ đứng, đậm, được đặt ở giữa, cân đối so với quyền hạn, chức vụ của người ký.
+
+8. Dấu và nơi nhận trên văn bản quy phạm pháp luật
+
+a) Dấu được đóng trên văn bản quy phạm pháp luật sau khi người có thẩm quyền ký văn bản. Việc đóng dấu trên văn bản được thực hiện theo quy định của pháp luật về công tác văn thư.
+
+Việc xác định và đóng dấu đối với văn bản có nội dung bí mật nhà nước được thực hiện theo quy định của pháp luật bảo vệ bí mật nhà nước.
+
+b) Tùy theo nội dung của văn bản, nơi nhận văn bản có thể gồm:
+
+- Cơ quan giám sát, kiểm tra việc triển khai thi hành văn bản;
+
+- Cơ quan công báo;
+[[trang 7]]
+- Cơ quan trực tiếp chịu trách nhiệm triển khai thi hành văn bản;
+
+- Cơ quan, tổ chức, cá nhân khác có liên quan;
+
+- Đơn vị lưu văn bản và đơn vị soạn thảo văn bản.
+
+c) Từ "Nơi nhận" được trình bày trên một dòng riêng (ngang hàng với dòng chữ "quyền hạn, chức vụ của người ký" và sát lề trái), sau có dấu hai chấm (:), bằng chữ in thường, cỡ chữ 12, kiểu chữ nghiêng, đậm.
+
+- Phần liệt kê các cơ quan, tổ chức, đơn vị và cá nhân nhận văn bản được trình bày bằng chữ in thường, cỡ chữ 11, kiểu chữ đứng; tên mỗi cơ quan, tổ chức, đơn vị và cá nhân hoặc mỗi nhóm cơ quan, tổ chức, đơn vị nhận văn bản được trình bày trên một dòng riêng, đầu dòng có gạch đầu dòng (-) sát lề trái, cuối dòng có dấu chấm phẩy (;).
+
+- Dòng cuối cùng bao gồm chữ "Lưu" sau có dấu hai chấm (:), tiếp theo là chữ viết tắt "VT", dấu phẩy (,), chữ viết tắt tên đơn vị (hoặc bộ phận) soạn thảo văn bản và số lượng bản lưu, cuối cùng là dấu chấm (.).
+
+III. PHẦN NỘI DUNG VĂN BẢN QUY PHẠM PHÁP LUẬT
+
+1. Trình bày căn cứ ban hành văn bản
+
+Căn cứ ban hành văn bản được trình bày bằng chữ in thường, cỡ chữ 14, kiểu chữ nghiêng và dưới phần tên của văn bản; sau mỗi căn cứ phải xuống dòng, cuối dòng có dấu chấm phẩy (;).
+
+a) Đối với luật, pháp lệnh, nghị quyết liên tịch, phía dưới phần căn cứ ban hành văn bản trình bày nội dung: tên cơ quan ban hành văn bản hoặc tên các cơ quan cùng ban hành văn bản, theo sau là cụm từ "ban hành" và tên văn bản, bằng chữ in thường, cỡ chữ 14, kiểu chữ nghiêng, kết thúc là dấu chấm (.).
+
+b) Đối với nghị quyết của Quốc hội, nghị quyết của Ủy ban Thường vụ Quốc hội thì căn cứ ban hành văn bản được trình bày dưới tên cơ quan ban hành văn bản; phía dưới phần căn cứ ban hành văn bản trình bày cụm từ "QUYẾT NGHỊ" bằng chữ in hoa, cỡ chữ 14, kiểu chữ đứng, đậm, trên một dòng riêng, sau có dấu hai chấm (:), đặt canh giữa theo chiều ngang của văn bản.
+
+c) Đối với lệnh, quyết định của Chủ tịch nước, căn cứ ban hành văn bản được trình bày dưới tên cơ quan ban hành văn bản; phía dưới phần căn cứ ban hành đối với lệnh của Chủ tịch nước trình bày từ "LỆNH" hoặc cụm từ "NAY..."; đối với quyết định của Chủ tịch nước trình bày cụm từ "QUYẾT ĐỊNH", bằng chữ in hoa, cỡ chữ 14, kiểu chữ đứng, đậm, trên một dòng riêng, sau có dấu hai chấm (:), đặt canh giữa theo chiều ngang của văn bản.
+
+d) Đối với nghị định, nghị quyết của Chính phủ, quyết định của Thủ tướng Chính phủ, nghị quyết của Hội đồng Thẩm phán Tòa án nhân dân tối cao, thông
+[[trang 8]]
+tư của Bộ trưởng, Thủ trưởng cơ quan ngang bộ, thông tư của Chánh án Tòa án nhân dân tối cao, thông tư của Viện trưởng Viện Kiểm sát nhân dân tối cao, thông tư của Tổng Kiểm toán nhà nước, thông tư liên tịch thì phía dưới phần căn cứ ban hành văn bản trình bày nội dung: tên cơ quan ban hành văn bản hoặc tên các cơ quan cùng ban hành văn bản, theo sau là cụm từ "ban hành" và tên văn bản, bằng chữ in thường, cỡ chữ 14, kiểu chữ nghiêng, kết thúc là dấu chấm (.). Khi trình bày tên văn bản quy phạm pháp luật trong phần căn cứ phải ghi tên loại văn bản, số, ký hiệu văn bản, tên cơ quan ban hành và tên gọi của văn bản.
+
+đ) Đối với nghị quyết của Hội đồng nhân dân các cấp; quyết định của Ủy ban nhân dân các cấp; quyết định của Chủ tịch Ủy ban nhân dân cấp tỉnh thì phía dưới phần căn cứ ban hành văn bản trình bày nội dung: tên cơ quan ban hành văn bản theo sau là cụm từ "ban hành" và tên văn bản, bằng chữ in thường, cỡ chữ 14, kiểu chữ nghiêng, kết thúc là dấu chấm (.). Khi trình bày tên văn bản quy phạm pháp luật của Hội đồng nhân dân, Ủy ban nhân dân các cấp, Chủ tịch Ủy ban nhân dân cấp tỉnh trong phần căn cứ phải ghi tên loại văn bản, số, ký hiệu văn bản, tên cơ quan ban hành và tên gọi của văn bản.
+
+2. Trình bày nội dung văn bản
+
+a) Nội dung văn bản được trình bày bằng chữ in thường, cỡ chữ 13 - 14, kiểu chữ đứng, dàn đều cả hai lề; khi xuống dòng, chữ đầu dòng lùi vào từ 1 cen-ti-mét (cm) đến 1,27 cen-ti-mét (cm); khoảng cách giữa các đoạn tối thiểu là 6 point (pt); khoảng cách giữa các dòng tối thiểu từ cách dòng đơn, tối đa là 1,5 lines.
+
+b) Thể thức văn bản trình bày như sau:
+
+- Từ "Phần", "Chương" và số thứ tự của phần, chương được trình bày bằng chữ in thường, cỡ chữ 13 - 14, kiểu chữ đứng, đậm, trên một dòng riêng, đặt canh giữa theo chiều ngang của văn bản. Số thứ tự của phần, chương dùng số La Mã. Tên của phần, chương được trình bày phía dưới, bằng chữ in hoa, cỡ chữ 14, kiểu chữ đứng, đậm, đặt canh giữa theo chiều ngang của văn bản.
+
+- Từ "Mục", "Tiểu mục" và số thứ tự của mục, tiểu mục được trình bày bằng chữ in thường, cỡ chữ 13 - 14, kiểu chữ đứng, đậm, trên một dòng riêng, đặt canh giữa theo chiều ngang của văn bản. Số thứ tự của mục, tiểu mục dùng số Ả Rập. Tên của mục, tiểu mục được trình bày phía dưới, bằng chữ in hoa, cỡ chữ 13 - 14, kiểu chữ đứng, đậm, đặt canh giữa theo chiều ngang của văn bản.
+
+- Từ "Điều", số thứ tự và tên của điều được trình bày bằng chữ in thường, cỡ chữ 13 - 14, kiểu chữ đứng, đậm, cách lề trái 1 cen-ti-mét (cm) đến 1,27 cen-ti-mét (cm). Số thứ tự của điều dùng số Ả Rập, sau số thứ tự có dấu chấm (.).
+
+- Số thứ tự các khoản trong mỗi điều dùng số Ả Rập, sau số thứ tự có dấu chấm (.), cỡ chữ 13 - 14, kiểu chữ đứng. Trường hợp khoản có tên, số thứ tự và tên của khoản được trình bày bằng chữ in thường, cỡ chữ 13 - 14, kiểu chữ đứng, trên một dòng riêng.
+[[trang 9]]
+- Các điểm trong mỗi khoản dùng chữ cái tiếng Việt theo thứ tự bảng chữ cái tiếng Việt, sau chữ cái có dấu đóng ngoặc đơn, được trình bày bằng chữ in thường, cỡ chữ 13 - 14, kiểu chữ đứng.
+
+3. Phụ lục trong văn bản quy phạm pháp luật
+
+a) Trường hợp văn bản có Phụ lục kèm theo thì trong văn bản phải chỉ dẫn về Phụ lục đó. Văn bản có từ hai Phụ lục trở lên thì các Phụ lục phải được đánh số thứ tự bằng chữ số La Mã.
+
+b) Từ "Phụ lục" và số thứ tự của Phụ lục được trình bày thành một dòng riêng, canh giữa, bằng chữ in thường, cỡ chữ 13 - 14, kiểu chữ đứng, đậm; tên Phụ lục (nếu có) được trình bày canh giữa, bằng chữ in hoa, cỡ chữ 13 - 14, kiểu chữ đứng, đậm.
+
+c) Thông tin chỉ dẫn kèm theo văn bản trên mỗi Phụ lục được ban hành bao gồm: số, ký hiệu văn bản, thời gian ban hành văn bản và tên cơ quan, tổ chức ban hành văn bản. Thông tin chỉ dẫn kèm theo văn bản được canh giữa phía dưới tên của Phụ lục, chữ in thường, cỡ chữ 13 - 14, kiểu chữ nghiêng, cùng phông chữ với nội dung văn bản.
+[[trang 10]]
+IV. SƠ ĐỒ BỐ TRÍ CÁC THÀNH PHẦN THỂ THỨC VĂN BẢN
+(Trên một trang giấy khổ A4: 210 mm x 297 mm)
+
+[Hình vẽ - mô tả bằng lời, không phải chữ in trong văn bản:]
+  Mũi tên lề trên ghi "20-25 mm"; mũi tên lề dưới ghi "20-25 mm";
+  mũi tên lề trái ghi "30-35 mm"; mũi tên lề phải ghi "15-20 mm".
+  Hàng đầu: ô 2 (trái) | ô 1 "Quốc hiệu" (phải).
+  Hàng hai: ô 3 (trái) | ô 4 (phải).
+  Giữa: ô 5. Trái, dưới ô 3: ô 10.
+  Thân: ô 6.
+  Cuối trang: ô 9 (trái, có ô 11 ở góc dưới phải của ô 9); bên phải: ô 7a, dưới là ô 8 (hình tròn) và ô 7c, dưới cùng ô 7b.
+
+!!! MÂU THUẪN TRONG VĂN BẢN GỐC (ghi nhận, không tự giải quyết):
+    Mục I.3 (trang 1) ghi "Cách mép trên và mép dưới, mép phải 15 - 20 mi-li-mét (mm)",
+    nhưng sơ đồ Phần IV (trang 10) ghi lề trên và lề dưới "20-25 mm".
+    Lề trái 30-35 mm và lề phải 15-20 mm thống nhất giữa hai chỗ.
+[[trang 11]]
+Ghi chú:
+Ô số : Thành phần thể thức văn bản
+1 : Quốc hiệu và Tiêu ngữ
+2 : Tên cơ quan, tổ chức ban hành văn bản
+3 : Số, ký hiệu của văn bản
+4 : Địa danh và ngày, tháng, năm ban hành văn bản
+5 : Tên văn bản
+6 : Nội dung văn bản
+7a, 7b, 7c : Chức vụ, họ và tên và chữ ký của người có thẩm quyền
+8 : Dấu của cơ quan, tổ chức
+9 : Nơi nhận
+10 : Dấu chỉ mức độ mật
+11 : Ký hiệu người đánh máy và số lượng bản phát hành
+
+[[trang 12-16]]
+Mục 2 - VIẾT HOA TRONG VĂN BẢN QUY PHẠM PHÁP LUẬT (trang PDF 51-55): CHƯA CHÉP LẠI trong tệp này.
+Không có quy tắc nào trong mã nguồn được dẫn chiếu tới Mục 2 này.
