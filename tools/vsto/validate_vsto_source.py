@@ -413,10 +413,17 @@ def validate() -> dict:
     if language_group is None or language_group.get("autoScale") != "false":
         raise RuntimeError("Language actions must disable label-hiding auto-scaling.")
     language_actions = list(language_group)
+    # Three normal controls form one column, so the group stays expanded beside the
+    # large Settings/Information buttons on a full-width ribbon instead of collapsing.
     if [control.get("id") for control in language_actions] != [
-        "mnuBoDau", "btnDoiDauThapPhan", "btnNoiDong", "btnTuDienCaNhan"
+        "mnuBoDau", "btnDoiDauThapPhan", "btnNoiDong"
     ] or any(control.get("size") != "normal" or control.get("showLabel") != "true" for control in language_actions):
-        raise RuntimeError("Language actions must be four direct normal-sized controls with explicit visible labels.")
+        raise RuntimeError("Language actions must be three direct normal-sized controls with explicit visible labels.")
+    settings_group = ribbon_elements.get("grpAbout")
+    if settings_group is None or [control.get("id") for control in settings_group] != [
+        "btnThietLap", "btnTuDienCaNhan"
+    ] or any(control.get("size") != "large" for control in settings_group):
+        raise RuntimeError("Personal dictionary must be a large button beside Thiết lập in the Settings group.")
     if "boxLanguageActions" in ribbon_elements:
         raise RuntimeError("Language actions must not use an indivisible vertical wrapper.")
 

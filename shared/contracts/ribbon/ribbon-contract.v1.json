@@ -2075,7 +2075,7 @@
       }
     },
     {
-      "groupId": "grpChinhTaSo",
+      "groupId": "grpAbout",
       "parentContainerId": null,
       "controlType": "button",
       "id": "btnTuDienCaNhan",
