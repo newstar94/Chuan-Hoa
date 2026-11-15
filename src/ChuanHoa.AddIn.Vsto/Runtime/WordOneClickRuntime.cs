@@ -184,6 +184,13 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 // below is recorded so later operations map their offsets to the
                 // current document (no Paragraphs[i] lookups, which are O(n) each).
                 s_tracker = new MainStoryEditTracker();
+                // Headings of the technical blocks are detected once, from the same
+                // snapshot the scanner used, so no step below formats them as body
+                // text (1 cm first-line indent, justified) before the technical
+                // profile gives them heading spacing.
+                var technicalHeadings = DetectTechnicalHeadings(local, blocks, roles);
+                var technicalHeadingIndexes = new HashSet<int>(
+                    technicalHeadings.Select(heading => heading.ParagraphIndex));
                 operation?.ReportProgress(0, 4, "sửa chữ");
                 correctedSpellingItems = ApplyDeterministicSpellingFixes(document, local,
                     formatFindings.Concat(spellingFindings).ToArray(), rules, blocks,
@@ -192,11 +199,14 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                     document, local, formatFindings, roles);
                 operation?.ReportProgress(1, 4, "định dạng đoạn");
                 changedParagraphs += ApplyExplicitFormatFindingFixes(document, local,
-                    formatFindings, rules, blocks, roles);
+                    formatFindings, rules, blocks, roles, technicalHeadingIndexes);
                 normalizedSections = NormalizeSections(document, local, rules);
                 NormalizeHeaderLayoutTables(document, local, roles, blocks);
-                changedParagraphs += ApplyParagraphFormats(document, local, roles, rules, blocks);
-                changedParagraphs += ApplyTechnicalDocumentProfile(document, local, blocks, roles);
+                changedParagraphs += ApplyParagraphFormats(document, local, roles, rules, blocks,
+                    technicalHeadingIndexes);
+                changedParagraphs += ApplyTechnicalDocumentProfile(document, local, blocks, roles,
+                    technicalHeadings, rules);
+                changedParagraphs += NormalizeTechnicalTableText(document, local, blocks, roles, rules);
 
                 operation?.ReportProgress(2, 4, "bảng và số trang");
                 EnsurePageNumbers(document, local, rules, blocks);
@@ -287,7 +297,7 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         /// </summary>
         private static int ApplyParagraphFormats(Word.Document document, LocalScanSnapshot snapshot,
             IReadOnlyDictionary<int, string> roles, LocalRulePack rules,
-            IReadOnlyList<LogicalDocumentBlock> blocks)
+            IReadOnlyList<LogicalDocumentBlock> blocks, ISet<int> technicalHeadings)
         {
             var party = IsParty(snapshot);
             var changed = 0;
@@ -301,6 +311,17 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 string role;
                 roles.TryGetValue(paragraph.Index, out role);
                 role = role ?? string.Empty;
+                if (role.Length == 0 && technicalHeadings.Contains(paragraph.Index))
+                {
+                    // A technical heading is formatted by ApplyTechnicalDocumentProfile;
+                    // it must not join a body run (no 1 cm indent, no justification).
+                    if (run.Count > 0)
+                    {
+                        changed += FormatBodyRun(document, snapshot, run, runSize, rules, party);
+                        run.Clear();
+                    }
+                    continue;
+                }
                 float size;
                 if (IsPlainBodyParagraph(paragraph, role, snapshot, party, out size))
                 {
@@ -425,34 +446,21 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
         /// Text is never changed.
         /// </summary>
         private static int ApplyTechnicalDocumentProfile(Word.Document document, LocalScanSnapshot snapshot,
-            IReadOnlyList<LogicalDocumentBlock> blocks, IReadOnlyDictionary<int, string> roles)
+            IReadOnlyList<LogicalDocumentBlock> blocks, IReadOnlyDictionary<int, string> roles,
+            IReadOnlyList<DetectedHeading> headings, LocalRulePack rules)
         {
-            var technical = blocks.Where(block => !block.IsAdministrative).ToArray();
-            if (technical.Length == 0) return 0;
-            var main = snapshot.Paragraphs
-                .Where(p => string.Equals(p.StoryType, "wdMainTextStory", StringComparison.Ordinal) &&
-                    technical.Any(block => block.ContainsParagraph(p.Index)))
-                .OrderBy(p => p.Index)
-                .ToList();
+            var main = TechnicalMainParagraphs(snapshot, blocks);
             if (main.Count == 0) return 0;
             var byIndex = main.GroupBy(p => p.Index).ToDictionary(group => group.Key, group => group.First());
-            var blockIds = new Dictionary<int, string>();
-            foreach (var paragraph in main)
-            {
-                var owner = technical.First(block => block.ContainsParagraph(paragraph.Index));
-                blockIds[paragraph.Index] = "B" + owner.StartParagraphIndex.ToString(CultureInfo.InvariantCulture);
-            }
 
             var changed = 0;
-            var headings = new HeadingDetector().Detect(main, new HeadingDetectionContext(roles, blockIds));
+            var party = IsParty(snapshot);
             foreach (var heading in headings)
             {
                 LocalParagraphSnapshot paragraph;
                 if (!byIndex.TryGetValue(heading.ParagraphIndex, out paragraph) ||
                     snapshot.IntersectsProtectedSpan(paragraph)) continue;
-                var first = heading.Level <= 1;
-                if (SetKeepAndSpacing(document, paragraph, true, true,
-                        first ? 12f : 6f, first ? 6f : 3f))
+                if (ApplyTechnicalHeadingFormat(document, paragraph, heading.Level, rules, party))
                     changed++;
             }
 
@@ -479,6 +487,159 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 }
             }
             return changed;
+        }
+
+        /// <summary>
+        /// Main-story paragraphs of the blocks that are not administrative
+        /// documents, in document order.
+        /// </summary>
+        private static List<LocalParagraphSnapshot> TechnicalMainParagraphs(LocalScanSnapshot snapshot,
+            IReadOnlyList<LogicalDocumentBlock> blocks)
+        {
+            var technical = blocks.Where(block => !block.IsAdministrative).ToArray();
+            if (technical.Length == 0) return new List<LocalParagraphSnapshot>();
+            return snapshot.Paragraphs
+                .Where(p => string.Equals(p.StoryType, "wdMainTextStory", StringComparison.Ordinal) &&
+                    technical.Any(block => block.ContainsParagraph(p.Index)))
+                .OrderBy(p => p.Index)
+                .ToList();
+        }
+
+        /// <summary>
+        /// Headings of the technical blocks ("1 Giới thiệu", "9.2 Nội dung..."),
+        /// detected with the same <see cref="HeadingDetector"/> the format scanner
+        /// uses, so the scanner and 1-Click agree on which paragraphs are headings.
+        /// </summary>
+        private static IReadOnlyList<DetectedHeading> DetectTechnicalHeadings(LocalScanSnapshot snapshot,
+            IReadOnlyList<LogicalDocumentBlock> blocks, IReadOnlyDictionary<int, string> roles)
+        {
+            var main = TechnicalMainParagraphs(snapshot, blocks);
+            if (main.Count == 0) return Array.Empty<DetectedHeading>();
+            var technical = blocks.Where(block => !block.IsAdministrative).ToArray();
+            var blockIds = new Dictionary<int, string>();
+            foreach (var paragraph in main)
+            {
+                var owner = technical.First(block => block.ContainsParagraph(paragraph.Index));
+                blockIds[paragraph.Index] = "B" + owner.StartParagraphIndex.ToString(CultureInfo.InvariantCulture);
+            }
+            return new HeadingDetector().Detect(main, new HeadingDetectionContext(roles, blockIds));
+        }
+
+        /// <summary>
+        /// Heading format of the technical profile: the body font in black at the
+        /// body size, no first-line indent (a heading is not a body paragraph),
+        /// kept with the next paragraph and its lines together, 12/6 pt around a
+        /// level-1 heading and 6/3 pt below. Bold, italic and alignment are kept.
+        /// </summary>
+        private static bool ApplyTechnicalHeadingFormat(Word.Document document, LocalParagraphSnapshot paragraph,
+            int level, LocalRulePack rules, bool party)
+        {
+            Word.Range? range = null;
+            Word.Font? font = null;
+            Word.ParagraphFormat? format = null;
+            try
+            {
+                range = ResolveCurrentMainParagraphRange(document, paragraph);
+                font = range.Font;
+                font.Name = rules.BodyFontName;
+                font.Color = Word.WdColor.wdColorAutomatic;
+                font.Size = party ? 14f : ValidOr(paragraph.FontSizePoints, 13, 14, 14);
+                format = range.ParagraphFormat;
+                format.LeftIndent = 0f;
+                format.RightIndent = 0f;
+                format.FirstLineIndent = 0f;
+                format.KeepWithNext = -1;
+                format.KeepTogether = -1;
+                format.WidowControl = -1;
+                var first = level <= 1;
+                format.SpaceBeforeAuto = 0;
+                format.SpaceAfterAuto = 0;
+                format.SpaceBefore = first ? 12f : 6f;
+                format.SpaceAfter = first ? 6f : 3f;
+                if (party)
+                {
+                    format.LineSpacingRule = Word.WdLineSpacing.wdLineSpaceExactly;
+                    format.LineSpacing = 18f;
+                }
+                else
+                {
+                    format.LineSpacingRule = Word.WdLineSpacing.wdLineSpaceMultiple;
+                    format.LineSpacing = 14.4f;
+                }
+                return true;
+            }
+            catch (Exception exception) when (exception is COMException ||
+                exception is InvalidOperationException)
+            {
+                return false;
+            }
+            finally { Release(format); Release(font); Release(range); }
+        }
+
+        /// <summary>
+        /// Text inside the data tables of the technical blocks: the body font in
+        /// black, at one size per table within the body range (13–14 pt; a table
+        /// generated at 11,5 or 12 pt becomes 14 pt). Tables holding a recognized
+        /// component (header layout tables) and tables of administrative blocks are
+        /// left alone. Returns the number of cell paragraphs covered.
+        /// </summary>
+        private static int NormalizeTechnicalTableText(Word.Document document, LocalScanSnapshot snapshot,
+            IReadOnlyList<LogicalDocumentBlock> blocks, IReadOnlyDictionary<int, string> roles,
+            LocalRulePack rules)
+        {
+            var technical = blocks.Where(block => !block.IsAdministrative).ToArray();
+            if (technical.Length == 0) return 0;
+            var cellParagraphs = snapshot.Paragraphs
+                .Where(p => p.IsInTable && p.TableIndex.HasValue &&
+                    string.Equals(p.StoryType, "wdMainTextStory", StringComparison.Ordinal))
+                .ToArray();
+            if (cellParagraphs.Length == 0) return 0;
+            var excludedTables = new HashSet<int>(cellParagraphs
+                .Where(p => roles.ContainsKey(p.Index) ||
+                    !technical.Any(block => block.ContainsParagraph(p.Index)) ||
+                    snapshot.IntersectsProtectedSpan(p))
+                .Select(p => p.TableIndex!.Value));
+            var party = IsParty(snapshot);
+            var count = 0;
+            Word.Tables? tables = null;
+            try
+            {
+                tables = document.Tables;
+                var tableCount = tables.Count;
+                foreach (var group in cellParagraphs.GroupBy(p => p.TableIndex!.Value).OrderBy(g => g.Key))
+                {
+                    var tableIndex = group.Key;
+                    if (tableIndex < 1 || tableIndex > tableCount || excludedTables.Contains(tableIndex)) continue;
+                    var paragraphs = group.Where(p => !string.IsNullOrWhiteSpace(p.Text)).ToArray();
+                    if (paragraphs.Length == 0) continue;
+                    // One size per table: the size most cells already use when it is
+                    // within the body range, otherwise the body default.
+                    var dominant = paragraphs
+                        .Where(p => p.FontSizePoints.HasValue && p.FontSizePoints.Value > 0 && p.FontSizePoints.Value < 1000)
+                        .GroupBy(p => Math.Round(p.FontSizePoints!.Value, 1))
+                        .OrderByDescending(g => g.Count()).ThenBy(g => g.Key)
+                        .Select(g => (double?)g.Key)
+                        .FirstOrDefault();
+                    var size = party ? 14f : ValidOr(dominant, 13, 14, 14);
+                    Word.Table? table = null;
+                    Word.Range? range = null;
+                    Word.Font? font = null;
+                    try
+                    {
+                        table = tables[tableIndex];
+                        range = table.Range;
+                        font = range.Font;
+                        font.Name = rules.BodyFontName;
+                        font.Color = Word.WdColor.wdColorAutomatic;
+                        font.Size = size;
+                        count += paragraphs.Length;
+                    }
+                    catch (COMException) { }
+                    finally { Release(font); Release(range); Release(table); }
+                }
+            }
+            finally { Release(tables); }
+            return count;
         }
 
         private static bool SetKeepAndSpacing(Word.Document document, LocalParagraphSnapshot paragraph,
@@ -962,6 +1123,16 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             string explicitRole;
             if (TryResolveExplicitFindingRole(finding.RuleCode, role, out explicitRole))
                 role = explicitRole;
+            if (string.IsNullOrEmpty(role) && !paragraph.IsInTable)
+            {
+                // "Sửa lỗi đang chọn" on a technical heading applies the heading
+                // format, the same as 1-Click, not the body format.
+                var heading = DetectTechnicalHeadings(snapshot, blocks, roles)
+                    .FirstOrDefault(item => item.ParagraphIndex == paragraph.Index);
+                if (heading != null)
+                    return ApplyTechnicalHeadingFormat(document, paragraph, heading.Level, rules,
+                        IsParty(snapshot));
+            }
             return ApplyParagraphFormat(document, paragraph, role ?? string.Empty, snapshot, rules,
                 headerFontTier);
         }
@@ -972,7 +1143,8 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
             IReadOnlyList<AnnotationFinding> findings,
             LocalRulePack rules,
             IReadOnlyList<LogicalDocumentBlock> blocks,
-            IReadOnlyDictionary<int, string> roles)
+            IReadOnlyDictionary<int, string> roles,
+            ISet<int> technicalHeadings)
         {
             var paragraphs = snapshot.Paragraphs.ToDictionary(item => item.Index);
             var handled = new HashSet<int>();
@@ -987,6 +1159,9 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                 roles.TryGetValue(paragraphIndex, out detectedRole);
                 string role;
                 if (!TryResolveExplicitFindingRole(finding.RuleCode, detectedRole, out role) ||
+                    // A font/colour/size finding on a technical heading is corrected by
+                    // the heading format, never by the body format with its indent.
+                    (role.Length == 0 && technicalHeadings.Contains(paragraphIndex)) ||
                     !handled.Add(paragraphIndex) ||
                     !paragraphs.TryGetValue(paragraphIndex, out paragraph) ||
                     snapshot.IntersectsProtectedSpan(paragraph))

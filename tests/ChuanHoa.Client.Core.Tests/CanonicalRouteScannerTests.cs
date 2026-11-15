@@ -1010,6 +1010,60 @@ public sealed class CanonicalRouteScannerTests
              item.Anchor.ParagraphIndex == 10 || item.Anchor.ParagraphIndex == 11));
     }
 
+    [Fact]
+    public void Technical_headings_are_not_checked_as_body_paragraph_shape()
+    {
+        // A technical document (no administrative header): numbered headings in
+        // Heading styles sit flush left with the 12/6 and 6/3 pt spacing 1-Click
+        // gives them. Only the body paragraph with 0 pt after is a finding.
+        var paragraphs = new[]
+        {
+            Heading(1, "1 Giới thiệu chung về gói thầu", "Heading 1", after: 6),
+            P(2, "Gói thầu cung cấp dịch vụ hoạt động giáo dục STEM cho học sinh tiểu học trong năm học.",
+                size: 14),
+            Heading(3, "1.1 Phạm vi dịch vụ cung cấp cho nhà trường", "Heading 2", after: 3),
+            P(4, "Nhà thầu chịu trách nhiệm tổ chức thực hiện đầy đủ các nội dung theo kế hoạch đã duyệt.",
+                size: 14, after: 0)
+        };
+        var snapshot = new LocalScanSnapshot("sha256:technical-headings", 1, new[] { ValidSection() },
+            paragraphs, Array.Empty<AnnotationProtectedSpan>());
+
+        var findings = new LocalDocumentScanner().ScanFormat(snapshot, Rules()).Findings;
+
+        var shapeRules = new[] { "ND30-PL1-M2-K6E-ALIGN", "ND30-PL1-M2-K6E-INDENT", "ND30-PL1-M2-K6E-SPACEAFTER" };
+        Assert.DoesNotContain(findings, f => shapeRules.Contains(f.RuleCode) &&
+            (f.Anchor.ParagraphIndex == 1 || f.Anchor.ParagraphIndex == 3));
+        Assert.Contains(findings, f => f.RuleCode == "ND30-PL1-M2-K6E-SPACEAFTER" && f.Anchor.ParagraphIndex == 4);
+    }
+
+    [Fact]
+    public void Technical_headings_keep_the_body_font_and_colour_rules()
+    {
+        var paragraphs = new[]
+        {
+            Heading(1, "1 Giới thiệu chung về gói thầu", "Heading 1", after: 6, font: "Arial", color: 255),
+            P(2, "Gói thầu cung cấp dịch vụ hoạt động giáo dục STEM cho học sinh tiểu học trong năm học.",
+                size: 14)
+        };
+        var snapshot = new LocalScanSnapshot("sha256:technical-heading-font", 1, new[] { ValidSection() },
+            paragraphs, Array.Empty<AnnotationProtectedSpan>());
+
+        var findings = new LocalDocumentScanner().ScanFormat(snapshot, Rules()).Findings;
+
+        Assert.Contains(findings, f => f.RuleCode == "ND30-PL1-M1-K4-FONT" && f.Anchor.ParagraphIndex == 1);
+        Assert.Contains(findings, f => f.RuleCode == "ND30-PL1-M1-K4-COLOR" && f.Anchor.ParagraphIndex == 1);
+    }
+
+    private static LocalParagraphSnapshot Heading(int index, string text, string styleName, double after,
+        string font = "Times New Roman", int color = 0)
+    {
+        return new LocalParagraphSnapshot(index, text, "wdMainTextStory", 1, index * 100, font,
+            fontSizePoints: 14, bold: true, italic: false, alignment: 0,
+            firstLineIndentPoints: 0, spaceBeforePoints: 6, spaceAfterPoints: after,
+            fontColor: color, lineSpacingPoints: 14.4, lineSpacingRule: 5, styleName: styleName,
+            keepWithNext: true);
+    }
+
     private static LocalScanSnapshot BadFormatSnapshot()
     {
         var paragraphs = new List<LocalParagraphSnapshot>

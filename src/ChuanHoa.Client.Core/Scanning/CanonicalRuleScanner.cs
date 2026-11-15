@@ -148,9 +148,15 @@ namespace ChuanHoa.Client.Core.Scanning
             snapshot = snapshot.WithRegime(_roleDetector.ResolveRegime(snapshot));
             var blocks = _roleDetector.DetectBlocks(snapshot);
             var roles = MergeRoles(blocks);
+            // Headings of a technical document ("1 Giới thiệu", "9.2 Nội dung...")
+            // carry no component role. They are detected once here so the body
+            // typography checks and 1-Click (which formats them as headings, not
+            // as body text) agree on the same paragraphs.
+            var analysis = DerivedAnalysisContext.Create(snapshot, blocks, roles, new HeadingDetector());
+            var headings = new HashSet<int>(analysis.Headings.Select(heading => heading.ParagraphIndex));
             CheckPageSetup(findings, snapshot, rules);
             cancellationToken.ThrowIfCancellationRequested();
-            CheckBodyTypography(findings, snapshot, rules, roles);
+            CheckBodyTypography(findings, snapshot, rules, roles, headings);
             cancellationToken.ThrowIfCancellationRequested();
             CheckComponents(findings, snapshot, rules, roles);
             CheckHeaderFontSizeTier(findings, snapshot, rules, blocks);
@@ -170,7 +176,6 @@ namespace ChuanHoa.Client.Core.Scanning
             CheckAppendices(findings, snapshot, rules, roles);
             CheckFontSizeConsistency(findings, snapshot, rules, roles);
             cancellationToken.ThrowIfCancellationRequested();
-            var analysis = DerivedAnalysisContext.Create(snapshot, blocks, roles, new HeadingDetector());
             var academic = _latexScanner.ScanDetailed(snapshot, rules, analysis, cancellationToken);
             findings.AddRange(academic.Findings);
             return new CanonicalFormatScanOutcome(findings, academic);
@@ -273,17 +278,22 @@ namespace ChuanHoa.Client.Core.Scanning
         }
 
         private static void CheckBodyTypography(ICollection<AnnotationFinding> findings, LocalScanSnapshot snapshot,
-            LocalRulePack rules, IDictionary<int, string> roles)
+            LocalRulePack rules, IDictionary<int, string> roles, ISet<int> headings)
         {
             var party = IsParty(snapshot);
             foreach (var paragraph in Scannable(snapshot))
             {
                 if (!IsBody(paragraph, roles)) continue;
+                // A detected heading keeps the body font, colour and size rules but
+                // not the paragraph shape of body text: it is not justified, not
+                // indented 1 cm and 1-Click deliberately gives sub-headings 3 pt
+                // after. Reporting those would ask the user to undo the fix.
+                var heading = headings.Contains(paragraph.Index);
                 if (!string.IsNullOrWhiteSpace(paragraph.FontName) && !Eq(paragraph.FontName, rules.BodyFontName))
                     findings.Add(Paragraph("ND30-PL1-M1-K4-FONT", paragraph, "Phông chữ không đúng quy định.", "Dùng " + rules.BodyFontName + ".", rules));
                 if (paragraph.FontColor.HasValue && paragraph.FontColor.Value != 0 && paragraph.FontColor.Value != -16777216)
                     findings.Add(Paragraph("ND30-PL1-M1-K4-COLOR", paragraph, "Nội dung không dùng màu đen.", "Dùng màu đen tự động.", rules));
-                if (paragraph.Alignment.HasValue && paragraph.Alignment.Value != rules.BodyAlignment)
+                if (!heading && paragraph.Alignment.HasValue && paragraph.Alignment.Value != rules.BodyAlignment)
                     findings.Add(Paragraph("ND30-PL1-M2-K6E-ALIGN", paragraph, "Đoạn nội dung chưa căn đều hai lề.", "Căn đều hai lề.", rules));
                 var minimumSize = party ? 14d : rules.BodyFontMinPoints;
                 var maximumSize = party ? 15d : rules.BodyFontMaxPoints;
@@ -291,12 +301,12 @@ namespace ChuanHoa.Client.Core.Scanning
                     (paragraph.FontSizePoints.Value < minimumSize - .1d || paragraph.FontSizePoints.Value > maximumSize + .1d))
                     findings.Add(Paragraph("ND30-PL1-MV-CT1", paragraph, "Cỡ chữ nội dung không đúng chế độ đã chọn.",
                         "Dùng cỡ " + minimumSize.ToString("0.#", CultureInfo.InvariantCulture) + "–" + maximumSize.ToString("0.#", CultureInfo.InvariantCulture) + ".", rules));
-                if (paragraph.FirstLineIndentPoints.HasValue && !ParagraphIndentPolicy.IsValidIndent(
+                if (!heading && paragraph.FirstLineIndentPoints.HasValue && !ParagraphIndentPolicy.IsValidIndent(
                     paragraph.Text, paragraph.FirstLineIndentPoints.Value / PointsPerMillimeter,
                     paragraph.LeftIndentPoints / PointsPerMillimeter,
                     rules.BodyFirstLineIndentMinMm, rules.BodyFirstLineIndentMaxMm))
                     findings.Add(Paragraph("ND30-PL1-M2-K6E-INDENT", paragraph, "Thụt đầu dòng không đúng.", "Thụt đầu dòng 1–1,27 cm.", rules));
-                if (paragraph.SpaceAfterPoints.HasValue && paragraph.SpaceAfterPoints.Value < rules.BodySpaceAfterMinPoints - TolerancePoints)
+                if (!heading && paragraph.SpaceAfterPoints.HasValue && paragraph.SpaceAfterPoints.Value < rules.BodySpaceAfterMinPoints - TolerancePoints)
                     findings.Add(Paragraph("ND30-PL1-M2-K6E-SPACEAFTER", paragraph, "Khoảng cách sau đoạn quá nhỏ.", "Đặt tối thiểu 6 pt.", rules));
                 if (paragraph.LineSpacingPoints.HasValue && paragraph.LineSpacingRule.HasValue)
                 {
