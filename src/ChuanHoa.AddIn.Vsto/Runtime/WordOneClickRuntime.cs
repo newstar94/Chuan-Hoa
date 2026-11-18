@@ -1893,6 +1893,17 @@ namespace ChuanHoa.AddIn.Vsto.Runtime
                          availableWidth)) &&
                     Math.Abs(l.HeightPoints) <= 3d &&
                     l.WidthPoints >= 10d && l.WidthPoints <= availableWidth).ToArray();
+                // The checks above only recognise a few anchoring layouts. Any other
+                // separator the scanner already counts under this component (same
+                // predicate, so no extra reach) is the "old Line Shape" as well:
+                // leave it and the document ends up with two stacked rules.
+                var matchedOriginals = originals;
+                originals = matchedOriginals.Concat(snapshot.LineShapes.Where(l =>
+                        !LineShapeOwnership.IsOwned(l.Name) &&
+                        l.WidthPoints >= 10d && l.WidthPoints <= availableWidth &&
+                        CanonicalRuleScanner.IsSeparatorCandidate(l, paragraph) &&
+                        !matchedOriginals.Any(o => string.Equals(o.Name, l.Name, StringComparison.Ordinal))))
+                    .ToArray();
                 var preparedLegacyNames = originalLegacyLineRules.Where(item =>
                         string.Equals(item.Value, ruleCode, StringComparison.Ordinal) &&
                         snapshot.LineShapes.Any(line => line.Name == item.Key &&

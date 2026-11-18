@@ -617,6 +617,23 @@ namespace ChuanHoa.Client.Core.Scanning
                 : RequiredLineStatus.InvalidGeometry;
         }
 
+        /// <summary>
+        /// True when the scanner would count this Line Shape as a separator drawn
+        /// under <paramref name="paragraph"/>. 1-Click uses the same predicate to
+        /// retire an old separator before it adds the canonical one; otherwise the
+        /// scanner reports "đã có Line Shape" for a pair that the fixer ignored and
+        /// the user sees two stacked rules.
+        /// </summary>
+        public static bool IsSeparatorCandidate(LocalLineShapeSnapshot line, LocalParagraphSnapshot paragraph)
+        {
+            if (line.ShapeType != 9) return false;
+            if (!string.Equals(line.AnchorStoryType, paragraph.StoryType, StringComparison.Ordinal)) return false;
+            if (line.AnchorSectionIndex != paragraph.SectionIndex) return false;
+            if (paragraph.PageNumber > 0 && line.AnchorPageNumber > 0 &&
+                line.AnchorPageNumber != paragraph.PageNumber) return false;
+            return IsPotentiallyAssociated(line, paragraph) && IsBelow(line, paragraph) && IsHorizontal(line);
+        }
+
         private static bool IsOwnedLineForParagraph(string? name, int paragraphIndex)
         {
             return LineShapeOwnership.IsOwnedForParagraph(name, paragraphIndex);
