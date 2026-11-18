@@ -4,9 +4,9 @@
     "net10.0": {
       "coverlet.collector": {
         "type": "Direct",
-        "requested": "[6.0.4, )",
-        "resolved": "6.0.4",
-        "contentHash": "lkhqpF8Pu2Y7IiN7OntbsTtdbpR1syMsm2F3IgX6ootA4ffRqWL5jF7XipHuZQTdVuWG/gVAAcf8mjk8Tz0xPg=="
+        "requested": "[10.0.1, )",
+        "resolved": "10.0.1",
+        "contentHash": "27jXSV/0DbVqF5jDrAxuQFZ9oaz6gmG03p8ttxAFk+X0M4woFYj7MoWDLCna5EGLb0CE6OE7X6ZH3Wt5smTtaA=="
       },
       "Microsoft.AspNetCore.TestHost": {
         "type": "Direct",
@@ -253,10 +253,10 @@
       "chuanhoa.api": {
         "type": "Project",
         "dependencies": {
-          "ChuanHoa.Application": "[1.0.0.144, )",
-          "ChuanHoa.Contracts": "[1.0.0.144, )",
-          "ChuanHoa.Domain": "[1.0.0.144, )",
-          "ChuanHoa.Infrastructure": "[1.0.0.144, )",
+          "ChuanHoa.Application": "[1.0.0.152, )",
+          "ChuanHoa.Contracts": "[1.0.0.152, )",
+          "ChuanHoa.Domain": "[1.0.0.152, )",
+          "ChuanHoa.Infrastructure": "[1.0.0.152, )",
           "Microsoft.AspNetCore.OpenApi": "[10.0.11, )",
           "payOS": "[2.1.0, )"
         }
@@ -264,8 +264,8 @@
       "chuanhoa.application": {
         "type": "Project",
         "dependencies": {
-          "ChuanHoa.Contracts": "[1.0.0.144, )",
-          "ChuanHoa.Domain": "[1.0.0.144, )"
+          "ChuanHoa.Contracts": "[1.0.0.152, )",
+          "ChuanHoa.Domain": "[1.0.0.152, )"
         }
       },
       "chuanhoa.client.core": {
@@ -277,15 +277,15 @@
       "chuanhoa.domain": {
         "type": "Project",
         "dependencies": {
-          "ChuanHoa.Contracts": "[1.0.0.144, )"
+          "ChuanHoa.Contracts": "[1.0.0.152, )"
         }
       },
       "chuanhoa.infrastructure": {
         "type": "Project",
         "dependencies": {
-          "ChuanHoa.Application": "[1.0.0.144, )",
-          "ChuanHoa.Contracts": "[1.0.0.144, )",
-          "ChuanHoa.Domain": "[1.0.0.144, )",
+          "ChuanHoa.Application": "[1.0.0.152, )",
+          "ChuanHoa.Contracts": "[1.0.0.152, )",
+          "ChuanHoa.Domain": "[1.0.0.152, )",
           "Npgsql": "[10.0.0, )"
         }
       }
