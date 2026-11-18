@@ -106,17 +106,17 @@ public sealed class ApiBoundaryTests
     }
 
     [Fact]
-    public async Task Grant_domain_failure_is_mapped_to_forbidden_with_recovery()
+    public async Task Domain_failure_is_mapped_to_unprocessable_with_recovery()
     {
         await using var fixture = await ApiFixture.CreateAsync();
 
-        using var response = await fixture.Client.GetAsync("/throw-grant");
+        using var response = await fixture.Client.GetAsync("/throw-domain");
         var error = await response.Content.ReadFromJsonAsync<ApiErrorResponse>();
 
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
         Assert.NotNull(error);
-        Assert.Equal("GRANT_DEVICE_MISMATCH", error.Code);
-        Assert.Contains("new execution grant", error.Recovery, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("SCAN_REQUEST_REQUIRED", error.Code);
+        Assert.Contains("retry with a new idempotency key", error.Recovery, StringComparison.OrdinalIgnoreCase);
     }
 
     [Theory]
@@ -168,7 +168,7 @@ public sealed class ApiBoundaryTests
                 (HttpContext context) => Results.Text(CorrelationIdMiddleware.GetCorrelationId(context)));
             app.MapPost("/v1/mutate", () => Results.NoContent());
             app.MapGet("/throw-unhandled", () => ThrowUnhandled());
-            app.MapGet("/throw-grant", () => ThrowGrantFailure());
+            app.MapGet("/throw-domain", () => ThrowDomainFailure());
             await app.StartAsync();
             return new ApiFixture(app);
         }
@@ -184,9 +184,9 @@ public sealed class ApiBoundaryTests
             throw new InvalidOperationException("sensitive-diagnostic");
         }
 
-        private static IResult ThrowGrantFailure()
+        private static IResult ThrowDomainFailure()
         {
-            throw new DomainException("GRANT_DEVICE_MISMATCH", "The device binding does not match.");
+            throw new DomainException("SCAN_REQUEST_REQUIRED", "A document scan request is required.");
         }
     }
 }

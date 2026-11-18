@@ -13,7 +13,6 @@
     <Project Path="tests/ChuanHoa.Api.Tests/ChuanHoa.Api.Tests.csproj" />
     <Project Path="tests/ChuanHoa.Client.Core.Tests/ChuanHoa.Client.Core.Tests.csproj" />
     <Project Path="tests/ChuanHoa.Contracts.Tests/ChuanHoa.Contracts.Tests.csproj" />
-    <Project Path="tests/ChuanHoa.Domain.Tests/ChuanHoa.Domain.Tests.csproj" />
     <Project Path="tests/ChuanHoa.Rules.Tests/ChuanHoa.Rules.Tests.csproj" />
   </Folder>
 </Solution>

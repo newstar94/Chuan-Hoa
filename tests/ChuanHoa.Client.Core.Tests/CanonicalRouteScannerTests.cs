@@ -438,6 +438,40 @@ public sealed class CanonicalRouteScannerTests
     }
 
     [Fact]
+    public void Separator_candidate_covers_the_pair_the_scanner_reports_as_geometry_error()
+    {
+        var paragraph = P(1, "Độc lập - Tự do - Hạnh phúc", "nationalMotto", size: 13,
+            bold: true, alignment: 1, page: 1, left: 320, top: 80, width: 180);
+        // Both rules sit under the motto at the right length: the scanner flags the
+        // pair, so the fixer must be able to see every one of them as a candidate.
+        var first = Line(1, paragraph, 320, 98, 180);
+        var second = Line(2, paragraph, 320, 100, 180);
+        var snapshot = new LocalScanSnapshot("sha256:double-line", 1, new[] { ValidSection() },
+            new[] { paragraph }, Array.Empty<AnnotationProtectedSpan>(), new[] { first, second }, "STATE_ND30");
+
+        var finding = Assert.Single(new LocalDocumentScanner().ScanFormat(snapshot, Rules()).Findings,
+            item => item.RuleCode == "ND30-PL1-M2-K1-TN-LINE");
+
+        Assert.Contains("Đã có Line Shape", finding.CurrentIssue, StringComparison.Ordinal);
+        Assert.True(CanonicalRuleScanner.IsSeparatorCandidate(first, paragraph));
+        Assert.True(CanonicalRuleScanner.IsSeparatorCandidate(second, paragraph));
+    }
+
+    [Fact]
+    public void Separator_candidate_ignores_lines_on_another_page_or_far_below()
+    {
+        var paragraph = P(1, "Độc lập - Tự do - Hạnh phúc", "nationalMotto", size: 13,
+            bold: true, alignment: 1, page: 1, left: 320, top: 80, width: 180);
+        var farBelow = Line(1, paragraph, 320, 400, 180);
+        var otherPage = new LocalLineShapeSnapshot(2, "Line other page", 9, paragraph.StoryType,
+            paragraph.SectionIndex, paragraph.AbsoluteStart, paragraph.Index, 2,
+            320, 98, 180, 0, 320, 98, 1, 1, true, 1, .75, 0, 1, 1);
+
+        Assert.False(CanonicalRuleScanner.IsSeparatorCandidate(farBelow, paragraph));
+        Assert.False(CanonicalRuleScanner.IsSeparatorCandidate(otherPage, paragraph));
+    }
+
+    [Fact]
     public void Visually_balanced_small_line_offset_is_accepted()
     {
         var paragraph = P(1, "CƠ QUAN BAN HÀNH", "organName", size: 13, bold: true,

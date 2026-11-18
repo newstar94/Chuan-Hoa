@@ -12,10 +12,7 @@ D:\Chuẩn Hóa
 ├── tests/                           # Unit, contract, API và integration tests
 ├── database/                        # PostgreSQL migrations và verification
 ├── shared/                          # Rules, dictionaries, contract và tài liệu triển khai
-├── tools/                           # Inventory, build/publish và Word smoke tools
-├── backend-api/                     # Prototype TypeScript lưu làm tài liệu đối chiếu, không phải production server
-├── client-vsto-csharp/              # Prototype VSTO cũ lưu làm provenance
-└── client-web-addin/                # Artefact tham khảo đã retire khỏi client product
+└── tools/                           # Inventory, build/publish và Word smoke tools
 ```
 
 ## Nguồn sự thật
